@@ -934,6 +934,42 @@
       "average": "Aportado de media",
       "accounts": "Cuenta vinculada",
       "accounts_other": "Cuentas vinculadas"
+    },
+    "kpi": {
+      "saved": "Total ahorrado",
+      "ofTarget": "de {{target}} · {{percent}}",
+      "onTrack": "En buen camino",
+      "behind": "{{count}} con retraso",
+      "behind_other": "{{count}} con retraso",
+      "noneBehind": "Ninguno con retraso",
+      "required": "Esfuerzo mensual",
+      "averaged": "Media: {{value}}",
+      "noAverage": "Aún sin historial",
+      "plans": "Invertido cada mes",
+      "running": "{{count}} plan activo",
+      "running_other": "{{count}} planes activos"
+    },
+    "trajectory": {
+      "saved": "Ahorrado",
+      "ideal": "Trayectoria hacia el objetivo",
+      "chartLabel": "Ahorro de las cuentas vinculadas frente a la trayectoria hacia {{target}}",
+      "empty": "Aún no hay historial suficiente para trazar la trayectoria.",
+      "error": "Historial no disponible.",
+      "onTime": "Alcanzado en {{month}} al ritmo medio de {{pace}}",
+      "late": "{{count}} mes de retraso: alcanzado en {{month}} al ritmo medio de {{pace}}",
+      "late_other": "{{count}} meses de retraso: alcanzado en {{month}} al ritmo medio de {{pace}}",
+      "never": "No se alcanza al ritmo medio de {{pace}}"
+    },
+    "planStats": {
+      "title": "Compras desde el {{date}}",
+      "invested": "Invertido",
+      "months": "Meses con compra",
+      "value": "Valor actual",
+      "gain": "Plusvalía",
+      "noPrice": "Valor no disponible: falta el precio de una de las posiciones compradas.",
+      "noPurchase": "Ninguna compra de este plan en el periodo.",
+      "needsSplit": "Reparta el plan entre posiciones para seguir sus compras.",
+      "error": "Seguimiento de compras no disponible."
     }
   },
   "addAccount": {

@@ -945,6 +945,42 @@
       "average": "Versé en moyenne",
       "accounts": "Compte lié",
       "accounts_other": "Comptes liés"
+    },
+    "kpi": {
+      "saved": "Total épargné",
+      "ofTarget": "sur {{target}} · {{percent}}",
+      "onTrack": "En bonne voie",
+      "behind": "{{count}} en retard",
+      "behind_other": "{{count}} en retard",
+      "noneBehind": "Aucun en retard",
+      "required": "Effort mensuel requis",
+      "averaged": "Moyenne : {{value}}",
+      "noAverage": "Pas encore d'historique",
+      "plans": "Investi chaque mois",
+      "running": "{{count}} plan actif",
+      "running_other": "{{count}} plans actifs"
+    },
+    "trajectory": {
+      "saved": "Épargné",
+      "ideal": "Trajectoire vers la cible",
+      "chartLabel": "Épargne des comptes liés face à la trajectoire vers {{target}}",
+      "empty": "Pas encore assez d'historique pour tracer la trajectoire.",
+      "error": "Historique indisponible.",
+      "onTime": "Atteint en {{month}} au rythme moyen de {{pace}}",
+      "late": "En retard de {{count}} mois : atteint en {{month}} au rythme moyen de {{pace}}",
+      "late_other": "En retard de {{count}} mois : atteint en {{month}} au rythme moyen de {{pace}}",
+      "never": "Pas atteint au rythme moyen de {{pace}}"
+    },
+    "planStats": {
+      "title": "Achats depuis le {{date}}",
+      "invested": "Investi",
+      "months": "Mois avec achat",
+      "value": "Valeur actuelle",
+      "gain": "Plus-value",
+      "noPrice": "Valeur indisponible : il manque le prix d'une ligne achetée.",
+      "noPurchase": "Aucun achat de ce plan sur la période.",
+      "needsSplit": "Détaillez la répartition du plan pour suivre ses achats.",
+      "error": "Suivi des achats indisponible."
     }
   },
   "budget": {

@@ -259,6 +259,20 @@ the card footer and a click on the card opens `GoalDetailModal`. Recurring plans
 its account, a split bar of the allocation lines (`--slice-*` colours, the list folded behind a
 toggle, the unallocated remainder as its own row), the account's current total and the end date.
 
+Under those, `RecurringPlanStats` reads `GET /api/goals/{id}/recurring-stats`
+([recurring-plan-stats.md](./recurring-plan-stats.md); `useRecurringStats`, key
+`['goals', id, 'recurring-stats']`): "Purchases since <from>" — the window starts on the 1st of the
+month 11 months back, cut to the plan's own dates, so the heading quotes `from` rather than
+saying "12 months" — then invested, months with a purchase as "11 / 12", the current value and the
+gain as a `Delta`. A null value means a bought ticker has no price: value and gain read "—" and a
+line says a price is missing. No purchase reads "—" too, with its own line, since a value of 0 is
+no valuation. A plan with no split shows a hint instead (purchases are matched on its tickers, so
+it can never have any), and a plan whose window has not started shows nothing.
+
+A KPI row (`GoalsKpiRow`) sits above both sections; its last tile is what the running plans pay
+in per month (`monthlyContributions`) and how many are running. See [goals.md](./goals.md) for the
+other three.
+
 ### Reading the chart
 
 The view (wealth / mix) and the horizon (10 / 20 / 30 years, default 20) are two compact
@@ -273,6 +287,16 @@ Every legend entry is a toggle for its curve, contributions included: five serie
 when a curve is hidden rescales every remaining curve, so hiding the optimistic line appears to
 move the pessimistic one — the opposite of what the reader clicked for. The maximum is rounded up
 to a 1 / 2 / 2.5 / 5 × 10ⁿ figure so the ticks stay readable.
+
+**Each visible scenario ends with its final value**, written beside the line's last point in ink
+(`money.compact`, so privacy mode masks it) with a dot in the scenario's colour. `ScenarioEndLabels`
+is a plain component inside the `LineChart` that reads Recharts' `useXAxisScale` / `useYAxisScale`
+/ `usePlotArea`, and `spreadLabels` (`projection-labels.ts`) pushes crowded labels 14px apart in
+the lines' order, walking back up from the bottom when needed; a short leader joins a moved label
+to its dot. The chart's right margin grows to the longest label (`labelGutter`, an estimate per
+character). On a phone (`useIsMobile`, under 768px) the labels and the margin are dropped: the
+legend and the tooltip still carry the values. The legend is unchanged. The chart also carries an
+`aria-label` listing the final value of every visible scenario.
 
 ### Key files
 
@@ -289,6 +313,8 @@ to a 1 / 2 / 2.5 / 5 × 10ⁿ figure so the ticks stay readable.
   pure helpers
 - `frontend/src/pages/analysis/ProjectionSection.tsx`,
   `AllocationTrajectory.tsx` — the two tabs, both labelled by `useProjectionDateLabel`
+- `frontend/src/pages/analysis/projection-labels.ts` — `spreadLabels`, `labelGutter` for the end labels
+- `frontend/src/pages/goals/RecurringPlanStats.tsx`, `GoalsKpiRow.tsx` — the plan's purchases, the KPI row
 
 ## The bug this fixes
 
@@ -407,6 +433,11 @@ after.
   and the form switch
 - `PyramidSection.test.tsx` — the same omission on `coverage`, `global` and `allocation` reads as
   "not rated" instead of `NaN` and `undefined / 100`
+- `projection-labels.test.ts` — end labels that clear each other stay put, crowded ones are pushed
+  apart in the lines' order, a stack past the bottom walks back up, the gutter fits the longest
+- `RecurringPlanStats.test.tsx` — invested, "11 / 12" and the gain; a missing price and no purchase
+  each read "—" with their reason; the split hint for an undetailed plan; nothing before the window
+  starts. `e2e/goals.spec.ts` checks the "11 / 12" on the demo plan
 
 ## Links
 

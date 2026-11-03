@@ -38,6 +38,8 @@ Null rules: `currentValueEur`, `gainEur` and `gainPercent` are null when any pur
 no price (a partial sum would read as a loss). With no purchase, `currentValueEur` is 0 and both
 gains are null: there is nothing to measure. Every key is always present (`@JsonInclude(ALWAYS)`).
 
+**Frontend.** `RecurringPlanStats` (`frontend/src/pages/goals/RecurringPlanStats.tsx`, hook `useRecurringStats`, key `['goals', id, 'recurring-stats']`) sits on each recurring-plan card. It shows "Purchases since <from>" (it quotes `from`, because the window starts on the 1st of the month 11 months back and is cut to the plan's dates), then the amount invested, the months with a purchase as "11 / 12", the current value, and the gain as a `Delta`. A null value means a price is missing: value and gain read "—" and a line gives that reason. No purchase also reads "—", with its own line. A plan with no split shows a hint, because purchases are matched on its tickers. A plan whose window has not started shows nothing.
+
 ### Key files
 
 - `controller/GoalController.java` — `GET /api/goals/{id}/recurring-stats`

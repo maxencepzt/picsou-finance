@@ -7,6 +7,11 @@ import { useMemberProfile } from '@/features/profile/hooks'
 import { AllocationPicker } from './AllocationPicker'
 import { allocatedTotal, isActiveThisMonth } from './plan-math'
 import { SavingsRateCard } from './SavingsRateCard'
+import { GoalsKpiRow } from './GoalsKpiRow'
+import { GoalTrajectory } from './GoalTrajectory'
+import { RecurringPlanStats } from './RecurringPlanStats'
+import { Stat } from './Stat'
+import { goalStatus } from './goal-stats'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { PageHeader } from '@/components/shared/PageHeader'
@@ -202,6 +207,8 @@ export function GoalsPage() {
         />
       ) : (
         <div className="flex flex-col gap-8">
+          <GoalsKpiRow savings={savingsTargets} plans={recurringPlans} today={today} />
+
           {savingsTargets.length > 0 && (
             <section className="flex flex-col gap-4">
               <h2 className="text-sm text-muted-foreground">{t('goals.sections.savings')}</h2>
@@ -210,6 +217,7 @@ export function GoalsPage() {
                 <GoalCard
                   key={goal.id}
                   goal={goal}
+                  today={today}
                   onEdit={() => openEdit(goal)}
                   onDelete={() => setDeleteId(goal.id)}
                   onCalendar={() => navigate(`/goals/${goal.id}/calendar`)}
@@ -439,15 +447,6 @@ export function GoalsPage() {
 const CARD_GRID = 'grid grid-cols-[repeat(auto-fill,minmax(min(100%,19rem),1fr))] gap-4'
 const BADGE = 'h-[22px] px-2 text-xs font-semibold'
 
-function Stat({ label, children, className }: { label: string; children: React.ReactNode; className?: string }) {
-  return (
-    <div className="min-w-0">
-      <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
-      <dd className={cn('font-semibold tabular-nums break-words', className)}>{children}</dd>
-    </div>
-  )
-}
-
 /** Edit / delete (and calendar) at the foot of a card; clicks stay off the card's own handler. */
 function CardActions({ children }: { children: React.ReactNode }) {
   return (
@@ -579,6 +578,8 @@ function RecurringPlanCard({
           )}
         </dl>
 
+        <RecurringPlanStats goal={goal} />
+
         <CardActions>
           <Button variant="ghost" size="icon" onClick={onEdit} aria-label={t('common.edit')}>
             <Pencil className="size-4" />
@@ -594,26 +595,27 @@ function RecurringPlanCard({
 
 interface GoalCardProps {
   goal: GoalProgress
+  today: string
   onEdit: () => void
   onDelete: () => void
   onCalendar: () => void
   onOpenDetail: () => void
 }
 
-function GoalCard({ goal, onEdit, onDelete, onCalendar, onOpenDetail }: GoalCardProps) {
+function GoalCard({ goal, today, onEdit, onDelete, onCalendar, onOpenDetail }: GoalCardProps) {
   const { t } = useTranslation()
   const money = useMoney()
   const perMonth = (value: number) =>
     t('goals.card.perMonth', { value: money.amount(value, 'EUR', { maximumFractionDigits: 0 }) })
 
-  const behind = (goal.monthlyNeeded ?? 0) > 0 && goal.avgMonthlyContribution != null && !goal.isOnTrack
-  const status = (goal.monthlyNeeded ?? 0) <= 0
-    ? { label: t('goals.achieved'), className: 'bg-gain/10 text-gain' }
-    : goal.avgMonthlyContribution == null
-      ? { label: t('goals.waiting'), className: '' }
-      : goal.isOnTrack
-        ? { label: t('goals.onTrack'), className: 'bg-primary/12 text-foreground' }
-        : { label: t('goals.behind'), className: 'text-warning' }
+  const verdict = goalStatus(goal)
+  const behind = verdict === 'behind'
+  const status = {
+    achieved: { label: t('goals.achieved'), className: 'bg-gain/10 text-gain' },
+    waiting: { label: t('goals.waiting'), className: '' },
+    onTrack: { label: t('goals.onTrack'), className: 'bg-primary/12 text-foreground' },
+    behind: { label: t('goals.behind'), className: 'text-warning' },
+  }[verdict]
 
   return (
     <Card
@@ -641,6 +643,8 @@ function GoalCard({ goal, onEdit, onDelete, onCalendar, onOpenDetail }: GoalCard
         </div>
 
         <Progress value={goal.percentComplete} className="h-1.5" aria-label={goal.name} />
+
+        <GoalTrajectory goal={goal} today={today} />
 
         <dl className="grid grid-cols-2 gap-2.5 text-[13px]">
           <Stat label={t('goals.deadline')}>{formatLocalDate(goal.deadline)}</Stat>

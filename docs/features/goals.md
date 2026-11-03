@@ -69,6 +69,7 @@ Users often start a goal in Picsou after they've already been saving for it. The
 - `backend/src/main/java/com/picsou/repository/GoalMonthOverrideRepository.java` -- Override lookup by goal + month
 - `backend/src/main/java/com/picsou/repository/GoalManualContributionRepository.java` -- Contribution lookup by goal + month
 - `frontend/src/pages/goals/GoalsPage.tsx` -- Grid of goal cards (`GoalCard`), CRUD dialog, status badges
+- `frontend/src/pages/goals/GoalsKpiRow.tsx`, `GoalTrajectory.tsx`, `goal-stats.ts` -- KPI row, the card's trajectory chart and forecast sentence, their pure helpers (`goalStatus`, `summarizeSavings`, `projectReach`, `trajectoryRows`)
 - `frontend/src/pages/goals/GoalCalendarPage.tsx` -- Monthly calendar view with donut rings, overrides, manual contributions
 
 ### Flow
@@ -134,11 +135,16 @@ GoalService.setMonthOverride(goalId, yearMonth, amount)
 ## Tests
 
 - `GoalServiceTest` -- unit tests for progress calculation, monthly entries, overrides, edge cases (deadline passed, no history)
+- `frontend/src/pages/goals/goal-stats.test.ts` -- the badge verdict, the KPI sums (achieved goals left out of required and averaged), the reach month (rounding up, exact divisions, year boundary, late by at least one month, never), the trajectory rows (start at creation, older goal, passed deadline, too few points)
+- `e2e/goals.spec.ts` -- each demo savings card shows its progress bar and its trajectory chart
 
 ## Frontend notes
 
 - **Goal card** (`GoalCard`, since the "Coffre Nocturne" redesign): current total over target and its percentage, a progress bar, then deadline, **required** monthly effort (`monthlyNeeded`, in `warning` when behind) beside the **average** one (`avgMonthlyContribution`, "–" without history), and the linked accounts by name. Edit, calendar and delete sit in the card footer; a click elsewhere on the card opens `GoalDetailModal`. Cards sit in an auto-fill grid. No per-account colour: the `ACCOUNT_COLORS` palette is still used elsewhere (ColorPicker, the Finary and Actual Budget imports) but not in goal cards.
-- **Status badges**: all `variant="secondary"`, coloured by state — achieved `bg-gain/10 text-gain`, on track `bg-primary/12`, behind `text-warning`, waiting (no average yet) plain.
+- **Status badges**: all `variant="secondary"`, coloured by state — achieved `bg-gain/10 text-gain`, on track `bg-primary/12`, behind `text-warning`, waiting (no average yet) plain. The verdict comes from `goalStatus` (`goal-stats.ts`), which the KPI row shares.
+- **KPI row** (`GoalsKpiRow`, above both sections, built from `GET /api/goals` alone): total saved over the total target with its percentage; goals achieved or on track out of all savings goals, with the number behind; the summed **required** monthly effort beside the summed **average** of the same goals (those not yet achieved, so the two compare); and the monthly amount of the running recurring plans. An account linked to two goals counts in both totals, as it does on each card.
+- **Trajectory on the card** (`GoalTrajectory`): a 64px chart from `GET /api/goals/{id}/history` (`useGoalHistory`) — the linked accounts' total since the goal's creation (or over the 12 months of history when the goal is older) as a `--chart-1` line, against a dashed `--chart-5` straight line from that first balance to the target at the deadline, both axes hidden, the Y axis zoomed between the lowest value and the target so the gap to the line shows. A two-entry legend sits under it and the chart carries an `aria-label`. Loading shows a skeleton, an error a retry link that does not open the detail, fewer than two points a sentence. The full chart with tooltips stays in `GoalDetailModal`.
+- **Forecast sentence**: the goal response has no projected date, so `projectReach` computes it from `avgMonthlyContribution`: `n = ⌈(target − current) / average⌉` months, the current month counting as the first, so reached at the end of month `today + n − 1`. "Reached in <month year> at the average pace of X / month"; when that month ends after the deadline, "N months late" (at least one) in `warning` with an icon; with an average of zero or less, or more than 50 years away, "not reached at the average pace of X / month". Nothing is said for a goal already reached or without history. The sentence can disagree with the badge on purpose: the badge looks at past months against their objectives, the sentence at the recent pace going forward.
 - **Calendar badges**: "manu." uses `variant="secondary"`, "modif." uses `variant="outline"` — no raw Tailwind color overrides.
 - **Icons**: `TrendingUp`/`TrendingDown` come from `lucide-react` (not HugeIcons) in the goals pages.
 - **Goal detail chart**: `GoalDetailModal` reuses the shared `NetWorthChart` with the optional `target`, `projection`, and `todayMs` props. The chart draws:

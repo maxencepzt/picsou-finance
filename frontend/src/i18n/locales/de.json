@@ -934,6 +934,42 @@
       "average": "Durchschnittlich eingezahlt",
       "accounts": "Verknüpftes Konto",
       "accounts_other": "Verknüpfte Konten"
+    },
+    "kpi": {
+      "saved": "Gesamt gespart",
+      "ofTarget": "von {{target}} · {{percent}}",
+      "onTrack": "Auf Kurs",
+      "behind": "{{count}} im Rückstand",
+      "behind_other": "{{count}} im Rückstand",
+      "noneBehind": "Keines im Rückstand",
+      "required": "Nötig pro Monat",
+      "averaged": "Schnitt: {{value}}",
+      "noAverage": "Noch kein Verlauf",
+      "plans": "Monatlich investiert",
+      "running": "{{count}} aktiver Plan",
+      "running_other": "{{count}} aktive Pläne"
+    },
+    "trajectory": {
+      "saved": "Gespart",
+      "ideal": "Kurs zum Ziel",
+      "chartLabel": "Ersparnis der verknüpften Konten gegenüber dem Kurs auf {{target}}",
+      "empty": "Noch nicht genug Verlauf, um den Kurs zu zeichnen.",
+      "error": "Verlauf nicht verfügbar.",
+      "onTime": "Erreicht im {{month}} bei durchschnittlich {{pace}}",
+      "late": "{{count}} Monat im Verzug: erreicht im {{month}} bei durchschnittlich {{pace}}",
+      "late_other": "{{count}} Monate im Verzug: erreicht im {{month}} bei durchschnittlich {{pace}}",
+      "never": "Bei durchschnittlich {{pace}} nicht erreichbar"
+    },
+    "planStats": {
+      "title": "Käufe seit dem {{date}}",
+      "invested": "Investiert",
+      "months": "Monate mit Kauf",
+      "value": "Aktueller Wert",
+      "gain": "Gewinn",
+      "noPrice": "Wert nicht verfügbar: Für eine gekaufte Position fehlt der Kurs.",
+      "noPurchase": "Keine Käufe für diesen Plan im Zeitraum.",
+      "needsSplit": "Teilen Sie den Plan auf Positionen auf, um seine Käufe zu verfolgen.",
+      "error": "Kaufverfolgung nicht verfügbar."
     }
   },
   "addAccount": {

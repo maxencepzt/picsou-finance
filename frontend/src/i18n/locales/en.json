@@ -945,6 +945,42 @@
       "average": "Average paid in",
       "accounts": "Linked account",
       "accounts_other": "Linked accounts"
+    },
+    "kpi": {
+      "saved": "Total saved",
+      "ofTarget": "of {{target}} · {{percent}}",
+      "onTrack": "On track",
+      "behind": "{{count}} behind",
+      "behind_other": "{{count}} behind",
+      "noneBehind": "None behind",
+      "required": "Monthly effort needed",
+      "averaged": "Average: {{value}}",
+      "noAverage": "No history yet",
+      "plans": "Invested every month",
+      "running": "{{count}} active plan",
+      "running_other": "{{count}} active plans"
+    },
+    "trajectory": {
+      "saved": "Saved",
+      "ideal": "Path to the target",
+      "chartLabel": "Linked accounts' savings against the path to {{target}}",
+      "empty": "Not enough history yet to draw the path.",
+      "error": "History unavailable.",
+      "onTime": "Reached in {{month}} at the average pace of {{pace}}",
+      "late": "{{count}} month late: reached in {{month}} at the average pace of {{pace}}",
+      "late_other": "{{count}} months late: reached in {{month}} at the average pace of {{pace}}",
+      "never": "Not reached at the average pace of {{pace}}"
+    },
+    "planStats": {
+      "title": "Purchases since {{date}}",
+      "invested": "Invested",
+      "months": "Months with a purchase",
+      "value": "Current value",
+      "gain": "Gain",
+      "noPrice": "Value unavailable: a price is missing for one of the positions bought.",
+      "noPurchase": "No purchase for this plan over the period.",
+      "needsSplit": "Split the plan across positions to track its purchases.",
+      "error": "Purchase tracking unavailable."
     }
   },
   "budget": {
