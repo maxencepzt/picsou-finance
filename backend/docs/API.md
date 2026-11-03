@@ -1039,6 +1039,27 @@ answer `400` for a recurring plan: they count towards a deadline it does not hav
 
 ---
 
+#### `GET /api/goals/{id}/recurring-stats`
+
+- **Auth:** Required
+- `400` for a `SAVINGS_TARGET`, `404` when the goal is not the member's.
+
+`BUY` rows of the plan's allocation tickers on its accounts, over the last 12 calendar months
+(current one included) intersected with `[startDate, endDate ?? today]`. See
+[Recurring plan stats](../../docs/features/recurring-plan-stats.md).
+
+**Response `200` — `RecurringStatsResponse`** (null keys are sent as `null`):
+```json
+{ "from": "2025-12-01", "to": "2026-11-03",
+  "investedEur": 1200.0, "purchases": 12, "monthsWithPurchase": 11, "monthsElapsed": 12,
+  "currentValueEur": 1350.0, "gainEur": 150.0, "gainPercent": 12.5 }
+```
+
+`currentValueEur` (bought quantity × today's EUR price), `gainEur` and `gainPercent` are null when
+a bought ticker has no price; the gains are also null when nothing was bought.
+
+---
+
 ### 8. Bank Sync (Enable Banking) — `/api/sync`
 
 #### `GET /api/sync/institutions`
