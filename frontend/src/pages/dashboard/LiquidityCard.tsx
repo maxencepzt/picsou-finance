@@ -31,11 +31,12 @@ export function LiquidityCard({ distribution }: { distribution: DashboardData['d
         </div>
         <ul className="flex flex-col gap-2">
           {buckets.map((b) => (
-            <li key={b.key} className="grid grid-cols-[10px_1fr_auto_3.5rem] items-center gap-2 text-sm">
+            <li key={b.key} className="grid grid-cols-[10px_minmax(0,1fr)_auto_3.5rem] items-center gap-2 text-sm">
               <span className="size-2.5 rounded-full" style={{ backgroundColor: LIQUIDITY_COLOR[b.key] }} aria-hidden="true" />
-              <span className="min-w-0 truncate">
-                {t(`dashboard.liquidity.${b.key}`)}
-                <span className="text-muted-foreground"> · {t(`dashboard.liquidity.${b.key}Hint`)}</span>
+              {/* Name and hint on their own lines: on a phone the hint wraps instead of running off. */}
+              <span className="min-w-0">
+                <span className="block truncate">{t(`dashboard.liquidity.${b.key}`)}</span>
+                <span className="block text-xs text-muted-foreground">{t(`dashboard.liquidity.${b.key}Hint`)}</span>
               </span>
               <CurrencyDisplay value={b.amount} className="font-semibold tabular-nums text-foreground" />
               <span className="text-right tabular-nums text-muted-foreground">{formatPercent(share(b.amount))}</span>

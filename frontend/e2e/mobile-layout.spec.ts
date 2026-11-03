@@ -50,6 +50,13 @@ const PAGES = [
   ['/accounts/2', '+ Ajouter'],
   ['/goals', 'Apport immobilier'],
   ['/goals/1/calendar', 'Voyage au Japon'],
+  // The redesigned pages: KPI figures and breakdown legends must shrink or wrap, never run off.
+  ['/', 'Plus fortes variations'],
+  ['/accounts', "Classe d'actifs"],
+  ['/budget', 'Principaux commerçants'],
+  ['/investments', 'Performance'],
+  ['/income', 'Mois par mois'],
+  ['/real-estate', 'Résidence principale'],
 ] as const
 
 test.describe('Phone layout (360px)', () => {

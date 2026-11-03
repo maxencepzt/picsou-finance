@@ -55,7 +55,7 @@ export function AnalysisPage() {
       />
 
       {pyramid.isLoading && (
-        <div className="grid gap-4 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
           <Skeleton className="h-64 lg:col-span-1" />
           <Skeleton className="h-64 lg:col-span-2" />
         </div>

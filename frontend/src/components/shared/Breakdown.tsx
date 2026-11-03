@@ -76,11 +76,12 @@ export function Breakdown({ items, centerLabel, defaultView = 'donut', ariaLabel
 
       <ul className="flex flex-col gap-2">
         {chartItems.map((item, index) => (
-          <li key={item.key} className="grid grid-cols-[10px_1fr_auto_3.5rem] items-center gap-2 text-sm">
+          <li key={item.key} className="grid grid-cols-[10px_minmax(0,1fr)_auto_3.5rem] items-center gap-2 text-sm">
             <span className="size-2.5 rounded-full" style={{ backgroundColor: item.color }} aria-hidden="true" />
-            <span className="min-w-0 truncate">
-              {item.label}
-              {items[index].hint && <span className="text-muted-foreground"> · {items[index].hint}</span>}
+            {/* Label and hint truncate on their own lines: a long "Apple Inc. · PEA BoursoBank" must not push the row wide. */}
+            <span className="min-w-0" title={items[index].hint ? `${item.label} · ${items[index].hint}` : item.label}>
+              <span className="block truncate">{item.label}</span>
+              {items[index].hint && <span className="block truncate text-xs text-muted-foreground">{items[index].hint}</span>}
             </span>
             <CurrencyDisplay value={items[index].amount} className="font-semibold tabular-nums text-foreground" />
             <span className="text-right tabular-nums text-muted-foreground">{formatPercent(item.percent, { fractionDigits: 1 })}</span>
