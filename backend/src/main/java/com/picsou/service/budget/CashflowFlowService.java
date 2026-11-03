@@ -5,6 +5,8 @@ import com.picsou.dto.CashflowFlowResponse.FlowLink;
 import com.picsou.dto.CashflowFlowResponse.FlowNode;
 import com.picsou.dto.CashflowFlowResponse.NodeType;
 import com.picsou.dto.CashflowPeriod;
+import com.picsou.dto.MerchantSpendingResponse;
+import com.picsou.dto.MerchantSpendingResponse.MerchantSpend;
 import com.picsou.dto.SpendingByCategoryResponse;
 import com.picsou.dto.SpendingByCategoryResponse.CategorySpend;
 import com.picsou.dto.SpendingDetailResponse;
@@ -52,19 +54,25 @@ public class CashflowFlowService {
 
     /** Keep the Sankey legible: beyond this many expense bands, the tail rolls into "other". */
     private static final int MAX_EXPENSE_NODES = 8;
+    /** Bounds of the by-merchant {@code limit}. */
+    static final int MIN_MERCHANTS = 1;
+    static final int MAX_MERCHANTS = 25;
 
     private final TransactionRepository transactionRepository;
     private final BudgetSettingsService budgetSettingsService;
     private final CategoryRepository categoryRepository;
+    private final MerchantKnowledgeBase knowledgeBase;
 
     public CashflowFlowService(
         TransactionRepository transactionRepository,
         BudgetSettingsService budgetSettingsService,
-        CategoryRepository categoryRepository
+        CategoryRepository categoryRepository,
+        MerchantKnowledgeBase knowledgeBase
     ) {
         this.transactionRepository = transactionRepository;
         this.budgetSettingsService = budgetSettingsService;
         this.categoryRepository = categoryRepository;
+        this.knowledgeBase = knowledgeBase;
     }
 
     // ─── Sankey flow ───────────────────────────────────────────────────────────
@@ -356,10 +364,7 @@ public class CashflowFlowService {
 
         Map<Long, Agg> expense = new HashMap<>();
         BigDecimal total = BigDecimal.ZERO;
-        for (Transaction tx : transactionRepository.findByMemberIdAndDateBetween(memberId, r.from, r.to)) {
-            if (isTransfer(tx) || tx.getAmount().signum() >= 0) {
-                continue;
-            }
+        for (Transaction tx : expenses(memberId, r)) {
             BigDecimal magnitude = tx.getAmount().negate();
             total = total.add(magnitude);
             Category cat = tx.getCategoryRef();
@@ -393,6 +398,58 @@ public class CashflowFlowService {
         categories.sort(Comparator.comparing(CategorySpend::amount).reversed());
 
         return new SpendingByCategoryResponse(period, r.from, r.to, total, categories);
+    }
+
+    // ─── Ranked merchants ────────────────────────────────────────────────────
+
+    /**
+     * The same spending rows as {@link #spendingByCategory}, grouped by merchant: the matched brand
+     * first, else the match key of the merchant label, else of the cleaned counterparty (or
+     * description, the categorizer's own fallback). {@code total} covers every row, listed or not.
+     */
+    public MerchantSpendingResponse spendingByMerchant(Long memberId, CashflowPeriod period, LocalDate today, int limit) {
+        Range r = range(memberId, period, today);
+
+        Map<String, MerchantAgg> byKey = new HashMap<>();
+        BigDecimal total = BigDecimal.ZERO;
+        for (Transaction tx : expenses(memberId, r)) {
+            BigDecimal magnitude = tx.getAmount().negate();
+            total = total.add(magnitude);
+            MerchantAgg merchant = merchantOf(tx);
+            byKey.computeIfAbsent(merchant.key, k -> merchant).add(magnitude);
+        }
+
+        boolean logos = byKey.values().stream().anyMatch(m -> m.logoDomain != null)
+            && budgetSettingsService.logoFetchEnabled(memberId);
+        final BigDecimal denominator = total;
+        List<MerchantSpend> merchants = byKey.values().stream()
+            .sorted(Comparator.comparing((MerchantAgg m) -> m.sum).reversed().thenComparing(m -> m.key))
+            .limit(Math.clamp(limit, MIN_MERCHANTS, MAX_MERCHANTS))
+            .map(m -> new MerchantSpend(
+                m.key,
+                m.label,
+                // Same opt-in proxy the frontend's MerchantAvatar loads; off means no URL at all.
+                logos && m.logoDomain != null ? "/api/merchants/" + m.brandId + "/logo" : null,
+                m.sum,
+                m.count,
+                m.sum.multiply(BigDecimal.valueOf(100)).divide(denominator, 2, RoundingMode.HALF_UP)))
+            .toList();
+
+        return new MerchantSpendingResponse(r.from, r.to, total, merchants);
+    }
+
+    private MerchantAgg merchantOf(Transaction tx) {
+        Long brandId = tx.getMerchantBrandId();
+        if (brandId != null) {
+            var brand = knowledgeBase.findById(brandId);
+            String label = brand.map(MerchantKnowledgeBase.Brand::displayName).orElse(tx.getMerchantLabel());
+            String domain = brand.map(MerchantKnowledgeBase.Brand::logoDomain).filter(d -> !d.isBlank()).orElse(null);
+            return new MerchantAgg("brand:" + brandId, label, brandId, domain);
+        }
+        String label = tx.getMerchantLabel() != null && !tx.getMerchantLabel().isBlank()
+            ? tx.getMerchantLabel().trim()
+            : MerchantNormalizer.normalize(tx.getCounterparty(), tx.getDescription());
+        return new MerchantAgg("label:" + MerchantNormalizer.matchKey(label), label, null, null);
     }
 
     // ─── Category drill ────────────────────────────────────────────────────────
@@ -445,6 +502,16 @@ public class CashflowFlowService {
 
     // ─── Shared helpers ──────────────────────────────────────────────────────
 
+    /**
+     * The period's spending rows: debits that are not transfers. The one definition both ranked
+     * breakdowns use, so the by-merchant total always equals the by-category total.
+     */
+    private List<Transaction> expenses(Long memberId, Range r) {
+        return transactionRepository.findByMemberIdAndDateBetween(memberId, r.from, r.to).stream()
+            .filter(tx -> !isTransfer(tx) && tx.getAmount().signum() < 0)
+            .toList();
+    }
+
     /** The [from, to] span for a period — current pay cycle, or calendar year-to-date. */
     private Range range(Long memberId, CashflowPeriod period, LocalDate today) {
         int cycleStartDay = budgetSettingsService.cycleStartDay(memberId);
@@ -487,6 +554,28 @@ public class CashflowFlowService {
 
         void add(BigDecimal amount) {
             sum = sum.add(amount);
+        }
+    }
+
+    /** Mutable per-merchant tally (positive magnitude); the first row seen names the merchant. */
+    private static final class MerchantAgg {
+        private final String key;
+        private final String label;
+        private final Long brandId;
+        private final String logoDomain;
+        private BigDecimal sum = BigDecimal.ZERO;
+        private int count = 0;
+
+        MerchantAgg(String key, String label, Long brandId, String logoDomain) {
+            this.key = key;
+            this.label = label;
+            this.brandId = brandId;
+            this.logoDomain = logoDomain;
+        }
+
+        void add(BigDecimal magnitude) {
+            sum = sum.add(magnitude);
+            count++;
         }
     }
 

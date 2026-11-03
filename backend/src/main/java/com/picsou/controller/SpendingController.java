@@ -1,6 +1,7 @@
 package com.picsou.controller;
 
 import com.picsou.dto.CashflowPeriod;
+import com.picsou.dto.MerchantSpendingResponse;
 import com.picsou.dto.SpendingByCategoryResponse;
 import com.picsou.dto.SpendingDetailResponse;
 import com.picsou.service.UserContext;
@@ -38,6 +39,17 @@ public class SpendingController {
     ) {
         return cashflowFlowService.spendingByCategory(userContext.currentMemberId(), period,
             anchor != null ? anchor : LocalDate.now());
+    }
+
+    /** Spending per merchant over the same window as {@code /by-category}; {@code limit} is clamped to 1..25. */
+    @GetMapping("/by-merchant")
+    public MerchantSpendingResponse byMerchant(
+        @RequestParam(defaultValue = "CYCLE") CashflowPeriod period,
+        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate anchor,
+        @RequestParam(defaultValue = "10") int limit
+    ) {
+        return cashflowFlowService.spendingByMerchant(userContext.currentMemberId(), period,
+            anchor != null ? anchor : LocalDate.now(), limit);
     }
 
     @GetMapping("/category/{categoryId}")

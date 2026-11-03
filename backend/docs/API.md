@@ -2133,6 +2133,28 @@ the credit as booked, not weighted by the member's share.
 
 ---
 
+### 16d. Spending — `/api/spending`
+
+#### `GET /api/spending/by-merchant?period=CYCLE&anchor=2026-11-03&limit=10`
+
+- **Auth:** Required
+- `period` (`CYCLE` | `YTD`) and `anchor` work as on `/api/spending/by-category`, with the same
+  exclusions (transfer-kind categories, credits). `limit` defaults to 10, clamped to 1..25.
+
+**Response `200` — `MerchantSpendingResponse`:**
+```json
+{ "from": "2026-10-25", "to": "2026-11-24", "total": 1834.2,
+  "merchants": [{ "key": "brand:12", "label": "Carrefour", "logoUrl": null,
+                  "amount": 412.3, "count": 7, "share": 22.48 }] }
+```
+
+`key` is `brand:<id>` for a matched brand, else `label:<match key>` of the merchant label (or of
+the cleaned counterparty, then description). `share` is a percentage of `total`, which covers
+every expense of the span. `logoUrl` is `/api/merchants/<id>/logo` when the member enabled logos
+and the brand has one, else null. See [Spending by merchant](../../docs/features/spending-by-merchant.md).
+
+---
+
 ### 17. Member profile — `/api/me/profile`
 
 The authenticated member's personal and fiscal context: age, marginal tax rate, household,
