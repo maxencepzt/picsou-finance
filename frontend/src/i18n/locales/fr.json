@@ -2515,7 +2515,6 @@
       "save": "Enregistrer",
       "saving": "Enregistrement...",
       "saved": "Enregistré",
-      "ready": "Enable Banking est prêt.",
       "incomplete": "Enable Banking n'est pas entièrement configuré. Manquant : {{fields}}. La recherche de banque et la synchronisation échoueront tant que ce n'est pas résolu.",
       "keypair": {
         "title": "Clé privée",
@@ -2536,7 +2535,28 @@
         "uploadInstruction": "Dans votre tableau de bord Enable Banking → votre app → Clé publique → collez ce bloc.",
         "copy": "Copier la clé publique",
         "copied": "Copié !",
-        "download": "Télécharger public.pem"
+        "download": "Télécharger public.pem",
+        "present": "Présente",
+        "missing": "Absente"
+      },
+      "statusReady": "Prêt",
+      "statusIncomplete": "Incomplet",
+      "debug": {
+        "title": "Journal des appels API",
+        "description": "Les appels HTTP bruts (endpoint, requête, réponse) vers Enable Banking, pour diagnostiquer une synchronisation.",
+        "view": "Voir les appels",
+        "dialogTitle": "Enable Banking — appels API bruts",
+        "count": "{{count}} appel en mémoire",
+        "count_other": "{{count}} appels en mémoire",
+        "refresh": "Rafraîchir",
+        "export": "Exporter en .txt",
+        "clear": "Vider",
+        "error": "Impossible de charger le journal des appels.",
+        "empty": "Aucun appel capturé pour l'instant. Lancez une synchronisation par Enable Banking pour en enregistrer.",
+        "colMethod": "Méthode",
+        "colEndpoint": "Endpoint",
+        "requestBody": "Corps de la requête",
+        "responseBody": "Corps de la réponse"
       }
     },
     "integrations": {
@@ -2556,7 +2576,7 @@
     "members": {
       "title": "Membres",
       "description": "Gérer les comptes des membres de la famille",
-      "createUser": "Créer un user",
+      "createUser": "Ajouter un membre",
       "createUserPlaceholder": "Nom du membre",
       "displayName": "Nom affiché",
       "loginName": "Identifiant",
@@ -2580,7 +2600,8 @@
       "copyLink": "Copier",
       "copied": "Copié !",
       "noMembers": "Aucun membre",
-      "loading": "Chargement..."
+      "loading": "Chargement...",
+      "moreActions": "Autres actions pour {{name}}"
     },
     "aiActivity": {
       "title": "Activité IA",
@@ -2612,6 +2633,11 @@
       "updateTitle": "Mise à jour disponible",
       "releaseNotes": "Notes de version",
       "later": "Plus tard"
+    },
+    "nav": {
+      "label": "Sections de l'administration",
+      "ai": "IA",
+      "telemetry": "Télémétrie"
     }
   },
   "error": {

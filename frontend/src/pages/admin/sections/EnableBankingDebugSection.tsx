@@ -1,14 +1,7 @@
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Download, Network, Trash2 } from 'lucide-react'
+import { Download, RotateCw, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
 import {
   Dialog,
   DialogContent,
@@ -19,20 +12,11 @@ import {
 import { useEbCallLog, useClearEbCallLog } from '@/features/admin/hooks'
 import { localeFromLanguage } from '@/lib/utils'
 import type { EbCallEntry } from '@/features/admin/api'
+import { SettingsCard, StatusText } from '../components/SettingsBlocks'
 
-function StatusBadge({ status }: { status: number }) {
+function HttpStatus({ status }: { status: number }) {
   const ok = status >= 200 && status < 300
-  return (
-    <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium tabular-nums ${
-        ok
-          ? 'bg-gain/10 text-gain'
-          : 'bg-destructive/10 text-destructive'
-      }`}
-    >
-      {status}
-    </span>
-  )
+  return <StatusText tone={ok ? 'ok' : 'error'} className="tabular-nums">{status}</StatusText>
 }
 
 function exportTxt(entries: EbCallEntry[]) {
@@ -59,114 +43,112 @@ function tryPretty(json: string) {
 }
 
 function EbCallLogDialog() {
-  const { i18n } = useTranslation()
+  const { t, i18n } = useTranslation()
   const locale = localeFromLanguage(i18n.resolvedLanguage ?? i18n.language)
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null)
   const { data, isLoading, isError, refetch } = useEbCallLog(true)
   const clear = useClearEbCallLog()
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex min-w-0 flex-col gap-4">
       {/* Toolbar */}
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-sm text-muted-foreground">
-          {data ? `${data.length} appel(s) en mémoire` : '—'}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="text-[13px] text-muted-foreground">
+          {data ? t('admin.enableBanking.debug.count', { count: data.length }) : '—'}
         </span>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => refetch()}>
-            Rafraîchir
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" size="xs" onClick={() => refetch()}>
+            <RotateCw aria-hidden="true" />
+            {t('admin.enableBanking.debug.refresh')}
           </Button>
           {data && data.length > 0 && (
-            <Button variant="outline" size="sm" onClick={() => exportTxt(data)}>
-              <Download className="mr-1.5 size-3.5" />
-              Export .txt
+            <Button variant="outline" size="xs" onClick={() => exportTxt(data)}>
+              <Download aria-hidden="true" />
+              {t('admin.enableBanking.debug.export')}
             </Button>
           )}
           <Button
             variant="outline"
-            size="sm"
+            size="xs"
+            className="text-destructive hover:text-destructive"
             disabled={clear.isPending || !data?.length}
             onClick={() => { clear.mutate(); setExpandedIdx(null) }}
           >
-            <Trash2 className="mr-1.5 size-3.5" />
-            Vider
+            <Trash2 aria-hidden="true" />
+            {t('admin.enableBanking.debug.clear')}
           </Button>
         </div>
       </div>
 
       {isLoading && (
-        <p className="py-8 text-center text-sm text-muted-foreground animate-pulse">Chargement…</p>
+        <p className="py-8 text-center text-sm text-muted-foreground">{t('common.loading')}</p>
       )}
       {isError && (
-        <p role="alert" className="text-sm text-destructive">Erreur lors du chargement.</p>
+        <p role="alert" className="text-sm text-destructive">{t('admin.enableBanking.debug.error')}</p>
       )}
       {!isLoading && !isError && data?.length === 0 && (
-        <p className="py-8 text-center text-sm text-muted-foreground">
-          Aucun appel capturé — lance une sync Revolut pour en générer.
-        </p>
+        <p className="py-8 text-center text-sm text-muted-foreground">{t('admin.enableBanking.debug.empty')}</p>
       )}
 
       {!isLoading && !isError && data && data.length > 0 && (
-        <div className="overflow-x-auto">
-          <div className="max-h-[60vh] overflow-y-auto">
-            <table className="w-full min-w-[560px] text-sm">
-              <thead className="sticky top-0 bg-background">
-                <tr className="border-b text-left text-xs font-medium text-muted-foreground">
-                  <th className="pb-2 pr-3 w-[140px]">Heure</th>
-                  <th className="pb-2 pr-3 w-[50px]">Méth.</th>
-                  <th className="pb-2 pr-3">Endpoint</th>
-                  <th className="pb-2 w-[60px] text-center">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.map((entry, idx) => (
-                  <>
-                    <tr
-                      key={idx}
-                      className="cursor-pointer border-b last:border-0 hover:bg-muted/30"
-                      onClick={() => setExpandedIdx(expandedIdx === idx ? null : idx)}
-                    >
-                      <td className="py-2 pr-3 text-xs text-muted-foreground whitespace-nowrap">
-                        {new Date(entry.timestamp).toLocaleTimeString(locale)}
-                      </td>
-                      <td className="py-2 pr-3 text-xs font-mono font-medium">
-                        {entry.method}
-                      </td>
-                      <td className="py-2 pr-3 text-xs font-mono truncate max-w-[320px]">
-                        {entry.url.replace('https://api.enablebanking.com', '')}
-                      </td>
-                      <td className="py-2 text-center">
-                        <StatusBadge status={entry.responseStatus} />
-                      </td>
-                    </tr>
-                    {expandedIdx === idx && (
-                      <tr key={`${idx}-detail`} className="border-b last:border-0 bg-muted/10">
-                        <td colSpan={4} className="px-2 pb-3 pt-1 space-y-3">
-                          <p className="font-mono text-[11px] break-all text-muted-foreground">
-                            {entry.method} {entry.url}
-                          </p>
-                          {entry.requestBody && (
-                            <div>
-                              <p className="mb-1 text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Request body</p>
-                              <pre className="whitespace-pre-wrap break-all text-[11px] max-h-48 overflow-auto rounded bg-muted/40 p-2 font-mono">
-                                {tryPretty(entry.requestBody)}
-                              </pre>
-                            </div>
-                          )}
+        <div className="max-h-[60vh] overflow-auto rounded-xl ring-1 ring-border">
+          <table className="w-full min-w-[560px] text-sm">
+            <thead className="sticky top-0 bg-popover">
+              <tr className="border-b border-border text-left text-xs font-medium text-muted-foreground">
+                <th className="w-[120px] px-3 py-2 font-medium">{t('admin.aiActivity.colTime')}</th>
+                <th className="w-[70px] px-3 py-2 font-medium">{t('admin.enableBanking.debug.colMethod')}</th>
+                <th className="px-3 py-2 font-medium">{t('admin.enableBanking.debug.colEndpoint')}</th>
+                <th className="w-[80px] px-3 py-2 font-medium">{t('admin.aiActivity.colStatus')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.map((entry, idx) => (
+                <Fragment key={idx}>
+                  <tr
+                    className="cursor-pointer border-b border-border last:border-0 hover:bg-muted/50"
+                    onClick={() => setExpandedIdx(expandedIdx === idx ? null : idx)}
+                    aria-expanded={expandedIdx === idx}
+                  >
+                    <td className="px-3 py-2 text-xs whitespace-nowrap text-muted-foreground tabular-nums">
+                      {new Date(entry.timestamp).toLocaleTimeString(locale)}
+                    </td>
+                    <td className="px-3 py-2 font-mono text-xs font-medium">
+                      {entry.method}
+                    </td>
+                    <td className="max-w-[320px] truncate px-3 py-2 font-mono text-xs">
+                      {entry.url.replace('https://api.enablebanking.com', '')}
+                    </td>
+                    <td className="px-3 py-2">
+                      <HttpStatus status={entry.responseStatus} />
+                    </td>
+                  </tr>
+                  {expandedIdx === idx && (
+                    <tr className="border-b border-border bg-muted/30 last:border-0">
+                      <td colSpan={4} className="space-y-3 px-3 pt-1 pb-3">
+                        <p className="font-mono text-[11px] break-all text-muted-foreground">
+                          {entry.method} {entry.url}
+                        </p>
+                        {entry.requestBody && (
                           <div>
-                            <p className="mb-1 text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Response body</p>
-                            <pre className="whitespace-pre-wrap break-all text-[11px] max-h-96 overflow-auto rounded bg-muted/40 p-2 font-mono">
-                              {tryPretty(entry.responseBody)}
+                            <p className="mb-1 text-xs font-medium text-muted-foreground">{t('admin.enableBanking.debug.requestBody')}</p>
+                            <pre className="max-h-48 overflow-auto rounded-md bg-muted p-2 font-mono text-[11px] whitespace-pre-wrap break-all">
+                              {tryPretty(entry.requestBody)}
                             </pre>
                           </div>
-                        </td>
-                      </tr>
-                    )}
-                  </>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                        )}
+                        <div>
+                          <p className="mb-1 text-xs font-medium text-muted-foreground">{t('admin.enableBanking.debug.responseBody')}</p>
+                          <pre className="max-h-96 overflow-auto rounded-md bg-muted p-2 font-mono text-[11px] whitespace-pre-wrap break-all">
+                            {tryPretty(entry.responseBody)}
+                          </pre>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>
@@ -174,32 +156,26 @@ function EbCallLogDialog() {
 }
 
 export function EnableBankingDebugSection() {
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
 
   return (
-    <Card className="rounded-2xl bg-card shadow-md">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Network className="size-5 text-muted-foreground" />
-          Enable Banking — Debug API
-        </CardTitle>
-        <CardDescription>
-          Capture des appels HTTP bruts (endpoint, request, response) vers Enable Banking pour diagnostic.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
+    <SettingsCard
+      title={t('admin.enableBanking.debug.title')}
+      description={t('admin.enableBanking.debug.description')}
+      action={
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button variant="outline">Voir les appels</Button>
+            <Button variant="outline" size="xs">{t('admin.enableBanking.debug.view')}</Button>
           </DialogTrigger>
           <DialogContent className="w-[95vw] sm:max-w-4xl">
             <DialogHeader>
-              <DialogTitle>Enable Banking — Appels API bruts</DialogTitle>
+              <DialogTitle>{t('admin.enableBanking.debug.dialogTitle')}</DialogTitle>
             </DialogHeader>
             {open && <EbCallLogDialog />}
           </DialogContent>
         </Dialog>
-      </CardContent>
-    </Card>
+      }
+    />
   )
 }

@@ -6,25 +6,15 @@ import { z } from 'zod'
 import {
   AlertTriangle,
   Check,
-  CheckCircle2,
   Copy,
   Download,
   KeyRound,
-  Landmark,
   Loader2,
   Upload,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Separator } from '@/components/ui/separator'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+import { SegmentedControl } from '@/components/shared/SegmentedControl'
 import { extractErrorMessage } from '@/lib/errors'
 import {
   useGenerateEnableBankingKeyPair,
@@ -32,6 +22,7 @@ import {
   useUpdateEnableBanking,
 } from '@/features/admin/hooks'
 import type { AdminEnableBankingSettings } from '@/features/admin/api'
+import { SettingRow, SettingsCard, StatusText } from '../components/SettingsBlocks'
 
 const schema = z.object({
   applicationId: z.string().min(1),
@@ -69,65 +60,66 @@ export function EnableBankingSection({ settings }: { settings: AdminEnableBankin
   if (!settings.privateKeyPresent) missing.push(t('admin.enableBanking.privateKey'))
 
   return (
-    <Card className="rounded-2xl bg-card">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Landmark className="size-5 text-muted-foreground" />
-          {t('admin.enableBanking.title')}
-        </CardTitle>
-        <CardDescription>{t('admin.enableBanking.description')}</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Readiness banner — names every missing piece, not just the key. */}
-        {missing.length === 0 ? (
-          <div className="flex items-start gap-2 rounded-xl border border-gain/40 bg-gain/5 p-3 text-sm text-gain">
-            <CheckCircle2 className="mt-0.5 size-4 shrink-0" />
-            <span>{t('admin.enableBanking.ready')}</span>
-          </div>
-        ) : (
-          <div role="alert" className="flex items-start gap-2 rounded-xl border border-warning/40 bg-warning/5 p-3 text-sm text-warning">
-            <AlertTriangle className="mt-0.5 size-4 shrink-0" />
-            <span>{t('admin.enableBanking.incomplete', { fields: missing.join(', ') })}</span>
-          </div>
-        )}
+    <>
+      <form onSubmit={onSubmit} noValidate>
+        <SettingsCard
+          title={t('admin.enableBanking.title')}
+          description={t('admin.enableBanking.description')}
+          action={
+            missing.length === 0
+              ? <StatusText tone="ok">{t('admin.enableBanking.statusReady')}</StatusText>
+              : <StatusText tone="warn">{t('admin.enableBanking.statusIncomplete')}</StatusText>
+          }
+          footer={
+            <>
+              {update.error && (
+                <p role="alert" className="text-[13px] text-destructive sm:mr-auto">
+                  {extractErrorMessage(update.error)}
+                </p>
+              )}
+              {update.isSuccess && !formState.isDirty && <StatusText tone="ok">{t('admin.enableBanking.saved')}</StatusText>}
+              <Button type="submit" size="xs" disabled={update.isPending || !formState.isDirty}>
+                {update.isPending && <Loader2 className="animate-spin" aria-hidden="true" />}
+                {update.isPending ? t('admin.enableBanking.saving') : t('admin.enableBanking.save')}
+              </Button>
+            </>
+          }
+        >
+          {/* Readiness — names every missing piece, not just the key. */}
+          {missing.length > 0 && (
+            <div className="py-4">
+              <div role="alert" className="flex items-start gap-3 rounded-xl bg-warning/10 px-4 py-3 text-[13px] leading-5 text-foreground">
+                <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden="true" />
+                <span>{t('admin.enableBanking.incomplete', { fields: missing.join(', ') })}</span>
+              </div>
+            </div>
+          )}
 
-        <form onSubmit={onSubmit} className="space-y-4" noValidate>
           {FIELDS.map(({ name, labelKey, placeholder, hintKey }) => (
-            <div key={name} className="space-y-1.5">
-              <Label htmlFor={`admin-eb-${name}`}>{t(labelKey)}</Label>
+            <SettingRow
+              key={name}
+              htmlFor={`admin-eb-${name}`}
+              label={t(labelKey)}
+              description={hintKey ? t(hintKey) : undefined}
+            >
               <Input
                 id={`admin-eb-${name}`}
                 placeholder={placeholder}
+                spellCheck={false}
                 aria-invalid={!!formState.errors[name]}
+                className="h-9 font-mono text-[13px]"
                 {...register(name)}
               />
-              {formState.errors[name] ? (
-                <p className="text-sm text-destructive">{formState.errors[name]?.message}</p>
-              ) : hintKey ? (
-                <p className="text-sm text-muted-foreground">{t(hintKey)}</p>
-              ) : null}
-            </div>
+              {formState.errors[name] && (
+                <p className="mt-1.5 text-[13px] text-destructive">{formState.errors[name]?.message}</p>
+              )}
+            </SettingRow>
           ))}
+        </SettingsCard>
+      </form>
 
-          {update.error && (
-            <p role="alert" className="text-sm text-destructive">
-              {extractErrorMessage(update.error)}
-            </p>
-          )}
-
-          <Button type="submit" disabled={update.isPending || !formState.isDirty}>
-            {update.isPending ? t('admin.enableBanking.saving') : t('admin.enableBanking.save')}
-          </Button>
-          {update.isSuccess && !formState.isDirty && (
-            <span className="ml-3 text-sm text-gain">{t('admin.enableBanking.saved')}</span>
-          )}
-        </form>
-
-        <Separator />
-
-        <KeypairPanel privateKeyPresent={settings.privateKeyPresent} />
-      </CardContent>
-    </Card>
+      <KeypairPanel privateKeyPresent={settings.privateKeyPresent} />
+    </>
   )
 }
 
@@ -206,119 +198,104 @@ function KeypairPanel({ privateKeyPresent }: { privateKeyPresent: boolean }) {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="space-y-1">
-        <h3 className="flex items-center gap-2 text-sm font-medium">
-          <KeyRound className="size-4 text-muted-foreground" />
-          {t('admin.enableBanking.keypair.title')}
-        </h3>
-        <p className="text-sm text-muted-foreground">
-          {privateKeyPresent
-            ? t('admin.enableBanking.keypair.statusPresent')
-            : t('admin.enableBanking.keypair.statusMissing')}
-        </p>
-      </div>
+    <SettingsCard
+      title={t('admin.enableBanking.keypair.title')}
+      description={privateKeyPresent
+        ? t('admin.enableBanking.keypair.statusPresent')
+        : t('admin.enableBanking.keypair.statusMissing')}
+      action={
+        privateKeyPresent
+          ? <StatusText tone="ok">{t('admin.enableBanking.keypair.present')}</StatusText>
+          : <StatusText tone="warn">{t('admin.enableBanking.keypair.missing')}</StatusText>
+      }
+    >
+      <div className="space-y-4 py-4">
+        <SegmentedControl
+          fill
+          className="sm:w-auto"
+          ariaLabel={t('admin.enableBanking.keypair.title')}
+          value={mode}
+          onChange={switchMode}
+          options={[
+            { value: 'generate', label: t('admin.enableBanking.keypair.modeGenerate') },
+            { value: 'import', label: t('admin.enableBanking.keypair.modeImport') },
+          ]}
+        />
 
-      {/* Mode toggle */}
-      <div className="flex gap-1 rounded-2xl bg-muted p-1">
-        {(['generate', 'import'] as Mode[]).map((m) => (
-          <button
-            key={m}
-            type="button"
-            onClick={() => switchMode(m)}
-            className={`flex-1 rounded-xl px-6 py-2 text-sm font-medium transition-colors ${
-              mode === m
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            {m === 'generate'
-              ? t('admin.enableBanking.keypair.modeGenerate')
-              : t('admin.enableBanking.keypair.modeImport')}
-          </button>
-        ))}
-      </div>
-
-      {mode === 'generate' && (
-        <div className="space-y-3">
-          <p className="text-sm text-muted-foreground">{t('admin.enableBanking.keypair.body')}</p>
-          {generate.isError && (
-            <p role="alert" className="text-sm text-destructive">{extractErrorMessage(generate.error)}</p>
-          )}
-          {!publicPem && (
-            <Button type="button" onClick={handleGenerate} disabled={generate.isPending} className="w-full sm:w-auto">
-              {generate.isPending ? (
-                <><Loader2 className="mr-2 size-4 animate-spin" />{t('admin.enableBanking.keypair.generating')}</>
-              ) : (
-                <><KeyRound className="mr-2 size-4" />{
-                  privateKeyPresent
-                    ? t('admin.enableBanking.keypair.regenerate')
-                    : t('admin.enableBanking.keypair.generate')
-                }</>
-              )}
-            </Button>
-          )}
-        </div>
-      )}
-
-      {mode === 'import' && !publicPem && (
-        <div className="space-y-3">
-          <p className="text-sm text-muted-foreground">{t('admin.enableBanking.keypair.importBody')}</p>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".pem,application/x-pem-file,text/plain"
-            className="hidden"
-            onChange={handleFileChange}
-          />
-          <Button type="button" variant="outline" className="w-full" onClick={() => fileInputRef.current?.click()}>
-            <Upload className="mr-2 size-4" />
-            {t('admin.enableBanking.keypair.chooseFile')}
-          </Button>
-          <p className="text-center text-sm text-muted-foreground">{t('admin.enableBanking.keypair.orPaste')}</p>
-          <textarea
-            value={privatePem}
-            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setPrivatePem(e.target.value)}
-            placeholder={'-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----'}
-            className="min-h-[140px] w-full resize-none rounded-xl border border-input bg-input/20 p-3 font-mono text-sm leading-snug placeholder:text-muted-foreground/80 dark:bg-input/30"
-          />
-          {importError && <p role="alert" className="text-sm text-destructive">{importError}</p>}
-          <Button
-            className="w-full sm:w-auto"
-            disabled={!privatePem.trim() || importKey.isPending}
-            onClick={handleImport}
-          >
-            {importKey.isPending ? (
-              <><Loader2 className="mr-2 size-4 animate-spin" />{t('admin.enableBanking.keypair.importing')}</>
-            ) : (
-              t('admin.enableBanking.keypair.importCta')
+        {mode === 'generate' && !publicPem && (
+          <div className="space-y-3">
+            <p className="text-[13px] leading-5 text-muted-foreground">{t('admin.enableBanking.keypair.body')}</p>
+            {generate.isError && (
+              <p role="alert" className="text-[13px] text-destructive">{extractErrorMessage(generate.error)}</p>
             )}
-          </Button>
-        </div>
-      )}
-
-      {/* Public PEM result (shared by both modes) */}
-      {publicPem && (
-        <div className="space-y-3">
-          <p className="text-sm text-muted-foreground">{t('admin.enableBanking.keypair.uploadInstruction')}</p>
-          <pre className="max-h-64 overflow-auto rounded-xl border border-border/60 bg-muted/40 p-4 font-mono text-[11px] leading-snug whitespace-pre-wrap break-all">
-            {publicPem}
-          </pre>
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <Button type="button" variant="outline" size="sm" onClick={handleCopy} className="w-full sm:w-auto">
-              {copied ? (
-                <><Check className="mr-2 size-4" />{t('admin.enableBanking.keypair.copied')}</>
-              ) : (
-                <><Copy className="mr-2 size-4" />{t('admin.enableBanking.keypair.copy')}</>
-              )}
-            </Button>
-            <Button type="button" variant="outline" size="sm" onClick={handleDownload} className="w-full sm:w-auto">
-              <Download className="mr-2 size-4" />
-              {t('admin.enableBanking.keypair.download')}
+            <Button type="button" size="xs" variant="outline" onClick={handleGenerate} disabled={generate.isPending} className="w-full sm:w-auto">
+              {generate.isPending ? <Loader2 className="animate-spin" aria-hidden="true" /> : <KeyRound aria-hidden="true" />}
+              {generate.isPending
+                ? t('admin.enableBanking.keypair.generating')
+                : privateKeyPresent
+                  ? t('admin.enableBanking.keypair.regenerate')
+                  : t('admin.enableBanking.keypair.generate')}
             </Button>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+
+        {mode === 'import' && !publicPem && (
+          <div className="space-y-3">
+            <p className="text-[13px] leading-5 text-muted-foreground">{t('admin.enableBanking.keypair.importBody')}</p>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pem,application/x-pem-file,text/plain"
+              className="hidden"
+              onChange={handleFileChange}
+            />
+            <Button type="button" variant="outline" size="xs" className="w-full sm:w-auto" onClick={() => fileInputRef.current?.click()}>
+              <Upload aria-hidden="true" />
+              {t('admin.enableBanking.keypair.chooseFile')}
+            </Button>
+            <p className="text-[13px] text-muted-foreground">{t('admin.enableBanking.keypair.orPaste')}</p>
+            <textarea
+              value={privatePem}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setPrivatePem(e.target.value)}
+              aria-label={t('admin.enableBanking.keypair.title')}
+              spellCheck={false}
+              placeholder={'-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----'}
+              className="min-h-[140px] w-full resize-y rounded-md border border-input bg-input/20 px-4 py-3 font-mono text-xs leading-snug outline-none placeholder:text-muted-foreground/80 dark:bg-input/30"
+            />
+            {importError && <p role="alert" className="text-[13px] text-destructive">{importError}</p>}
+            <Button
+              type="button"
+              size="xs"
+              className="w-full sm:w-auto"
+              disabled={!privatePem.trim() || importKey.isPending}
+              onClick={handleImport}
+            >
+              {importKey.isPending && <Loader2 className="animate-spin" aria-hidden="true" />}
+              {importKey.isPending ? t('admin.enableBanking.keypair.importing') : t('admin.enableBanking.keypair.importCta')}
+            </Button>
+          </div>
+        )}
+
+        {/* Public PEM result (shared by both modes) */}
+        {publicPem && (
+          <div className="space-y-3">
+            <p className="text-[13px] leading-5 text-muted-foreground">{t('admin.enableBanking.keypair.uploadInstruction')}</p>
+            <pre className="max-h-64 overflow-auto rounded-xl bg-muted p-4 font-mono text-xs leading-snug whitespace-pre-wrap break-all text-foreground">
+              {publicPem}
+            </pre>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Button type="button" variant="outline" size="xs" onClick={handleCopy} className="w-full sm:w-auto">
+                {copied ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
+                {copied ? t('admin.enableBanking.keypair.copied') : t('admin.enableBanking.keypair.copy')}
+              </Button>
+              <Button type="button" variant="outline" size="xs" onClick={handleDownload} className="w-full sm:w-auto">
+                <Download aria-hidden="true" />
+                {t('admin.enableBanking.keypair.download')}
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+    </SettingsCard>
   )
 }

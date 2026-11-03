@@ -2515,7 +2515,6 @@
       "save": "Save",
       "saving": "Saving...",
       "saved": "Saved",
-      "ready": "Enable Banking is ready.",
       "incomplete": "Enable Banking is not fully configured. Missing: {{fields}}. Bank search and sync will fail until this is resolved.",
       "keypair": {
         "title": "Private key",
@@ -2536,7 +2535,28 @@
         "uploadInstruction": "In your Enable Banking dashboard → your app → Public key → paste this block.",
         "copy": "Copy public key",
         "copied": "Copied!",
-        "download": "Download public.pem"
+        "download": "Download public.pem",
+        "present": "Present",
+        "missing": "Missing"
+      },
+      "statusReady": "Ready",
+      "statusIncomplete": "Incomplete",
+      "debug": {
+        "title": "API call log",
+        "description": "The raw HTTP calls (endpoint, request, response) to Enable Banking, to diagnose a sync.",
+        "view": "View calls",
+        "dialogTitle": "Enable Banking — raw API calls",
+        "count": "{{count}} call in memory",
+        "count_other": "{{count}} calls in memory",
+        "refresh": "Refresh",
+        "export": "Export as .txt",
+        "clear": "Clear",
+        "error": "Could not load the call log.",
+        "empty": "No call captured yet. Run an Enable Banking sync to record some.",
+        "colMethod": "Method",
+        "colEndpoint": "Endpoint",
+        "requestBody": "Request body",
+        "responseBody": "Response body"
       }
     },
     "integrations": {
@@ -2556,7 +2576,7 @@
     "members": {
       "title": "Members",
       "description": "Manage family member accounts",
-      "createUser": "Create user",
+      "createUser": "Add member",
       "createUserPlaceholder": "Member name",
       "displayName": "Display name",
       "loginName": "Login",
@@ -2580,7 +2600,8 @@
       "copyLink": "Copy",
       "copied": "Copied!",
       "noMembers": "No members",
-      "loading": "Loading..."
+      "loading": "Loading...",
+      "moreActions": "More actions for {{name}}"
     },
     "aiActivity": {
       "title": "AI activity",
@@ -2612,6 +2633,11 @@
       "updateTitle": "Update available",
       "releaseNotes": "Release notes",
       "later": "Later"
+    },
+    "nav": {
+      "label": "Administration sections",
+      "ai": "AI",
+      "telemetry": "Telemetry"
     }
   },
   "error": {

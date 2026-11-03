@@ -1,6 +1,6 @@
 # Feature: Admin Page (instance settings)
 
-> Last updated: 2026-05-29 (create-user-from-Admin + login derived from display name)
+> Last updated: 2026-11-03
 
 ## Context
 
@@ -64,22 +64,43 @@ Backend:
 
 Frontend:
 - `frontend/src/pages/admin/AdminPage.tsx` — page shell, single
-  `useAdminSettings()` query, sections aligned with the main app column rather
-  than centered in a narrow wrapper.
+  `useAdminSettings()` query. Settings-style layout: a section navigation (a sticky
+  list left of the content from `lg`, a `ScrollStrip` of links above it on smaller
+  screens) jumps to six sections — Members, Security, Enable Banking, AI,
+  Integrations, Telemetry — and highlights the one in the upper third of the screen
+  (an `IntersectionObserver` over the `<section id>` wrappers). Content column capped
+  at `max-w-3xl`.
+- `frontend/src/pages/admin/components/SettingsBlocks.tsx` — the layout pieces every
+  section uses: `SettingsCard` (flat card, small bold title, description, optional
+  header action that drops under the text on phones, divided rows, a hairline save
+  footer), `SettingRow` (label and description left, control right in a fixed
+  column; `stacked` for lists, `toggle` for switches) and `StatusText` (a status as a
+  dot and a word in `gain` / `warning` / `destructive` / muted, never a filled badge).
 - `frontend/src/pages/admin/sections/SecuritySection.tsx` — RHF +
-  `useFieldArray` for CORS origins, `Controller` + `Switch` for the secure-cookie
-  flag, Zod schema requires at least one origin.
-- `frontend/src/pages/admin/sections/EnableBankingSection.tsx` — RHF over a
-  `FIELDS` array, Zod with `.url()` on `redirectUri`.
-- `frontend/src/pages/admin/sections/IntegrationsSection.tsx` — five hardcoded keys
-  (`enablebanking, boursobank, traderepublic, finary, crypto`) toggled via
-  `useToggleIntegration`.
+  `useFieldArray` for CORS origins (stacked row), `Controller` + `Switch` for the
+  secure-cookie flag, Zod schema requires at least one origin.
+- `frontend/src/pages/admin/sections/EnableBankingSection.tsx` — two cards: the
+  credentials (RHF over a `FIELDS` array, Zod with `.url()` on `redirectUri`, a
+  Ready / Incomplete status in the header and the list of missing pieces in a
+  warning row) and the private key (`SegmentedControl` generate / import).
+- `frontend/src/pages/admin/sections/EnableBankingDebugSection.tsx` — a third Enable
+  Banking card, "API call log": opens a dialog listing the raw calls kept in memory
+  (refresh, export `.txt`, clear), HTTP status as `StatusText`. Translated under
+  `admin.enableBanking.debug.*`.
+- `frontend/src/pages/admin/sections/AiCategorizationSection.tsx` +
+  `AiActivitySection.tsx` — the AI section: provider form as setting rows (the
+  provider is read with `useWatch`), test result and save state in the footer; the
+  activity card opens the paginated call log.
+- `frontend/src/pages/admin/sections/IntegrationsSection.tsx` — one row per
+  integration with its bundled logo or monogram (`pages/setup/components/IntegrationMark`)
+  and a `Switch`, toggled via `useToggleIntegration`.
 - `frontend/src/pages/admin/sections/MembersSection.tsx` — create-user form (name
-  + "Create user" button) on top, then the list of family members with avatar,
-  display name, login, derived status; per-member actions: create / regenerate
-  activation link, reset password, reset 2FA, delete. Generated/activation link is
-  shown inline with a copy button; no email is sent (self-hosted, admin transmits
-  manually).
+  + "Add member" button) on top, then the list of family members with avatar,
+  display name, login, status (dot and word), 2FA; per member one outlined action
+  (create / regenerate activation link, or reset password) and a "more actions"
+  menu that groups the destructive ones (reset 2FA, delete, each behind a
+  `ConfirmDialog`). The generated link is shown in a code-copy row; no email is sent
+  (self-hosted, admin transmits manually).
 - `frontend/src/features/family/hooks.ts` — `useCreateUserWithLogin` chains
   `createMember` + `generateActivationLink` (one loading/error state, returns the
   activation link); plus `useFamilyMembers`, `useDeleteMember`,
@@ -202,8 +223,10 @@ On submit / toggle ──► PUT or PATCH ──► invalidate adminKeys.setting
 - No dedicated integration test for the role gate (manual verification — same
   approach as `security-cors-cookies.md`). A future MockMvc slice test asserting a
   USER-role request is rejected with 403 would close the gap.
-- Frontend coverage is `bun run typecheck` + `bun run build` + manual flow only;
-  no Vitest component tests for the admin sections yet.
+- Frontend: `AiCategorizationSection.test.tsx`, `AiActivitySection.test.tsx`,
+  `TelemetrySection.test.tsx` and `AdminTimestampLocale.test.tsx` (call times follow
+  the app locale) under `frontend/src/pages/admin/sections/`. The page layout and
+  the members section are covered by manual checks only.
 
 ## Links
 

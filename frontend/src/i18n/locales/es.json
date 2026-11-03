@@ -2161,7 +2161,6 @@
       "save": "Guardar",
       "saving": "Guardando...",
       "saved": "Guardado",
-      "ready": "Enable Banking está listo.",
       "incomplete": "Enable Banking no está completamente configurado. Falta: {{fields}}. La búsqueda de bancos y la sincronización fallarán hasta que se resuelva.",
       "keypair": {
         "title": "Clave privada",
@@ -2182,7 +2181,28 @@
         "uploadInstruction": "En tu panel de Enable Banking → tu app → Public key → pega este bloque.",
         "copy": "Copiar clave pública",
         "copied": "¡Copiado!",
-        "download": "Descargar public.pem"
+        "download": "Descargar public.pem",
+        "present": "Presente",
+        "missing": "Ausente"
+      },
+      "statusReady": "Listo",
+      "statusIncomplete": "Incompleto",
+      "debug": {
+        "title": "Registro de llamadas a la API",
+        "description": "Las llamadas HTTP sin procesar (endpoint, solicitud, respuesta) a Enable Banking, para diagnosticar una sincronización.",
+        "view": "Ver llamadas",
+        "dialogTitle": "Enable Banking — llamadas a la API sin procesar",
+        "count": "{{count}} llamada en memoria",
+        "count_other": "{{count}} llamadas en memoria",
+        "refresh": "Actualizar",
+        "export": "Exportar a .txt",
+        "clear": "Vaciar",
+        "error": "No se pudo cargar el registro de llamadas.",
+        "empty": "Aún no se ha capturado ninguna llamada. Lance una sincronización con Enable Banking para registrar algunas.",
+        "colMethod": "Método",
+        "colEndpoint": "Endpoint",
+        "requestBody": "Cuerpo de la solicitud",
+        "responseBody": "Cuerpo de la respuesta"
       }
     },
     "integrations": {
@@ -2202,7 +2222,7 @@
     "members": {
       "title": "Miembros",
       "description": "Gestiona las cuentas de los miembros de la familia",
-      "createUser": "Crear usuario",
+      "createUser": "Añadir miembro",
       "createUserPlaceholder": "Nombre del miembro",
       "displayName": "Nombre visible",
       "loginName": "Usuario",
@@ -2226,7 +2246,8 @@
       "copyLink": "Copiar",
       "copied": "¡Copiado!",
       "noMembers": "Sin miembros",
-      "loading": "Cargando..."
+      "loading": "Cargando...",
+      "moreActions": "Más acciones para {{name}}"
     },
     "ai": {
       "title": "AI categorization",
@@ -2278,6 +2299,11 @@
       "updateTitle": "Actualización disponible",
       "releaseNotes": "Notas de la versión",
       "later": "Más tarde"
+    },
+    "nav": {
+      "label": "Secciones de administración",
+      "ai": "IA",
+      "telemetry": "Telemetría"
     }
   },
   "error": {

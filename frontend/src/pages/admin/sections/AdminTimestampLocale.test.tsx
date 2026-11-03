@@ -96,7 +96,7 @@ describe('admin timestamps', () => {
       `time:${localeName(locales)}`
     ))
     const view = render(<EnableBankingDebugSection />)
-    fireEvent.click(screen.getByText('Voir les appels'))
+    fireEvent.click(screen.getByText('admin.enableBanking.debug.view'))
 
     expect(screen.getByText('time:de-DE')).toBeInTheDocument()
 

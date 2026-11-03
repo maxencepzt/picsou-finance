@@ -2161,7 +2161,6 @@
       "save": "Speichern",
       "saving": "Wird gespeichert...",
       "saved": "Gespeichert",
-      "ready": "Enable Banking ist bereit.",
       "incomplete": "Enable Banking ist nicht vollständig konfiguriert. Es fehlt: {{fields}}. Banksuche und Synchronisierung schlagen fehl, bis das behoben ist.",
       "keypair": {
         "title": "Privater Schlüssel",
@@ -2182,7 +2181,28 @@
         "uploadInstruction": "In deinem Enable-Banking-Dashboard → deine App → Public key → füge diesen Block ein.",
         "copy": "Öffentlichen Schlüssel kopieren",
         "copied": "Kopiert!",
-        "download": "public.pem herunterladen"
+        "download": "public.pem herunterladen",
+        "present": "Vorhanden",
+        "missing": "Fehlt"
+      },
+      "statusReady": "Bereit",
+      "statusIncomplete": "Unvollständig",
+      "debug": {
+        "title": "API-Aufrufprotokoll",
+        "description": "Die rohen HTTP-Aufrufe (Endpunkt, Anfrage, Antwort) an Enable Banking, um eine Synchronisierung zu untersuchen.",
+        "view": "Aufrufe anzeigen",
+        "dialogTitle": "Enable Banking — rohe API-Aufrufe",
+        "count": "{{count}} Aufruf im Speicher",
+        "count_other": "{{count}} Aufrufe im Speicher",
+        "refresh": "Aktualisieren",
+        "export": "Als .txt exportieren",
+        "clear": "Leeren",
+        "error": "Das Aufrufprotokoll konnte nicht geladen werden.",
+        "empty": "Noch kein Aufruf erfasst. Starten Sie eine Synchronisierung über Enable Banking, um welche aufzuzeichnen.",
+        "colMethod": "Methode",
+        "colEndpoint": "Endpunkt",
+        "requestBody": "Anfrage-Body",
+        "responseBody": "Antwort-Body"
       }
     },
     "integrations": {
@@ -2202,7 +2222,7 @@
     "members": {
       "title": "Mitglieder",
       "description": "Verwalte die Konten der Familienmitglieder",
-      "createUser": "Benutzer erstellen",
+      "createUser": "Mitglied hinzufügen",
       "createUserPlaceholder": "Name des Mitglieds",
       "displayName": "Anzeigename",
       "loginName": "Login",
@@ -2226,7 +2246,8 @@
       "copyLink": "Kopieren",
       "copied": "Kopiert!",
       "noMembers": "Keine Mitglieder",
-      "loading": "Wird geladen..."
+      "loading": "Wird geladen...",
+      "moreActions": "Weitere Aktionen für {{name}}"
     },
     "ai": {
       "title": "AI categorization",
@@ -2278,6 +2299,11 @@
       "updateTitle": "Update verfügbar",
       "releaseNotes": "Versionshinweise",
       "later": "Später"
+    },
+    "nav": {
+      "label": "Bereiche der Verwaltung",
+      "ai": "KI",
+      "telemetry": "Telemetrie"
     }
   },
   "error": {
