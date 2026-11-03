@@ -191,6 +191,30 @@ Rotates `access_token`/`refresh_token` (old refresh token is invalidated) whenev
 }
 ```
 
+#### `GET /api/dashboard/movers?limit=5`
+
+- **Auth:** Required
+- `limit` defaults to 5, clamped to 1..10 per list.
+
+Day-over-day move of each held security (non-hidden PEA, CTO, crypto, assurance-vie, PER and
+employee-savings accounts), merged by ticker with share-weighted quantities, from its two most
+recent `price_snapshot` days within the last 10. Reads no provider. See
+[Dashboard movers](../../docs/features/dashboard-movers.md).
+
+**Response `200` — `MoversResponse`** (null keys are sent as `null`, never omitted):
+```json
+{
+  "date": "2026-11-03", "previousDate": "2026-10-31",
+  "gainers": [{ "ticker": "AAPL", "name": "Apple", "logoUrl": null, "priceEur": 190.1,
+                "previousPriceEur": 185.0, "changePercent": 2.76, "valueEur": 1901.0, "valueChangeEur": 51.0 }],
+  "losers": []
+}
+```
+
+`gainers`: `changePercent > 0`, largest first; `losers`: `< 0`, worst first. `date` /
+`previousDate` are null when no held ticker has two snapshots. `logoUrl` is a stored instrument
+mark, null for crypto.
+
 ---
 
 ### 3. Accounts — `/api/accounts`
