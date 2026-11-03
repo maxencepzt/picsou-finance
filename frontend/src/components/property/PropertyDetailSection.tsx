@@ -127,7 +127,7 @@ export function PropertyDetailSection({ account }: PropertyDetailSectionProps) {
             <Fact
               label={t('property.details.gain')}
               value={
-                <span className={gain >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-destructive'}>
+                <span className={gain >= 0 ? 'text-gain' : 'text-destructive'}>
                   <CurrencyDisplay value={gain} showSign />
                   {gainPct != null && <span className="ml-1 text-xs">({formatPercent(gainPct)})</span>}
                 </span>

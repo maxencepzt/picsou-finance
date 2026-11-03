@@ -41,9 +41,9 @@ function scorePassword(pw: string): 0 | 1 | 2 | 3 | 4 {
 const STRENGTH_COPY: Record<0 | 1 | 2 | 3 | 4, { key: string; tone: string }> = {
   0: { key: 'setup.admin.strength.weak', tone: 'bg-destructive' },
   1: { key: 'setup.admin.strength.weak', tone: 'bg-destructive' },
-  2: { key: 'setup.admin.strength.fair', tone: 'bg-amber-500' },
-  3: { key: 'setup.admin.strength.good', tone: 'bg-emerald-500' },
-  4: { key: 'setup.admin.strength.strong', tone: 'bg-emerald-500' },
+  2: { key: 'setup.admin.strength.fair', tone: 'bg-warning' },
+  3: { key: 'setup.admin.strength.good', tone: 'bg-gain' },
+  4: { key: 'setup.admin.strength.strong', tone: 'bg-gain' },
 }
 
 export function SetupStepAdmin() {

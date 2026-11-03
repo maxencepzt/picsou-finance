@@ -81,7 +81,7 @@ export function RevolutTab() {
         <CardContent className="py-4">
           <div className="flex flex-wrap items-center gap-3">
             {remembered ? (
-              <Badge className="bg-green-500/10 text-green-600 dark:text-green-400">
+              <Badge className="bg-gain/10 text-gain">
                 {t('sync.revolut.connected')}
               </Badge>
             ) : (
@@ -134,9 +134,9 @@ export function RevolutTab() {
       )}
 
       {justSynced && !busy && !errorMsg && (
-        <Card size="sm" className="border-green-500/30">
+        <Card size="sm" className="border-gain/30">
           <CardContent className="flex items-center gap-3 py-4">
-            <CheckCircle2 className="size-5 text-green-500 shrink-0" />
+            <CheckCircle2 className="size-5 text-gain shrink-0" />
             <p className="text-sm text-muted-foreground">{t('sync.revolut.syncSuccess')}</p>
           </CardContent>
         </Card>

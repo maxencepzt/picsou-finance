@@ -1,192 +1,143 @@
 ---
 name: Picsou
-description: Self-hosted personal-finance dashboard — credible, calm, private.
+description: Self-hosted personal-finance dashboard — credible, calm, private. Dark first.
 colors:
-  vault-light: "oklch(1 0 0)"
-  vault-dark: "oklch(0.145 0 0)"
-  card-light: "oklch(1 0 0)"
-  card-dark: "oklch(0.205 0 0)"
-  coffre-blue: "oklch(0.488 0.243 264.376)"
+  bg-dark: "#0a0c10"
+  bg-light: "#f6f7f9"
+  sidebar-dark: "#0d1015"
+  sidebar-light: "#ffffff"
+  surface-dark: "#12151b"
+  surface-light: "#ffffff"
+  surface-raised-dark: "#1a1e26"
+  surface-raised-light: "#f1f3f6"
+  ink-dark: "#f4f6f8"
+  ink-light: "#0e1116"
+  slate-dark: "#9ba3af"
+  slate-light: "#5a6372"
   coffre-blue-dark: "oklch(0.707 0.165 254.624)"
-  coffre-blue-foreground: "oklch(0.97 0.014 254.604)"
-  coffre-blue-foreground-dark: "oklch(0.19 0.06 267.935)"
-  ledger-ink: "oklch(0.145 0 0)"
-  ledger-ink-dark: "oklch(0.985 0 0)"
-  quiet-slate: "oklch(0.45 0 0)"
-  quiet-slate-dark: "oklch(0.708 0 0)"
-  soft-secondary: "oklch(0.967 0.001 286.375)"
-  soft-secondary-dark: "oklch(0.274 0.006 286.033)"
-  muted-surface: "oklch(0.97 0 0)"
-  muted-surface-dark: "oklch(0.269 0 0)"
-  alert-red: "oklch(0.577 0.245 27.325)"
-  alert-red-dark: "oklch(0.704 0.191 22.216)"
-  hairline-border: "oklch(0.922 0 0)"
-  growth-green-1: "oklch(0.845 0.143 164.978)"
-  growth-green-2: "oklch(0.696 0.17 162.48)"
-  growth-green-3: "oklch(0.596 0.145 163.225)"
-  growth-green-4: "oklch(0.508 0.118 165.612)"
-  growth-green-5: "oklch(0.432 0.095 166.913)"
-  focus-ring: "oklch(0.708 0 0)"
+  coffre-blue-light: "oklch(0.488 0.243 264.376)"
+  on-coffre-blue-dark: "oklch(0.19 0.06 267.935)"
+  gain-dark: "#4ade98"
+  gain-light: "#06663b"
+  loss-dark: "#f47a5b"
+  loss-light: "#b43c0a"
+  warning-dark: "#f2b544"
+  warning-light: "#9a5b00"
+  class-cash: "#3987e5 / #2a78d6"
+  class-savings: "#d95926 / #eb6834"
+  class-equity: "#199e70 / #1baf7a"
+  class-crypto: "#c98500 / #eda100"
+  class-funds: "#d55181 / #e87ba4"
+  class-scpi: "#9085e9 / #6250d6"
+  class-realestate: "#e66767 / #e34948"
+  class-other: "#6b7280 / #9ca3af"
 typography:
-  display:
-    fontFamily: "'Geist Variable', sans-serif"
-    fontWeight: 700
-  body:
-    fontFamily: "'Geist Variable', sans-serif"
-    fontSize: "0.875rem"
-    fontWeight: 400
-    lineHeight: 1.6
-  label:
-    fontFamily: "'Geist Variable', sans-serif"
-    fontSize: "0.875rem"
-    fontWeight: 500
-  card-title:
-    fontFamily: "'Geist Variable', sans-serif"
-    fontSize: "0.875rem"
-    fontWeight: 700
+  family: "'Geist Variable', sans-serif"
+  display: { size: "44px", weight: 700, lineHeight: 1.05 }
+  headline: { size: "24px", weight: 700, lineHeight: 1.2 }
+  kpi: { size: "22px", weight: 600, lineHeight: 1.2 }
+  card-title: { size: "14px", weight: 700 }
+  body: { size: "14px", weight: 400, lineHeight: 1.6 }
+  label: { size: "13px", weight: 500 }
+  caption: { size: "12px", weight: 500 }
 rounded:
-  sm: "0.375rem"
-  md: "0.5rem"
-  lg: "0.625rem"
-  xl: "0.875rem"
-  2xl: "1.125rem"
-  3xl: "1.375rem"
-  4xl: "1.625rem"
+  control: "0.5rem (rounded-md)"
+  tile: "0.75rem (rounded-xl)"
+  card: "1.125rem (rounded-2xl)"
 spacing:
   card-pad: "1rem"
-  card-pad-sm: "0.75rem"
-  btn-h: "2.5rem"
-  btn-h-lg: "3rem"
+  grid-gap: "1rem"
+  compact-control-h: "2rem"
+  control-h: "2.5rem"
+  sidebar-w: "14.5rem"
+  topbar-h: "3.5rem"
 ---
 
-# Design System: Picsou
+# Design System: Picsou — "Coffre Nocturne"
 
 ## 1. Overview
 
-**Creative North Star: "Le Coffre Lumineux"**
+**Creative North Star: "Le Coffre Nocturne".** The strongbox seen at night, lit from within by the figures. The interface carries real money and treats it with the calm seriousness of a private ledger: a near-black graphite canvas, cards one tone lighter, and the numbers the user came to read in bright ink. Dark is the primary theme (the default for new installs); the light theme keeps exactly the same roles.
 
-Picsou is a strongbox that does not need to look austere. The interface carries real financial data — balances, holdings, net worth — and treats it with the calm seriousness of a private ledger, lit from within rather than bolted shut. The light is the point: the user opens the app to *see where they stand*, and every surface is arranged so the answer arrives in one glance, without flash, without noise.
+The organisation of the information takes inspiration from modern wealth dashboards: a headline figure, a row of indicators, an evolution chart, a breakdown, then the detail on demand. The identity stays Picsou's: no other product's name, logo, colours or screens.
 
-The system rejects the four traps named in PRODUCT.md. It is not generic fintech flash — no violet gradients, no neon, no flat-design mascots. It is not a cold technical dashboard — the human behind the numbers stays legible. It is not hollow marketing — the numbers are always real and always present. And it is not a traditional banking app — the user's patrimony, not the bank's product catalog, owns the screen. What sits between these rejections is the register: credible without being cold, warm without being childish, composed enough that the data breathes.
+The four traps named in PRODUCT.md still apply: no generic fintech flash (no violet gradients, no neon, no mascots), no cold analytics dashboard, no hollow marketing (no animated counters, no invented figures), no banking-app catalogue.
 
-Density is earned, never default. A surface earns its whitespace; a figure earns its presence. The palette is restrained — one confident blue carries the brand, neutrals carry everything else, and a green family reserved for growth-positive charts. Components are flat by default: depth is conveyed by tonal layering and a hairline ring, never by drop shadows. Motion is present where it carries feedback (a press, a sync, a value change) and silent everywhere else.
+**Key characteristics:** dark first, one confident blue, movement colours that always come with a sign and an arrow, a fixed colour per asset class, flat cards with a hairline ring, one typeface, compact controls inside cards.
 
-**Key Characteristics:** restrained palette, flat surfaces with hairline rings, single-sans typographic hierarchy, calm motion, WCAG AA with AAA on every figure the user came to read.
+The design system is also published on Claude Design ("Picsou") with tokens, guidelines and live component previews; the mockup of every screen lives on the "Picsou — Refonte" canvas.
 
-## 2. Colors: The Vault Palette
+## 2. Colours
 
-One confident blue, honest neutrals, and a reserved green family for growth. The palette never raises its voice.
+All colours are theme tokens in `frontend/src/index.css` (`:root` = light, `.dark` = dark), mirrored as Tailwind colours (`text-gain`, `bg-class-equity`…). `frontend/src/theme-contrast.test.ts` checks the pairs below in both themes.
 
-### Primary
-- **Coffre Blue** (`oklch(0.488 0.243 264.376)`): the brand anchor. A saturated blue-violet that carries identity without aggression. Used on primary actions, the active nav state, links, and focusable emphasis. Its rarity is the point — it appears on the small fraction of the screen that *does* something.
-- **Coffre Blue (dark)** (`oklch(0.707 0.165 254.624)`, foreground `oklch(0.19 0.06 267.935)`): the dark-mode counterpart, lifted so primary text, tinted badges and progress fills clear WCAG AA on the dark card (6.8:1 as text, 5.7:1 against a muted track). No blue can do that and also carry near-white text, so in dark mode primary fills take a deep navy label (7.0:1, and 4.8:1 on the translucent `bg-primary/80` hover over the canvas). Ink drawn on a member's own avatar colour is white, never `primary-foreground`.
+### Surfaces and ink
+- **Canvas** (`--background`): `#0a0c10` dark, `#f6f7f9` light. Nothing critical sits directly on it except the page title.
+- **Card** (`--card`): `#12151b` / white — the only container. A 1px `ring-foreground/10` defines its edge.
+- **Raised** (`--muted`, `--secondary`, `--accent`): `#1a1e26` / `#f1f3f6` — tiles inside a card, hovered rows, the track of a segmented control.
+- **Ink** (`--foreground`): every amount, balance, percentage and title. ≥ 15:1 on every surface.
+- **Slate** (`--muted-foreground`): labels, captions, axis ticks. ≥ 4.5:1 on every surface. Never on a critical figure.
 
-### Neutral
-- **Vault Light / Ledger Ink** (`oklch(1 0 0)` background, `oklch(0.145 0 0)` ink): the canvas and its text. True white and near-black, achromatic — no warm drift, no cream. The clarity is deliberate: financial figures read against pure contrast.
-- **Card Light** (`oklch(1 0 0)`, dark: `oklch(0.205 0 0)`): the surface for grouped content. Identical to the canvas in light mode (cards read via their hairline ring, not a tint shift), one step lifted in dark mode.
-- **Quiet Slate** (`oklch(0.45 0 0)`, dark: `oklch(0.708 0 0)`): secondary text. Held at 0.45 lightness specifically so it clears WCAG AA (4.5:1) even on a muted surface — the value was tuned down from the shadcn default for exactly this reason. Critical figures (amounts, balances) use Ledger Ink, never Quiet Slate.
-- **Muted Surface** (`oklch(0.97 0 0)`, dark: `oklch(0.269 0 0)`): the resting state for inactive nav items, ghost-button hovers, and muted containers. Achromatic, one breath off the canvas.
-- **Soft Secondary** (`oklch(0.967 0.001 286.375)`): a near-neutral with the faintest violet whisper, used for secondary buttons and badges. Close enough to read as neutral, tinted enough to distinguish from Muted.
-- **Hairline Border** (`oklch(0.922 0 0)`): the structural line. Borders and inputs share this value; in dark mode it becomes `oklch(1 0 0 / 10%)` — a hair of white, not a gray.
+### Coffre blue
+`--primary` (`oklch(0.707 0.165 254.6)` dark, `oklch(0.488 0.243 264.4)` light) is the **only** saturated colour on interactive chrome: primary button, active navigation, selected segment, links, focus ring (`--ring`). ≤ 10 % of any screen. On a blue fill, the label is `--primary-foreground` (navy in dark). The selected tint is `bg-primary/12`.
 
-### Tertiary
-- **Alert Red** (`oklch(0.577 0.245 27.325)`): destruction and danger. Used sparingly and only where the user must feel a stop signal — delete confirmations, invalid states, loss indicators. Never decorative.
-- **Growth Green family** (`chart-1` through `chart-5`, `oklch(0.845→0.432 0.143→0.095 ~165)`): a five-step green ramp reserved for charts and positive-value visualization. Lightened for area fills, deepened for primary series. Hue is held near-constant so the family reads as one gesture; lightness does the differentiation, keeping the palette accessible beyond hue alone. Dark mode shifts `chart-2`…`chart-5` one emerald step lighter (`0.845→0.508`) so the darkest series still clears 3:1 against the dark card, and the net-worth area wash drops to `--chart-area-opacity: 0.08` so lines drawn over it keep that 3:1.
+### Movement
+- **Gain** (`--gain`, `#4ade98` / `#06663b`) and **Loss** (`--loss`, `#f47a5b` / `#b43c0a`): positive and negative movement only — deltas, P&L, budget overspent. Always with a sign and an arrow (`Delta` component), so the direction never rests on colour alone. A falling debt is a gain.
+- **Warning** (`--warning`): a stale price, a sync to check, an envelope at 80 %. Always with an icon and a word.
+- **Destructive** stays for destructive actions and errors.
 
-### Named Rules
-**The One Voice Rule.** Coffre Blue is the only saturated color permitted on interactive chrome. It appears on ≤10% of any given screen. Its rarity is what makes it read as confidence rather than decoration.
+### Asset classes
+One fixed colour per class, in the order validated against colour blindness (adjacent pairs ΔE ≥ 8 in both themes): cash, regulated savings, stocks & ETFs, crypto, funds (life insurance, pension), SCPI, property, other (neutral). **Colour follows the class, never its rank.** Mapping from account types: `frontend/src/lib/asset-classes.ts`. Labels drawn inside a class fill use `--on-class`. `--slice-1..10` (categorical charts) start with the same eight colours.
 
-**The Green Is For Growth Rule.** The Growth Green family never appears on buttons, text, or chrome. It is reserved for charts and positive financial movement. Mixing it into the UI vocabulary dilutes both the brand voice and the semantic.
-
-**The Critical Ink Rule.** Amounts, balances, and alerts — any figure the user came to read — render in Ledger Ink (`oklch(0.145 0 0)`), never in Quiet Slate. Quiet Slate is for supporting prose only. This is how the system meets AAA on critical content.
+### Charts
+`--chart-1..5` is a single-hue blue ramp: `chart-1` is the value line (with a faint `--chart-area-opacity` wash), `chart-5` the dashed "capital invested" reference. Ordered data (liquidity buckets, scenarios) take ramp steps by lightness. Gridlines are recessive; every multi-series chart has a legend; hover tooltips use the popover surface.
 
 ## 3. Typography
 
-**Display Font:** Geist Variable (`'Geist Variable', sans-serif`)
-**Body Font:** Geist Variable (`'Geist Variable', sans-serif`)
-**Label/Mono Font:** Geist Variable — no second family is used.
+One family, **Geist Variable**; hierarchy from weight and size only. Numbers use tabular figures.
+- **Display** (44px / 700): the single headline figure of a screen — the net worth.
+- **Headline** (24px / 700): the page title (`PageHeader`).
+- **KPI** (22px / 600): the figure of a `KpiTile`.
+- **Card title** (14px / 700): small and bold, never enlarged.
+- **Body** (14px), **label** (13px / 500), **caption** (12px / 500).
 
-**Character:** A single geometric-grotesque variable face carries the entire hierarchy. Geist's even color and open counters keep dense financial tables legible at small sizes, while its tighter terminals read as deliberate at heading scale. The system does not pair fonts; it pairs weights. The discipline of one family reinforces the "calm instrument" register — nothing competes for attention.
+## 4. Layout and elevation
 
-### Hierarchy
-- **Display** (700, page scale via clamp, 1.1): reserved for the single most prominent figure on a screen — a net-worth headline, a dashboard total. Never more than one per view.
-- **Headline** (700, ~1.5–1.875rem, 1.2): page and section titles via `PageHeader`. Sets the frame for what the user is looking at.
-- **Card Title** (700, 0.875rem, tight): the `cn-card-title` utility — small, bold, confident. Card headers do not shout; they label.
-- **Body** (400, 0.875rem, 1.6 / `text-sm/relaxed`): the default reading size. Tables, descriptions, transaction rows. Line height relaxed enough for scanning.
-- **Label** (500, 0.875rem): button text, nav labels, form labels. Medium weight to read as an affordance without bulk.
-
-### Named Rules
-**The One Family Rule.** No second typeface. Hierarchy is built from weight and size, never from a contrasting face. A serif or display face would break the instrument register; the calm comes from consistency.
-
-**The Small-Bold Rule.** Card titles are 0.875rem and 700 weight — small *and* bold. Resist the urge to enlarge them. The grid of confident small labels is what makes the dashboard scannable; oversized titles fragment the rhythm.
-
-## 4. Elevation
-
-Picsou is flat by default. Depth is conveyed by **tonal layering** and a **hairline ring**, not by drop shadows. This is the doctrine: shadows are reserved for elements that physically detach from the surface — floating dialogs, sheets, dropdown menus, popovers — and even there they stay soft and diffuse. A card at rest has no shadow; it has a 1px ring (`ring-1 ring-foreground/10`) that defines its edge against the canvas.
-
-In dark mode the same logic holds: the card surface lifts one tonal step (`oklch(0.205)` against `oklch(0.145)` background) and the ring becomes a hair of white at 8–10% opacity.
-
-### Named Rules
-**The Flat-By-Default Rule.** Surfaces are flat at rest. A ring or a tonal step separates them from the canvas. Shadows appear only on elements that float above the page (dialogs, sheets, popovers, tooltips) — never on cards, inputs, or buttons in their resting state.
-
-**The No-Glow Rule.** No colored glows, no neon drop shadows, no `box-shadow` used as decoration. A shadow that exists is structural: it tells the user "this floats." If it does not tell them that, it does not exist.
+- **Shell:** a 232px sidebar (40px rows: icon + label, active row tinted blue), a 56px top bar (search, Me/Household, sync status, privacy eye, Sync button), content up to 1280px wide. On phones: a floating bottom bar with five labelled entries, the fifth ("More") opening the rest.
+- **Grid:** cards in a 12-column rhythm with 16px gaps; a KPI row of six tiles on wide screens, two on phones.
+- **Elevation:** flat by default — a hairline ring, never a shadow at rest. Shadows only on what floats: dialogs, the search palette, sheets, popovers.
+- **Shape:** cards `rounded-2xl`, tiles and rows `rounded-xl`, controls `rounded-md`, badges and dots `rounded-full`.
 
 ## 5. Components
 
-### Buttons
-- **Shape:** rounded-md (0.5rem), `bg-clip-padding` to keep backgrounds crisp on the radius.
-- **Primary:** Coffre Blue (`bg-primary`) with `primary-foreground` text; hover drops to 80% opacity (`hover:bg-primary/80`) for a settled, not flashy, response. Default height 2.5rem (h-10), padding px-8.
-- **Active feedback:** `active:not-aria-[haspopup]:scale-[0.96]` — a subtle 4% press scale, the "posé et vivant" gesture. Buttons with popovers (dropdowns) do not scale, since the click opens rather than commits.
-- **Secondary / Outline / Ghost:** secondary uses Soft Secondary surface; outline uses Hairline Border with input-tinted background; ghost is transparent until hover, where it picks up Muted Surface. All share the same height, radius, and motion as Primary.
-- **Destructive:** a tinted red (`bg-destructive/10`), not a solid red — the danger is legible without shouting, and darkens on hover.
-- **Focus:** the global focus-visible ring (2px solid `--ring`, 4px `color-mix` halo at 20%).
-- **Icon buttons:** square (`size-10`), same radius, icon scaled to 1rem.
+- **Card** — `Card` primitive: title, optional action (a link or a `SegmentedControl`), content.
+- **KpiTile** — label, figure, one line under it (a `Delta` or a caption).
+- **Delta** — signed amount and/or percentage with an arrow, gain/loss colour, `invert` for debts.
+- **SegmentedControl** — the compact 32px switch of card headers (period, view, grouping). Page-level controls keep the 40px height.
+- **Breakdown** — a part-to-whole drawn as stacked bar, donut or treemap (the user chooses), always with a legend listing names, amounts and shares.
+- **TimeRangeSelector** — period switch of the value charts, built on `SegmentedControl`, scrolls on a phone.
+- **Search palette** — opened from the top bar or with ⌘K (macOS) / Ctrl K (Windows, Linux): accounts, securities, pages, quick actions. The shortcut shown always matches the platform.
+- **Kbd** — a keycap.
+- Range inputs use the `range-input` class (blue fill, light thumb).
 
-### Badges
-- **Shape:** rounded-full, height 1.25rem (h-5), 0.625rem text — the smallest typographic element in the system.
-- **Variants:** default (Coffre Blue), secondary (Soft Secondary), destructive (Alert Red at 10% tint), outline (bordered, input-tinted). Same tonal logic as buttons, miniaturized.
+## 6. Motion
 
-### Cards
-- **Corner:** rounded-4xl (1.625rem) — the most generous radius in the system. Cards are the soft containers of the dashboard.
-- **Background:** Card Light surface; `ring-1 ring-foreground/10` defines the edge. No shadow at rest.
-- **Padding:** 1rem (px-4, py-4) default; `size="sm"` tightens to 0.75rem. Header and footer pin to the card's rounded corners via `rounded-t-4xl` / `rounded-b-4xl`.
-- **Title:** `cn-card-title` (0.875rem, 700) — small and confident per the Small-Bold Rule.
+Feedback where it carries meaning (a press, a sync), silent elsewhere. `prefers-reduced-motion` is enforced globally in `index.css`.
 
-### Inputs
-- **Shape:** rounded-md (0.5rem), height 2.5rem (h-10), Hairline Border, background `bg-input/20` (a faint tint of the border color).
-- **Focus:** border and box-shadow transition together; invalid state rings Alert Red at 20% (40% in dark).
-- **Placeholder:** `placeholder:text-muted-foreground/80` — slightly faded, but Quiet Slate is already tuned for contrast, so even at 80% it stays legible.
+## 7. Do's and Don'ts
 
-### Navigation
-- **Sidebar (desktop):** Muted-dark surface (`oklch(0.985)` light / `oklch(0.16)` dark), 1px border-right. Active item: Coffre Blue text or tinted background. Inactive items use Quiet Slate, settling to Ledger Ink on hover.
-- **Mobile bottom nav:** the same items compressed to the bottom bar on small screens; icons primary, labels in Label style.
-- **Account menu:** dropdown (Radix), floating with the soft shadow reserved for popovers.
+### Do
+- Render every amount through `CurrencyDisplay` / `useMoney` (privacy mode) in ink, with tabular figures.
+- Pair every gain or loss colour with a sign and an arrow.
+- Give each asset class its fixed colour, everywhere.
+- Offer bar / donut / treemap for a breakdown, and keep the legend.
+- Show the keyboard shortcut of the user's platform (⌘ or Ctrl), never a hard-coded one.
+- Leave out a figure the data cannot support rather than inventing one.
 
-### Charts
-- **Series colors:** the Growth Green family, lightened for fills, deepened for primary lines.
-- **Grid:** hairline, low-contrast — the data owns the chart, the grid only orients.
-- **Tooltips:** popover surface, Card Light, hairline ring, no decorative shadow.
-
-## 6. Do's and Don'ts
-
-### Do:
-- **Do** keep Coffre Blue to ≤10% of any screen. It marks interactive identity and nothing else.
-- **Do** render every amount, balance, and alert in Ledger Ink (`oklch(0.145 0 0)`). Critical figures meet AAA this way.
-- **Do** use the Growth Green family *only* in charts and for positive financial movement.
-- **Do** keep cards flat at rest — a hairline ring (`ring-1 ring-foreground/10`) defines the edge, no shadow.
-- **Do** reserve shadows for elements that physically float (dialogs, sheets, popovers, tooltips), and keep them soft and diffuse.
-- **Do** use a single typeface (Geist Variable) and build hierarchy from weight and size alone.
-- **Do** respect `prefers-reduced-motion` — it is enforced globally in the base stylesheet, and feature motion must work inside that net.
-- **Do** make charts distinguishable beyond hue: the Growth Green ramp steps lightness, never relying on hue alone.
-
-### Don't:
-- **Don't** use violet gradients, neon accents, or flat-design illustrations — Picsou is not generic fintech flash.
-- **Don't** make the interface look like Datadog, Grafana, or a generic analytics tool — cold technical dashboards forget the human behind the numbers.
-- **Don't** ship big animated numbers, testimonials, or reassurance without real data — Picsou is not hollow fintech marketing.
-- **Don't** prioritize a product catalog over the user's patrimony — Picsou is not a traditional banking app.
-- **Don't** use colored drop shadows or glows as decoration. A shadow that does not say "this floats" does not exist.
-- **Don't** use `border-left` or `border-right` greater than 1px as a colored stripe accent. Full borders or background tints only.
-- **Don't** apply `background-clip: text` with a gradient. Emphasis comes from weight or size, never from gradient text.
-- **Don't** pair Geist with a similar geometric sans to "add variety." One family, weights and sizes — that is the hierarchy.
-- **Don't** enlarge card titles past 0.875rem. The grid of confident small labels is what makes the dashboard scannable.
-- **Don't** put Quiet Slate on critical figures. It is for supporting prose only.
+### Don't
+- Use raw palette classes (`text-emerald-500`, `bg-red-50`…): only tokens.
+- Use violet gradients, neon, glows, gradient text, colored left-border cards or emoji.
+- Shadow a card at rest.
+- Enlarge card titles, or add a second typeface.
+- Put slate on a critical figure.
+- Copy another product's identity.

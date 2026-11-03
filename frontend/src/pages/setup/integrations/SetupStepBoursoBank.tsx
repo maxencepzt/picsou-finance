@@ -86,8 +86,8 @@ export function SetupStepBoursoBank() {
       )}
 
       {phase === 'ok' && (
-        <div className="flex flex-col items-center gap-3 rounded-2xl border border-emerald-500/40 bg-emerald-500/5 p-6 text-center">
-          <CheckCircle2 className="h-10 w-10 text-emerald-500" />
+        <div className="flex flex-col items-center gap-3 rounded-2xl border border-gain/40 bg-gain/5 p-6 text-center">
+          <CheckCircle2 className="h-10 w-10 text-gain" />
           <p className="text-lg font-medium">{t('setup.bourso.ok')}</p>
         </div>
       )}

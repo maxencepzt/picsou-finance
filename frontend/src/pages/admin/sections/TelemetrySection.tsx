@@ -26,7 +26,7 @@ export function TelemetrySection({ settings }: { settings: TelemetrySettings }) 
   }
 
   return (
-    <Card className="rounded-4xl bg-card">
+    <Card className="rounded-2xl bg-card">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-lg">
           <Activity className="size-5 text-muted-foreground" />

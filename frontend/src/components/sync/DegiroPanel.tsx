@@ -75,11 +75,11 @@ export function DegiroPanel({ onConnected }: DegiroPanelProps = {}) {
         <CardContent className="py-4">
           <div className="flex flex-wrap items-center gap-3">
             {connected ? (
-              <Badge className="bg-green-500/10 text-green-600 dark:text-green-400">
+              <Badge className="bg-gain/10 text-gain">
                 {t("sync.degiro.sessionActive")}
               </Badge>
             ) : needsReauth ? (
-              <Badge variant="outline" className="border-amber-500/50 text-amber-600 dark:text-amber-400">
+              <Badge variant="outline" className="border-warning/50 text-warning">
                 {t("sync.degiro.reauthRequired")}
               </Badge>
             ) : (

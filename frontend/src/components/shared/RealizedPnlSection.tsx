@@ -73,7 +73,7 @@ export function RealizedPnlSection({ accountId, enabled = true }: RealizedPnlSec
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0">
         <CardTitle className="text-base">{t('realized.title')}</CardTitle>
-        <div className={cn('flex items-center gap-1.5 font-medium', positive ? 'text-emerald-500' : 'text-red-500')}>
+        <div className={cn('flex items-center gap-1.5 font-medium', positive ? 'text-gain' : 'text-loss')}>
           {positive ? <TrendingUp className="size-4" /> : <TrendingDown className="size-4" />}
           <CurrencyDisplay value={realizedTotal} currency={currency} showSign />
         </div>
@@ -105,7 +105,7 @@ export function RealizedPnlSection({ accountId, enabled = true }: RealizedPnlSec
                   <TableCell className="text-right">
                     <CurrencyDisplay value={lot.proceeds} currency={currency} className="text-sm" />
                   </TableCell>
-                  <TableCell className={cn('text-right', lot.realized >= 0 ? 'text-emerald-500' : 'text-red-500')}>
+                  <TableCell className={cn('text-right', lot.realized >= 0 ? 'text-gain' : 'text-loss')}>
                     <CurrencyDisplay value={lot.realized} currency={currency} showSign className="text-sm" />
                   </TableCell>
                 </TableRow>

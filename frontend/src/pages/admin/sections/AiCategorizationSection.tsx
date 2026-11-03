@@ -94,7 +94,7 @@ export function AiCategorizationSection({ settings }: { settings: AdminAiSetting
   }
 
   return (
-    <Card className="rounded-4xl bg-card shadow-md">
+    <Card className="rounded-2xl bg-card shadow-md">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-lg">
           <BrainCircuit className="size-5 text-muted-foreground" />
@@ -181,7 +181,7 @@ export function AiCategorizationSection({ settings }: { settings: AdminAiSetting
 
               {/* Test result */}
               {testAi.data?.ok === true && (
-                <p className="text-sm text-emerald-600">{testAi.data.message}</p>
+                <p className="text-sm text-gain">{testAi.data.message}</p>
               )}
               {(testAi.isError || testAi.data?.ok === false) && (
                 <p role="alert" className="text-sm text-destructive">
@@ -215,7 +215,7 @@ export function AiCategorizationSection({ settings }: { settings: AdminAiSetting
             </Button>
           </div>
           {update.isSuccess && !formState.isDirty && (
-            <span className="text-sm text-emerald-600">{t('admin.ai.saved')}</span>
+            <span className="text-sm text-gain">{t('admin.ai.saved')}</span>
           )}
         </form>
       </CardContent>

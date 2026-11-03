@@ -70,6 +70,32 @@ describe.each([':root', '.dark'])('%s primary tokens meet WCAG AA', (selector) =
   })
 })
 
+describe.each([':root', '.dark'])('%s text tokens meet WCAG AA', (selector) => {
+  const t = themeTokens(selector)
+
+  it.each(['foreground', 'muted-foreground', 'gain', 'loss', 'warning'])('%s reads on the canvas, a card and a muted surface', (token) => {
+    for (const surface of ['background', 'card', 'muted']) {
+      expect(contrast(t[token]!, t[surface]!)).toBeGreaterThanOrEqual(4.5)
+    }
+  })
+
+  it.each(['gain', 'loss'])('%s reads on its own 10%% badge tint', (token) => {
+    expect(contrast(t[token]!, tint(t[token]!, t.card!, 0.1))).toBeGreaterThanOrEqual(4.5)
+  })
+})
+
+describe('.dark asset-class fills', () => {
+  const t = themeTokens('.dark')
+
+  it.each(['class-cash', 'class-savings', 'class-equity', 'class-crypto', 'class-funds', 'class-scpi', 'class-realestate'])(
+    '%s stands out from a card and carries an on-class label',
+    (token) => {
+      expect(contrast(t[token]!, t.card!)).toBeGreaterThanOrEqual(3)
+      expect(contrast(t['on-class']!, t[token]!)).toBeGreaterThanOrEqual(4.5)
+    },
+  )
+})
+
 // Scoped to dark: light mode's white label on blue/80 over white measures 4.2:1 and predates
 // the dark tokens.
 describe('.dark primary button', () => {

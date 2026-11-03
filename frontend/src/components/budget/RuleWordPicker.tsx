@@ -233,7 +233,7 @@ export function RuleWordPicker({
                   </span>
                   <span
                     className={`shrink-0 tabular-nums font-medium ${
-                      tx.amount >= 0 ? 'text-emerald-600 dark:text-emerald-400' : ''
+                      tx.amount >= 0 ? 'text-gain' : ''
                     }`}
                   >
                     <CurrencyDisplay value={tx.amount} showSign />

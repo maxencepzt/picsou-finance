@@ -11,8 +11,8 @@ export function LoanMonthlyBreakdownCard({ summary }: LoanMonthlyBreakdownCardPr
   const { t } = useTranslation()
 
   const items = [
-    { label: t('debt.capital'), value: summary.monthlyCapital, color: 'bg-emerald-500' },
-    { label: t('debt.interest'), value: summary.monthlyInterest, color: 'bg-amber-500' },
+    { label: t('debt.capital'), value: summary.monthlyCapital, color: 'bg-gain' },
+    { label: t('debt.interest'), value: summary.monthlyInterest, color: 'bg-warning' },
     { label: t('debt.insurance'), value: summary.monthlyInsurance, color: 'bg-sky-500' },
   ]
 

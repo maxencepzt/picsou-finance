@@ -102,7 +102,7 @@ export function ScpiDetailSection({ account }: { account: Account }) {
       </CardHeader>
       <CardContent className="space-y-4">
         {position?.valuationStatus === 'PRICE_INCOMPLETE' && (
-          <p className="text-sm text-amber-600 dark:text-amber-400">{t('scpi.incomplete')}</p>
+          <p className="text-sm text-warning">{t('scpi.incomplete')}</p>
         )}
 
         {position && (!editing || !canEdit) && (

@@ -23,7 +23,7 @@ import type { ChainType } from '@/types/api'
 import { extractErrorMessage, formatApiError } from '@/lib/errors'
 
 const CHAIN_COLORS: Record<ChainType, string> = {
-  BITCOIN: 'bg-orange-500/15 text-orange-600 dark:text-orange-400',
+  BITCOIN: 'bg-warning/15 text-warning',
   EVM: 'bg-blue-500/15 text-blue-600 dark:text-blue-400',
   SOLANA: 'bg-purple-500/15 text-purple-600 dark:text-purple-400',
 }

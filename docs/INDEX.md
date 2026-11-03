@@ -85,6 +85,7 @@
 | 2026-10-31 | [Trusted proxy client addresses](./decisions/2026-10-31-trusted-proxy-client-address.md) | Active |
 | 2026-10-31 | [Helm chart in the repository, published by CI next to the images](./decisions/2026-10-31-helm-chart-published-from-ci.md) | Active |
 | 2026-11-01 | [Sidecars share one Python package for their plumbing](./decisions/2026-11-01-shared-sidecar-package.md) | Active |
+| 2026-11-03 | ["Coffre Nocturne" — a dark-first redesign of the web front](./decisions/2026-11-03-coffre-nocturne-dark-first-redesign.md) | Active |
 
 ## Feature notes
 
@@ -96,7 +97,7 @@
 | Internationalization (FR/EN/DE/ES) | 2026-10-31 | [i18n.md](./features/i18n.md) |
 | Frontend utilities (lib/utils.ts) | 2026-10-31 | [frontend-utils.md](./features/frontend-utils.md) |
 | Demo mode | 2026-10-31 | [demo-mode.md](./features/demo-mode.md) |
-| Theme (dark / light / system) + theme-adaptive rendering | 2026-10-31 | [theme-persistence.md](./features/theme-persistence.md) |
+| Theme (dark / light / system) + theme-adaptive rendering | 2026-11-03 | [theme-persistence.md](./features/theme-persistence.md) |
 | Dashboard — Time range isolation | 2026-04-13 | [dashboard-time-range-isolation.md](./features/dashboard-time-range-isolation.md) |
 | Bank sync | 2026-10-31 | [bank-sync.md](./features/bank-sync.md) |
 | SimpleFIN sync | 2026-10-04 | [simplefin-sync.md](./features/simplefin-sync.md) |

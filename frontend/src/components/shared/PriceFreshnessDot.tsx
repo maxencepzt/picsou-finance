@@ -55,15 +55,15 @@ export function PriceFreshnessDot({ priceUpdatedAt, staleAsOf = null }: PriceFre
   // says when the position was last synced, this one says the price on screen is not today's.
   // A position synced a minute ago can still be valued from yesterday's price.
   if (staleAsOf) {
-    return <Dot className="bg-amber-500" label={t('accounts.priceAsOf', { date: formatDate(staleAsOf) })} />
+    return <Dot className="bg-warning" label={t('accounts.priceAsOf', { date: formatDate(staleAsOf) })} />
   }
 
   if (!priceUpdatedAt) return null
 
   const age = now - new Date(priceUpdatedAt).getTime()
   if (age < LIVE_THRESHOLD_MS) {
-    return <Dot className="bg-emerald-500" label={t('accounts.priceLive')} />
+    return <Dot className="bg-gain" label={t('accounts.priceLive')} />
   }
 
-  return <Dot className="bg-amber-500" label={t('accounts.priceStale', { time: formatTimeAgo(priceUpdatedAt) })} />
+  return <Dot className="bg-warning" label={t('accounts.priceStale', { time: formatTimeAgo(priceUpdatedAt) })} />
 }

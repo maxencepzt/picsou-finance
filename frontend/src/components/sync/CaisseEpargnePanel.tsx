@@ -412,7 +412,7 @@ export function CaisseEpargnePanel({ onConnected }: CaisseEpargnePanelProps = {}
         <CardContent className="py-4">
           <Badge
             className={
-              connected ? "bg-green-500/10 text-green-600 dark:text-green-400" : undefined
+              connected ? "bg-gain/10 text-gain" : undefined
             }
             variant={connected ? "default" : "outline"}
           >
@@ -429,7 +429,7 @@ export function CaisseEpargnePanel({ onConnected }: CaisseEpargnePanelProps = {}
             </p>
           )}
           {syncStatus === "SUCCESS" && status.data?.lastSyncCompletedAt && (
-            <p className="mt-2 text-sm text-emerald-600 dark:text-emerald-400">
+            <p className="mt-2 text-sm text-gain">
               {t("sync.caisseEpargne.syncSuccess")}
             </p>
           )}
@@ -541,9 +541,9 @@ export function CaisseEpargnePanel({ onConnected }: CaisseEpargnePanelProps = {}
             void submit()
           }}
         >
-          <Card size="sm" className="border-amber-500/30">
+          <Card size="sm" className="border-warning/30">
             <CardContent className="flex items-start gap-3 py-4">
-              <ShieldAlert className="mt-0.5 size-5 shrink-0 text-amber-600 dark:text-amber-400" />
+              <ShieldAlert className="mt-0.5 size-5 shrink-0 text-warning" />
               <ul className="space-y-1 text-xs text-muted-foreground">
                 <li>{t("sync.caisseEpargne.notice.neverStored")}</li>
                 <li>{t("sync.caisseEpargne.notice.noRetry")}</li>

@@ -18,9 +18,9 @@ interface PropertyValuationCardProps {
 }
 
 const CONFIDENCE_STYLES: Record<ValuationConfidence, string> = {
-  HIGH: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
-  MEDIUM: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
-  LOW: 'bg-rose-500/10 text-rose-600 dark:text-rose-400',
+  HIGH: 'bg-gain/10 text-gain',
+  MEDIUM: 'bg-warning/10 text-warning',
+  LOW: 'bg-loss/10 text-loss',
 }
 
 export function PropertyValuationCard({ accountId, metadata, currentValue }: PropertyValuationCardProps) {

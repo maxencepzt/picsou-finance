@@ -42,7 +42,7 @@ function statusVariant(status: string): 'default' | 'secondary' | 'destructive' 
 function statusClasses(status: string): string {
   switch (status) {
     case 'EXPIRED': return 'bg-muted text-muted-foreground'
-    case 'FAILED': return 'bg-red-500/10 text-red-600 dark:text-red-400'
+    case 'FAILED': return 'bg-loss/10 text-loss'
     default: return ''
   }
 }
@@ -156,7 +156,7 @@ export function BankSyncTab() {
       {/* OAuth callback status */}
       {callbackStatus && (
         <Card className={
-          callbackStatus === 'done' ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950' :
+          callbackStatus === 'done' ? 'border-gain/30 bg-gain/10' :
           callbackStatus === 'error' ? 'border-destructive/30 bg-destructive/5' :
           'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950'
         }>
@@ -165,7 +165,7 @@ export function BankSyncTab() {
               <Loader2 className="size-4 animate-spin text-blue-600 dark:text-blue-400" />
             )}
             {callbackStatus === 'done' && (
-              <CheckCircle className="size-4 text-green-600 dark:text-green-400" />
+              <CheckCircle className="size-4 text-gain" />
             )}
             {callbackStatus === 'error' && (
               <AlertTriangle className="size-4 text-destructive" />

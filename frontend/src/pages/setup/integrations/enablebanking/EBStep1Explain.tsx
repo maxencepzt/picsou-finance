@@ -60,13 +60,13 @@ export function EBStep1Explain({ onNext }: Props) {
           </div>
         )}
 
-        <div className="flex items-start gap-3 rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-left">
-          <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-600 dark:text-amber-400" />
+        <div className="flex items-start gap-3 rounded-xl border border-warning/40 bg-warning/10 p-4 text-left">
+          <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-warning" />
           <div className="space-y-1 text-xs sm:text-sm">
-            <p className="font-medium text-amber-900 dark:text-amber-100">
+            <p className="font-medium text-warning">
               {t('setup.enablebanking.explain.prodWarningTitle')}
             </p>
-            <p className="text-amber-900/80 dark:text-amber-100/80">
+            <p className="text-warning/80">
               {t('setup.enablebanking.explain.prodWarningBody')}
             </p>
           </div>

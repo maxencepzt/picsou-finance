@@ -259,10 +259,10 @@ describe('AccountCard', () => {
     const dayAgo = (days: number) => new Date(Date.now() - days * DAY).toISOString().slice(0, 10)
 
     it.each([
-      ['green under a day', 2 * HOUR, 'text-emerald-600'],
-      ['yellow in the second day', 30 * HOUR, 'text-yellow-600'],
-      ['orange past two days', 3 * DAY, 'text-orange-600'],
-      ['red past a week', 10 * DAY, 'text-red-600'],
+      ['green under a day', 2 * HOUR, 'text-gain'],
+      ['yellow in the second day', 30 * HOUR, 'text-warning'],
+      ['orange past two days', 3 * DAY, 'text-warning'],
+      ['red past a week', 10 * DAY, 'text-loss'],
     ])('grades a sync date %s', async (_label, age, expectedClass) => {
       const account = { ...baseAccount, lastSyncedAt: isoAgo(age) }
       const { findByText } = render(<AccountCard account={account} />)
@@ -272,9 +272,9 @@ describe('AccountCard', () => {
     })
 
     it.each([
-      ['green in the first month', 10, 'text-emerald-600'],
-      ['yellow past 35 days', 45, 'text-yellow-600'],
-      ['red past 90 days', 100, 'text-red-600'],
+      ['green in the first month', 10, 'text-gain'],
+      ['yellow past 35 days', 45, 'text-warning'],
+      ['red past 90 days', 100, 'text-loss'],
     ])('grades a valuation date %s on the monthly scale', async (_label, days, expectedClass) => {
       const account = realEstateAccount({}, { lastValuedAt: dayAgo(days) })
       const { findByText } = render(<AccountCard account={account} />)
@@ -298,7 +298,7 @@ describe('AccountCard', () => {
       const { queryByText, findByText } = render(<AccountCard account={account} />)
 
       const line = await findByText(/accounts\.lastSync/)
-      expect(line.className).toContain('text-red-600')
+      expect(line.className).toContain('text-loss')
       expect(queryByText('accounts.syncStale')).not.toBeInTheDocument()
     })
   })

@@ -66,7 +66,7 @@ export function SubscriptionCard({ series }: { series: RecurringSeries }) {
               </span>
             )}
             {showPriceChange && (
-              <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400">
+              <span className="inline-flex items-center gap-1 text-warning">
                 <TrendingUp className="size-3 shrink-0" />
                 {t('budget.recurring.priceFromTo', {
                   from: money.amount(Math.abs(series.previousAmount!)),
@@ -87,7 +87,7 @@ export function SubscriptionCard({ series }: { series: RecurringSeries }) {
           <Button size="icon" variant="ghost" disabled={busy}
             aria-label={t('budget.a11y.confirm', { name: series.label })}
             onClick={() => confirm.mutate(series.id)}>
-            <Check className="size-4 text-emerald-600 dark:text-emerald-400" />
+            <Check className="size-4 text-gain" />
           </Button>
         )}
         {series.status !== 'IGNORED' && (

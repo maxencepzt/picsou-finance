@@ -56,7 +56,7 @@ function PortfolioItem({ line }: { line: PortfolioLine }) {
         {line.pnlEur != null && (
           <div className="flex flex-col items-end gap-0.5">
             <span className="text-sm text-muted-foreground">{t('portfolio.pnl')}</span>
-            <span className={cn('text-sm font-medium tabular-nums', isPositive ? 'text-emerald-500' : 'text-red-500')}>
+            <span className={cn('text-sm font-medium tabular-nums', isPositive ? 'text-gain' : 'text-loss')}>
               {line.pnlPercent != null ? formatPercent(line.pnlPercent, { signed: true }) : '—'}
             </span>
           </div>

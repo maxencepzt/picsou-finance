@@ -121,8 +121,8 @@ function EnvelopeRow({ budget, onEdit, onDelete }: {
   const pct = Math.min(budget.percent, 100)
   const percent = formatPercent(budget.percent, { fractionDigits: 0 })
   const barTone = budget.overBudget
-    ? 'bg-destructive'
-    : budget.percent >= 80 ? 'bg-amber-500' : 'bg-primary'
+    ? 'bg-loss'
+    : budget.percent >= 80 ? 'bg-warning' : 'bg-primary'
 
   return (
     <Card>
@@ -157,7 +157,7 @@ function EnvelopeRow({ budget, onEdit, onDelete }: {
           <span className="text-muted-foreground">
             <CurrencyDisplay value={budget.spent} /> / <CurrencyDisplay value={budget.monthlyLimit} />
           </span>
-          <span className={budget.overBudget ? 'font-medium text-destructive' : 'text-muted-foreground'}>
+          <span className={budget.overBudget ? 'font-medium text-loss' : 'text-muted-foreground'}>
             {t(budget.overBudget ? 'budget.envelope.overspent' : 'budget.envelope.remaining', {
               amount: money.amount(Math.abs(budget.remaining)),
               percent,

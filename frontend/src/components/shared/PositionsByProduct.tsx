@@ -23,7 +23,7 @@ interface PositionsByProductProps {
 /** Same green/red convention as the flat holdings table. */
 function pnlColor(value: number | null): string {
   if (value == null) return ''
-  return value >= 0 ? 'text-emerald-500' : 'text-red-500'
+  return value >= 0 ? 'text-gain' : 'text-loss'
 }
 
 /** Fixed order rather than the API's: spot first, then what is put to work. */
@@ -130,7 +130,7 @@ export function PositionsByProduct({ positions }: PositionsByProductProps) {
                           </TableCell>
                         )}
                         {showYield && (
-                          <TableCell className="text-right tabular-nums text-emerald-500">
+                          <TableCell className="text-right tabular-nums text-gain">
                             {row.interest != null ? money.quantity(row.interest) : '—'}
                           </TableCell>
                         )}

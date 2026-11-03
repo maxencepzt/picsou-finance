@@ -336,7 +336,7 @@ export function SidecarSessionPanel({
           <Badge
             className={
               connected
-                ? "bg-green-500/10 text-green-600 dark:text-green-400"
+                ? "bg-gain/10 text-gain"
                 : undefined
             }
             variant={connected ? "default" : "outline"}
@@ -353,7 +353,7 @@ export function SidecarSessionPanel({
           )}
           {syncStatus === "SUCCESS" && status.data?.lastSyncCompletedAt && (
             successSummary ?? (
-              <p className="mt-2 text-sm text-emerald-600 dark:text-emerald-400">
+              <p className="mt-2 text-sm text-gain">
                 {t(key("syncSuccess"))}
               </p>
             )

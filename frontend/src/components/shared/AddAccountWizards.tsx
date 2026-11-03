@@ -57,7 +57,7 @@ export function BackButton({ onClick }: { onClick: () => void }) {
 export function SuccessState({ message }: { message: string }) {
   return (
     <div className="flex flex-col items-center gap-3 py-10 text-center">
-      <CheckCircle2 className="size-8 text-green-500" />
+      <CheckCircle2 className="size-8 text-gain" />
       <p className="text-sm font-medium">{message}</p>
     </div>
   )

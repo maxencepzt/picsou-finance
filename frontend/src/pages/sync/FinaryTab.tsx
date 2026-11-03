@@ -137,11 +137,11 @@ export function FinaryTab() {
           <CardContent className="flex items-center justify-between py-4">
             <div className="flex items-center gap-3">
               {isTotpRequired ? (
-                <Badge className="bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                <Badge className="bg-warning/10 text-warning">
                   {t('sync.finary.totpRequired')}
                 </Badge>
               ) : (
-                <Badge className="bg-green-500/10 text-green-600 dark:text-green-400">
+                <Badge className="bg-gain/10 text-gain">
                   {t('sync.finary.connected')}
                 </Badge>
               )}

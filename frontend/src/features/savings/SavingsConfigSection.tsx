@@ -236,7 +236,7 @@ export function SavingsConfigSection({
                     <p className="text-xs text-muted-foreground">{t('savings.projectionYtd')}</p>
                     <CurrencyDisplay
                       value={interest.estimatedInterestYtd}
-                      className="text-lg font-semibold text-emerald-600 dark:text-emerald-400"
+                      className="text-lg font-semibold text-gain"
                     />
                   </div>
                   <div>

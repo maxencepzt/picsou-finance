@@ -223,7 +223,8 @@ const DashboardPage = lazy(() =>
 - Imported via `@import "tailwindcss"` in `index.css`.
 - oklch color tokens for both light and dark themes (defined in `:root` and `.dark`).
 - Font: **Geist Variable** (`@fontsource-variable/geist`).
-- Radius scale from `--radius` base.
+- Radius scale from `--radius` base. Cards are `rounded-2xl` (the `Card` primitive), tiles and rows `rounded-xl`, controls `rounded-md`.
+- Dark is the default theme ("Coffre Nocturne", see `DESIGN.md`); both themes share the same roles.
 
 ### shadcn/ui
 
@@ -237,6 +238,8 @@ Text inputs, text buttons, tabs, dropdown menus, segmented controls, and pill fi
 - Horizontal padding: `px-8` for normal buttons, `px-4` for inputs/selects, `px-6` for dense segmented controls
 - Font size: `text-sm`
 - Shape: **follow the shadcn theme radius, all derived from `--radius` in `index.css`.** Interactive text controls are `rounded-md` (buttons, filter chips, tabs/segmented items, menu items); their containers (segmented control, dropdown menu, popover) are `rounded-lg`. Never hardcode `rounded-full`, `rounded-xl`, or `rounded-2xl` on a text control or its container — a pill button next to `rounded-lg` cards reads as a foreign design system. `rounded-full` is reserved for avatars, switches, badges, and status dots; larger radii (`rounded-xl`/`rounded-2xl`/`rounded-4xl`) belong to cards and large surfaces only.
+
+**Exception — compact card controls:** the switch inside a card header (period, view, grouping) is `SegmentedControl` (`components/shared/SegmentedControl.tsx`): 32px segments in a `bg-muted` track, the selected one on `bg-card` with a ring. Use it instead of a row of 40px buttons; `TimeRangeSelector` is built on it. A part-to-whole is drawn with `Breakdown` (`components/shared/Breakdown.tsx`), which lets the user pick stacked bar, donut or treemap and always keeps the legend; indicators use `KpiTile`.
 
 Avoid local `h-6`, `h-7`, `h-8`, `h-9`, `text-xs`, or narrow `px-2` overrides for text controls, and never re-pill a control with a `rounded-full` className that overrides the shadcn `Button`/`Tabs` primitive. OTP slots should follow the same readable `h-10` control rhythm unless a dense, space-constrained surface has a documented reason to shrink them. Reserve smaller sizing for pure icon buttons, badges, dense table data, chart labels, and non-interactive metadata.
 
@@ -276,14 +279,18 @@ All theme color tokens are defined in the `@theme` block of `frontend/src/index.
 
 | Intent | Use |
 |--------|-----|
-| Primary text | `text-foreground` |
+| Primary text, every amount | `text-foreground` |
 | Muted / secondary text | `text-muted-foreground` |
-| Subtle background | `bg-muted` |
+| Subtle background, tiles inside a card | `bg-muted` |
 | Card background | `bg-card` |
-| Primary action color | `text-primary` / `bg-primary` |
-| Destructive / error | `text-destructive` |
+| Primary action color, selected tint | `text-primary` / `bg-primary` / `bg-primary/12` |
+| Gain / positive movement | `text-gain`, `bg-gain/10` |
+| Loss / negative movement, overspent | `text-loss`, `bg-loss/10` |
+| Warning (stale, to check, ≥ 80 %) | `text-warning`, `bg-warning/10` |
+| Asset class (one fixed colour each) | `bg-class-cash` … `bg-class-other`, or `var(--class-*)` in charts; labels on a fill `text-on-class` |
+| Destructive action / error | `text-destructive` |
 
-**Exception:** intentional status colors (`text-green-*`, `text-red-*`, `text-amber-*`, etc.) are fine when used as semantic UI signals (sync status badges, financial gain/loss indicators). Always include dark-mode variants or use the `dark:` prefix for those.
+Gain and loss always come with a sign and an arrow (`components/shared/Delta.tsx`). Raw palette classes (`text-emerald-*`, `bg-red-*`, `text-amber-*`…) are not used anywhere any more: the semantic tokens switch with the theme, so no `dark:` duplicate is needed. Map an account type to its class with `lib/asset-classes.ts`.
 
 ### Icons
 

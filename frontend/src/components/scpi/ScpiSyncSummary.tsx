@@ -29,12 +29,12 @@ export function ScpiSyncSummary({ provider, completedAt }: { provider: ScpiProvi
   return (
     <div className="mt-2 space-y-1 text-sm" data-testid="scpi-sync-summary">
       {applied > 0 ? (
-        <p className="text-emerald-600 dark:text-emerald-400">
+        <p className="text-gain">
           {t('scpi.sync.found', { count: listed.length })}
           {parts.length > 0 && ` — ${parts.join(', ')}`}
         </p>
       ) : (
-        <p className="text-amber-600 dark:text-amber-400">
+        <p className="text-warning">
           {listed.length === 0 ? t('scpi.sync.noFund') : t('scpi.sync.noneApplied', { count: listed.length })}
         </p>
       )}

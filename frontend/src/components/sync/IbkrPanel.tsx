@@ -64,7 +64,7 @@ export function IbkrPanel({ onConnected }: IbkrPanelProps = {}) {
               {isError ? (
                 <Badge className="bg-destructive/10 text-destructive">{t('sync.ibkr.statusError')}</Badge>
               ) : (
-                <Badge className="bg-green-500/10 text-green-600 dark:text-green-400">
+                <Badge className="bg-gain/10 text-gain">
                   {t('sync.ibkr.connected')}
                 </Badge>
               )}

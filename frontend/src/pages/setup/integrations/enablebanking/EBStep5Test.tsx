@@ -85,10 +85,10 @@ export function EBStep5Test({ onBack }: Props) {
         {phase === 'idle' && (
           <>
             <div
-              className="flex items-start gap-3 rounded-2xl border border-amber-500/40 bg-amber-500/5 p-4 text-sm text-amber-900 dark:text-amber-200"
+              className="flex items-start gap-3 rounded-2xl border border-warning/40 bg-warning/5 p-4 text-sm text-warning"
               role="note"
             >
-              <Info className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+              <Info className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
               <p>{t('setup.enablebanking.test.activationNotice')}</p>
             </div>
             <div className="flex justify-center">
@@ -110,8 +110,8 @@ export function EBStep5Test({ onBack }: Props) {
         )}
 
         {phase === 'ok' && (
-          <div role="status" className="space-y-4 rounded-2xl border border-emerald-500/40 bg-emerald-500/5 p-6 text-center">
-            <CheckCircle2 className="mx-auto h-10 w-10 text-emerald-500" />
+          <div role="status" className="space-y-4 rounded-2xl border border-gain/40 bg-gain/5 p-6 text-center">
+            <CheckCircle2 className="mx-auto h-10 w-10 text-gain" />
             <p className="text-lg font-medium">{t('setup.enablebanking.test.success')}</p>
             <p className="text-sm text-muted-foreground">{t('setup.enablebanking.test.successBody')}</p>
             <Button

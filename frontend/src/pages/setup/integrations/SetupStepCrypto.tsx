@@ -95,8 +95,8 @@ export function SetupStepCrypto() {
       )}
 
       {(phase === 'existed' || phase === 'created') && (
-        <div className="space-y-3 rounded-2xl border border-emerald-500/40 bg-emerald-500/5 p-6 text-center">
-          <CheckCircle2 className="mx-auto h-10 w-10 text-emerald-500" />
+        <div className="space-y-3 rounded-2xl border border-gain/40 bg-gain/5 p-6 text-center">
+          <CheckCircle2 className="mx-auto h-10 w-10 text-gain" />
           <p className="text-lg font-medium">{successCopy}</p>
           {keyPath && (
             <p className="text-xs text-muted-foreground">

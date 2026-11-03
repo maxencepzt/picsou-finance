@@ -130,7 +130,7 @@ function InboxRow({ tx, categories }: {
             </div>
           </div>
           <span className={`shrink-0 font-semibold tabular-nums ${
-            tx.amount >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-foreground'}`}>
+            tx.amount >= 0 ? 'text-gain' : 'text-foreground'}`}>
             <CurrencyDisplay value={tx.amount} showSign />
           </span>
         </div>

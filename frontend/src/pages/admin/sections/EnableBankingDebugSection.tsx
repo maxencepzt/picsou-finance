@@ -26,7 +26,7 @@ function StatusBadge({ status }: { status: number }) {
     <span
       className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium tabular-nums ${
         ok
-          ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+          ? 'bg-gain/10 text-gain'
           : 'bg-destructive/10 text-destructive'
       }`}
     >
@@ -177,7 +177,7 @@ export function EnableBankingDebugSection() {
   const [open, setOpen] = useState(false)
 
   return (
-    <Card className="rounded-4xl bg-card shadow-md">
+    <Card className="rounded-2xl bg-card shadow-md">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-lg">
           <Network className="size-5 text-muted-foreground" />

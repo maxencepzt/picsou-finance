@@ -18,7 +18,7 @@ export const FALLBACK_COLOR = '#6366f1'
 
 /** i18n key + semantic tone for each category kind. */
 export const KIND_META: Record<CategoryKind, { labelKey: string; tone: string }> = {
-  INCOME: { labelKey: 'budget.kind.income', tone: 'text-emerald-600 dark:text-emerald-400' },
+  INCOME: { labelKey: 'budget.kind.income', tone: 'text-gain' },
   EXPENSE: { labelKey: 'budget.kind.expense', tone: 'text-foreground' },
   TRANSFER: { labelKey: 'budget.kind.transfer', tone: 'text-sky-600 dark:text-sky-400' },
 }
@@ -51,11 +51,11 @@ export const RUNTIME_STATUS_META: Record<
   },
   LATE: {
     labelKey: 'budget.recurring.runtime.late',
-    className: 'border-transparent bg-rose-500/15 text-rose-600 dark:text-rose-400',
+    className: 'border-transparent bg-loss/15 text-loss',
   },
   DUE_SOON: {
     labelKey: 'budget.recurring.runtime.dueSoon',
-    className: 'border-transparent bg-amber-500/15 text-amber-600 dark:text-amber-400',
+    className: 'border-transparent bg-warning/15 text-warning',
   },
 }
 

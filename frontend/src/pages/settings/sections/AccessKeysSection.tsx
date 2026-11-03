@@ -265,7 +265,7 @@ export function AccessKeysSection() {
           </div>
         </div>
 
-        <p className="flex items-start gap-2 text-sm text-amber-700 dark:text-amber-400">
+        <p className="flex items-start gap-2 text-sm text-warning">
           <ShieldAlert className="mt-0.5 size-3.5 shrink-0" />
           {t('accessKeys.connectHttpsWarning')}
         </p>
@@ -281,7 +281,7 @@ export function AccessKeysSection() {
                 <DialogDescription>{t('accessKeys.secretWarning')}</DialogDescription>
               </DialogHeader>
               <div className="min-h-0 overflow-y-auto px-5 py-4">
-                <div className="space-y-2 rounded-lg border border-amber-500/40 bg-amber-50 p-3 dark:bg-amber-950/30">
+                <div className="space-y-2 rounded-lg border border-warning/40 bg-warning/10 p-3">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                     <code className="flex min-h-10 flex-1 items-center break-all rounded-xl bg-background px-4 py-2 font-mono text-sm">
                       {created.secret}

@@ -1,6 +1,6 @@
 # Feature: Theme persistence + theme-adaptive rendering (dark / light / system)
 
-> Last updated: 2026-10-31
+> Last updated: 2026-11-03
 
 ## Context
 
@@ -8,7 +8,7 @@ Users can choose between dark, light, and system themes in Settings. Without per
 
 ## How it works
 
-Theme is stored in `localStorage` under the key `'theme'` (`'light' | 'dark' | 'system'`). On every page load, the external script `frontend/public/theme-init.js` (loaded `<script src="/theme-init.js">` in `index.html`, before `main.tsx`) reads that value and adds the `dark` class to `<html>` before any CSS or JS runs (preventing flash of unstyled content). React then picks up an already-correct DOM.
+Theme is stored in `localStorage` under the key `'theme'` (`'light' | 'dark' | 'system'`). When nothing is stored the theme is **dark** (`DEFAULT_THEME` in `lib/theme.ts`, mirrored in `theme-init.js`): Picsou is dark first since the "Coffre Nocturne" redesign (ADR `2026-11-03-coffre-nocturne-dark-first-redesign.md`). A user who wants to follow the OS picks "System". On every page load, the external script `frontend/public/theme-init.js` (loaded `<script src="/theme-init.js">` in `index.html`, before `main.tsx`) reads that value and adds the `dark` class to `<html>` before any CSS or JS runs (preventing flash of unstyled content). React then picks up an already-correct DOM.
 
 ### Key files
 

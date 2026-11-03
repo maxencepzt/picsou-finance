@@ -96,7 +96,7 @@ function SectionCard({
   children: React.ReactNode
 }) {
   return (
-    <Card className="rounded-4xl bg-card">
+    <Card className="rounded-2xl bg-card">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-lg">
           {React.createElement(icon, { className: "size-5 text-muted-foreground" })}
@@ -297,7 +297,7 @@ export function SettingsPage() {
                     disabled={usernameSaving}
                   />
                   <Button size="icon" variant="outline" onClick={saveUsername} disabled={usernameSaving}>
-                    <Check className="size-4 text-emerald-600" />
+                    <Check className="size-4 text-gain" />
                   </Button>
                   <Button size="icon" variant="outline" onClick={cancelEditUsername} disabled={usernameSaving}>
                     <X className="size-4" />

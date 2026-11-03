@@ -320,7 +320,7 @@ export function FinaryResultStep({
   return (
     <div className={modal ? 'space-y-4' : 'mx-auto max-w-lg space-y-6'}>
       <div className={`grid grid-cols-2 ${modal ? 'gap-3' : 'gap-4'}`}>
-        <ResultStat modal={modal} label={t('sync.finary.accountsCreated')} value={result.accountsCreated} color="text-emerald-600" />
+        <ResultStat modal={modal} label={t('sync.finary.accountsCreated')} value={result.accountsCreated} color="text-gain" />
         <ResultStat modal={modal} label={t('sync.finary.accountsMapped')} value={result.accountsMapped} color="text-blue-600" />
         <ResultStat modal={modal} label={t('sync.finary.accountsSkipped')} value={result.accountsSkipped} color="text-muted-foreground" />
         <ResultStat modal={modal} label={t('sync.finary.transactionsImported')} value={result.transactionsImported} color="text-violet-600" />

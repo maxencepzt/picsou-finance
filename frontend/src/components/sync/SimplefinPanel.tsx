@@ -73,7 +73,7 @@ export function SimplefinPanel({ onConnected }: SimplefinPanelProps = {}) {
               {isError ? (
                 <Badge className="bg-destructive/10 text-destructive">{t('sync.simplefin.statusError')}</Badge>
               ) : (
-                <Badge className="bg-green-500/10 text-green-600 dark:text-green-400">
+                <Badge className="bg-gain/10 text-gain">
                   {t('sync.simplefin.connected')}
                 </Badge>
               )}

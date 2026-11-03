@@ -71,7 +71,7 @@ describe('PortfolioView', () => {
     render(<PortfolioView />)
 
     expect(screen.getByRole('img', { name: 'accounts.priceAsOf 2026-08-18' }))
-      .toHaveClass('bg-amber-500')
+      .toHaveClass('bg-warning')
     expect(screen.queryByRole('img', { name: 'accounts.priceLive' })).not.toBeInTheDocument()
   })
 

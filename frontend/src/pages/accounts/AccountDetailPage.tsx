@@ -299,7 +299,7 @@ export function AccountDetailPage() {
             </div>
           ) : <>
             <p className="text-xs text-muted-foreground mb-1">{t('accounts.currentBalance')}</p>
-            <CurrencyDisplay value={displayBalance} className={`text-3xl font-bold ${isLoan ? 'text-red-500' : 'text-foreground'}`} />
+            <CurrencyDisplay value={displayBalance} className={`text-3xl font-bold ${isLoan ? 'text-loss' : 'text-foreground'}`} />
             {showHoldings && account.cashBalance != null && (
               <p className="mt-1 text-xs text-muted-foreground">
                 {t('common.labelColon', { label: t(account.type === 'PER' ? 'accounts.perEuroFundBalance' : 'accounts.cashBalance') })} <CurrencyDisplay value={account.cashBalance} />
@@ -314,9 +314,9 @@ export function AccountDetailPage() {
             {showHoldings && pnl !== null && (
               <div className="mt-3 flex items-center gap-2">
                 {pnlPositive
-                  ? <TrendingUp className="text-emerald-500" size={16} />
-                  : <TrendingDown className="text-red-500" size={16} />}
-                <span className={`text-sm font-medium ${pnlPositive ? 'text-emerald-500' : 'text-red-500'}`}>
+                  ? <TrendingUp className="text-gain" size={16} />
+                  : <TrendingDown className="text-loss" size={16} />}
+                <span className={`text-sm font-medium ${pnlPositive ? 'text-gain' : 'text-loss'}`}>
                   <CurrencyDisplay value={pnl} />
                   {pnlPct !== null && (
                     <span className="ml-1 font-normal text-muted-foreground">

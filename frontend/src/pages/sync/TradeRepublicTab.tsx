@@ -74,7 +74,7 @@ export function TradeRepublicTab() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               {isConnected ? (
-                <Badge className="bg-green-500/10 text-green-600 dark:text-green-400">
+                <Badge className="bg-gain/10 text-gain">
                   {t('sync.tr.sessionActive')}
                 </Badge>
               ) : (

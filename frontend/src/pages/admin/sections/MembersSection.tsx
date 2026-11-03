@@ -158,7 +158,7 @@ export function MembersSection() {
                         {m.mfaEnabled && (
                           <>
                             <span className="mx-2">·</span>
-                            <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400">
+                            <span className="inline-flex items-center gap-1 text-gain">
                               <ShieldCheck size={11} />
                               {t('admin.members.mfaOn')}
                             </span>

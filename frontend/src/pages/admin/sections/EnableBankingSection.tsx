@@ -69,7 +69,7 @@ export function EnableBankingSection({ settings }: { settings: AdminEnableBankin
   if (!settings.privateKeyPresent) missing.push(t('admin.enableBanking.privateKey'))
 
   return (
-    <Card className="rounded-4xl bg-card">
+    <Card className="rounded-2xl bg-card">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-lg">
           <Landmark className="size-5 text-muted-foreground" />
@@ -80,12 +80,12 @@ export function EnableBankingSection({ settings }: { settings: AdminEnableBankin
       <CardContent className="space-y-6">
         {/* Readiness banner — names every missing piece, not just the key. */}
         {missing.length === 0 ? (
-          <div className="flex items-start gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/5 p-3 text-sm text-emerald-700 dark:text-emerald-400">
+          <div className="flex items-start gap-2 rounded-xl border border-gain/40 bg-gain/5 p-3 text-sm text-gain">
             <CheckCircle2 className="mt-0.5 size-4 shrink-0" />
             <span>{t('admin.enableBanking.ready')}</span>
           </div>
         ) : (
-          <div role="alert" className="flex items-start gap-2 rounded-xl border border-amber-500/40 bg-amber-500/5 p-3 text-sm text-amber-700 dark:text-amber-400">
+          <div role="alert" className="flex items-start gap-2 rounded-xl border border-warning/40 bg-warning/5 p-3 text-sm text-warning">
             <AlertTriangle className="mt-0.5 size-4 shrink-0" />
             <span>{t('admin.enableBanking.incomplete', { fields: missing.join(', ') })}</span>
           </div>
@@ -119,7 +119,7 @@ export function EnableBankingSection({ settings }: { settings: AdminEnableBankin
             {update.isPending ? t('admin.enableBanking.saving') : t('admin.enableBanking.save')}
           </Button>
           {update.isSuccess && !formState.isDirty && (
-            <span className="ml-3 text-sm text-emerald-600">{t('admin.enableBanking.saved')}</span>
+            <span className="ml-3 text-sm text-gain">{t('admin.enableBanking.saved')}</span>
           )}
         </form>
 

@@ -52,7 +52,7 @@ function PnlTooltip({ active, payload, accounts, labels }: {
               style={{ backgroundColor: account.color }}
             />
             <span className="text-muted-foreground truncate">{account.name}</span>
-            <span className={`ml-auto font-mono font-medium tabular-nums ${item.value >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+            <span className={`ml-auto font-mono font-medium tabular-nums ${item.value >= 0 ? 'text-gain' : 'text-loss'}`}>
               {item.value >= 0 ? '+' : ''}{money.amount(item.value, labels.currency)}
             </span>
           </div>
@@ -60,7 +60,7 @@ function PnlTooltip({ active, payload, accounts, labels }: {
       </div>
       <div className="my-1.5 border-t border-border" />
       <div className="flex items-center justify-between py-0.5">
-        <span className={`font-mono font-medium tabular-nums ${total >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+        <span className={`font-mono font-medium tabular-nums ${total >= 0 ? 'text-gain' : 'text-loss'}`}>
           {total >= 0 ? '+' : ''}{money.amount(total, labels.currency)}
         </span>
       </div>
