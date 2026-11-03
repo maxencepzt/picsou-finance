@@ -2,20 +2,20 @@ import { useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
-import { Check, Loader2, ShieldCheck } from 'lucide-react'
+import { Check, CircleAlert, Loader2, ShieldCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { AlertBanner } from '@/components/shared/AlertBanner'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 import { formatApiError } from '@/lib/errors'
 import { oauthConsentApi } from '@/features/oauthConsent/api'
 import { scopeGroup, scopeI18nKey } from '@/features/accessKeys/scopes'
+import { AuthScreen } from '@/pages/login/AuthScreen'
 
 // One accessible checkbox for a single requested scope. Unlike the access-key create dialog's
 // `ScopeToggle` (a faked ARIA checkbox — no plain input backs it), this one wraps a REAL
 // `<input type="checkbox" name="scope">` so the browser's native form submission does the
 // "one repeated `scope` field per approved scope" work for us; nothing here needs to serialize
-// the selection by hand.
+// the selection by hand. The input is visually hidden, so the row carries its focus ring.
 function ScopeCheckbox({
   scope,
   checked,
@@ -28,35 +28,41 @@ function ScopeCheckbox({
   const { t } = useTranslation()
   const k = scopeI18nKey(scope)
   return (
-    <label
-      className={cn(
-        'flex w-full cursor-pointer flex-col items-start gap-0.5 rounded-lg border p-3 text-left transition-colors',
-        checked ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted',
-      )}
-    >
-      <span className="flex items-center gap-2 text-sm font-medium">
-        <input
-          type="checkbox"
-          name="scope"
-          value={scope}
-          checked={checked}
-          onChange={onToggle}
-          className="sr-only"
-        />
-        <span
-          className={cn(
-            'flex size-4 shrink-0 items-center justify-center rounded border',
-            checked ? 'border-primary bg-primary text-primary-foreground' : 'border-muted-foreground/40',
-          )}
-          aria-hidden
-        >
-          {checked && <Check className="size-3" />}
-        </span>
-        {t(`accessKeys.scopes.${k}.label`)}
-        <code className="text-[10px] font-normal text-muted-foreground">{scope}</code>
+    <label className="flex cursor-pointer items-start gap-3 px-4 py-3 transition-colors hover:bg-muted/60 has-focus-visible:bg-muted/60 has-focus-visible:outline-2 has-focus-visible:-outline-offset-2 has-focus-visible:outline-ring">
+      <input
+        type="checkbox"
+        name="scope"
+        value={scope}
+        checked={checked}
+        onChange={onToggle}
+        className="sr-only"
+      />
+      <span
+        className={cn(
+          'mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-sm border transition-colors',
+          checked ? 'border-primary bg-primary text-primary-foreground' : 'border-input',
+        )}
+        aria-hidden
+      >
+        {checked && <Check className="size-3 stroke-[3]" />}
       </span>
-      <span className="pl-6 text-xs text-muted-foreground">{t(`accessKeys.scopes.${k}.desc`)}</span>
+      <span className="min-w-0 flex-1">
+        <span className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+          <span className="text-sm font-medium text-foreground">{t(`accessKeys.scopes.${k}.label`)}</span>
+          <code className="font-mono text-xs text-muted-foreground">{scope}</code>
+        </span>
+        <span className="mt-0.5 block text-[13px] leading-5 text-muted-foreground">{t(`accessKeys.scopes.${k}.desc`)}</span>
+      </span>
     </label>
+  )
+}
+
+function ScopeGroup({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <fieldset className="space-y-2">
+      <legend className="mb-2 text-[13px] font-medium text-muted-foreground">{title}</legend>
+      <div className="divide-y divide-border overflow-hidden rounded-xl ring-1 ring-border">{children}</div>
+    </fieldset>
   )
 }
 
@@ -116,87 +122,65 @@ export function ConsentPage() {
   const writeScopes = requestedScopes.filter((s) => scopeGroup(s) === 'write')
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-10">
-      <Card className="w-full max-w-2xl">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <ShieldCheck className="size-5 text-muted-foreground" />
-            {data ? t('oauthConsent.title', { app: data.clientName }) : t('oauthConsent.titleGeneric')}
-          </CardTitle>
-          <CardDescription>{t('oauthConsent.description')}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {!clientId ? (
-            <AlertBanner variant="bordered" role="alert">{t('oauthConsent.missingParams')}</AlertBanner>
-          ) : isLoading ? (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Loader2 className="size-4 animate-spin" />
-              {t('oauthConsent.loading')}
-            </div>
-          ) : isError ? (
-            <AlertBanner variant="bordered" role="alert">{formatApiError(error, t, 'oauthConsent.error')}</AlertBanner>
+    <AuthScreen
+      wide
+      icon={<ShieldCheck />}
+      title={data ? t('oauthConsent.title', { app: data.clientName }) : t('oauthConsent.titleGeneric')}
+      description={t('oauthConsent.description')}
+    >
+      {!clientId ? (
+        <AlertBanner role="alert" icon={<CircleAlert className="size-4 shrink-0" aria-hidden="true" />}>{t('oauthConsent.missingParams')}</AlertBanner>
+      ) : isLoading ? (
+        <div className="flex items-center justify-center gap-2 py-4 text-sm text-muted-foreground" role="status">
+          <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+          {t('oauthConsent.loading')}
+        </div>
+      ) : isError ? (
+        <AlertBanner role="alert" icon={<CircleAlert className="size-4 shrink-0" aria-hidden="true" />}>{formatApiError(error, t, 'oauthConsent.error')}</AlertBanner>
+      ) : (
+        <form
+          ref={formRef}
+          method="post"
+          action="/oauth2/authorize"
+          noValidate
+          data-testid="consent-form"
+          className="space-y-5"
+        >
+          <input type="hidden" name="client_id" value={clientId} />
+          <input type="hidden" name="state" value={state} />
+
+          {requestedScopes.length === 0 ? (
+            <p className="text-center text-sm text-muted-foreground">{t('oauthConsent.noScopes')}</p>
           ) : (
-            <form
-              ref={formRef}
-              method="post"
-              action="/oauth2/authorize"
-              noValidate
-              data-testid="consent-form"
-              className="space-y-5"
-            >
-              <input type="hidden" name="client_id" value={clientId} />
-              <input type="hidden" name="state" value={state} />
-
-              {requestedScopes.length === 0 ? (
-                <p className="text-sm text-muted-foreground">{t('oauthConsent.noScopes')}</p>
-              ) : (
-                <div className="space-y-3">
-                  <p className="text-sm text-muted-foreground">{t('oauthConsent.scopesIntro')}</p>
-                  {readScopes.length > 0 && (
-                    <div className="space-y-2">
-                      <p className="text-xs font-medium text-muted-foreground">{t('accessKeys.groupRead')}</p>
-                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                        {readScopes.map((s) => (
-                          <ScopeCheckbox
-                            key={s}
-                            scope={s}
-                            checked={selectedScopes.includes(s)}
-                            onToggle={() => toggleScope(s)}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {writeScopes.length > 0 && (
-                    <div className="space-y-2">
-                      <p className="pt-1 text-xs font-medium text-muted-foreground">{t('accessKeys.groupWrite')}</p>
-                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                        {writeScopes.map((s) => (
-                          <ScopeCheckbox
-                            key={s}
-                            scope={s}
-                            checked={selectedScopes.includes(s)}
-                            onToggle={() => toggleScope(s)}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
+            <div className="space-y-4">
+              <p className="text-sm text-foreground">{t('oauthConsent.scopesIntro')}</p>
+              {readScopes.length > 0 && (
+                <ScopeGroup title={t('accessKeys.groupRead')}>
+                  {readScopes.map((s) => (
+                    <ScopeCheckbox key={s} scope={s} checked={selectedScopes.includes(s)} onToggle={() => toggleScope(s)} />
+                  ))}
+                </ScopeGroup>
               )}
-
-              <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:justify-end">
-                <Button type="button" variant="outline" onClick={handleDeny} className="w-full sm:w-auto">
-                  {t('oauthConsent.deny')}
-                </Button>
-                <Button type="button" onClick={handleApprove} className="w-full sm:w-auto">
-                  {t('oauthConsent.approve')}
-                </Button>
-              </div>
-            </form>
+              {writeScopes.length > 0 && (
+                <ScopeGroup title={t('accessKeys.groupWrite')}>
+                  {writeScopes.map((s) => (
+                    <ScopeCheckbox key={s} scope={s} checked={selectedScopes.includes(s)} onToggle={() => toggleScope(s)} />
+                  ))}
+                </ScopeGroup>
+              )}
+            </div>
           )}
-        </CardContent>
-      </Card>
-    </div>
+
+          <div className="flex flex-col-reverse gap-2 border-t border-border pt-5 sm:flex-row sm:justify-end">
+            <Button type="button" variant="outline" onClick={handleDeny} className="w-full sm:w-auto">
+              {t('oauthConsent.deny')}
+            </Button>
+            <Button type="button" onClick={handleApprove} className="w-full sm:w-auto">
+              {t('oauthConsent.approve')}
+            </Button>
+          </div>
+        </form>
+      )}
+    </AuthScreen>
   )
 }

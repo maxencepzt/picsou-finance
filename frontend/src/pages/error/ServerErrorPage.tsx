@@ -8,8 +8,9 @@ export function ServerErrorPage() {
   const [searchParams] = useSearchParams()
   return (
     <ErrorScreen
-      icon={<ServerCrash className="size-12 text-destructive" />}
+      icon={<ServerCrash />}
       code={searchParams.get('code') || '500'}
+      title={t('error.serverErrorTitle')}
       message={t('error.serverError')}
     />
   )

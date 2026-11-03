@@ -62,7 +62,7 @@
   },
   "auth": {
     "login": "Anmelden",
-    "loginTagline": "Picsou",
+    "loginTagline": "Melden Sie sich bei Ihrer Picsou-Instanz an.",
     "username": "Benutzername",
     "usernameTooShort": "Mindestens 3 Zeichen.",
     "usernameInvalidChars": "Nur Buchstaben, Zahlen, Punkte, Binde- und Unterstriche verwenden.",
@@ -99,6 +99,25 @@
       "usernameFormat": "Nur Buchstaben, Zahlen, Punkte, Unterstriche oder Bindestriche verwenden.",
       "passwordTooShort": "Das Passwort muss mindestens 8 Zeichen enthalten.",
       "passwordTooLong": "Das Passwort darf höchstens 128 Zeichen enthalten."
+    },
+    "mfaRecoveryDesc": "Geben Sie einen der Wiederherstellungscodes ein, die Sie beim Aktivieren der 2FA gespeichert haben.",
+    "backToLogin": "Zurück zur Anmeldung",
+    "activation": {
+      "title": "Aktivieren Sie Ihr Konto",
+      "subtitle": "Wählen Sie ein Passwort, um die Einrichtung Ihres Kontos abzuschließen.",
+      "noticeTitle": "Hinweis zum Datenzugriff",
+      "noticeBody": "Der Administrator dieser Picsou-Instanz hat technischen Zugriff auf alle hier gespeicherten Daten, einschließlich Bankverbindungen und API-Zugangsdaten. Mit der Aktivierung Ihres Kontos nehmen Sie dies zur Kenntnis.",
+      "acknowledge": "Ich verstehe, dass der Administrator Zugriff auf alle Daten dieser Instanz hat.",
+      "passwordHint": "Mindestens 8 Zeichen.",
+      "confirmPassword": "Passwort bestätigen",
+      "errorAcknowledge": "Bestätigen Sie den Hinweis zum Datenzugriff, um fortzufahren.",
+      "errorMismatch": "Die Passwörter stimmen nicht überein.",
+      "errorInvalidLink": "Dieser Aktivierungslink ist ungültig.",
+      "errorFailed": "Die Aktivierung ist fehlgeschlagen. Der Link ist möglicherweise abgelaufen: Bitten Sie den Administrator um einen neuen.",
+      "submit": "Mein Konto aktivieren",
+      "submitting": "Wird aktiviert…",
+      "successTitle": "Konto aktiviert",
+      "successBody": "Weiterleitung zur Anmeldung…"
     }
   },
   "dashboard": {
@@ -2266,13 +2285,17 @@
     "noConnection": "Keine Verbindung zum Server möglich",
     "noConnectionDesc": "Stelle sicher, dass der Server läuft, und versuche es erneut.",
     "degradedMode": "Keine Verbindung zum Server. Einige Funktionen sind eventuell nicht verfügbar.",
-    "notFound": "Die gesuchte Seite existiert nicht.",
+    "notFound": "Diese Adresse führt zu keiner Seite. Prüfen Sie den Link oder kehren Sie zum Dashboard zurück.",
     "backToDashboard": "Zurück zum Dashboard",
-    "forbidden": "Du hast keine Berechtigung, auf diese Seite zuzugreifen.",
+    "forbidden": "Ihr Konto hat keinen Zugriff auf diese Seite. Wenn Sie ihn benötigen, wenden Sie sich an den Administrator dieser Instanz.",
     "serverError": "Auf dem Server ist ein unerwarteter Fehler aufgetreten.",
     "crashTitle": "Etwas ist schiefgelaufen",
     "crashDesc": "Ein unerwarteter Fehler ist aufgetreten. Bitte lade die Seite neu.",
-    "reload": "Seite neu laden"
+    "reload": "Seite neu laden",
+    "code": "Fehler {{code}}",
+    "notFoundTitle": "Seite nicht gefunden",
+    "forbiddenTitle": "Zugriff verweigert",
+    "serverErrorTitle": "Serverfehler"
   },
   "family": {
     "dashboard": {

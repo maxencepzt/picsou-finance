@@ -62,7 +62,7 @@
   },
   "auth": {
     "login": "Connexion",
-    "loginTagline": "Picsou",
+    "loginTagline": "Connectez-vous à votre instance Picsou.",
     "username": "Nom d'utilisateur",
     "usernameTooShort": "3 caractères minimum.",
     "usernameInvalidChars": "Utilisez uniquement lettres, chiffres, points, tirets et underscores.",
@@ -99,6 +99,25 @@
       "usernameFormat": "Utilisez uniquement des lettres, des chiffres, des points, des tirets bas ou des tirets.",
       "passwordTooShort": "Le mot de passe doit contenir au moins 8 caractères.",
       "passwordTooLong": "Le mot de passe doit contenir 128 caractères maximum."
+    },
+    "mfaRecoveryDesc": "Saisissez l'un des codes de récupération obtenus à l'activation de la 2FA.",
+    "backToLogin": "Retour à la connexion",
+    "activation": {
+      "title": "Activez votre compte",
+      "subtitle": "Choisissez un mot de passe pour terminer la création de votre compte.",
+      "noticeTitle": "Accès aux données",
+      "noticeBody": "L'administrateur de cette instance Picsou a un accès technique à toutes les données qui y sont stockées, y compris les coordonnées bancaires et les identifiants d'API. En activant votre compte, vous en prenez acte.",
+      "acknowledge": "Je comprends que l'administrateur a accès à toutes les données de cette instance.",
+      "passwordHint": "8 caractères minimum.",
+      "confirmPassword": "Confirmez le mot de passe",
+      "errorAcknowledge": "Prenez acte de l'accès aux données pour continuer.",
+      "errorMismatch": "Les mots de passe ne correspondent pas.",
+      "errorInvalidLink": "Ce lien d'activation n'est pas valide.",
+      "errorFailed": "L'activation a échoué. Le lien a peut-être expiré : demandez-en un nouveau à l'administrateur.",
+      "submit": "Activer mon compte",
+      "submitting": "Activation…",
+      "successTitle": "Compte activé",
+      "successBody": "Redirection vers la connexion…"
     }
   },
   "dashboard": {
@@ -2600,13 +2619,17 @@
     "noConnection": "Impossible de se connecter au serveur",
     "noConnectionDesc": "Vérifiez que le serveur est démarré et réessayez.",
     "degradedMode": "Aucune connexion au serveur. Certaines fonctionnalités peuvent ne pas fonctionner.",
-    "notFound": "La page que vous recherchez n'existe pas.",
+    "notFound": "Cette adresse ne mène à aucune page. Vérifiez le lien, ou revenez au tableau de bord.",
     "backToDashboard": "Retour au tableau de bord",
-    "forbidden": "Vous n'avez pas la permission d'accéder à cette page.",
+    "forbidden": "Votre compte n'a pas accès à cette page. Si vous en avez besoin, demandez-le à l'administrateur de l'instance.",
     "serverError": "Une erreur inattendue s'est produite sur le serveur.",
     "crashTitle": "Une erreur est survenue",
     "crashDesc": "Une erreur inattendue s'est produite. Veuillez recharger la page.",
-    "reload": "Recharger la page"
+    "reload": "Recharger la page",
+    "code": "Erreur {{code}}",
+    "notFoundTitle": "Page introuvable",
+    "forbiddenTitle": "Accès refusé",
+    "serverErrorTitle": "Erreur du serveur"
   },
   "family": {
     "dashboard": {

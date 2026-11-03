@@ -62,7 +62,7 @@
   },
   "auth": {
     "login": "Iniciar sesión",
-    "loginTagline": "Picsou",
+    "loginTagline": "Inicie sesión en su instancia de Picsou.",
     "username": "Nombre de usuario",
     "usernameTooShort": "Mínimo 3 caracteres.",
     "usernameInvalidChars": "Usa solo letras, números, puntos, guiones y guiones bajos.",
@@ -99,6 +99,25 @@
       "usernameFormat": "Usa solo letras, números, puntos, guiones bajos o guiones.",
       "passwordTooShort": "La contraseña debe tener al menos 8 caracteres.",
       "passwordTooLong": "La contraseña debe tener 128 caracteres como máximo."
+    },
+    "mfaRecoveryDesc": "Introduzca uno de los códigos de recuperación que guardó al activar la 2FA.",
+    "backToLogin": "Volver al inicio de sesión",
+    "activation": {
+      "title": "Active su cuenta",
+      "subtitle": "Elija una contraseña para terminar de configurar su cuenta.",
+      "noticeTitle": "Aviso sobre el acceso a los datos",
+      "noticeBody": "El administrador de esta instancia de Picsou tiene acceso técnico a todos los datos aquí almacenados, incluidos los datos bancarios y las credenciales de API. Al activar su cuenta, usted lo reconoce.",
+      "acknowledge": "Entiendo que el administrador tiene acceso a todos los datos de esta instancia.",
+      "passwordHint": "Al menos 8 caracteres.",
+      "confirmPassword": "Confirme la contraseña",
+      "errorAcknowledge": "Acepte el aviso sobre el acceso a los datos para continuar.",
+      "errorMismatch": "Las contraseñas no coinciden.",
+      "errorInvalidLink": "Este enlace de activación no es válido.",
+      "errorFailed": "La activación ha fallado. Puede que el enlace haya caducado: pida uno nuevo al administrador.",
+      "submit": "Activar mi cuenta",
+      "submitting": "Activando…",
+      "successTitle": "Cuenta activada",
+      "successBody": "Redirigiendo al inicio de sesión…"
     }
   },
   "dashboard": {
@@ -2266,13 +2285,17 @@
     "noConnection": "No se puede conectar con el servidor",
     "noConnectionDesc": "Asegúrate de que el servidor está en marcha e inténtalo de nuevo.",
     "degradedMode": "Sin conexión con el servidor. Algunas funciones pueden no funcionar.",
-    "notFound": "La página que buscas no existe.",
+    "notFound": "Esta dirección no lleva a ninguna página. Compruebe el enlace o vuelva al panel.",
     "backToDashboard": "Volver al panel",
-    "forbidden": "No tienes permiso para acceder a esta página.",
+    "forbidden": "Su cuenta no tiene acceso a esta página. Si lo necesita, pídaselo al administrador de la instancia.",
     "serverError": "Se ha producido un error inesperado en el servidor.",
     "crashTitle": "Algo ha salido mal",
     "crashDesc": "Se ha producido un error inesperado. Recarga la página.",
-    "reload": "Recargar página"
+    "reload": "Recargar página",
+    "code": "Error {{code}}",
+    "notFoundTitle": "Página no encontrada",
+    "forbiddenTitle": "Acceso denegado",
+    "serverErrorTitle": "Error del servidor"
   },
   "family": {
     "dashboard": {

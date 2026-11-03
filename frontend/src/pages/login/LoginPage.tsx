@@ -9,8 +9,8 @@ import { Button } from '@/components/ui/button'
 import { AlertBanner } from '@/components/shared/AlertBanner'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Eye, EyeOff, Loader2 } from 'lucide-react'
+import { CircleAlert, Eye, EyeOff, Loader2 } from 'lucide-react'
+import { AuthScreen, CheckboxRow } from './AuthScreen'
 
 export function LoginPage() {
   const { t } = useTranslation()
@@ -65,108 +65,78 @@ export function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-10">
-      <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
-        <Card className="py-8 sm:py-10">
-          <CardHeader className="items-center gap-2 px-6 text-center sm:px-10">
-            <CardTitle className="text-3xl font-semibold sm:text-4xl">{t('auth.login')}</CardTitle>
-            <CardDescription className="mt-1 text-base leading-6">
-              {t('auth.loginTagline')}
-            </CardDescription>
-          </CardHeader>
+    <AuthScreen
+      title={t('auth.login')}
+      description={t('auth.loginTagline')}
+      footer={demoMode && (
+        <p className="text-center">
+          <span className="font-medium text-foreground">{t('auth.demoMode')}</span>
+          {' · '}
+          {t('auth.demoModeDesc')}
+        </p>
+      )}
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="username">{t('auth.username')}</Label>
+          <Input
+            id="username"
+            type="text"
+            value={username}
+            onChange={e => setUsername(e.target.value)}
+            autoComplete="username"
+            autoCapitalize="none"
+            spellCheck={false}
+            autoFocus
+            required
+            aria-invalid={error ? true : undefined}
+          />
+        </div>
 
-          <CardContent className="px-6 sm:px-10">
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div className="space-y-2">
-                <Label htmlFor="username" className="text-base font-semibold">
-                  {t('auth.username')}
-                </Label>
-                <Input
-                  id="username"
-                  type="text"
-                  value={username}
-                  onChange={e => setUsername(e.target.value)}
-                  autoComplete="username"
-                  required
-                  placeholder="admin"
-                  className="h-12 rounded-xl px-4 text-base md:text-base"
-                />
-              </div>
+        <div className="space-y-2">
+          <Label htmlFor="password">{t('auth.password')}</Label>
+          <div className="relative">
+            <Input
+              id="password"
+              type={showPw ? 'text' : 'password'}
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              autoComplete="current-password"
+              required
+              aria-invalid={error ? true : undefined}
+              className="pr-11"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPw(v => !v)}
+              className="absolute inset-y-0 right-0 grid w-10 place-items-center rounded-r-md text-muted-foreground transition-colors hover:text-foreground"
+              aria-label={showPw ? t('auth.hidePassword') : t('auth.showPassword')}
+              aria-pressed={showPw}
+            >
+              {showPw ? <EyeOff className="size-4" aria-hidden="true" /> : <Eye className="size-4" aria-hidden="true" />}
+            </button>
+          </div>
+        </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-base font-semibold">
-                  {t('auth.password')}
-                </Label>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPw ? 'text' : 'password'}
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    autoComplete="current-password"
-                    required
-                    placeholder="••••••••"
-                    className="h-12 rounded-xl px-4 pr-14 text-base md:text-base"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPw(v => !v)}
-                    className="absolute right-2 top-1/2 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                    aria-label={showPw ? t('auth.hidePassword') : t('auth.showPassword')}
-                    aria-pressed={showPw}
-                  >
-                    {showPw ? (
-                      <EyeOff className="size-5" aria-hidden="true" />
-                    ) : (
-                      <Eye className="size-5" aria-hidden="true" />
-                    )}
-                  </button>
-                </div>
-              </div>
+        <CheckboxRow
+          id="rememberMe"
+          checked={rememberMe}
+          onCheckedChange={setRememberMe}
+          label={t('auth.rememberMe')}
+          description={t('auth.rememberMeDesc')}
+        />
 
-              <div className="flex items-start gap-3 rounded-xl py-1">
-                <input
-                  id="rememberMe"
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={e => setRememberMe(e.target.checked)}
-                  className="mt-1 h-5 w-5 shrink-0 rounded-md accent-primary"
-                />
-                <div className="flex flex-col">
-                  <Label htmlFor="rememberMe" className="cursor-pointer text-base font-semibold">
-                    {t('auth.rememberMe')}
-                  </Label>
-                  <p className="text-sm text-muted-foreground">{t('auth.rememberMeDesc')}</p>
-                </div>
-              </div>
-
-              {error && (
-                <AlertBanner variant="prominent" role="alert">{error}</AlertBanner>
-              )}
-
-              <Button
-                type="submit"
-                disabled={loginMutation.isPending}
-                className="mt-2 h-12 w-full rounded-full px-8 text-base transition-transform active:scale-[0.96]"
-              >
-                {loginMutation.isPending && (
-                  <Loader2 className="size-5 animate-spin" />
-                )}
-                {loginMutation.isPending ? t('auth.loggingIn') : t('auth.loginButton')}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-
-        {demoMode && (
-          <Card className="border-muted bg-muted/40">
-            <CardContent className="px-6 py-5 sm:px-10">
-              <p className="text-base font-semibold text-foreground">{t('auth.demoMode')}</p>
-              <p className="mt-1 text-sm text-muted-foreground">{t('auth.demoModeDesc')}</p>
-            </CardContent>
-          </Card>
+        {error && (
+          <AlertBanner role="alert" icon={<CircleAlert className="size-4 shrink-0" aria-hidden="true" />}>
+            {error}
+          </AlertBanner>
         )}
-      </div>
-    </div>
+
+        <Button type="submit" disabled={loginMutation.isPending} className="w-full">
+          {loginMutation.isPending && <Loader2 className="animate-spin" aria-hidden="true" />}
+          {loginMutation.isPending ? t('auth.loggingIn') : t('auth.loginButton')}
+        </Button>
+      </form>
+    </AuthScreen>
   )
 }

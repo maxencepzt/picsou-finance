@@ -62,7 +62,7 @@
   },
   "auth": {
     "login": "Sign in",
-    "loginTagline": "Picsou",
+    "loginTagline": "Sign in to your Picsou instance.",
     "username": "Username",
     "usernameTooShort": "Use at least 3 characters.",
     "usernameInvalidChars": "Use only letters, numbers, dots, dashes and underscores.",
@@ -99,6 +99,25 @@
       "usernameFormat": "Use only letters, numbers, dots, underscores, or hyphens.",
       "passwordTooShort": "The password must contain at least 8 characters.",
       "passwordTooLong": "The password must contain 128 characters or fewer."
+    },
+    "mfaRecoveryDesc": "Enter one of the recovery codes you saved when you turned on 2FA.",
+    "backToLogin": "Back to sign-in",
+    "activation": {
+      "title": "Activate your account",
+      "subtitle": "Choose a password to finish setting up your account.",
+      "noticeTitle": "Data access notice",
+      "noticeBody": "The administrator of this Picsou instance has technical access to all data stored here, including bank account details and API credentials. By activating your account, you acknowledge this.",
+      "acknowledge": "I understand that the administrator has access to all data on this instance.",
+      "passwordHint": "At least 8 characters.",
+      "confirmPassword": "Confirm password",
+      "errorAcknowledge": "Acknowledge the data access notice to continue.",
+      "errorMismatch": "The passwords do not match.",
+      "errorInvalidLink": "This activation link is not valid.",
+      "errorFailed": "Activation failed. The link may have expired: ask the administrator for a new one.",
+      "submit": "Activate my account",
+      "submitting": "Activating…",
+      "successTitle": "Account activated",
+      "successBody": "Taking you to sign-in…"
     }
   },
   "dashboard": {
@@ -2600,13 +2619,17 @@
     "noConnection": "Cannot connect to server",
     "noConnectionDesc": "Make sure the server is running and try again.",
     "degradedMode": "No connection to server. Some features may not work.",
-    "notFound": "The page you are looking for does not exist.",
+    "notFound": "This address does not lead to any page. Check the link, or go back to the dashboard.",
     "backToDashboard": "Back to dashboard",
-    "forbidden": "You do not have permission to access this page.",
+    "forbidden": "Your account cannot open this page. If you need it, ask the administrator of this instance.",
     "serverError": "An unexpected error occurred on the server.",
     "crashTitle": "Something went wrong",
     "crashDesc": "An unexpected error occurred. Please reload the page.",
-    "reload": "Reload page"
+    "reload": "Reload page",
+    "code": "Error {{code}}",
+    "notFoundTitle": "Page not found",
+    "forbiddenTitle": "Access denied",
+    "serverErrorTitle": "Server error"
   },
   "family": {
     "dashboard": {
