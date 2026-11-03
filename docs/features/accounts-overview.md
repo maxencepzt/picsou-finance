@@ -1,4 +1,4 @@
-# Feature: Accounts Overview (KPI row + grouped account rows + PnL chart + filters)
+# Feature: Accounts Overview (KPI row + grouped account rows + side panel + breakdown + PnL chart + filters)
 
 > Last updated: 2026-11-03
 
@@ -13,8 +13,8 @@ The Accounts page (`/accounts`) lists every account as a compact row, grouped by
 Since the "Coffre Nocturne" redesign, `AccountsPage.tsx` shows, top to bottom: the savings
 suggestions banner, a KPI row (`KpiTile` ×4 from `accountKpis`: gross assets with net worth,
 debts, accounts tracked with the manual count, synced accounts refreshed within a day), the
-filter strip, then a 12-column grid — the grouped rows on the left (7 columns), the total card
-and the PnL chart on the right (5 columns).
+filter strip, then a 12-column grid — the grouped rows on the left (7 columns), the total card,
+the asset-class breakdown and the PnL chart on the right (5 columns).
 
 `groupByAssetClass` (`pages/accounts/account-groups.ts`) groups the top-level accounts by
 `assetClassOf(type)` in the palette's order, liabilities last under "Debts"; each group header
@@ -22,6 +22,40 @@ shows the class colour and the group total, and rows inside a group are sorted b
 balance, largest first. A wallet's pockets render as nested rows under it and count only
 through the wallet's balance. `signedBalance` reads a `LOAN` (stored positive) and a card debt
 (stored negative) both as negative.
+
+### Grouping by asset class or by institution
+
+A `SegmentedControl` at the top of the list card switches the grouping (local state, default
+asset class). `groupByInstitution` groups the same items by `provider` (trimmed, compared
+lower-cased, spelled as the first account of the group spells it), banks by net total
+descending, then the accounts that name no institution ("Manual") and the properties
+(`REAL_ESTATE`) in their own bucket. A manual account that names its bank — a loan typed in by
+hand — stays with that bank: the view answers "what do I have where". Institution headers carry
+no colour dot, since colour belongs to the asset class. Both groupings share `bucket()` (wallet
+counts once, largest row first).
+
+### Breakdown by asset class
+
+A `Breakdown` card (bar by default, `lib/asset-classes.ts` colours) over the filtered top-level
+accounts: `sumBy(..., assetClassOf, ASSET_CLASS_ORDER)` drops liabilities and empty classes,
+largest first. Hidden when nothing is left (the Debts filter).
+
+### Account side panel
+
+Clicking a row (or a pocket) opens `AccountPanel` (`pages/accounts/AccountPanel.tsx`), a right
+`Sheet` (full width on a phone): name, type and provider, the signed balance, the
+`BalanceHistoryChart` of `useAccountHistory`, the positions for a `HOLDING_ACCOUNT_TYPES` account
+(`PositionsByProduct` or a read-only `HoldingsTable`, as on the detail page), the five latest
+transactions (`TransactionRow`, dated) and a "View details" link to `/accounts/:id`. It reads the
+detail page's own hooks, so the detail page opens from the cache.
+
+### Edit deep link
+
+`/accounts?edit=<id>` opens that account's edit form: the open form *is* the URL parameter —
+`editingAccount` is derived from `?edit` and the account list, the edit button sets it and closing
+the form removes it (both `replace`). An unknown id opens nothing. Query structural sharing keeps
+the account object stable across refetches, so `AccountForm`'s reset-on-`defaultValues` does not
+wipe what the user is typing unless the account itself changed on the server.
 
 ### Account row anatomy
 
@@ -223,7 +257,8 @@ every non-pocket account in split mode: each `NetWorthPoint` carries an `account
 - `backend/src/main/resources/db/migration/V91__account_opened_at.sql`
 - `frontend/src/pages/accounts/AccountsPage.tsx` — page: KPI row, filters, grouped rows, total card, PnL chart
 - `frontend/src/pages/accounts/AccountRow.tsx` — one row; `AccountMark`
-- `frontend/src/pages/accounts/account-groups.ts` — `signedBalance`, `groupByAssetClass`, `accountKpis`
+- `frontend/src/pages/accounts/AccountPanel.tsx` — the side panel
+- `frontend/src/pages/accounts/account-groups.ts` — `signedBalance`, `groupByAssetClass`, `groupByInstitution`, `accountKpis`
 - `frontend/src/lib/property-icons.ts` — `PROPERTY_KIND_ICONS`, shared with `AddPropertyModal`
 - `frontend/src/components/shared/AccountsStackedChart.tsx` — PnL line chart component
 - `frontend/src/features/history/hooks.ts` — `useHistory` (split mode)
@@ -289,9 +324,14 @@ AccountsPage
   kind and city standing in for the provider, the stale warning on a synced account not
   refreshed for days, none on a recent sync or a manual account.
 - `frontend/src/pages/accounts/account-groups.test.ts` — group order with debts last and summed
-  negative; the KPI split of assets and debts and the count of synced accounts refreshed within a day.
+  negative; institutions netted and ordered, a hand-typed loan kept with its bank, the manual and
+  property buckets last; the KPI split of assets and debts and the count of synced accounts
+  refreshed within a day.
 - `frontend/src/pages/accounts/AccountsPage.test.tsx` — the property gain against its cost basis,
-  the PnL chart on the Immobilier filter, partial bases, and the row actions visible on touch screens.
+  the PnL chart on the Immobilier filter, partial bases, the row actions visible on touch screens,
+  the grouping switch, a row opening the panel, `?edit=<id>` opening and clearing, an unknown id.
+- `e2e/accounts.spec.ts` — the panel from a row and its link to the detail page, the `?edit=`
+  deep link opening and clearing, an unknown id.
 - `frontend/src/hooks/use-table-sort.test.ts` — direction flips, a new column starting at its
   natural direction, nulls last both ways, collator ordering, stability, and that the caller's
   array is never mutated.
@@ -304,7 +344,8 @@ AccountsPage
 
 ## Links
 
-- i18n keys: `accounts.pnl`, `accounts.total`, `accounts.filters.*`, `accounts.lastSync`,
+- i18n keys: `accounts.pnl`, `accounts.total`, `accounts.filters.*`, `accounts.groupBy.*`,
+  `accounts.breakdown.*`, `accounts.panel.*`, `accounts.lastSync`,
   `accounts.lastValuation`, `property.kind.*`, `dashboard.netWorthChange`
 - Related: [dashboard-time-range-isolation.md](./dashboard-time-range-isolation.md) — Dashboard PnL chart
 - Related: [live-prices-holdings.md](./live-prices-holdings.md) — per-holding PnL calculation

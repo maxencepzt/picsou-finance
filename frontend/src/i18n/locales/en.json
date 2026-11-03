@@ -407,6 +407,20 @@
       "upToDate": "Up to date",
       "upToDateHint": "Synced within the last 24 h",
       "noSynced": "No synced account"
+    },
+    "groupBy": {
+      "label": "Group accounts by",
+      "class": "Asset class",
+      "institution": "Institution",
+      "manual": "Manual",
+      "property": "Properties"
+    },
+    "breakdown": {
+      "title": "Breakdown by asset class"
+    },
+    "panel": {
+      "latestTransactions": "Latest transactions",
+      "viewDetail": "View details"
     }
   },
   "analysis": {

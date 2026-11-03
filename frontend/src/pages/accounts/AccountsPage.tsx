@@ -1,5 +1,5 @@
 import { Fragment, useState, useMemo } from 'react'
-import { useNavigate } from 'react-router'
+import { useNavigate, useSearchParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { useAccounts, useAccountTree, useAccountDeletionImpact, useUpdateAccount, useDeleteAccount, useUpdateDebtMetadata } from '@/features/accounts/hooks'
 import { useHistory } from '@/features/history/hooks'
@@ -10,6 +10,7 @@ import { AddPropertyModal } from '@/components/property/AddPropertyModal'
 import { ExportAccountsModal } from '@/components/shared/ExportAccountsModal'
 import { AddScpiModal } from '@/components/scpi/AddScpiModal'
 import { AccountsStackedChart } from '@/components/shared/AccountsStackedChart'
+import { Breakdown } from '@/components/shared/Breakdown'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { CurrencyDisplay } from '@/components/shared/CurrencyDisplay'
 import { Delta } from '@/components/shared/Delta'
@@ -17,17 +18,19 @@ import { EmptyState } from '@/components/shared/EmptyState'
 import { KpiTile } from '@/components/shared/KpiTile'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { ScrollStrip } from '@/components/shared/ScrollStrip'
+import { SegmentedControl } from '@/components/shared/SegmentedControl'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Plus, Wallet, Download } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { assetClassColor } from '@/lib/asset-classes'
+import { ASSET_CLASS_ORDER, assetClassColor, assetClassOf, sumBy } from '@/lib/asset-classes'
 import { HOLDING_ACCOUNT_TYPES, LIABILITY_ACCOUNT_TYPES } from '@/lib/constants'
 import { accountInvestedAt, accountPnlAt, hasMeasurableGain } from '@/features/accounts/pnl'
 import { useAppStore } from '@/stores/app-store'
 import type { Account, AccountRequest, AccountType } from '@/types/api'
-import { accountKpis, groupByAssetClass } from './account-groups'
+import { accountKpis, groupByAssetClass, groupByInstitution } from './account-groups'
+import { AccountPanel } from './AccountPanel'
 import { AccountRow } from './AccountRow'
 
 type AssetFilter = 'ALL' | 'STOCKS' | 'METALS' | 'SAVINGS' | 'CHECKING' | 'CRYPTO' | 'REAL_ESTATE' | 'DEBTS'
@@ -120,10 +123,21 @@ export function AccountsPage() {
   const [showPropertyModal, setShowPropertyModal] = useState(false)
   const [showExportModal, setShowExportModal] = useState(false)
   const [showScpiModal, setShowScpiModal] = useState(false)
-  const [showEditForm, setShowEditForm] = useState(false)
-  const [editingAccount, setEditingAccount] = useState<Account | null>(null)
   const [deleteId, setDeleteId] = useState<number | null>(null)
   const [filter, setFilter] = useState<AssetFilter>('ALL')
+  const [groupBy, setGroupBy] = useState<'class' | 'institution'>('class')
+  const [panelId, setPanelId] = useState<number | null>(null)
+  const panelAccount = accounts?.find((a) => a.id === panelId) ?? null
+
+  // The edit form lives in the URL (`?edit=<id>`) so a link can open it; an unknown id opens
+  // nothing. Query structural sharing keeps the account object stable across refetches, so the
+  // form's reset-on-defaultValues does not wipe what the user is typing.
+  const [searchParams, setSearchParams] = useSearchParams()
+  const editParam = searchParams.get('edit')
+  const editingAccount = useMemo(
+    () => (editParam == null ? null : accounts?.find((a) => String(a.id) === editParam) ?? null),
+    [accounts, editParam],
+  )
 
   // ── Pocket grouping ──────────────────────────────────────────────────────────
   //
@@ -169,10 +183,31 @@ export function AccountsPage() {
     return allStandaloneAccounts.filter((a) => types.includes(a.type))
   }, [allStandaloneAccounts, filter])
 
-  const groups = useMemo(() => groupByAssetClass([
-    ...walletGroups.map(({ wallet, pockets }) => ({ account: wallet, pockets })),
-    ...standaloneAccounts.map((account) => ({ account, pockets: [] })),
-  ]), [walletGroups, standaloneAccounts])
+  const groups = useMemo(() => {
+    const items = [
+      ...walletGroups.map(({ wallet, pockets }) => ({ account: wallet, pockets })),
+      ...standaloneAccounts.map((account) => ({ account, pockets: [] })),
+    ]
+    if (groupBy === 'institution') {
+      return groupByInstitution(items).map((g) => ({
+        ...g,
+        label: g.label ?? t(`accounts.groupBy.${g.key}`),
+        color: null,
+      }))
+    }
+    return groupByAssetClass(items).map((g) => ({
+      ...g,
+      label: g.key === 'debts' ? t('accounts.filters.DEBTS') : t(`assetClasses.${g.key}`),
+      color: g.key === 'debts' ? 'var(--muted-foreground)' : assetClassColor(g.key),
+    }))
+  }, [walletGroups, standaloneAccounts, groupBy, t])
+
+  // Gross assets of the filter by class; sumBy leaves liabilities and empty classes out.
+  const classBreakdown = useMemo(() =>
+    sumBy(filteredNonPockets.map((a) => ({ type: a.type, amount: a.currentBalanceEur })), assetClassOf, ASSET_CLASS_ORDER)
+      .sort((a, b) => b.amount - a.amount)
+      .map(({ key, amount }) => ({ key, amount, label: t(`assetClasses.${key}`), color: assetClassColor(key) })),
+  [filteredNonPockets, t])
 
   // Whether the current filter has a gain/loss worth showing: an investment account, whose
   // basis comes from its holdings, or a property, whose basis is its purchase price plus fees.
@@ -318,13 +353,15 @@ export function AccountsPage() {
   }
 
   function handleOpenEdit(account: Account) {
-    setEditingAccount(account)
-    setShowEditForm(true)
+    setSearchParams((params) => { params.set('edit', String(account.id)); return params }, { replace: true })
+  }
+
+  function closeEdit() {
+    setSearchParams((params) => { params.delete('edit'); return params }, { replace: true })
   }
 
   function handleEditFormOpenChange(open: boolean) {
-    setShowEditForm(open)
-    if (!open) setEditingAccount(null)
+    if (!open) closeEdit()
   }
 
   async function handleEditSubmit(data: AccountFormData) {
@@ -366,8 +403,7 @@ export function AccountsPage() {
         },
       })
     }
-    setShowEditForm(false)
-    setEditingAccount(null)
+    closeEdit()
   }
 
   async function handleConfirmDelete() {
@@ -534,18 +570,25 @@ export function AccountsPage() {
             />
           ) : (
             <Card className="py-2 lg:col-span-7">
+              <div className="flex justify-end px-4 pt-2">
+                <SegmentedControl
+                  ariaLabel={t('accounts.groupBy.label')}
+                  value={groupBy}
+                  onChange={setGroupBy}
+                  options={[
+                    { value: 'class', label: t('accounts.groupBy.class') },
+                    { value: 'institution', label: t('accounts.groupBy.institution') },
+                  ]}
+                />
+              </div>
               <CardContent className="divide-y divide-border px-2">
                 {groups.map((group) => (
                   <section key={group.key} aria-labelledby={`group-${group.key}`} className="py-2">
                     <div className="flex items-center justify-between gap-3 px-3 pt-1 pb-1">
                       <span id={`group-${group.key}`} className="inline-flex min-w-0 items-center gap-2 text-[13px] font-semibold">
-                        <span
-                          className="size-2.5 shrink-0 rounded-full"
-                          style={{ backgroundColor: group.key === 'debts' ? 'var(--muted-foreground)' : assetClassColor(group.key) }}
-                        />
-                        <span className="truncate">
-                          {group.key === 'debts' ? t('accounts.filters.DEBTS') : t(`assetClasses.${group.key}`)}
-                        </span>
+                        {/* Colour follows the asset class; an institution has none. */}
+                        {group.color && <span className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: group.color }} />}
+                        <span className="truncate">{group.label}</span>
                       </span>
                       <CurrencyDisplay value={group.total} className="shrink-0 text-[13px] font-semibold tabular-nums" />
                     </div>
@@ -555,7 +598,7 @@ export function AccountsPage() {
                           <AccountRow
                             account={account}
                             now={now}
-                            onOpen={() => navigate(`/accounts/${account.id}`)}
+                            onOpen={() => setPanelId(account.id)}
                             onEdit={() => handleOpenEdit(account)}
                             onDelete={() => setDeleteId(account.id)}
                           />
@@ -566,7 +609,7 @@ export function AccountsPage() {
                               account={pocket}
                               now={now}
                               nested
-                              onOpen={() => navigate(`/accounts/${pocket.id}`)}
+                              onOpen={() => setPanelId(pocket.id)}
                               onEdit={() => handleOpenEdit(pocket)}
                             />
                           ))}
@@ -592,6 +635,22 @@ export function AccountsPage() {
                 )}
               </CardContent>
             </Card>
+
+            {classBreakdown.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>{t('accounts.breakdown.title')}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Breakdown
+                    items={classBreakdown}
+                    defaultView="bar"
+                    centerLabel={t('dashboard.grossAssets')}
+                    ariaLabel={t('accounts.breakdown.title')}
+                  />
+                </CardContent>
+              </Card>
+            )}
 
             {/* PnL chart */}
             {hasPnl && (
@@ -631,8 +690,10 @@ export function AccountsPage() {
         onOpenChange={setShowCreateModal}
       />
 
+      <AccountPanel account={panelAccount} onClose={() => setPanelId(null)} />
+
       <AccountForm
-        open={showEditForm}
+        open={editingAccount != null}
         onOpenChange={handleEditFormOpenChange}
         onSubmit={handleEditSubmit}
         defaultValues={defaultValues}

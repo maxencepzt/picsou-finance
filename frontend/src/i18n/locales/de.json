@@ -396,6 +396,20 @@
       "upToDate": "Aktuell",
       "upToDateHint": "In den letzten 24 h synchronisiert",
       "noSynced": "Kein synchronisiertes Konto"
+    },
+    "groupBy": {
+      "label": "Konten gruppieren nach",
+      "class": "Anlageklasse",
+      "institution": "Institut",
+      "manual": "Manuell",
+      "property": "Immobilien"
+    },
+    "breakdown": {
+      "title": "Aufteilung nach Anlageklasse"
+    },
+    "panel": {
+      "latestTransactions": "Letzte Umsätze",
+      "viewDetail": "Details anzeigen"
     }
   },
   "analysis": {

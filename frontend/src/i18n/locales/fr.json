@@ -407,6 +407,20 @@
       "upToDate": "À jour",
       "upToDateHint": "Synchronisés depuis moins de 24 h",
       "noSynced": "Aucun compte synchronisé"
+    },
+    "groupBy": {
+      "label": "Regrouper les comptes par",
+      "class": "Classe d'actifs",
+      "institution": "Établissement",
+      "manual": "Manuel",
+      "property": "Biens immobiliers"
+    },
+    "breakdown": {
+      "title": "Répartition par classe d'actifs"
+    },
+    "panel": {
+      "latestTransactions": "Dernières opérations",
+      "viewDetail": "Voir le détail"
     }
   },
   "analysis": {

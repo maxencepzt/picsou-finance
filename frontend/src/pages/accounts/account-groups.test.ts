@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Account, AccountType } from '@/types/api'
-import { accountKpis, groupByAssetClass } from './account-groups'
+import { accountKpis, groupByAssetClass, groupByInstitution } from './account-groups'
 
 const NOW = Date.parse('2026-11-03T12:00:00Z')
 
@@ -27,6 +27,28 @@ describe('groupByAssetClass', () => {
     expect(groups[0].items.map((i) => i.account.id)).toEqual([6, 3])
     expect(groups[2].total).toBe(-1300)
     expect(groups[2].items.map((i) => i.account.id)).toEqual([1, 5])
+  })
+})
+
+describe('groupByInstitution', () => {
+  it('groups by provider, nets each bank, then the accounts with no institution and the properties', () => {
+    const groups = groupByInstitution([
+      { account: account(1, 'CHECKING', 2000, { provider: 'BNP Paribas', isManual: false }), pockets: [] },
+      { account: account(2, 'LOAN', 1500, { provider: ' bnp paribas ' }), pockets: [] },
+      { account: account(3, 'PEA', 4000, { provider: 'BoursoBank', isManual: false }), pockets: [] },
+      { account: account(4, 'CHECKING', 300, { provider: 'Revolut', isManual: false }), pockets: [account(5, 'CHECKING', 100, { provider: 'Revolut' })] },
+      { account: account(6, 'OTHER', 800), pockets: [] },
+      { account: account(7, 'REAL_ESTATE', 250000), pockets: [] },
+      { account: account(8, 'LIVRET_A', 1000, { provider: 'BNP Paribas', isManual: false }), pockets: [] },
+    ])
+    expect(groups.map((g) => g.key)).toEqual(['bank:boursobank', 'bank:bnp paribas', 'bank:revolut', 'manual', 'property'])
+    // A hand-typed loan stays with its bank, spelling and case aside: 2000 + 1000 − 1500.
+    expect(groups[1]).toMatchObject({ label: 'BNP Paribas', total: 1500 })
+    expect(groups[1].items.map((i) => i.account.id)).toEqual([1, 2, 8])
+    // The pocket is already inside the wallet's balance.
+    expect(groups[2].total).toBe(300)
+    expect(groups[3]).toMatchObject({ label: null, total: 800 })
+    expect(groups[4]).toMatchObject({ label: null, total: 250000 })
   })
 })
 

@@ -396,6 +396,20 @@
       "upToDate": "Al día",
       "upToDateHint": "Sincronizadas en las últimas 24 h",
       "noSynced": "Ninguna cuenta sincronizada"
+    },
+    "groupBy": {
+      "label": "Agrupar cuentas por",
+      "class": "Clase de activo",
+      "institution": "Entidad",
+      "manual": "Manual",
+      "property": "Inmuebles"
+    },
+    "breakdown": {
+      "title": "Reparto por clase de activo"
+    },
+    "panel": {
+      "latestTransactions": "Últimos movimientos",
+      "viewDetail": "Ver el detalle"
     }
   },
   "analysis": {
