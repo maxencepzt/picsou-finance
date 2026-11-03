@@ -39,6 +39,7 @@ test.describe('Sidebar navigation', () => {
 
   for (const [label, path] of [
     ['Revenus passifs', '/income'],
+    ['Immobilier & prêts', '/real-estate'],
   ] as const) {
     test(`should navigate to ${label}`, async ({ page }) => {
       await page.getByRole('navigation', { name: 'Navigation principale' }).getByRole('link', { name: label }).click()

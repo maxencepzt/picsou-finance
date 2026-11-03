@@ -538,12 +538,7 @@
     "edit": "Bearbeiten",
     "save": "Speichern",
     "summary": {
-      "title": "Papierimmobilie",
-      "gross": "Wert zum Rücknahmepreis",
-      "debt": "Verknüpfter Kredit",
-      "net": "Netto",
-      "hint": "Nicht in der Quadratmeter-Schätzung. Der Ausgabepreis steht nicht in dieser Summe.",
-      "incomplete": "Ein Anteil nutzt noch den letzten bekannten Saldo: der Rücknahmepreis fehlt."
+      "title": "Papierimmobilie"
     },
     "sync": {
       "found_one": "1 Fonds gefunden",
@@ -2509,15 +2504,6 @@
       "net": "Nettowert",
       "equityShare": "{{pct}} des Objekts gehören Ihnen tatsächlich"
     },
-    "summary": {
-      "title": "Immobilienvermögen",
-      "gross": "Brutto",
-      "debt": "Schulden",
-      "net": "Netto",
-      "gain": "Wertzuwachs",
-      "loanToValue": "Beleihungsquote: {{pct}} des Objektwerts",
-      "rentalIncome": "Monatliche Mieteinnahmen:"
-    },
     "ownership": {
       "title": "Eigentumsanteile",
       "hint": "Anteil je Mitglied festlegen. Jeder zählt nur seinen eigenen Anteil zum Vermögen.",
@@ -3127,6 +3113,57 @@
       "rate": "Zinssatz",
       "cadence": "Häufigkeit",
       "next": "Nächste"
+    }
+  },
+  "realEstatePage": {
+    "perYearSuffix": "/Jahr",
+    "kpi": {
+      "gross": "Bruttowert",
+      "debt": "Immobilienschulden",
+      "net": "Nettowert",
+      "gain": "Nicht realisierter Gewinn",
+      "loanToValue": "Beleihungsquote",
+      "rent": "Monatliche Miete",
+      "propertyCount": "{{count}} Immobilie",
+      "propertyCount_other": "{{count}} Immobilien",
+      "scpiCount": "{{count}} SCPI",
+      "scpiCount_other": "{{count}} SCPI",
+      "loanCount": "{{count}} verknüpfter Kredit",
+      "loanCount_other": "{{count}} verknüpfte Kredite",
+      "netWorthShare": "{{pct}} des Nettovermögens",
+      "sincePurchase": "seit dem Kauf",
+      "loanToValueHint": "Schulden im Verhältnis zum Bruttowert",
+      "rentHint": "Für Ihre Immobilien angegebene Miete"
+    },
+    "property": {
+      "boughtIn": "gekauft im {{date}}",
+      "range": "Spanne",
+      "updated": "Aktualisiert"
+    },
+    "scpi": {
+      "subscriptionValue": "Wert zum Zeichnungspreis",
+      "distribution": "Ausschüttung"
+    },
+    "loan": {
+      "totalInterest": "Gesamte Zinskosten",
+      "remainingInterest": "Noch zu zahlende Zinsen"
+    },
+    "dti": {
+      "title": "Schuldenquote",
+      "over": "Über {{pct}}",
+      "under": "Unter der Schwelle von {{pct}}",
+      "ofIncome": "des Nettolohns vor Steuern",
+      "threshold": "Schwelle {{pct}}",
+      "detail": "{{payments}} Kreditraten für {{income}} monatlichen Nettolohn vor Steuern laut Ihrem Profil.",
+      "needsIncome": "Geben Sie in den Einstellungen Ihren monatlichen Nettolohn vor Steuern an, um Ihre Schuldenquote zu berechnen."
+    },
+    "cards": {
+      "title": "Anstehende Kartenabrechnungen"
+    },
+    "empty": {
+      "properties": "Noch keine Immobilie",
+      "propertiesHint": "Fügen Sie eine Immobilie hinzu, um ihren Schätzwert und den finanzierenden Kredit zu verfolgen.",
+      "loansHint": "Fügen Sie ein Kreditkonto hinzu, um seine Tilgung zu verfolgen."
     }
   }
 }

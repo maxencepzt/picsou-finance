@@ -549,12 +549,7 @@
     "edit": "Edit",
     "save": "Save",
     "summary": {
-      "title": "Paper property",
-      "gross": "Withdrawal value",
-      "debt": "Linked loan",
-      "net": "Net",
-      "hint": "Kept out of the price-per-square-metre estimate. The subscription price is not in this total.",
-      "incomplete": "One share still uses its last known balance: the withdrawal price is missing."
+      "title": "Paper property"
     },
     "sync": {
       "found_one": "1 fund found",
@@ -2857,15 +2852,6 @@
       "net": "Net value",
       "equityShare": "{{pct}} of the property is genuinely yours"
     },
-    "summary": {
-      "title": "Property wealth",
-      "gross": "Gross",
-      "debt": "Debt",
-      "net": "Net",
-      "gain": "Gain",
-      "loanToValue": "Loan-to-value: {{pct}} of the properties' value",
-      "rentalIncome": "Monthly rental income:"
-    },
     "ownership": {
       "title": "Ownership split",
       "hint": "Set each member's share. Everyone counts only their own part in their net worth.",
@@ -3127,6 +3113,57 @@
       "rate": "Rate",
       "cadence": "Frequency",
       "next": "Next"
+    }
+  },
+  "realEstatePage": {
+    "perYearSuffix": "/yr",
+    "kpi": {
+      "gross": "Gross value",
+      "debt": "Property debt",
+      "net": "Net value",
+      "gain": "Unrealised gain",
+      "loanToValue": "Loan-to-value",
+      "rent": "Monthly rent",
+      "propertyCount": "{{count}} property",
+      "propertyCount_other": "{{count}} properties",
+      "scpiCount": "{{count}} SCPI",
+      "scpiCount_other": "{{count}} SCPIs",
+      "loanCount": "{{count}} linked loan",
+      "loanCount_other": "{{count}} linked loans",
+      "netWorthShare": "{{pct}} of net worth",
+      "sincePurchase": "since purchase",
+      "loanToValueHint": "Debt over gross value",
+      "rentHint": "Rent declared on your properties"
+    },
+    "property": {
+      "boughtIn": "bought in {{date}}",
+      "range": "Range",
+      "updated": "Updated"
+    },
+    "scpi": {
+      "subscriptionValue": "Value at subscription price",
+      "distribution": "Distribution"
+    },
+    "loan": {
+      "totalInterest": "Total interest cost",
+      "remainingInterest": "Interest still to pay"
+    },
+    "dti": {
+      "title": "Debt-to-income ratio",
+      "over": "Above {{pct}}",
+      "under": "Below the {{pct}} threshold",
+      "ofIncome": "of net pay before tax",
+      "threshold": "threshold {{pct}}",
+      "detail": "{{payments}} in loan payments for {{income}} of monthly net pay before tax declared in your profile.",
+      "needsIncome": "Enter your monthly net pay before tax in the settings to compute your debt-to-income ratio."
+    },
+    "cards": {
+      "title": "Upcoming card statements"
+    },
+    "empty": {
+      "properties": "No property yet",
+      "propertiesHint": "Add a property to track its estimated value and the loan that finances it.",
+      "loansHint": "Add a loan account to track its amortisation."
     }
   }
 }

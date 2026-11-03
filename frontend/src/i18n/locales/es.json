@@ -538,12 +538,7 @@
     "edit": "Modificar",
     "save": "Guardar",
     "summary": {
-      "title": "Inversión inmobiliaria indirecta",
-      "gross": "Valor al reembolso",
-      "debt": "Crédito vinculado",
-      "net": "Neto",
-      "hint": "Fuera de la estimación por metro cuadrado. El precio de suscripción no entra en este total.",
-      "incomplete": "Una participación sigue usando su último saldo conocido: falta el precio de reembolso."
+      "title": "Inversión inmobiliaria indirecta"
     },
     "sync": {
       "found_one": "1 fondo encontrado",
@@ -2509,15 +2504,6 @@
       "net": "Valor neto",
       "equityShare": "El {{pct}} del inmueble es realmente tuyo"
     },
-    "summary": {
-      "title": "Patrimonio inmobiliario",
-      "gross": "Bruto",
-      "debt": "Deuda",
-      "net": "Neto",
-      "gain": "Plusvalía",
-      "loanToValue": "Ratio de endeudamiento: {{pct}} del valor de los inmuebles",
-      "rentalIncome": "Ingresos por alquiler mensuales:"
-    },
     "ownership": {
       "title": "Reparto de propiedad",
       "hint": "Indica la parte de cada miembro. Cada uno solo cuenta su parte en su patrimonio.",
@@ -3127,6 +3113,57 @@
       "rate": "Tipo de interés",
       "cadence": "Frecuencia",
       "next": "Próximo"
+    }
+  },
+  "realEstatePage": {
+    "perYearSuffix": "/año",
+    "kpi": {
+      "gross": "Valor bruto",
+      "debt": "Deuda inmobiliaria",
+      "net": "Valor neto",
+      "gain": "Plusvalía latente",
+      "loanToValue": "Ratio préstamo / valor",
+      "rent": "Alquileres mensuales",
+      "propertyCount": "{{count}} inmueble",
+      "propertyCount_other": "{{count}} inmuebles",
+      "scpiCount": "{{count}} SCPI",
+      "scpiCount_other": "{{count}} SCPI",
+      "loanCount": "{{count}} préstamo vinculado",
+      "loanCount_other": "{{count}} préstamos vinculados",
+      "netWorthShare": "{{pct}} del patrimonio neto",
+      "sincePurchase": "desde la compra",
+      "loanToValueHint": "Deuda sobre el valor bruto",
+      "rentHint": "Alquileres declarados en sus inmuebles"
+    },
+    "property": {
+      "boughtIn": "comprado en {{date}}",
+      "range": "Horquilla",
+      "updated": "Actualizado"
+    },
+    "scpi": {
+      "subscriptionValue": "Valor a precio de suscripción",
+      "distribution": "Distribución"
+    },
+    "loan": {
+      "totalInterest": "Coste total de los intereses",
+      "remainingInterest": "Intereses pendientes de pago"
+    },
+    "dti": {
+      "title": "Tasa de endeudamiento",
+      "over": "Por encima del {{pct}}",
+      "under": "Por debajo del umbral del {{pct}}",
+      "ofIncome": "del neto antes de impuestos",
+      "threshold": "umbral {{pct}}",
+      "detail": "{{payments}} de cuotas para {{income}} de neto mensual antes de impuestos declarado en su perfil.",
+      "needsIncome": "Indique su neto mensual antes de impuestos en los ajustes para calcular su tasa de endeudamiento."
+    },
+    "cards": {
+      "title": "Próximos cargos de tarjeta"
+    },
+    "empty": {
+      "properties": "Ningún inmueble",
+      "propertiesHint": "Añada un inmueble para seguir su valor estimado y el préstamo que lo financia.",
+      "loansHint": "Añada una cuenta de préstamo para seguir su amortización."
     }
   }
 }

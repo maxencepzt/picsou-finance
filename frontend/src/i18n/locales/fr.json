@@ -549,12 +549,7 @@
     "edit": "Modifier",
     "save": "Enregistrer",
     "summary": {
-      "title": "Pierre-papier",
-      "gross": "Valeur au retrait",
-      "debt": "Crédit lié",
-      "net": "Net",
-      "hint": "Hors estimation au mètre carré. Le prix de souscription n'entre pas dans ce total.",
-      "incomplete": "Une part utilise encore son dernier solde connu : le prix de retrait manque."
+      "title": "Pierre-papier"
     },
     "sync": {
       "found_one": "1 fonds trouvé",
@@ -2857,15 +2852,6 @@
       "net": "Valeur nette",
       "equityShare": "{{pct}} du bien vous appartient réellement"
     },
-    "summary": {
-      "title": "Patrimoine immobilier",
-      "gross": "Brut",
-      "debt": "Endettement",
-      "net": "Net",
-      "gain": "Plus-value",
-      "loanToValue": "Taux d'endettement : {{pct}} de la valeur des biens",
-      "rentalIncome": "Revenus locatifs mensuels :"
-    },
     "ownership": {
       "title": "Répartition",
       "hint": "Indiquez la part détenue par chaque membre. Chacun ne compte que sa part dans son patrimoine.",
@@ -3127,6 +3113,57 @@
       "rate": "Taux",
       "cadence": "Fréquence",
       "next": "Prochain"
+    }
+  },
+  "realEstatePage": {
+    "perYearSuffix": "/an",
+    "kpi": {
+      "gross": "Valeur brute",
+      "debt": "Dette immobilière",
+      "net": "Valeur nette",
+      "gain": "Plus-value latente",
+      "loanToValue": "Ratio prêt / valeur",
+      "rent": "Loyers mensuels",
+      "propertyCount": "{{count}} bien",
+      "propertyCount_other": "{{count}} biens",
+      "scpiCount": "{{count}} SCPI",
+      "scpiCount_other": "{{count}} SCPI",
+      "loanCount": "{{count}} prêt lié",
+      "loanCount_other": "{{count}} prêts liés",
+      "netWorthShare": "{{pct}} du patrimoine net",
+      "sincePurchase": "depuis l'achat",
+      "loanToValueHint": "Dette rapportée à la valeur brute",
+      "rentHint": "Loyers déclarés sur vos biens"
+    },
+    "property": {
+      "boughtIn": "acheté en {{date}}",
+      "range": "Fourchette",
+      "updated": "Mise à jour"
+    },
+    "scpi": {
+      "subscriptionValue": "Valeur au prix de souscription",
+      "distribution": "Distribution"
+    },
+    "loan": {
+      "totalInterest": "Coût total des intérêts",
+      "remainingInterest": "Intérêts restant à payer"
+    },
+    "dti": {
+      "title": "Taux d'endettement",
+      "over": "Au-dessus de {{pct}}",
+      "under": "Sous le seuil de {{pct}}",
+      "ofIncome": "du net avant impôt",
+      "threshold": "seuil {{pct}}",
+      "detail": "{{payments}} de mensualités pour {{income}} de net mensuel avant impôt déclaré dans votre profil.",
+      "needsIncome": "Renseignez votre net mensuel avant impôt dans les paramètres pour calculer votre taux d'endettement."
+    },
+    "cards": {
+      "title": "Relevés de carte à venir"
+    },
+    "empty": {
+      "properties": "Aucun bien immobilier",
+      "propertiesHint": "Ajoutez un bien pour suivre sa valeur estimée et le prêt qui le finance.",
+      "loansHint": "Ajoutez un compte de type prêt pour suivre son amortissement."
     }
   }
 }

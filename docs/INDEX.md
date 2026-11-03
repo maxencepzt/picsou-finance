@@ -150,6 +150,7 @@
 | Search palette (⌘K / Ctrl K) | 2026-11-03 | [search-palette.md](./features/search-palette.md) |
 | Overview dashboard (Synthèse) | 2026-11-03 | [overview-dashboard.md](./features/overview-dashboard.md) |
 | Passive income page (Revenus passifs) | 2026-11-03 | [passive-income-page.md](./features/passive-income-page.md) |
+| Property & loans page (Immobilier & prêts) | 2026-11-03 | [real-estate-page.md](./features/real-estate-page.md) |
 | UI control shape (shadcn theme radius) | 2026-08-10 | [ui-control-shape-system.md](./features/ui-control-shape-system.md) |
 | Privacy mode (hiding amounts for demos) | 2026-10-31 | [privacy-mode.md](./features/privacy-mode.md) |
 | Multi-account family system | 2026-07-07 | [multi-account-family.md](./features/multi-account-family.md) |
@@ -168,7 +169,7 @@
 | Login timing equalization (username-enumeration defense, GHSA-ww5m-pxgq-8qq6) | 2026-06-27 | [login-timing-attack.md](./features/login-timing-attack.md) |
 | GDPR data export (JSON + CSV) | 2026-04-26 | [data-export.md](./features/data-export.md) |
 | Opt-in anonymous telemetry & privacy (GlitchTip) | 2026-10-05 | [telemetry.md](./features/telemetry.md) |
-| Account spreadsheet export (xlsx) | 2026-08-18 | [account-xlsx-export.md](./features/account-xlsx-export.md) |
+| Account spreadsheet export (xlsx) | 2026-11-03 | [account-xlsx-export.md](./features/account-xlsx-export.md) |
 | Revolut pockets (reconstruction from PSD2 internal-transfer rows) (removed, 2026-07-14) | 2026-06-28 | [revolut-pockets.md](./features/revolut-pockets.md) |
 | Revolut sidecar (assisted-enrolment login connector) | 2026-10-31 | [revolut-sidecar.md](./features/revolut-sidecar.md) |
 | Dividend forecast (shares, ETFs, SCPI) as upcoming capital income | 2026-10-20 | [dividend-forecast.md](./features/dividend-forecast.md) |
