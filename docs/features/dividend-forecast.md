@@ -1,6 +1,6 @@
 # Feature: Dividend forecast
 
-> Last updated: 2026-10-29
+> Last updated: 2026-11-03
 
 ## Context
 
@@ -142,6 +142,9 @@ notifier (iOS, 2.0) can use to tell "already sent" from "new".
 - **Account detail** (compte-titres, PEA): carousel of cards for the next 12 months, each with
   ex-date and amount, payment date (or "unknown") and amount, amount per share, and an
   "Annoncé" / "Estimé" badge.
+- **Dashboard and Passive income page**: the "Next 30 days" card (`pages/dashboard/UpcomingCard.tsx`)
+  and `/income` read the forecast through `useUpcomingDividends`; `/income` and `/investments` read
+  `/received` through `useReceivedDividends` (see [passive-income-page.md](./passive-income-page.md)).
 - **SCPI forms**: annual distribution per share and frequency. Omitting either field leaves
   the stored value alone, the same way an omitted fund code does. An explicit null clears it.
 
@@ -155,7 +158,7 @@ notifier (iOS, 2.0) can use to tell "already sent" from "new".
 - `db/migration/V116__dividend_forecast.sql` — `dividend_source`, `dividend_event`, SCPI fields,
   `revenus-capital` category back-fill
 - `frontend/src/features/dividends/`, `components/dividends/AccountDividendsSection.tsx`,
-  `pages/budget/OverviewTab.tsx`
+  `pages/budget/OverviewTab.tsx` (`CapitalIncomeAhead`)
 
 ## Gotchas / Pitfalls
 

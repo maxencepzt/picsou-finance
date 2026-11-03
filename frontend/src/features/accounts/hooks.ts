@@ -37,6 +37,8 @@ export interface PortfolioLine {
   costBasisEur: number | null
   averageBuyIn: number | null
   quoteCurrency: string | null
+  /** The currency the security is listed in, kept when a live EUR price replaces `quoteCurrency`. */
+  listingCurrency?: string | null
   pnlEur: number | null
   pnlPercent: number | null
   priceUpdatedAt: string | null
@@ -180,6 +182,7 @@ export function usePortfolio() {
             costBasisEur: h.costBasisEur,
             averageBuyIn: h.averageBuyIn,
             quoteCurrency: h.quoteCurrency ?? null,
+            listingCurrency: h.quoteCurrency ?? null,
             pnlEur: h.pnlEur,
             pnlPercent: h.pnlPercent,
             priceUpdatedAt: h.priceUpdatedAt,

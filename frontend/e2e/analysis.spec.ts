@@ -42,8 +42,9 @@ test.describe('Analysis', () => {
     await expect(page.getByRole('button', { name: 'Enregistrer' })).toBeDisabled()
   })
 
+  // The diversification breakdown moved to Investissements with the redesign.
   test('should show the sector and geographic breakdowns', async ({ page }) => {
-    await page.goto('/analysis')
+    await page.goto('/investments')
     await expect(page.getByText('Diversification')).toBeVisible()
     await expect(page.getByText('Secteurs')).toBeVisible()
     await expect(page.getByText('Zones géographiques')).toBeVisible()
@@ -53,7 +54,7 @@ test.describe('Analysis', () => {
   })
 
   test('should state what the breakdown could not classify', async ({ page }) => {
-    await page.goto('/analysis')
+    await page.goto('/investments')
     // Coverage is stated rather than renormalised away — a bar over part of the portfolio must
     // not read as one over all of it.
     await expect(page.getByText(/Calculé sur \d+\s% du portefeuille/)).toBeVisible()

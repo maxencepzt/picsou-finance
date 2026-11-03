@@ -38,6 +38,7 @@ test.describe('Sidebar navigation', () => {
   })
 
   for (const [label, path] of [
+    ['Investissements', '/investments'],
     ['Revenus passifs', '/income'],
     ['Immobilier & prêts', '/real-estate'],
   ] as const) {

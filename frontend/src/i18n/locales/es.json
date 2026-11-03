@@ -3165,5 +3165,65 @@
       "propertiesHint": "Añada un inmueble para seguir su valor estimado y el préstamo que lo financia.",
       "loansHint": "Añada una cuenta de préstamo para seguir su amortización."
     }
+  },
+  "investments": {
+    "value": "Valor de la cartera",
+    "unrealisedGain": "de plusvalía latente",
+    "unrealisedLoss": "de minusvalía latente",
+    "realisedYear": "Plusvalías realizadas {{year}}",
+    "dividends12m": "Dividendos en 12 meses",
+    "lines": "Líneas",
+    "wrapperCount": "{{count}} cuenta",
+    "wrapperCount_other": "{{count}} cuentas",
+    "chartTitle": "Evolución de la cartera",
+    "empty": "Todavía no hay inversiones registradas.",
+    "emptyHint": "Añada un PEA, una cuenta de valores, una cartera cripto o un seguro de vida para seguir sus posiciones aquí.",
+    "positions": {
+      "title": "Posiciones",
+      "count": "{{count}} línea",
+      "count_other": "{{count}} líneas",
+      "filter": "Tipo de cuenta",
+      "other": "Otras",
+      "position": "Posición",
+      "wrapper": "Tipo de cuenta",
+      "avgCost": "Coste medio",
+      "price": "Cotización",
+      "pnl": "Latente +/−",
+      "weight": "Peso"
+    },
+    "concentration": {
+      "title": "Concentración y divisas",
+      "top": "{{count}} primera línea",
+      "top_other": "{{count}} primeras líneas",
+      "largest": "{{name}} representa el {{share}} de la cartera."
+    },
+    "realized": {
+      "description": "De dónde vienen · coste medio ponderado, comisiones incluidas",
+      "year": "Año",
+      "net": "Neto realizado en {{year}}",
+      "summary": "{{gains}} de ganancias, {{losses}} de pérdidas, en {{count}} venta",
+      "summary_other": "{{gains}} de ganancias, {{losses}} de pérdidas, en {{count}} ventas",
+      "gains": "Ganancias realizadas",
+      "noGains": "Ninguna ganancia realizada ese año.",
+      "losses": "Minusvalías"
+    },
+    "tax": {
+      "title": "Envoltorios fiscales",
+      "years": "{{count}} año",
+      "years_other": "{{count}} años",
+      "months": "{{count}} mes",
+      "months_other": "{{count}} meses",
+      "ageOf": "Antigüedad de {{name}}",
+      "pea": {
+        "pending": "Plusvalías exentas del impuesto sobre la renta a partir del {{date}}.",
+        "reached": "Plusvalías exentas del impuesto sobre la renta desde el {{date}}."
+      },
+      "av": {
+        "pending": "Reducción anual sobre las ganancias retiradas a partir del {{date}}.",
+        "reached": "Reducción anual sobre las ganancias retiradas desde el {{date}}."
+      },
+      "missing": "Fecha de apertura sin indicar: no se puede calcular la antigüedad.",
+      "setDate": "Indicarla en Cuentas"
+    }
   }
 }

@@ -141,6 +141,9 @@ export const SetupStepCrypto = lazy(() =>
   }))
 )
 
+export const InvestmentsPage = lazy(() =>
+  import('@/pages/investments/InvestmentsPage').then((m) => ({ default: m.InvestmentsPage }))
+)
 export const IncomePage = lazy(() =>
   import('@/pages/income/IncomePage').then((m) => ({ default: m.IncomePage }))
 )

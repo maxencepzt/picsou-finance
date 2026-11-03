@@ -3165,5 +3165,65 @@
       "propertiesHint": "Fügen Sie eine Immobilie hinzu, um ihren Schätzwert und den finanzierenden Kredit zu verfolgen.",
       "loansHint": "Fügen Sie ein Kreditkonto hinzu, um seine Tilgung zu verfolgen."
     }
+  },
+  "investments": {
+    "value": "Depotwert",
+    "unrealisedGain": "nicht realisierter Gewinn",
+    "unrealisedLoss": "nicht realisierter Verlust",
+    "realisedYear": "Realisierte Gewinne {{year}}",
+    "dividends12m": "Dividenden der letzten 12 Monate",
+    "lines": "Positionen",
+    "wrapperCount": "{{count}} Konto",
+    "wrapperCount_other": "{{count}} Konten",
+    "chartTitle": "Entwicklung des Depots",
+    "empty": "Noch keine Anlagen erfasst.",
+    "emptyHint": "Fügen Sie einen PEA, ein Wertpapierdepot, eine Krypto-Wallet oder eine Lebensversicherung hinzu, um Ihre Positionen hier zu verfolgen.",
+    "positions": {
+      "title": "Positionen",
+      "count": "{{count}} Position",
+      "count_other": "{{count}} Positionen",
+      "filter": "Kontoart",
+      "other": "Sonstige",
+      "position": "Position",
+      "wrapper": "Kontoart",
+      "avgCost": "Ø-Kosten",
+      "price": "Kurs",
+      "pnl": "Nicht realisiert +/−",
+      "weight": "Anteil"
+    },
+    "concentration": {
+      "title": "Konzentration und Währungen",
+      "top": "Größte {{count}} Position",
+      "top_other": "Größte {{count}} Positionen",
+      "largest": "{{name}} macht {{share}} des Depots aus."
+    },
+    "realized": {
+      "description": "Woher sie stammen · gewichteter Durchschnittspreis, inkl. Gebühren",
+      "year": "Jahr",
+      "net": "Netto realisiert {{year}}",
+      "summary": "{{gains}} Gewinne, {{losses}} Verluste, aus {{count}} Verkauf",
+      "summary_other": "{{gains}} Gewinne, {{losses}} Verluste, aus {{count}} Verkäufen",
+      "gains": "Realisierte Gewinne",
+      "noGains": "In diesem Jahr kein Gewinn realisiert.",
+      "losses": "Verluste"
+    },
+    "tax": {
+      "title": "Steuerliche Hüllen",
+      "years": "{{count}} Jahr",
+      "years_other": "{{count}} Jahre",
+      "months": "{{count}} Monat",
+      "months_other": "{{count}} Monate",
+      "ageOf": "Alter von {{name}}",
+      "pea": {
+        "pending": "Gewinne ab dem {{date}} einkommensteuerfrei.",
+        "reached": "Gewinne seit dem {{date}} einkommensteuerfrei."
+      },
+      "av": {
+        "pending": "Jährlicher Freibetrag auf entnommene Gewinne ab dem {{date}}.",
+        "reached": "Jährlicher Freibetrag auf entnommene Gewinne seit dem {{date}}."
+      },
+      "missing": "Eröffnungsdatum nicht angegeben: Das Alter lässt sich nicht berechnen.",
+      "setDate": "Unter Konten eintragen"
+    }
   }
 }

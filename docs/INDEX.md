@@ -120,7 +120,7 @@
 | Encryption at rest | 2026-04-08 | [encryption-at-rest.md](./features/encryption-at-rest.md) |
 | Crypto tracking | 2026-08-11 | [crypto-tracking.md](./features/crypto-tracking.md) |
 | Wealth pyramid (Analysis) | 2026-08-16 | [wealth-pyramid.md](./features/wealth-pyramid.md) |
-| Portfolio diversification (sector + geography) | 2026-08-15 | [portfolio-diversification.md](./features/portfolio-diversification.md) |
+| Portfolio diversification (sector + geography, on Investments) | 2026-11-03 | [portfolio-diversification.md](./features/portfolio-diversification.md) |
 | Recurring investment plans + wealth projection | 2026-08-19 | [goal-recurring-investment.md](./features/goal-recurring-investment.md) |
 | Member profile (age, TMI, income) | 2026-08-19 | [member-profile.md](./features/member-profile.md) |
 | Savings goals | 2026-06-02 | [goals.md](./features/goals.md) |
@@ -149,6 +149,7 @@
 | Navigation (sidebar, top bar, mobile bar) | 2026-11-03 | [sidebar-navigation.md](./features/sidebar-navigation.md) |
 | Search palette (⌘K / Ctrl K) | 2026-11-03 | [search-palette.md](./features/search-palette.md) |
 | Overview dashboard (Synthèse) | 2026-11-03 | [overview-dashboard.md](./features/overview-dashboard.md) |
+| Investments page (Investissements) | 2026-11-03 | [investments-page.md](./features/investments-page.md) |
 | Passive income page (Revenus passifs) | 2026-11-03 | [passive-income-page.md](./features/passive-income-page.md) |
 | Property & loans page (Immobilier & prêts) | 2026-11-03 | [real-estate-page.md](./features/real-estate-page.md) |
 | UI control shape (shadcn theme radius) | 2026-08-10 | [ui-control-shape-system.md](./features/ui-control-shape-system.md) |
@@ -172,7 +173,7 @@
 | Account spreadsheet export (xlsx) | 2026-11-03 | [account-xlsx-export.md](./features/account-xlsx-export.md) |
 | Revolut pockets (reconstruction from PSD2 internal-transfer rows) (removed, 2026-07-14) | 2026-06-28 | [revolut-pockets.md](./features/revolut-pockets.md) |
 | Revolut sidecar (assisted-enrolment login connector) | 2026-10-31 | [revolut-sidecar.md](./features/revolut-sidecar.md) |
-| Dividend forecast (shares, ETFs, SCPI) as upcoming capital income | 2026-10-20 | [dividend-forecast.md](./features/dividend-forecast.md) |
+| Dividend forecast (shares, ETFs, SCPI) as upcoming capital income | 2026-11-03 | [dividend-forecast.md](./features/dividend-forecast.md) |
 
 ## Lessons
 

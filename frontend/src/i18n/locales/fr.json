@@ -3165,5 +3165,65 @@
       "propertiesHint": "Ajoutez un bien pour suivre sa valeur estimée et le prêt qui le finance.",
       "loansHint": "Ajoutez un compte de type prêt pour suivre son amortissement."
     }
+  },
+  "investments": {
+    "value": "Valeur du portefeuille",
+    "unrealisedGain": "de plus-value latente",
+    "unrealisedLoss": "de moins-value latente",
+    "realisedYear": "Plus-values réalisées {{year}}",
+    "dividends12m": "Dividendes sur 12 mois",
+    "lines": "Lignes",
+    "wrapperCount": "{{count}} enveloppe",
+    "wrapperCount_other": "{{count}} enveloppes",
+    "chartTitle": "Évolution du portefeuille",
+    "empty": "Aucun investissement suivi pour l'instant.",
+    "emptyHint": "Ajoutez un PEA, un compte-titres, un portefeuille crypto ou une assurance vie pour suivre vos positions ici.",
+    "positions": {
+      "title": "Positions",
+      "count": "{{count}} ligne",
+      "count_other": "{{count}} lignes",
+      "filter": "Enveloppe",
+      "other": "Autres",
+      "position": "Position",
+      "wrapper": "Enveloppe",
+      "avgCost": "PRU",
+      "price": "Cours",
+      "pnl": "+/− latent",
+      "weight": "Poids"
+    },
+    "concentration": {
+      "title": "Concentration et devises",
+      "top": "{{count}} première ligne",
+      "top_other": "{{count}} premières lignes",
+      "largest": "{{name}} représente {{share}} du portefeuille."
+    },
+    "realized": {
+      "description": "D'où elles viennent · prix moyen pondéré, frais inclus",
+      "year": "Année",
+      "net": "Net réalisé en {{year}}",
+      "summary": "{{gains}} de gains, {{losses}} de pertes, sur {{count}} vente",
+      "summary_other": "{{gains}} de gains, {{losses}} de pertes, sur {{count}} ventes",
+      "gains": "Gains réalisés",
+      "noGains": "Aucun gain réalisé cette année-là.",
+      "losses": "Moins-values"
+    },
+    "tax": {
+      "title": "Enveloppes fiscales",
+      "years": "{{count}} an",
+      "years_other": "{{count}} ans",
+      "months": "{{count}} mois",
+      "months_other": "{{count}} mois",
+      "ageOf": "Ancienneté de {{name}}",
+      "pea": {
+        "pending": "Plus-values exonérées d'impôt sur le revenu à partir du {{date}}.",
+        "reached": "Plus-values exonérées d'impôt sur le revenu depuis le {{date}}."
+      },
+      "av": {
+        "pending": "Abattement annuel sur les gains retirés à partir du {{date}}.",
+        "reached": "Abattement annuel sur les gains retirés depuis le {{date}}."
+      },
+      "missing": "Date d'ouverture non renseignée : l'ancienneté ne peut pas être calculée.",
+      "setDate": "La renseigner dans Comptes"
+    }
   }
 }

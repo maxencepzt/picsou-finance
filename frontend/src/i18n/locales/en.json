@@ -3165,5 +3165,65 @@
       "propertiesHint": "Add a property to track its estimated value and the loan that finances it.",
       "loansHint": "Add a loan account to track its amortisation."
     }
+  },
+  "investments": {
+    "value": "Portfolio value",
+    "unrealisedGain": "unrealized gain",
+    "unrealisedLoss": "unrealized loss",
+    "realisedYear": "Realized gains {{year}}",
+    "dividends12m": "Dividends over 12 months",
+    "lines": "Lines",
+    "wrapperCount": "{{count}} account",
+    "wrapperCount_other": "{{count}} accounts",
+    "chartTitle": "Portfolio value over time",
+    "empty": "No investments tracked yet.",
+    "emptyHint": "Add a PEA, a brokerage account, a crypto wallet or a life insurance contract to follow your positions here.",
+    "positions": {
+      "title": "Positions",
+      "count": "{{count}} line",
+      "count_other": "{{count}} lines",
+      "filter": "Account type",
+      "other": "Other",
+      "position": "Position",
+      "wrapper": "Account type",
+      "avgCost": "Avg cost",
+      "price": "Price",
+      "pnl": "Unrealized +/−",
+      "weight": "Weight"
+    },
+    "concentration": {
+      "title": "Concentration and currencies",
+      "top": "Top {{count}} line",
+      "top_other": "Top {{count}} lines",
+      "largest": "{{name}} is {{share}} of the portfolio."
+    },
+    "realized": {
+      "description": "Where they come from · weighted average cost, fees included",
+      "year": "Year",
+      "net": "Net realized in {{year}}",
+      "summary": "{{gains}} in gains, {{losses}} in losses, over {{count}} sale",
+      "summary_other": "{{gains}} in gains, {{losses}} in losses, over {{count}} sales",
+      "gains": "Realized gains",
+      "noGains": "No gain realized that year.",
+      "losses": "Losses"
+    },
+    "tax": {
+      "title": "Tax wrappers",
+      "years": "{{count}} year",
+      "years_other": "{{count}} years",
+      "months": "{{count}} month",
+      "months_other": "{{count}} months",
+      "ageOf": "Age of {{name}}",
+      "pea": {
+        "pending": "Gains exempt from income tax from {{date}}.",
+        "reached": "Gains exempt from income tax since {{date}}."
+      },
+      "av": {
+        "pending": "Yearly allowance on withdrawn gains from {{date}}.",
+        "reached": "Yearly allowance on withdrawn gains since {{date}}."
+      },
+      "missing": "Opening date not set: the age cannot be worked out.",
+      "setDate": "Set it in Accounts"
+    }
   }
 }
