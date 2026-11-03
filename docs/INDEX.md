@@ -146,7 +146,8 @@
 | Docker deployment and migration-safe releases | 2026-10-31 | [docker-deployment.md](./features/docker-deployment.md) |
 | Production release backup, preflight, migration and rollback | 2026-10-08 | [release-deployment.md](./features/release-deployment.md) |
 | Kubernetes deployment (Helm chart) | 2026-11-01 | [helm-chart.md](./features/helm-chart.md) |
-| Navigation (sidebar + mobile bottom nav) | 2026-07-12 | [sidebar-navigation.md](./features/sidebar-navigation.md) |
+| Navigation (sidebar, top bar, mobile bar) | 2026-11-03 | [sidebar-navigation.md](./features/sidebar-navigation.md) |
+| Search palette (⌘K / Ctrl K) | 2026-11-03 | [search-palette.md](./features/search-palette.md) |
 | UI control shape (shadcn theme radius) | 2026-08-10 | [ui-control-shape-system.md](./features/ui-control-shape-system.md) |
 | Privacy mode (hiding amounts for demos) | 2026-10-31 | [privacy-mode.md](./features/privacy-mode.md) |
 | Multi-account family system | 2026-07-07 | [multi-account-family.md](./features/multi-account-family.md) |

@@ -36,30 +36,29 @@
     "labelColon": "{{label}}:"
   },
   "nav": {
-    "dashboard": "Dashboard",
-    "dashboard.desc": "Overview",
+    "dashboard": "Overview",
     "accounts": "Accounts",
-    "accounts.desc": "Balances & transactions",
     "goals": "Goals",
-    "goals.desc": "Track your savings",
     "budget": "Budget",
-    "budget.desc": "Spending & cashflow",
     "sync": "Sync",
     "settings": "Settings",
-    "settings.desc": "Preferences & account",
     "family": "Family",
-    "family.desc": "Shared view",
     "account": "My account",
     "managedProfile": "Managed profile",
     "switchProfile": "Switch profile",
     "unknownProfile": "Unknown profile",
     "logout": "Logout",
     "admin": "Administration",
-    "admin.desc": "Instance settings",
     "analysis": "Analysis",
-    "analysis.desc": "Allocation & diversification",
     "hideAmounts": "Hide amounts",
-    "showAmounts": "Show amounts"
+    "showAmounts": "Show amounts",
+    "investments": "Investments",
+    "investShort": "Invest",
+    "income": "Passive income",
+    "realEstate": "Property & loans",
+    "more": "More",
+    "moreDescription": "The other Picsou pages",
+    "main": "Main navigation"
   },
   "auth": {
     "login": "Sign in",
@@ -2966,6 +2965,30 @@
       "totalPayment": "Payment",
       "yes": "Yes",
       "no": "No"
+    }
+  },
+  "topbar": {
+    "search": "Search an account, a security, a page…",
+    "scope": "Scope",
+    "scopeMe": "Me",
+    "scopeHousehold": "Household",
+    "synced": "Synced {{time}}",
+    "syncAttention": "Sync needs attention"
+  },
+  "palette": {
+    "title": "Search",
+    "description": "Find an account, a security, a page or an action.",
+    "placeholder": "Account, security, page, action…",
+    "esc": "Esc",
+    "navigate": "navigate",
+    "open": "open",
+    "anywhere": "from any page",
+    "syncAll": "Sync all accounts",
+    "groups": {
+      "pages": "Go to",
+      "accounts": "Accounts",
+      "holdings": "Securities",
+      "actions": "Quick actions"
     }
   }
 }

@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
 
@@ -21,16 +21,25 @@ function renderAt(path: string) {
 }
 
 describe('MobileBottomNav', () => {
-  it('reaches the family view, like the desktop sidebar', () => {
+  it('shows five labelled entries, the last one opening the rest', () => {
     renderAt('/')
-
-    expect(screen.getByRole('link', { name: 'nav.family' })).toHaveAttribute('href', '/family')
+    const bar = screen.getAllByRole('navigation')[0]
+    expect(within(bar).getAllByRole('link').map((link) => link.getAttribute('href'))).toEqual(['/', '/accounts', '/investments', '/budget'])
+    expect(within(bar).getByRole('button', { name: 'nav.more' })).toBeInTheDocument()
   })
 
-  it('marks Famille as the current page on /family and nothing else', () => {
-    renderAt('/family')
+  it('reaches the family view, settings and sync through "More"', () => {
+    renderAt('/')
+    fireEvent.click(screen.getByRole('button', { name: 'nav.more' }))
+    expect(screen.getByRole('link', { name: 'nav.family' })).toHaveAttribute('href', '/family')
+    expect(screen.getByRole('link', { name: 'nav.settings' })).toHaveAttribute('href', '/settings')
+    expect(screen.getByRole('link', { name: 'nav.sync' })).toHaveAttribute('href', '/sync')
+  })
 
+  it('marks "More" as current on a page it holds, and nothing in the bar', () => {
+    renderAt('/family')
+    expect(screen.getByRole('button', { name: 'nav.more' })).toHaveAttribute('aria-current', 'page')
     const current = screen.getAllByRole('link').filter((link) => link.getAttribute('aria-current') === 'page')
-    expect(current.map((link) => link.getAttribute('href'))).toEqual(['/family'])
+    expect(current).toEqual([])
   })
 })

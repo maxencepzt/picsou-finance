@@ -36,30 +36,29 @@
     "category": "Category"
   },
   "nav": {
-    "dashboard": "Panel",
-    "dashboard.desc": "Resumen y patrimonio",
+    "dashboard": "Resumen",
     "accounts": "Cuentas",
-    "accounts.desc": "Saldos y transacciones",
     "goals": "Objetivos",
-    "goals.desc": "Sigue tu ahorro",
     "sync": "Sincronización",
     "settings": "Ajustes",
-    "settings.desc": "Preferencias y cuenta",
     "family": "Familia",
-    "family.desc": "Vista compartida",
     "account": "Mi cuenta",
     "managedProfile": "Perfil gestionado",
     "switchProfile": "Cambiar de perfil",
     "unknownProfile": "Perfil desconocido",
     "logout": "Cerrar sesión",
     "admin": "Administración",
-    "admin.desc": "Ajustes de la instancia",
     "analysis": "Análisis",
-    "analysis.desc": "Reparto y diversificación",
     "hideAmounts": "Ocultar importes",
     "showAmounts": "Mostrar importes",
     "budget": "Budget",
-    "budget.desc": "Spending & cashflow"
+    "investments": "Inversiones",
+    "investShort": "Invertir",
+    "income": "Ingresos pasivos",
+    "realEstate": "Inmuebles y préstamos",
+    "more": "Más",
+    "moreDescription": "Las demás páginas de Picsou",
+    "main": "Navegación principal"
   },
   "auth": {
     "login": "Iniciar sesión",
@@ -2967,5 +2966,29 @@
     "suggestionsBanner_other": "{{count}} savings accounts to configure",
     "configureSavings": "Configure",
     "uncertain": "Uncertain classification — please verify"
+  },
+  "topbar": {
+    "search": "Buscar una cuenta, un valor, una página…",
+    "scope": "Ámbito",
+    "scopeMe": "Yo",
+    "scopeHousehold": "Hogar",
+    "synced": "Sincronizado {{time}}",
+    "syncAttention": "Revisar la sincronización"
+  },
+  "palette": {
+    "title": "Búsqueda",
+    "description": "Busque una cuenta, un valor, una página o una acción.",
+    "placeholder": "Cuenta, valor, página, acción…",
+    "esc": "Esc",
+    "navigate": "navegar",
+    "open": "abrir",
+    "anywhere": "desde cualquier página",
+    "syncAll": "Sincronizar todas las cuentas",
+    "groups": {
+      "pages": "Ir a",
+      "accounts": "Cuentas",
+      "holdings": "Valores",
+      "actions": "Acciones rápidas"
+    }
   }
 }

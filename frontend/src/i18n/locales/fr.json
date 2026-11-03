@@ -36,30 +36,29 @@
     "labelColon": "{{label}}\u00a0:"
   },
   "nav": {
-    "dashboard": "Tableau de bord",
-    "dashboard.desc": "Vue d'ensemble",
+    "dashboard": "Synthèse",
     "accounts": "Comptes",
-    "accounts.desc": "Soldes & transactions",
     "goals": "Objectifs",
-    "goals.desc": "Suivi de vos épargnes",
     "budget": "Budget",
-    "budget.desc": "Dépenses & cashflow",
     "sync": "Synchronisation",
     "settings": "Paramètres",
-    "settings.desc": "Préférences & compte",
     "family": "Famille",
-    "family.desc": "Vue partagée",
     "account": "Mon compte",
     "managedProfile": "Profil géré",
     "switchProfile": "Changer de profil",
     "unknownProfile": "Profil inconnu",
     "logout": "Déconnexion",
     "admin": "Administration",
-    "admin.desc": "Réglages de l'instance",
     "analysis": "Analyse",
-    "analysis.desc": "Répartition & diversification",
     "hideAmounts": "Masquer les montants",
-    "showAmounts": "Afficher les montants"
+    "showAmounts": "Afficher les montants",
+    "investments": "Investissements",
+    "investShort": "Investir",
+    "income": "Revenus passifs",
+    "realEstate": "Immobilier & prêts",
+    "more": "Plus",
+    "moreDescription": "Les autres pages de Picsou",
+    "main": "Navigation principale"
   },
   "auth": {
     "login": "Connexion",
@@ -2966,6 +2965,30 @@
       "totalPayment": "Mensualité",
       "yes": "Oui",
       "no": "Non"
+    }
+  },
+  "topbar": {
+    "search": "Rechercher un compte, un titre, une page…",
+    "scope": "Périmètre",
+    "scopeMe": "Moi",
+    "scopeHousehold": "Foyer",
+    "synced": "Synchronisé {{time}}",
+    "syncAttention": "Synchronisation à vérifier"
+  },
+  "palette": {
+    "title": "Recherche",
+    "description": "Cherchez un compte, un titre, une page ou une action.",
+    "placeholder": "Compte, titre, page, action…",
+    "esc": "Échap",
+    "navigate": "naviguer",
+    "open": "ouvrir",
+    "anywhere": "depuis n'importe quelle page",
+    "syncAll": "Synchroniser tous les comptes",
+    "groups": {
+      "pages": "Aller à",
+      "accounts": "Comptes",
+      "holdings": "Titres",
+      "actions": "Actions rapides"
     }
   }
 }

@@ -36,30 +36,29 @@
     "category": "Category"
   },
   "nav": {
-    "dashboard": "Dashboard",
-    "dashboard.desc": "Überblick & Vermögen",
+    "dashboard": "Übersicht",
     "accounts": "Konten",
-    "accounts.desc": "Salden & Transaktionen",
     "goals": "Ziele",
-    "goals.desc": "Verfolge deine Sparziele",
     "sync": "Sync",
     "settings": "Einstellungen",
-    "settings.desc": "Präferenzen & Konto",
     "family": "Familie",
-    "family.desc": "Geteilte Ansicht",
     "account": "Mein Konto",
     "managedProfile": "Verwaltetes Profil",
     "switchProfile": "Profil wechseln",
     "unknownProfile": "Unbekanntes Profil",
     "logout": "Abmelden",
     "admin": "Administration",
-    "admin.desc": "Instanz-Einstellungen",
     "analysis": "Analyse",
-    "analysis.desc": "Aufteilung & Diversifikation",
     "hideAmounts": "Beträge ausblenden",
     "showAmounts": "Beträge einblenden",
     "budget": "Budget",
-    "budget.desc": "Spending & cashflow"
+    "investments": "Investments",
+    "investShort": "Anlegen",
+    "income": "Passives Einkommen",
+    "realEstate": "Immobilien & Kredite",
+    "more": "Mehr",
+    "moreDescription": "Die übrigen Picsou-Seiten",
+    "main": "Hauptnavigation"
   },
   "auth": {
     "login": "Anmelden",
@@ -2967,5 +2966,29 @@
     "suggestionsBanner_other": "{{count}} savings accounts to configure",
     "configureSavings": "Configure",
     "uncertain": "Uncertain classification — please verify"
+  },
+  "topbar": {
+    "search": "Konto, Wertpapier, Seite suchen…",
+    "scope": "Ansicht",
+    "scopeMe": "Ich",
+    "scopeHousehold": "Haushalt",
+    "synced": "Synchronisiert {{time}}",
+    "syncAttention": "Synchronisierung prüfen"
+  },
+  "palette": {
+    "title": "Suche",
+    "description": "Konto, Wertpapier, Seite oder Aktion finden.",
+    "placeholder": "Konto, Wertpapier, Seite, Aktion…",
+    "esc": "Esc",
+    "navigate": "navigieren",
+    "open": "öffnen",
+    "anywhere": "von jeder Seite aus",
+    "syncAll": "Alle Konten synchronisieren",
+    "groups": {
+      "pages": "Gehe zu",
+      "accounts": "Konten",
+      "holdings": "Wertpapiere",
+      "actions": "Schnellaktionen"
+    }
   }
 }

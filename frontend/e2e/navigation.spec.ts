@@ -26,21 +26,33 @@ test.describe('Sidebar navigation', () => {
     await expect(page.getByRole('heading', { name: 'Synchronisation' })).toBeVisible()
   })
 
-  test('should navigate back to Tableau de bord', async ({ page }) => {
+  test('should navigate back to Synthèse', async ({ page }) => {
     // Go to accounts first
     await page.getByRole('link', { name: 'Comptes' }).click()
     await page.waitForURL('**/accounts')
 
-    // Go back to dashboard
-    await page.getByRole('link', { name: 'Tableau de bord' }).click()
+    // Go back to the overview
+    await page.getByRole('link', { name: 'Synthèse' }).click()
     await page.waitForURL('/')
     await expect(page.getByRole('heading', { level: 1, name: 'Tableau de bord' })).toBeVisible()
+  })
+
+  test('opens the search palette with the platform shortcut and jumps to a page', async ({ page }) => {
+    // The layout mounts the shortcut listener; wait for it before pressing.
+    await expect(page.getByRole('button', { name: 'Rechercher un compte, un titre, une page…' })).toBeVisible()
+    // "Desktop Chrome" reports Windows on every host, so the app expects Ctrl, even on a Mac runner.
+    await page.keyboard.press('Control+k')
+    const search = page.getByRole('combobox', { name: 'Recherche' })
+    await expect(search).toBeFocused()
+    await search.fill('budget')
+    await page.keyboard.press('Enter')
+    await page.waitForURL('**/budget')
   })
 })
 
 for (const sidebarStyle of ['classic', 'current']) {
   for (const locale of ['fr', 'en', 'de', 'es']) {
-    test(`${sidebarStyle} sidebar shows every nav subtitle in full (${locale})`, async ({ page }) => {
+    test(`${sidebarStyle} sidebar shows every nav label in full (${locale})`, async ({ page }) => {
       await page.setViewportSize({ width: 1440, height: 900 })
       await page.addInitScript(({ sidebarStyle, locale }) => {
         localStorage.setItem('picsou-locale', locale)
@@ -51,10 +63,10 @@ for (const sidebarStyle of ['classic', 'current']) {
       }, { sidebarStyle, locale })
       await page.goto('/')
 
-      const subtitles = page.locator('nav a [data-slot="item-description"]')
-      await expect(subtitles.first()).toBeVisible()
-      const clipped = await subtitles.evaluateAll((els) => els
-        .filter((el) => el.scrollHeight > el.clientHeight || el.scrollWidth > el.clientWidth)
+      const labels = page.locator('nav:not(.fixed) a span.truncate')
+      await expect(labels.first()).toBeVisible()
+      const clipped = await labels.evaluateAll((els) => els
+        .filter((el) => el.scrollWidth > el.clientWidth)
         .map((el) => el.textContent))
       expect(clipped).toEqual([])
     })

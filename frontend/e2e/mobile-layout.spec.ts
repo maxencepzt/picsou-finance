@@ -264,10 +264,11 @@ test.describe('Mobile layout', () => {
     expect(content.top).toBeGreaterThanOrEqual(NAV_INSET)
   })
 
-  test('Famille is reachable from the bottom nav', async ({ page }) => {
-    const famille = page.locator('nav.fixed').getByRole('link', { name: 'Famille' })
-    await famille.click()
+  test('Famille is reachable from the bottom nav through "Plus"', async ({ page }) => {
+    const more = page.locator('nav.fixed').getByRole('button', { name: 'Plus' })
+    await more.click()
+    await page.getByRole('dialog').getByRole('link', { name: 'Famille' }).click()
     await page.waitForURL('**/family')
-    await expect(famille).toHaveAttribute('aria-current', 'page')
+    await expect(more).toHaveAttribute('aria-current', 'page')
   })
 })
