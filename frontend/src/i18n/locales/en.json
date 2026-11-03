@@ -468,7 +468,9 @@
       "tier": "Tier",
       "today": "Today",
       "atHorizon": "In {{count}} years",
-      "atAge": "age {{age}}"
+      "atAge": "age {{age}}",
+      "viewLabel": "View",
+      "horizonLabel": "Horizon"
     },
     "classification": {
       "title": "Classify this security",
@@ -501,6 +503,60 @@
       "EMPTY_TIER": "Nothing at all in {{label}}: this tier is empty, not merely under target.",
       "CUSHION_OVERFUNDED": "{{value}} beyond your cushion target — money available to put elsewhere.",
       "title": "Worth noting"
+    },
+    "pyramid": {
+      "title": "Wealth pyramid",
+      "description": "Riskiest at the top, safest at the bottom · the line marks the target"
+    },
+    "fi": {
+      "title": "Financial independence",
+      "rule": "{{value}} rule",
+      "target": "Target capital",
+      "formula": "{{expenses}} of essential expenses × 12 ÷ {{rate}}",
+      "expensesDefault": "Essential expenses not stated: default value. Set them in My targets.",
+      "assets": "Financial assets today",
+      "progress": "{{value}} of the way, excluding property and SCPI.",
+      "estimatedAge": "Estimated age",
+      "estimatedWhen": "Estimated date",
+      "paceYear": "in {{year}}, at your current pace",
+      "pace": "at your current pace",
+      "retirement": "Target retirement",
+      "notSet": "Not set",
+      "fillProfile": "Add your birth date to your profile to see an age instead of a duration.",
+      "goToProfile": "Complete your profile",
+      "reached": "Already reached",
+      "beyondYears": "Over {{count}} year",
+      "beyondYears_other": "Over {{count}} years",
+      "beyondAge": "After age {{age}}",
+      "inYears": "In {{count}} year",
+      "inYears_other": "In {{count}} years",
+      "inYear": "in {{year}}",
+      "sim": {
+        "title": "Financial independence simulator",
+        "description": "Move one assumption: the age and the capital update straight away.",
+        "reset": "Reset",
+        "savings": "Monthly savings",
+        "savingsHint": "Today: {{value}} per month",
+        "return": "Annual return",
+        "returnHint": "After fees, before inflation",
+        "expenses": "Essential expenses",
+        "expensesHint": "Stated in your targets: {{value}} per month",
+        "expensesDefault": "Not stated: default value",
+        "withdrawal": "Withdrawal rate",
+        "withdrawalHint": "Share of the capital spent each year",
+        "perMonth": "{{value}} / month",
+        "presets": "Quick amounts",
+        "todayPreset": "{{value}} · today",
+        "earlier": "{{count}} year earlier than your current pace",
+        "earlier_other": "{{count}} years earlier than your current pace",
+        "later": "{{count}} year later than your current pace",
+        "later_other": "{{count}} years later than your current pace",
+        "same": "Same date as your current pace",
+        "withHypotheses": "With these assumptions",
+        "currentPace": "At your current pace · {{value}} per month",
+        "capitalAt": "Capital at age {{age}}",
+        "extraEffort": "Extra effort"
+      }
     }
   },
   "accountTypes": {

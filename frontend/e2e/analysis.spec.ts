@@ -15,11 +15,11 @@ test.describe('Analysis', () => {
   test('should show the composition score and every tier', async ({ page }) => {
     await page.goto('/analysis')
     await expect(page.getByText('Score de composition')).toBeVisible()
-    // The cushion is measured in euros above the allocation bars, not as one of them. Scoped to
-    // its card because the sector breakdown further down has its own "Immobilier".
+    // The safety net is the pyramid's base box, not one of its tier rows. Scoped to the pyramid
+    // card because the score card's alerts can name a tier too.
     const allocation = page
       .locator('[data-slot="card"]')
-      .filter({ hasText: 'Matelas de sécurité et répartition' })
+      .filter({ hasText: 'Pyramide patrimoniale' })
     await expect(allocation).toBeVisible()
     for (const tier of ['Immobilier', 'Actions & ETF', 'Crypto', 'Actifs alternatifs']) {
       await expect(allocation.getByText(tier, { exact: true })).toBeVisible()
@@ -42,8 +42,6 @@ test.describe('Analysis', () => {
     await expect(page.getByRole('button', { name: 'Enregistrer' })).toBeDisabled()
   })
 
-  // The diversification breakdown moved to Investissements with the redesign.
-  // The diversification breakdown moved to Investissements with the redesign.
   // The diversification breakdown moved to Investissements with the redesign.
   test('should show the sector and geographic breakdowns', async ({ page }) => {
     await page.goto('/investments')

@@ -457,7 +457,9 @@
       "tier": "Stufe",
       "today": "Heute",
       "atHorizon": "In {{count}} Jahren",
-      "atAge": "{{age}} Jahre"
+      "atAge": "{{age}} Jahre",
+      "viewLabel": "Ansicht",
+      "horizonLabel": "Horizont"
     },
     "classification": {
       "title": "Wertpapier einordnen",
@@ -490,6 +492,60 @@
       "EMPTY_TIER": "Nichts in {{label}}: diese Stufe ist leer, nicht bloß unter dem Ziel.",
       "CUSHION_OVERFUNDED": "{{value}} über Ihrem Polsterziel — Geld, das anderswo arbeiten könnte.",
       "title": "Beachtenswert"
+    },
+    "pyramid": {
+      "title": "Vermögenspyramide",
+      "description": "Oben das riskanteste, unten das sicherste · der Strich markiert das Ziel"
+    },
+    "fi": {
+      "title": "Finanzielle Unabhängigkeit",
+      "rule": "{{value}}-Regel",
+      "target": "Zielkapital",
+      "formula": "{{expenses}} wesentliche Ausgaben × 12 ÷ {{rate}}",
+      "expensesDefault": "Wesentliche Ausgaben nicht angegeben: Standardwert. Tragen Sie sie unter Meine Ziele ein.",
+      "assets": "Finanzvermögen heute",
+      "progress": "{{value}} des Weges, ohne Immobilien und SCPI.",
+      "estimatedAge": "Geschätztes Alter",
+      "estimatedWhen": "Geschätzter Zeitpunkt",
+      "paceYear": "{{year}}, im aktuellen Tempo",
+      "pace": "im aktuellen Tempo",
+      "retirement": "Geplanter Ruhestand",
+      "notSet": "Nicht angegeben",
+      "fillProfile": "Tragen Sie Ihr Geburtsdatum im Profil ein, um ein Alter statt einer Dauer zu sehen.",
+      "goToProfile": "Profil ergänzen",
+      "reached": "Bereits erreicht",
+      "beyondYears": "Mehr als {{count}} Jahr",
+      "beyondYears_other": "Mehr als {{count}} Jahre",
+      "beyondAge": "Nach {{age}} Jahren",
+      "inYears": "In {{count}} Jahr",
+      "inYears_other": "In {{count}} Jahren",
+      "inYear": "{{year}}",
+      "sim": {
+        "title": "Simulator für finanzielle Unabhängigkeit",
+        "description": "Ändern Sie eine Annahme: Alter und Kapital werden sofort neu berechnet.",
+        "reset": "Zurücksetzen",
+        "savings": "Monatliche Sparrate",
+        "savingsHint": "Heute: {{value}} pro Monat",
+        "return": "Jährliche Rendite",
+        "returnHint": "Nach Kosten, vor Inflation",
+        "expenses": "Wesentliche Ausgaben",
+        "expensesHint": "In Ihren Zielen angegeben: {{value}} pro Monat",
+        "expensesDefault": "Nicht angegeben: Standardwert",
+        "withdrawal": "Entnahmerate",
+        "withdrawalHint": "Jährlich entnommener Anteil des Kapitals",
+        "perMonth": "{{value}} / Monat",
+        "presets": "Schnellbeträge",
+        "todayPreset": "{{value}} · heute",
+        "earlier": "{{count}} Jahr früher als im aktuellen Tempo",
+        "earlier_other": "{{count}} Jahre früher als im aktuellen Tempo",
+        "later": "{{count}} Jahr später als im aktuellen Tempo",
+        "later_other": "{{count}} Jahre später als im aktuellen Tempo",
+        "same": "Gleicher Zeitpunkt wie im aktuellen Tempo",
+        "withHypotheses": "Mit diesen Annahmen",
+        "currentPace": "Im aktuellen Tempo · {{value}} pro Monat",
+        "capitalAt": "Kapital mit {{age}} Jahren",
+        "extraEffort": "Zusätzlicher Aufwand"
+      }
     }
   },
   "accountTypes": {

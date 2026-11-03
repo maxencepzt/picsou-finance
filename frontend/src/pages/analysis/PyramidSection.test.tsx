@@ -53,7 +53,8 @@ describe('PyramidSection', () => {
   it('renders the global score and one row per investment tier', () => {
     render(<PyramidSection pyramid={pyramid()} />)
 
-    expect(screen.getByText('100')).toBeInTheDocument()
+    // The ring is one image to assistive tech: its accessible name carries the global score.
+    expect(screen.getByRole('img', { name: /^100 / })).toBeInTheDocument()
     for (const tier of ['REAL_ESTATE', 'EQUITY', 'CRYPTO', 'ALTERNATIVE']) {
       expect(screen.getByText(`analysis.tiers.${tier}`)).toBeInTheDocument()
     }

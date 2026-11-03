@@ -119,7 +119,8 @@
 | ISIN → Ticker conversion | 2026-08-10 | [ISIN_TO_TICKER_CONVERSION.md](./features/ISIN_TO_TICKER_CONVERSION.md) |
 | Encryption at rest | 2026-04-08 | [encryption-at-rest.md](./features/encryption-at-rest.md) |
 | Crypto tracking | 2026-11-03 | [crypto-tracking.md](./features/crypto-tracking.md) |
-| Wealth pyramid (Analysis) | 2026-08-16 | [wealth-pyramid.md](./features/wealth-pyramid.md) |
+| Wealth pyramid (Analysis) | 2026-11-03 | [wealth-pyramid.md](./features/wealth-pyramid.md) |
+| Financial independence (Analysis: target, card, simulator) | 2026-11-03 | [financial-independence.md](./features/financial-independence.md) |
 | Portfolio diversification (sector + geography, on Investments) | 2026-11-03 | [portfolio-diversification.md](./features/portfolio-diversification.md) |
 | Recurring investment plans + wealth projection | 2026-08-19 | [goal-recurring-investment.md](./features/goal-recurring-investment.md) |
 | Member profile (age, TMI, income) | 2026-08-19 | [member-profile.md](./features/member-profile.md) |

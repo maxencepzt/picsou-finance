@@ -457,7 +457,9 @@
       "tier": "Bolsa",
       "today": "Hoy",
       "atHorizon": "En {{count}} años",
-      "atAge": "{{age}} años"
+      "atAge": "{{age}} años",
+      "viewLabel": "Vista",
+      "horizonLabel": "Horizonte"
     },
     "classification": {
       "title": "Clasificar este valor",
@@ -490,6 +492,60 @@
       "EMPTY_TIER": "Nada en {{label}}: esta bolsa está vacía, no solo por debajo del objetivo.",
       "CUSHION_OVERFUNDED": "{{value}} por encima de su objetivo de colchón: dinero disponible para colocar.",
       "title": "A tener en cuenta"
+    },
+    "pyramid": {
+      "title": "Pirámide patrimonial",
+      "description": "Lo más arriesgado arriba, lo más seguro abajo · la línea marca el objetivo"
+    },
+    "fi": {
+      "title": "Independencia financiera",
+      "rule": "Regla del {{value}}",
+      "target": "Capital objetivo",
+      "formula": "{{expenses}} de gastos esenciales × 12 ÷ {{rate}}",
+      "expensesDefault": "Gastos esenciales no indicados: valor por defecto. Indíquelos en Mis objetivos.",
+      "assets": "Activos financieros hoy",
+      "progress": "{{value}} del camino, sin inmuebles ni SCPI.",
+      "estimatedAge": "Edad estimada",
+      "estimatedWhen": "Plazo estimado",
+      "paceYear": "en {{year}}, al ritmo actual",
+      "pace": "al ritmo actual",
+      "retirement": "Jubilación prevista",
+      "notSet": "No indicada",
+      "fillProfile": "Indique su fecha de nacimiento en su perfil para ver una edad en lugar de una duración.",
+      "goToProfile": "Completar el perfil",
+      "reached": "Ya alcanzada",
+      "beyondYears": "Más de {{count}} año",
+      "beyondYears_other": "Más de {{count}} años",
+      "beyondAge": "Después de los {{age}} años",
+      "inYears": "Dentro de {{count}} año",
+      "inYears_other": "Dentro de {{count}} años",
+      "inYear": "en {{year}}",
+      "sim": {
+        "title": "Simulador de independencia financiera",
+        "description": "Mueva una hipótesis: la edad y el capital se recalculan al instante.",
+        "reset": "Restablecer",
+        "savings": "Ahorro mensual",
+        "savingsHint": "Hoy: {{value}} al mes",
+        "return": "Rentabilidad anual",
+        "returnHint": "Después de comisiones, antes de inflación",
+        "expenses": "Gastos esenciales",
+        "expensesHint": "Indicados en sus objetivos: {{value}} al mes",
+        "expensesDefault": "No indicados: valor por defecto",
+        "withdrawal": "Tasa de retirada",
+        "withdrawalHint": "Parte del capital gastada cada año",
+        "perMonth": "{{value}} / mes",
+        "presets": "Importes rápidos",
+        "todayPreset": "{{value}} · hoy",
+        "earlier": "{{count}} año antes que al ritmo actual",
+        "earlier_other": "{{count}} años antes que al ritmo actual",
+        "later": "{{count}} año después que al ritmo actual",
+        "later_other": "{{count}} años después que al ritmo actual",
+        "same": "Mismo plazo que al ritmo actual",
+        "withHypotheses": "Con estas hipótesis",
+        "currentPace": "Al ritmo actual · {{value}} al mes",
+        "capitalAt": "Capital a los {{age}} años",
+        "extraEffort": "Esfuerzo adicional"
+      }
     }
   },
   "accountTypes": {

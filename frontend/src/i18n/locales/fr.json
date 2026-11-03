@@ -468,7 +468,9 @@
       "tier": "Poche",
       "today": "Aujourd'hui",
       "atHorizon": "À {{count}} ans",
-      "atAge": "{{age}} ans"
+      "atAge": "{{age}} ans",
+      "viewLabel": "Vue",
+      "horizonLabel": "Horizon"
     },
     "classification": {
       "title": "Classer ce titre",
@@ -501,6 +503,60 @@
       "EMPTY_TIER": "Aucun actif en {{label}} : cette poche est à zéro, pas simplement sous-dotée.",
       "CUSHION_OVERFUNDED": "{{value}} au-delà de votre cible de matelas — de l'argent disponible à replacer.",
       "title": "Points d'attention"
+    },
+    "pyramid": {
+      "title": "Pyramide patrimoniale",
+      "description": "Du plus risqué (haut) au plus sûr (bas) · le trait marque la cible"
+    },
+    "fi": {
+      "title": "Indépendance financière",
+      "rule": "Règle des {{value}}",
+      "target": "Capital à viser",
+      "formula": "{{expenses}} de dépenses essentielles × 12 ÷ {{rate}}",
+      "expensesDefault": "Dépenses essentielles non renseignées : valeur par défaut. Renseignez-les dans Mes cibles.",
+      "assets": "Actifs financiers aujourd'hui",
+      "progress": "{{value}} du chemin, hors immobilier et SCPI.",
+      "estimatedAge": "Âge estimé",
+      "estimatedWhen": "Échéance estimée",
+      "paceYear": "en {{year}}, au rythme actuel",
+      "pace": "au rythme actuel",
+      "retirement": "Retraite visée",
+      "notSet": "Non renseignée",
+      "fillProfile": "Renseignez votre date de naissance dans votre profil pour voir un âge plutôt qu'une durée.",
+      "goToProfile": "Compléter le profil",
+      "reached": "Déjà atteinte",
+      "beyondYears": "Plus de {{count}} an",
+      "beyondYears_other": "Plus de {{count}} ans",
+      "beyondAge": "Après {{age}} ans",
+      "inYears": "Dans {{count}} an",
+      "inYears_other": "Dans {{count}} ans",
+      "inYear": "en {{year}}",
+      "sim": {
+        "title": "Simulateur d'indépendance financière",
+        "description": "Bougez une hypothèse : l'âge et le capital se recalculent aussitôt.",
+        "reset": "Réinitialiser",
+        "savings": "Épargne mensuelle",
+        "savingsHint": "Aujourd'hui : {{value}} par mois",
+        "return": "Rendement annuel",
+        "returnHint": "Après frais, avant inflation",
+        "expenses": "Dépenses essentielles",
+        "expensesHint": "Déclarées dans vos cibles : {{value}} par mois",
+        "expensesDefault": "Non déclarées : valeur par défaut",
+        "withdrawal": "Taux de retrait",
+        "withdrawalHint": "Part du capital dépensée chaque année",
+        "perMonth": "{{value}} / mois",
+        "presets": "Montants rapides",
+        "todayPreset": "{{value}} · aujourd'hui",
+        "earlier": "{{count}} an plus tôt qu'au rythme actuel",
+        "earlier_other": "{{count}} ans plus tôt qu'au rythme actuel",
+        "later": "{{count}} an plus tard qu'au rythme actuel",
+        "later_other": "{{count}} ans plus tard qu'au rythme actuel",
+        "same": "Même échéance qu'au rythme actuel",
+        "withHypotheses": "Avec ces hypothèses",
+        "currentPace": "Au rythme actuel · {{value}} par mois",
+        "capitalAt": "Capital à {{age}} ans",
+        "extraEffort": "Effort en plus"
+      }
     }
   },
   "accountTypes": {
