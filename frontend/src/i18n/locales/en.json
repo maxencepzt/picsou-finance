@@ -3203,7 +3203,23 @@
     },
     "months": {
       "title": "Month by month",
-      "description": "Forecast for the next 12 months"
+      "description": "Forecast for the next 12 months",
+      "period": "Period",
+      "periods": {
+        "past": "Received",
+        "next": "Forecast",
+        "both": "Both"
+      },
+      "descriptions": {
+        "past": "Dividends received over the last 12 months",
+        "both": "Dividends received over the last 12 months, forecast for the next 12"
+      },
+      "received": "Dividends received",
+      "forecastOf": "{{source}} (forecast)",
+      "empty": "Nothing over this period.",
+      "receivedError": "Could not load the dividends received.",
+      "unconverted": "{{count}} dividend received without an exchange rate is not counted.",
+      "unconverted_other": "{{count}} dividends received without an exchange rate are not counted."
     },
     "upcoming": {
       "title": "Next payments",

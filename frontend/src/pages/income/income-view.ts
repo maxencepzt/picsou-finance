@@ -1,5 +1,5 @@
 import type { DividendCadence, ReceivedDividend, UpcomingDividend } from '@/types/api'
-import type { IncomeMonth, IncomeSource, SavingsInterestLine } from '@/features/income/passive-income'
+import { nextMonths, type IncomeMonth, type IncomeSource, type SavingsInterestLine } from '@/features/income/passive-income'
 
 export const INCOME_SOURCES: IncomeSource[] = ['dividends', 'scpi', 'rent', 'interest']
 
@@ -38,10 +38,43 @@ export interface IncomeSourceRow {
 const dividendSource = (d: UpcomingDividend): IncomeSource => (d.source === 'SCPI' ? 'scpi' : 'dividends')
 const paymentDate = (d: UpcomingDividend) => d.paymentDate ?? d.expectedDate
 
-/** Dividends credited over the window. */
-// shortcut: non-EUR credits are left out (booked in the account currency, no FX on the client); convert server-side if foreign-currency accounts matter.
+/** Dividends credited over the window, in euros whatever the account currency; a credit with no rate (`amountEur` null) is left out. */
 export function receivedTotal(rows: ReceivedDividend[]): number {
-  return rows.filter((r) => r.currency === 'EUR').reduce((sum, r) => sum + r.amount, 0)
+  return rows.reduce((sum, r) => sum + (r.amountEur ?? 0), 0)
+}
+
+/** Which months the chart shows: the twelve received up to now, the twelve forecast from now, or both. */
+export type IncomePeriod = 'past' | 'next' | 'both'
+
+/** One bar of the months chart. A null value is a side the month does not belong to (no bar, no tooltip row). */
+export type IncomeChartRow = { month: string; received: number | null } & Record<IncomeSource, number | null>
+
+/**
+ * The bars of the months chart. The twelve months up to the current one carry the dividends received
+ * (by credit date, in euros, credits with no rate left out); the twelve from the current one carry the
+ * forecast by source. The current month belongs to both, so "both" shows 23 bars.
+ */
+export function incomeChartRows(forecast: IncomeMonth[], received: ReceivedDividend[], period: IncomePeriod): IncomeChartRow[] {
+  const [year, month] = forecast[0].month.split('-').map(Number)
+  const past = period === 'next' ? [] : nextMonths(new Date(year, month - 12, 1))
+  const next = new Map(period === 'past' ? [] : forecast.map((m) => [m.month, m]))
+  const receivedByMonth = new Map<string, number>()
+  for (const r of received) {
+    if (r.amountEur == null) continue
+    const key = r.receivedDate.slice(0, 7)
+    receivedByMonth.set(key, (receivedByMonth.get(key) ?? 0) + r.amountEur)
+  }
+  return [...new Set([...past, ...next.keys()])].map((key) => {
+    const f = next.get(key)
+    return {
+      month: key,
+      received: past.includes(key) ? (receivedByMonth.get(key) ?? 0) : null,
+      dividends: f ? f.dividends : null,
+      scpi: f ? f.scpi : null,
+      rent: f ? f.rent : null,
+      interest: f ? f.interest : null,
+    }
+  })
 }
 
 /** The next `limit` payments: projected dividends and distributions plus passbook capitalisations, soonest first. */
@@ -119,8 +152,14 @@ export function incomeBySource(
   return [...groups.values(), ...passbooks, ...rentRow].sort((a, b) => b.amount - a.amount)
 }
 
-/** Short month name of a `YYYY-MM` key, for the chart's axis. */
-export function monthLabel(month: string, locale: string): string {
+/**
+ * A `YYYY-MM` key for the chart: a short month on the axis, January with its year so a 23-month axis
+ * reads unambiguously; month and year in full for the tooltip.
+ */
+export function monthLabel(month: string, locale: string, full = false): string {
   const [year, m] = month.split('-').map(Number)
-  return new Intl.DateTimeFormat(locale, { month: 'short' }).format(new Date(year, m - 1, 1))
+  const format: Intl.DateTimeFormatOptions = full
+    ? { month: 'long', year: 'numeric' }
+    : m === 1 ? { month: 'short', year: '2-digit' } : { month: 'short' }
+  return new Intl.DateTimeFormat(locale, format).format(new Date(year, m - 1, 1))
 }

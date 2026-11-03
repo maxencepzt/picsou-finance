@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
 import { Coins } from 'lucide-react'
@@ -9,8 +10,9 @@ import { EmptyState } from '@/components/shared/EmptyState'
 import { ErrorState } from '@/components/shared/ErrorState'
 import { LoadingSkeleton } from '@/components/shared/LoadingSkeleton'
 import { PageHeader } from '@/components/shared/PageHeader'
+import { SegmentedControl } from '@/components/shared/SegmentedControl'
 import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useMoney } from '@/hooks/use-money'
@@ -18,9 +20,11 @@ import { formatPercent, formatShortDate, localeFromLanguage } from '@/lib/utils'
 import type { DividendCadence } from '@/types/api'
 import type { IncomeSource } from '@/features/income/passive-income'
 import { IncomeMonthsChart } from './IncomeMonthsChart'
-import { INCOME_SOURCES, SOURCE_COLORS, incomeBySource, nextPayments, receivedTotal, type IncomePayment } from './income-view'
+import {
+  INCOME_SOURCES, SOURCE_COLORS, incomeBySource, incomeChartRows, nextPayments, receivedTotal, type IncomePayment, type IncomePeriod,
+} from './income-view'
 
-/** Passive income over the next twelve months: where it comes from, when it lands, who pays it. */
+/** Passive income over the next twelve months (where it comes from, when it lands, who pays it), beside the dividends received over the last twelve. */
 export function IncomePage() {
   const { t, i18n } = useTranslation()
   const money = useMoney()
@@ -28,6 +32,7 @@ export function IncomePage() {
   const income = usePassiveIncome()
   const received = useReceivedDividends(365)
   const { data: targets } = useAllocationTargets()
+  const [period, setPeriod] = useState<IncomePeriod>('both')
 
   if (income.isLoading || received.isLoading) return <LoadingSkeleton />
 
@@ -37,8 +42,10 @@ export function IncomePage() {
   }
 
   const { totals } = income
-  const receivedSum = receivedTotal(received.data ?? [])
-  if (totals.total === 0 && receivedSum === 0) {
+  const receivedRows = received.data ?? []
+  const receivedSum = receivedTotal(receivedRows)
+  const unconverted = receivedRows.filter((r) => r.amountEur == null).length
+  if (totals.total === 0 && receivedRows.length === 0) {
     return (
       <>
         {header}
@@ -54,6 +61,7 @@ export function IncomePage() {
   const coverage = expenses > 0 ? (perMonth / expenses) * 100 : null
   const payments = nextPayments(income.upcoming, income.savings)
   const rows = incomeBySource(income.months, income.upcoming, income.savings)
+  const monthsDescription = t(period === 'next' ? 'income.months.description' : `income.months.descriptions.${period}`)
   const cadence = (c: DividendCadence | null) => (c ? t(`accounts.dividends.cadence.${c}`) : '—')
 
   const paymentHint = (p: IncomePayment) => [
@@ -127,14 +135,30 @@ export function IncomePage() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Card className="min-w-0 lg:col-span-2">
           <CardHeader>
             <CardTitle>{t('income.months.title')}</CardTitle>
-            <CardDescription>{t('income.months.description')}</CardDescription>
+            {/* Narrow card: the switch stays beside the title and the description takes the full width under them. */}
+            <CardDescription className="col-span-2 @md/card-header:col-span-1">{monthsDescription}</CardDescription>
+            <CardAction className="row-end-2 @md/card-header:row-end-3">
+              <SegmentedControl
+                ariaLabel={t('income.months.period')}
+                value={period}
+                onChange={setPeriod}
+                options={(['past', 'next', 'both'] as const).map((value) => ({ value, label: t(`income.months.periods.${value}`) }))}
+              />
+            </CardAction>
           </CardHeader>
-          <CardContent>
-            <IncomeMonthsChart months={income.months} sources={sources} />
+          <CardContent className="flex flex-col gap-2">
+            {received.isError && period !== 'next' ? (
+              <ErrorState messageOnly message={t('income.months.receivedError')} onRetry={() => void received.refetch()} />
+            ) : (
+              <IncomeMonthsChart rows={incomeChartRows(income.months, receivedRows, period)} ariaLabel={`${t('income.months.title')} — ${monthsDescription}`} />
+            )}
+            {unconverted > 0 && period !== 'next' && (
+              <p className="text-xs text-muted-foreground">{t('income.months.unconverted', { count: unconverted })}</p>
+            )}
           </CardContent>
         </Card>
 

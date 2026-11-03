@@ -5,31 +5,56 @@ import { MoneyChartTooltip } from '@/components/shared/MoneyChartTooltip'
 import { useMoney } from '@/hooks/use-money'
 import { AXIS_PROPS, yAxisWidth } from '@/lib/chart-axis'
 import { localeFromLanguage } from '@/lib/utils'
-import type { IncomeMonth, IncomeSource } from '@/features/income/passive-income'
-import { monthLabel, SOURCE_COLORS } from './income-view'
+import { INCOME_SOURCES, monthLabel, SOURCE_COLORS, type IncomeChartRow } from './income-view'
 
-/** The twelve months stacked by source; only the sources that pay something get a bar and a legend entry. */
-export function IncomeMonthsChart({ months, sources }: { months: IncomeMonth[]; sources: IncomeSource[] }) {
+// Received first, then the forecast in the hero's source order (Recharts sorts alphabetically otherwise).
+const LEGEND_ORDER = ['received', ...INCOME_SOURCES]
+
+/**
+ * Month by month on one money axis: dividends received as solid bars, the forecast stacked by
+ * source as lighter outlined bars. Only the sides and sources that pay something get a bar and a
+ * legend entry.
+ */
+export function IncomeMonthsChart({ rows, ariaLabel }: { rows: IncomeChartRow[]; ariaLabel: string }) {
   const { t, i18n } = useTranslation()
   const money = useMoney()
   const locale = localeFromLanguage(i18n.resolvedLanguage ?? i18n.language)
 
-  const config = Object.fromEntries(
-    sources.map((s) => [s, { label: t(`income.source.${s}`), color: SOURCE_COLORS[s] }]),
-  ) satisfies ChartConfig
-  const data = months.map((m) => ({ ...m, label: monthLabel(m.month, locale) }))
-  const width = yAxisWidth(months.map((m) => m.dividends + m.scpi + m.rent + m.interest), money.tick)
+  const received = rows.some((r) => (r.received ?? 0) > 0)
+  const forecast = INCOME_SOURCES.filter((s) => rows.some((r) => (r[s] ?? 0) > 0))
+  if (!received && forecast.length === 0) return <p className="py-12 text-center text-sm text-muted-foreground">{t('income.months.empty')}</p>
+  const config = {
+    received: { label: t('income.months.received'), color: SOURCE_COLORS.dividends },
+    ...Object.fromEntries(
+      forecast.map((s) => [s, { label: t('income.months.forecastOf', { source: t(`income.source.${s}`) }), color: SOURCE_COLORS[s] }]),
+    ),
+  } satisfies ChartConfig
+  const width = yAxisWidth(
+    rows.map((r) => (r.received ?? 0) + (r.dividends ?? 0) + (r.scpi ?? 0) + (r.rent ?? 0) + (r.interest ?? 0)),
+    money.tick,
+  )
 
   return (
-    <ChartContainer config={config} className="h-[260px] w-full">
-      <BarChart data={data} accessibilityLayer>
+    <ChartContainer config={config} className="h-[260px] w-full" role="img" aria-label={ariaLabel}>
+      <BarChart data={rows} accessibilityLayer>
         <CartesianGrid vertical={false} />
-        <XAxis dataKey="label" {...AXIS_PROPS} fontSize={12} />
+        <XAxis dataKey="month" {...AXIS_PROPS} fontSize={12} tickFormatter={(m: string) => monthLabel(m, locale)} />
         <YAxis {...AXIS_PROPS} width={width} fontSize={12} tickFormatter={money.tick} />
-        <ChartTooltip content={<MoneyChartTooltip config={config} />} />
-        <ChartLegend content={<ChartLegendContent className="flex-wrap gap-x-4 gap-y-1" />} />
-        {sources.map((s) => (
-          <Bar key={s} dataKey={s} stackId="income" fill={`var(--color-${s})`} />
+        <ChartTooltip content={<MoneyChartTooltip config={config} labelFormatter={(m) => monthLabel(String(m), locale, true)} />} />
+        <ChartLegend
+          content={<ChartLegendContent className="flex-wrap gap-x-4 gap-y-1" />}
+          itemSorter={(item) => LEGEND_ORDER.indexOf(String(item.dataKey))}
+        />
+        {received && <Bar dataKey="received" stackId="income" fill="var(--color-received)" />}
+        {forecast.map((s) => (
+          <Bar
+            key={s}
+            dataKey={s}
+            stackId="income"
+            fill={`color-mix(in oklab, var(--color-${s}) 35%, transparent)`}
+            stroke={`var(--color-${s})`}
+            strokeWidth={1}
+          />
         ))}
       </BarChart>
     </ChartContainer>

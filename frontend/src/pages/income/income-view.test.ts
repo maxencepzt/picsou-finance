@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { ReceivedDividend, UpcomingDividend } from '@/types/api'
 import type { IncomeMonth, SavingsInterestLine } from '@/features/income/passive-income'
-import { incomeBySource, nextPayments, receivedTotal } from './income-view'
+import { incomeBySource, incomeChartRows, nextPayments, receivedTotal } from './income-view'
 
 const dividend = (overrides: Partial<UpcomingDividend>) => ({
   id: 'd', source: 'HOLDING', name: 'LVMH', expectedDate: '2026-12-02', paymentDate: '2026-12-04',
@@ -21,9 +21,43 @@ const month = (key: string, rent = 0): IncomeMonth => ({ month: key, dividends: 
 const months = ['2026-11', '2026-12', '2027-01'].map((m) => month(m, 100))
 
 describe('income view', () => {
-  it('sums EUR credits only', () => {
-    const rows = [{ amount: 6, currency: 'EUR' }, { amount: 3.5, currency: 'EUR' }, { amount: 9, currency: 'USD' }] as ReceivedDividend[]
-    expect(receivedTotal(rows)).toBe(9.5)
+  it('sums every currency through amountEur and leaves out credits with no rate', () => {
+    const rows = [
+      { amount: 6, currency: 'EUR', amountEur: 6 },
+      { amount: 9, currency: 'USD', amountEur: 8.25 },
+      { amount: 4, currency: 'GBP', amountEur: null },
+    ] as ReceivedDividend[]
+    expect(receivedTotal(rows)).toBe(14.25)
+  })
+
+  it('puts received credits on the twelve months up to now and the forecast on the twelve from now', () => {
+    const forecast = Array.from({ length: 12 }, (_, i) => ({
+      ...month(i < 2 ? `2026-${11 + i}` : `2027-${String(i - 1).padStart(2, '0')}`), dividends: 10 + i,
+    }))
+    const received = [
+      { receivedDate: '2025-11-20', amountEur: 99 }, // 12 months back: outside the window
+      { receivedDate: '2025-12-02', amountEur: 6 },
+      { receivedDate: '2026-03-14', amountEur: 4 },
+      { receivedDate: '2026-03-28', amountEur: 2.5 },
+      { receivedDate: '2026-11-02', amountEur: 3 },
+      { receivedDate: '2026-11-03', amountEur: null }, // no rate: left out
+    ] as ReceivedDividend[]
+
+    const both = incomeChartRows(forecast, received, 'both')
+    expect(both).toHaveLength(23)
+    expect(both[0]).toEqual({ month: '2025-12', received: 6, dividends: null, scpi: null, rent: null, interest: null })
+    expect(both.find((r) => r.month === '2026-03')?.received).toBe(6.5)
+    // The current month carries what already landed and what is still forecast.
+    expect(both[11]).toEqual({ month: '2026-11', received: 3, dividends: 10, scpi: 0, rent: 0, interest: 0 })
+    expect(both[22]).toMatchObject({ month: '2027-10', received: null, dividends: 21 })
+
+    const past = incomeChartRows(forecast, received, 'past')
+    expect(past.map((r) => r.month)).toEqual(both.slice(0, 12).map((r) => r.month))
+    expect(past.every((r) => r.dividends === null)).toBe(true)
+
+    const next = incomeChartRows(forecast, received, 'next')
+    expect(next.map((r) => r.month)).toEqual(forecast.map((m) => m.month))
+    expect(next.every((r) => r.received === null)).toBe(true)
   })
 
   it('merges dividends and capitalisations, soonest first, capped', () => {

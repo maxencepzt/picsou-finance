@@ -45,6 +45,18 @@ describe('IncomePage', () => {
     expect(screen.getByText('income.empty.title')).toBeInTheDocument()
   })
 
+  it('keeps the page when the only credits have no exchange rate, and says they are not counted', () => {
+    hooks.usePassiveIncome.mockReturnValue({
+      isLoading: false, isError: false, months, totals: { ...empty, total: 0 }, upcoming: [], savings: [], monthlyRent: 0,
+    })
+    hooks.useReceivedDividends.mockReturnValue({
+      data: [{ id: 'r', receivedDate: '2027-01-10', amount: 4, currency: 'GBP', amountEur: null }], isLoading: false,
+    })
+    renderPage()
+    expect(screen.queryByText('income.empty.title')).toBeNull()
+    expect(screen.getByText('income.months.unconverted')).toBeInTheDocument()
+  })
+
   it('lists payers and points to Analyse when essential expenses are unknown', () => {
     const lvmh = {
       id: 'a', source: 'HOLDING', name: 'LVMH', expectedDate: '2027-03-02', paymentDate: '2027-03-04', amountEur: 52, cadence: 'ANNUAL',
