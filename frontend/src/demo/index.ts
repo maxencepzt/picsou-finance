@@ -1249,7 +1249,6 @@ handlers.set(key('GET', '/oauth2/consent-info'), (config) => {
   }
 })
 // Family (solo demo profile: no managed members, a small shared view)
-handlers.set(key('GET', '/family/members'), () => [])
 // Read from the same fixtures as every other page, so a shared account keeps its name and balance.
 handlers.set(key('GET', '/family/dashboard'), () => {
   const sharedAccounts = _demoAccounts.filter(a => a.id === 1 || a.id === 2).map(a => ({
