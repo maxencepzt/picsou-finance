@@ -946,7 +946,7 @@
     "card": {
       "active": "Active",
       "upcoming": "Upcoming",
-      "perMonth": "{{value}} / month",
+      "perMonth": "{{value}} / month",
       "into": "into {{account}}",
       "required": "Required effort",
       "average": "Average paid in",
@@ -976,7 +976,8 @@
       "onTime": "Reached in {{month}} at the average pace of {{pace}}",
       "late": "{{count}} month late: reached in {{month}} at the average pace of {{pace}}",
       "late_other": "{{count}} months late: reached in {{month}} at the average pace of {{pace}}",
-      "never": "Not reached at the average pace of {{pace}}"
+      "never": "Not reached at the average pace of {{pace}}",
+      "shrinking": "Not reached: the linked savings shrink by {{pace}} on average"
     },
     "planStats": {
       "title": "Purchases since {{date}}",
@@ -988,7 +989,9 @@
       "noPurchase": "No purchase for this plan over the period.",
       "needsSplit": "Split the plan across positions to track its purchases.",
       "error": "Purchase tracking unavailable."
-    }
+    },
+    "objectiveShort": "target {{value}}",
+    "nameLabel": "Goal name"
   },
   "budget": {
     "surtitle": "FINANCES",

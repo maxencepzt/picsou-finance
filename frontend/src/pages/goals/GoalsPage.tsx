@@ -10,7 +10,7 @@ import { SavingsRateCard } from './SavingsRateCard'
 import { GoalsKpiRow } from './GoalsKpiRow'
 import { GoalTrajectory } from './GoalTrajectory'
 import { RecurringPlanStats } from './RecurringPlanStats'
-import { Stat } from './Stat'
+import { Stat, StatusDot } from './Stat'
 import { goalStatus } from './goal-stats'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { EmptyState } from '@/components/shared/EmptyState'
@@ -22,11 +22,11 @@ import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/componen
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { NumericInput } from '@/components/shared/NumericInput'
+import { SegmentedControl } from '@/components/shared/SegmentedControl'
 import { DateInput } from '@/components/shared/DateInput'
 import { formatLocalDate, formatPercent, parseAmount } from '@/lib/utils'
 import { useMoney } from '@/hooks/use-money'
 import { Label } from '@/components/ui/label'
-import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import {
   Dialog,
@@ -191,7 +191,7 @@ export function GoalsPage() {
       <PageHeader
         title={t('goals.title')}
         actions={
-          <Button onClick={openCreate} size="sm" className="gap-1.5">
+          <Button onClick={openCreate} size="sm">
             <Plus className="size-4" />
             {t('goals.addGoal')}
           </Button>
@@ -210,8 +210,8 @@ export function GoalsPage() {
           <GoalsKpiRow savings={savingsTargets} plans={recurringPlans} today={today} />
 
           {savingsTargets.length > 0 && (
-            <section className="flex flex-col gap-4">
-              <h2 className="text-sm text-muted-foreground">{t('goals.sections.savings')}</h2>
+            <section className="flex flex-col gap-3">
+              <h2 className={SECTION_TITLE}>{t('goals.sections.savings')}</h2>
               <div className={CARD_GRID}>
               {savingsTargets.map((goal) => (
                 <GoalCard
@@ -229,18 +229,13 @@ export function GoalsPage() {
           )}
 
           {recurringPlans.length > 0 && (
-            <section className="flex flex-col gap-4">
+            <section className="flex flex-col gap-3">
               <div>
-                <h2 className="text-sm text-muted-foreground">{t('goals.sections.recurring')}</h2>
-                <p className="text-xs text-muted-foreground">{t('goals.sections.recurringHint')}</p>
+                <h2 className={SECTION_TITLE}>{t('goals.sections.recurring')}</h2>
+                <p className="text-[13px] text-pretty text-muted-foreground">{t('goals.sections.recurringHint')}</p>
               </div>
-              <SavingsRateCard
-                plans={recurringPlans}
-                monthlyNetIncome={profile?.monthlyNetIncome ?? null}
-                today={today}
-                onOpenSettings={() => navigate('/settings')}
-              />
-              <div className={CARD_GRID}>
+              {/* Top-aligned: the savings-rate card is short and must not stretch to a plan's height. */}
+              <div className={cn(CARD_GRID, 'items-start')}>
               {recurringPlans.map((goal) => (
                 <RecurringPlanCard
                   key={goal.id}
@@ -250,6 +245,13 @@ export function GoalsPage() {
                   onDelete={() => setDeleteId(goal.id)}
                 />
               ))}
+              {/* What the plans add up to against income: a cell of the grid, not a full-width band. */}
+              <SavingsRateCard
+                plans={recurringPlans}
+                monthlyNetIncome={profile?.monthlyNetIncome ?? null}
+                today={today}
+                onOpenSettings={() => navigate('/settings?section=profile')}
+              />
               </div>
             </section>
           )}
@@ -275,24 +277,21 @@ export function GoalsPage() {
             {!editingGoal && (
               <div className="flex flex-col gap-1.5">
                 <Label>{t('goals.goalType')}</Label>
-                <div className="flex gap-2">
-                  {(['SAVINGS_TARGET', 'RECURRING_INVESTMENT'] as GoalType[]).map((type) => (
-                    <Button
-                      key={type}
-                      type="button"
-                      variant={form.type === type ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setForm((f) => ({ ...f, type, accountIds: [], allocations: [] }))}
-                    >
-                      {t(`goals.types.${type}`)}
-                    </Button>
-                  ))}
-                </div>
+                <SegmentedControl
+                  fill
+                  ariaLabel={t('goals.goalType')}
+                  value={form.type}
+                  onChange={(type) => setForm((f) => ({ ...f, type, accountIds: [], allocations: [] }))}
+                  options={(['SAVINGS_TARGET', 'RECURRING_INVESTMENT'] as GoalType[]).map((type) => ({
+                    value: type,
+                    label: t(`goals.types.${type}`),
+                  }))}
+                />
               </div>
             )}
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="goal-name">{t('goals.title')}</Label>
+              <Label htmlFor="goal-name">{t('goals.nameLabel')}</Label>
               <Input
                 id="goal-name"
                 required
@@ -303,7 +302,7 @@ export function GoalsPage() {
             </div>
 
             {form.type === 'SAVINGS_TARGET' ? (
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div className="flex flex-col gap-1.5">
                   <Label htmlFor="goal-target">{t('goals.targetAmount')}</Label>
                   <NumericInput
@@ -326,7 +325,7 @@ export function GoalsPage() {
               </div>
             ) : (
               <>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div className="flex flex-col gap-1.5">
                     <Label htmlFor="goal-monthly">{t('goals.monthlyAmount')}</Label>
                     <NumericInput
@@ -347,7 +346,7 @@ export function GoalsPage() {
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div className="flex flex-col gap-1.5">
                     <Label htmlFor="goal-start">{t('goals.startDate')}</Label>
                     <DateInput
@@ -371,26 +370,25 @@ export function GoalsPage() {
 
             <div className="flex flex-col gap-2">
               <Label>{t('goals.includedAccounts')}</Label>
-              <div className="flex flex-col gap-2 max-h-40 overflow-y-auto">
+              <div className="flex max-h-48 flex-col overflow-y-auto rounded-xl p-1 ring-1 ring-border">
                 {(accounts ?? []).map((a) => (
                   <label
                     key={a.id}
-                    className="flex items-center gap-2.5 cursor-pointer select-none"
+                    className="flex min-h-10 cursor-pointer items-center gap-2.5 rounded-lg px-2.5 select-none hover:bg-muted/50"
                   >
                     <input
                       type="checkbox"
                       checked={form.accountIds.includes(a.id)}
                       onChange={() => toggleAccount(a.id)}
-                      className="rounded accent-primary"
+                      className="size-4 shrink-0 rounded accent-primary"
                     />
                     <span
-                      className="w-2.5 h-2.5 rounded-full shrink-0"
+                      className="size-2.5 shrink-0 rounded-full"
                       style={{ background: a.color }}
+                      aria-hidden="true"
                     />
-                    <span className="text-sm flex-1">{a.name}</span>
-                    <span className="text-xs text-muted-foreground">
-                      <CurrencyDisplay value={a.currentBalanceEur} />
-                    </span>
+                    <span className="min-w-0 flex-1 truncate text-sm">{a.name}</span>
+                    <CurrencyDisplay value={a.currentBalanceEur} className="shrink-0 text-[13px] font-semibold tabular-nums text-foreground" />
                   </label>
                 ))}
               </div>
@@ -419,9 +417,7 @@ export function GoalsPage() {
                 }
               >
                 {(createGoal.isPending || updateGoal.isPending) && (
-                  <Loader2
-                    className="size-4 animate-spin mr-1"
-                  />
+                  <Loader2 className="size-4 animate-spin" />
                 )}
                 {t('common.save')}
               </Button>
@@ -445,7 +441,7 @@ export function GoalsPage() {
 }
 
 const CARD_GRID = 'grid grid-cols-[repeat(auto-fill,minmax(min(100%,19rem),1fr))] gap-4'
-const BADGE = 'h-[22px] px-2 text-xs font-semibold'
+const SECTION_TITLE = 'text-sm font-semibold text-foreground'
 
 /** Edit / delete (and calendar) at the foot of a card; clicks stay off the card's own handler. */
 function CardActions({ children }: { children: React.ReactNode }) {
@@ -487,17 +483,17 @@ function RecurringPlanCard({
   const color = (i: number) => `var(--slice-${(i % 10) + 1})`
 
   const state = isActiveThisMonth(goal, today)
-    ? { label: t('goals.card.active'), className: 'bg-primary/12 text-foreground' }
+    ? { label: t('goals.card.active'), tone: 'gain' as const }
     : goal.startDate != null && goal.startDate > today
-      ? { label: t('goals.card.upcoming'), className: '' }
-      : { label: t('common.done'), className: '' }
+      ? { label: t('goals.card.upcoming'), tone: 'muted' as const }
+      : { label: t('common.done'), tone: 'muted' as const }
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="line-clamp-2 break-words">{goal.name}</CardTitle>
         <CardAction>
-          <Badge variant="secondary" className={cn(BADGE, state.className)}>{state.label}</Badge>
+          <StatusDot tone={state.tone}>{state.label}</StatusDot>
         </CardAction>
       </CardHeader>
       <CardContent className="flex flex-1 flex-col gap-3">
@@ -610,12 +606,12 @@ function GoalCard({ goal, today, onEdit, onDelete, onCalendar, onOpenDetail }: G
 
   const verdict = goalStatus(goal)
   const behind = verdict === 'behind'
-  const status = {
-    achieved: { label: t('goals.achieved'), className: 'bg-gain/10 text-gain' },
-    waiting: { label: t('goals.waiting'), className: '' },
-    onTrack: { label: t('goals.onTrack'), className: 'bg-primary/12 text-foreground' },
-    behind: { label: t('goals.behind'), className: 'text-warning' },
-  }[verdict]
+  const status = ({
+    achieved: { label: t('goals.achieved'), tone: 'gain' },
+    waiting: { label: t('goals.waiting'), tone: 'muted' },
+    onTrack: { label: t('goals.onTrack'), tone: 'gain' },
+    behind: { label: t('goals.behind'), tone: 'warning' },
+  } as const)[verdict]
 
   return (
     <Card
@@ -625,7 +621,7 @@ function GoalCard({ goal, today, onEdit, onDelete, onCalendar, onOpenDetail }: G
       <CardHeader>
         <CardTitle className="line-clamp-2 break-words">{goal.name}</CardTitle>
         <CardAction>
-          <Badge variant="secondary" className={cn(BADGE, status.className)}>{status.label}</Badge>
+          <StatusDot tone={status.tone}>{status.label}</StatusDot>
         </CardAction>
       </CardHeader>
       <CardContent className="flex flex-1 flex-col gap-3">

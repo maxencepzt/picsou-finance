@@ -935,7 +935,7 @@
     "card": {
       "active": "Aktiv",
       "upcoming": "Geplant",
-      "perMonth": "{{value}} / Monat",
+      "perMonth": "{{value}} / Monat",
       "into": "auf {{account}}",
       "required": "Erforderlicher Betrag",
       "average": "Durchschnittlich eingezahlt",
@@ -965,7 +965,8 @@
       "onTime": "Erreicht im {{month}} bei durchschnittlich {{pace}}",
       "late": "{{count}} Monat im Verzug: erreicht im {{month}} bei durchschnittlich {{pace}}",
       "late_other": "{{count}} Monate im Verzug: erreicht im {{month}} bei durchschnittlich {{pace}}",
-      "never": "Bei durchschnittlich {{pace}} nicht erreichbar"
+      "never": "Bei durchschnittlich {{pace}} nicht erreichbar",
+      "shrinking": "Nicht erreicht: Die verknüpften Ersparnisse sinken im Schnitt um {{pace}}"
     },
     "planStats": {
       "title": "Käufe seit dem {{date}}",
@@ -977,7 +978,9 @@
       "noPurchase": "Keine Käufe für diesen Plan im Zeitraum.",
       "needsSplit": "Teilen Sie den Plan auf Positionen auf, um seine Käufe zu verfolgen.",
       "error": "Kaufverfolgung nicht verfügbar."
-    }
+    },
+    "objectiveShort": "Ziel {{value}}",
+    "nameLabel": "Name des Ziels"
   },
   "addAccount": {
     "title": "Konto hinzufügen",

@@ -946,7 +946,7 @@
     "card": {
       "active": "Actif",
       "upcoming": "À venir",
-      "perMonth": "{{value}} / mois",
+      "perMonth": "{{value}} / mois",
       "into": "sur {{account}}",
       "required": "Effort requis",
       "average": "Versé en moyenne",
@@ -976,7 +976,8 @@
       "onTime": "Atteint en {{month}} au rythme moyen de {{pace}}",
       "late": "En retard de {{count}} mois : atteint en {{month}} au rythme moyen de {{pace}}",
       "late_other": "En retard de {{count}} mois : atteint en {{month}} au rythme moyen de {{pace}}",
-      "never": "Pas atteint au rythme moyen de {{pace}}"
+      "never": "Pas atteint au rythme moyen de {{pace}}",
+      "shrinking": "Pas atteint : l'épargne liée recule de {{pace}} en moyenne"
     },
     "planStats": {
       "title": "Achats depuis le {{date}}",
@@ -988,7 +989,9 @@
       "noPurchase": "Aucun achat de ce plan sur la période.",
       "needsSplit": "Détaillez la répartition du plan pour suivre ses achats.",
       "error": "Suivi des achats indisponible."
-    }
+    },
+    "objectiveShort": "obj. {{value}}",
+    "nameLabel": "Nom de l'objectif"
   },
   "budget": {
     "surtitle": "FINANCES",

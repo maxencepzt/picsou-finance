@@ -281,7 +281,8 @@ reference scenario is drawn thicker (3px against 2px) because it is the one to r
 contributions are a dashed `--chart-5` line underneath.
 
 Every legend entry is a toggle for its curve, contributions included: five series is more than a
-320 px chart separates, and comparing two of them means removing the other three.
+320 px chart separates, and comparing two of them means removing the other three. Each toggle is
+at least 32px tall (padded, not enlarged) so a finger can hit it on a phone.
 
 **The Y axis is pinned to the full set of series, not to the visible ones.** Letting it breathe
 when a curve is hidden rescales every remaining curve, so hiding the optimistic line appears to

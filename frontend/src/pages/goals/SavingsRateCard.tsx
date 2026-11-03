@@ -1,7 +1,8 @@
 import { useTranslation } from 'react-i18next'
 import { Info } from 'lucide-react'
 import { CurrencyDisplay } from '@/components/shared/CurrencyDisplay'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Progress } from '@/components/ui/progress'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { FRENCH_HOUSEHOLD_SAVINGS_RATE } from '@/lib/constants'
 import { formatPercent } from '@/lib/utils'
@@ -49,11 +50,41 @@ export function SavingsRateCard({
   // No income stated: show what is being put aside and say what is missing, rather than
   // inventing a denominator. Same principle as the allocation targets form, which never guesses
   // an expense on the member's behalf.
+  const header = (
+    <CardHeader>
+      <CardTitle>{t('goals.savingsRate.title')}</CardTitle>
+      <CardAction>
+        {/* Wrapped locally like PriceFreshnessDot and AccountRow: providers.tsx already
+            supplies one app-wide, but this keeps the card renderable on its own. */}
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                aria-label={t('goals.savingsRate.benchmarkLabel')}
+                className="grid size-8 place-items-center rounded-md text-muted-foreground hover:text-foreground"
+              >
+                <Info className="size-4" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-xs">
+              {t('goals.savingsRate.benchmark', { rate: formatPercent(FRENCH_HOUSEHOLD_SAVINGS_RATE) })}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </CardAction>
+    </CardHeader>
+  )
+
+  // No income stated: show what is being put aside and say what is missing, rather than
+  // inventing a denominator. Same principle as the allocation targets form, which never guesses
+  // an expense on the member's behalf.
   if (monthlyNetIncome == null || monthlyNetIncome <= 0) {
     return (
       <Card>
-        <CardContent className="flex flex-wrap items-center justify-between gap-3 py-4">
-          <p className="text-sm text-muted-foreground">{t('goals.savingsRate.needsIncome')}</p>
+        {header}
+        <CardContent className="flex flex-col items-start gap-3">
+          <p className="text-sm text-pretty text-muted-foreground">{t('goals.savingsRate.needsIncome')}</p>
           <button
             type="button"
             onClick={onOpenSettings}
@@ -70,39 +101,20 @@ export function SavingsRateCard({
 
   return (
     <Card>
-      <CardContent className="flex flex-wrap items-center justify-between gap-4 py-4">
-        <div className="min-w-0">
-          <div className="flex items-center gap-1.5">
-            <p className="text-xs text-muted-foreground">{t('goals.savingsRate.title')}</p>
-            {/* Wrapped locally like PriceFreshnessDot and AccountRow: providers.tsx already
-                supplies one app-wide, but this keeps the card renderable on its own. */}
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    type="button"
-                    aria-label={t('goals.savingsRate.benchmarkLabel')}
-                    className="text-muted-foreground hover:text-foreground"
-                  >
-                    <Info className="size-3.5" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent className="max-w-xs">
-                  {t('goals.savingsRate.benchmark', { rate: formatPercent(FRENCH_HOUSEHOLD_SAVINGS_RATE) })}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
+      {header}
+      <CardContent className="flex flex-col gap-3">
+        <div>
           {/* A ratio, so it stays legible in privacy mode -- the amounts beside it do not. */}
-          <p className="text-2xl font-semibold tabular-nums">{formatPercent(rate)}</p>
-          <p className="mt-0.5 text-sm text-muted-foreground">
-            <CurrencyDisplay value={contributions} />
+          <p className="text-[22px] leading-tight font-semibold tracking-tight tabular-nums">{formatPercent(rate)}</p>
+          <p className="mt-1 text-[13px] text-muted-foreground">
+            <CurrencyDisplay value={contributions} className="font-semibold text-foreground" />
             {' / '}
             <CurrencyDisplay value={monthlyNetIncome} />
             {' '}
             {t('goals.savingsRate.perMonth')}
           </p>
         </div>
+        <Progress value={Math.min(100, rate)} className="h-1.5" aria-label={t('goals.savingsRate.title')} />
       </CardContent>
     </Card>
   )

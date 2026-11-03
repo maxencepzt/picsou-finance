@@ -8,16 +8,16 @@ import { PageHeader } from '@/components/shared/PageHeader'
 import { ErrorState } from '@/components/shared/ErrorState'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
-import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
 import { Separator } from '@/components/ui/separator'
-import { ArrowLeft, Calendar, LayoutGrid, Clock, Loader2, Plus } from 'lucide-react'
-import { cn, formatPercent, localeFromLanguage, parseAmount } from '@/lib/utils'
+import { ArrowLeft, Calendar, LayoutGrid, Clock, Loader2, Plus, X } from 'lucide-react'
+import { formatPercent, localeFromLanguage, parseAmount } from '@/lib/utils'
 import { useMoney } from '@/hooks/use-money'
 import type { GoalMonthEntry } from '@/types/api'
+import { StatusDot } from './Stat'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -69,13 +69,15 @@ function groupByYear(months: GoalMonthEntry[]): { year: number; entries: GoalMon
 // Progress Ring
 // ---------------------------------------------------------------------------
 
+// Theme tokens only: a month met fills in the app's blue like every progress bar, a shortfall turns
+// amber then loss-red, and the share above the objective wraps on top in gain green.
 const COLORS = {
-  success: 'oklch(from var(--primary) calc(l + 0.2) c h)',
-  warning: '#f59e0b',
-  destructive: 'oklch(from var(--destructive) calc(l + 0.15) c h)',
+  success: 'var(--primary)',
+  warning: 'var(--warning)',
+  destructive: 'var(--loss)',
   muted: 'var(--muted)',
   mutedFg: 'var(--muted-foreground)',
-  overshoot: '#818cf8',
+  overshoot: 'var(--gain)',
 } as const
 
 function ProgressRing({ pct, color, size = 80, stroke = 9 }: {
@@ -115,7 +117,7 @@ function getProgressColor(entry: GoalMonthEntry, isPast: boolean): { color: stri
   const obj = entry.objective ?? 0
   const ratio = obj > 0 ? entry.effective / obj : 1
   const label = formatPercent(ratio * 100, { fractionDigits: 0 })
-  if (ratio >= 1) return { color: COLORS.success, pct: ratio, label, textColor: COLORS.success }
+  if (ratio >= 1) return { color: COLORS.success, pct: ratio, label, textColor: COLORS.overshoot }
   if (ratio >= 0.6) return { color: COLORS.warning, pct: ratio, label, textColor: COLORS.warning }
   return { color: COLORS.destructive, pct: ratio, label, textColor: COLORS.destructive }
 }
@@ -149,7 +151,7 @@ function YearGridView({ months, selectedYm, onSelect, onAddPreviousMonth, isAddi
       {years.map(({ year, entries }) => (
         <Card key={year}>
           <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-bold tracking-wider uppercase text-muted-foreground">{year}</CardTitle>
+            <CardTitle className="tabular-nums">{year}</CardTitle>
           </CardHeader>
           <CardContent className="pb-4 pt-3 px-4">
             <div className="grid grid-cols-[repeat(auto-fill,minmax(6rem,1fr))] gap-3">
@@ -198,10 +200,10 @@ function YearGridView({ months, selectedYm, onSelect, onAddPreviousMonth, isAddi
                     </span>
                     <div className="relative">
                       {hasOverride && !hasManual && (
-                        <div className="absolute top-[3px] right-[3px] z-10 w-[9px] h-[9px] rounded-full bg-violet-600 border-2 border-background" />
+                        <div className="absolute top-[3px] right-[3px] z-10 size-[9px] rounded-full border-2 border-card bg-warning" />
                       )}
                       {hasManual && (
-                        <div className="absolute top-[3px] right-[3px] z-10 w-[9px] h-[9px] rounded-full bg-blue-500 border-2 border-background" />
+                        <div className="absolute top-[3px] right-[3px] z-10 size-[9px] rounded-full border-2 border-card bg-foreground" />
                       )}
                       <ProgressRing pct={pct} color={color} />
                       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none gap-1">
@@ -222,7 +224,7 @@ function YearGridView({ months, selectedYm, onSelect, onAddPreviousMonth, isAddi
                       </div>
                     </div>
                     <span className="text-[11px] text-muted-foreground leading-none tabular-nums">
-                      obj.&nbsp;{wholeEuros(entry.objective)}
+                      {t('goals.objectiveShort', { value: wholeEuros(entry.objective) })}
                     </span>
                   </button>
                 )
@@ -241,6 +243,14 @@ function YearGridView({ months, selectedYm, onSelect, onAddPreviousMonth, isAddi
             <ProgressRing pct={1.3} color={COLORS.mutedFg} size={16} stroke={3} />
             {t('goals.legendOvershoot')}
           </span>
+          <span className="flex items-center gap-2">
+            <span className="size-2 rounded-full bg-foreground" aria-hidden="true" />
+            <span className="first-letter:uppercase">{t('goals.declared')}</span>
+          </span>
+          <span className="flex items-center gap-2">
+            <span className="size-2 rounded-full bg-warning" aria-hidden="true" />
+            <span className="first-letter:uppercase">{t('goals.modified')}</span>
+          </span>
         </div>
       )}
     </div>
@@ -254,7 +264,7 @@ function YearGridView({ months, selectedYm, onSelect, onAddPreviousMonth, isAddi
 function TimelineView({ months, selectedYm, onSelect }: {
   months: GoalMonthEntry[]; selectedYm: string | null; onSelect: (ym: string) => void
 }) {
-  const { i18n } = useTranslation()
+  const { t, i18n } = useTranslation()
   const locale = localeFromLanguage(i18n.resolvedLanguage ?? i18n.language)
   const sorted = useMemo(() =>
     [...(months ?? [])].filter(e => isPastOrCurrent(e.yearMonth)).reverse(),
@@ -269,7 +279,7 @@ function TimelineView({ months, selectedYm, onSelect }: {
           const obj = entry.objective ?? 0
           const eff = entry.effective ?? 0
           const pct = obj > 0 ? Math.min(100, (eff / obj) * 100) : (eff > 0 ? 100 : 0)
-          const barClass = pct >= 100 ? 'bg-primary' : pct >= 60 ? 'bg-primary/60' : 'bg-destructive/50'
+          const barClass = pct >= 100 ? 'bg-primary' : pct >= 60 ? 'bg-warning' : 'bg-loss'
 
           return (
             <button
@@ -288,10 +298,10 @@ function TimelineView({ months, selectedYm, onSelect }: {
                 {entry.effective != null ? <CurrencyDisplay value={entry.effective} /> : ''}
               </span>
               {entry.manualActual != null && (
-                <Badge variant="secondary" className="text-[10px] px-1.5 py-0">manu.</Badge>
+                <span className="size-2 shrink-0 rounded-full bg-foreground" title={t('goals.declared')} aria-label={t('goals.declared')} />
               )}
               {entry.override != null && (
-                <Badge variant="outline" className="text-[10px] px-1.5 py-0">modif.</Badge>
+                <span className="size-2 shrink-0 rounded-full bg-warning" title={t('goals.modified')} aria-label={t('goals.modified')} />
               )}
             </button>
           )
@@ -308,7 +318,7 @@ function TimelineView({ months, selectedYm, onSelect }: {
 function CalendarGridView({ months, selectedYm, onSelect }: {
   months: GoalMonthEntry[]; selectedYm: string | null; onSelect: (ym: string) => void
 }) {
-  const { i18n } = useTranslation()
+  const { t, i18n } = useTranslation()
   const locale = localeFromLanguage(i18n.resolvedLanguage ?? i18n.language)
   const years = useMemo(() => groupByYear(months), [months])
 
@@ -317,7 +327,7 @@ function CalendarGridView({ months, selectedYm, onSelect }: {
       {years.map(({ year, entries }) => (
         <Card key={year}>
           <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-bold tracking-wider uppercase text-muted-foreground">{year}</CardTitle>
+            <CardTitle className="tabular-nums">{year}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-4 gap-2">
@@ -351,8 +361,8 @@ function CalendarGridView({ months, selectedYm, onSelect }: {
                     )}
                     {(entry.manualActual != null || entry.override != null) && (
                       <div className="flex gap-1 mt-1.5">
-                        {entry.manualActual != null && <Badge variant="secondary" className="text-[9px] px-1 py-0">manu.</Badge>}
-                        {entry.override != null && <Badge variant="outline" className="text-[9px] px-1 py-0 text-violet-500 border-violet-300">modif.</Badge>}
+                        {entry.manualActual != null && <StatusDot tone="muted">{t('goals.declared')}</StatusDot>}
+                        {entry.override != null && <StatusDot tone="warning">{t('goals.modified')}</StatusDot>}
                       </div>
                     )}
                   </button>
@@ -388,24 +398,22 @@ function MonthDetailPanel({ goalId, entry, onClose, className }: {
 
   return (
     <Card className={className}>
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <CardTitle className="text-base">{fullMonthName(entry.yearMonth, locale)}</CardTitle>
-            {entry.override != null && (
-              <Badge variant="outline" className="text-[10px]">{t('goals.modified')}</Badge>
-            )}
-            {entry.manualActual != null && (
-              <Badge variant="secondary" className="text-[10px]">{t('goals.declared')}</Badge>
-            )}
+      <CardHeader>
+        <CardTitle>{fullMonthName(entry.yearMonth, locale)}</CardTitle>
+        {(entry.override != null || entry.manualActual != null) && (
+          <div className="flex flex-wrap gap-x-3">
+            {entry.override != null && <StatusDot tone="warning">{t('goals.modified')}</StatusDot>}
+            {entry.manualActual != null && <StatusDot tone="muted">{t('goals.declared')}</StatusDot>}
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose}>
-            &times;
+        )}
+        <CardAction>
+          <Button variant="ghost" size="icon-sm" onClick={onClose} aria-label={t('common.close')}>
+            <X className="size-4" />
           </Button>
-        </div>
+        </CardAction>
       </CardHeader>
       <Separator />
-      <CardContent className="pt-4">
+      <CardContent>
         <div className="grid grid-cols-1 gap-6">
           {/* Objective override */}
           <div className="space-y-3">
@@ -422,7 +430,7 @@ function MonthDetailPanel({ goalId, entry, onClose, className }: {
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">€</span>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button
                 variant="outline"
                 size="sm"
@@ -470,7 +478,7 @@ function MonthDetailPanel({ goalId, entry, onClose, className }: {
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">€</span>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               {entry.actual != null && (
                 <Button
                   variant="outline"
@@ -590,7 +598,7 @@ export function GoalCalendarPage() {
         surtitle={t('goals.calendar')}
         title={goal.name}
         actions={
-          <Button variant="outline" size="sm" onClick={() => navigate('/goals')}>
+          <Button variant="outline" size="sm" className="self-start sm:self-auto" onClick={() => navigate('/goals')}>
             <ArrowLeft className="size-4" />
             {t('goals.title')}
           </Button>
@@ -598,41 +606,45 @@ export function GoalCalendarPage() {
       />
 
       {/* Summary bar */}
-      <div className="flex items-center gap-3 text-sm">
-        <span className="text-muted-foreground">
-          {t('common.labelColon', { label: t('goals.monthlyObjective') })} <CurrencyDisplay value={goal.monthlyNeeded ?? 0} />
-        </span>
-        {pastMonths.length > 0 && (
-          <Badge variant="secondary">
-            {achievedCount}/{pastMonths.length} {t('goals.achieved')}
-          </Badge>
-        )}
+      {/* Summary, then the view switch */}
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+          <span className="text-muted-foreground">
+            {t('common.labelColon', { label: t('goals.monthlyObjective') })}{' '}
+            <CurrencyDisplay value={goal.monthlyNeeded ?? 0} className="font-semibold text-foreground tabular-nums" />
+          </span>
+          {pastMonths.length > 0 && (
+            <StatusDot tone={achievedCount === pastMonths.length ? 'gain' : 'muted'}>
+              {achievedCount}/{pastMonths.length} {t('goals.achieved')}
+            </StatusDot>
+          )}
+        </div>
+
+        <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as typeof viewMode)}>
+          <TabsList>
+            <TabsTrigger value="grid" className="gap-1.5">
+              <LayoutGrid className="size-4" aria-hidden="true" />
+              {/* Hidden visually on a phone only: the tab keeps its name for screen readers. */}
+              <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">{t('goals.viewGrid')}</span>
+            </TabsTrigger>
+            <TabsTrigger value="timeline" className="gap-1.5">
+              <Clock className="size-4" aria-hidden="true" />
+              <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">{t('goals.viewTimeline')}</span>
+            </TabsTrigger>
+            <TabsTrigger value="calendar" className="gap-1.5">
+              <Calendar className="size-4" aria-hidden="true" />
+              <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">{t('goals.viewCalendar')}</span>
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
       </div>
 
-      {/* View toggle with shadcn Tabs */}
-      <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as typeof viewMode)}>
-        <TabsList>
-          <TabsTrigger value="grid" className="gap-1.5">
-            <LayoutGrid className="size-4" />
-            <span className="hidden sm:inline">{t('goals.viewGrid')}</span>
-          </TabsTrigger>
-          <TabsTrigger value="timeline" className="gap-1.5">
-            <Clock className="size-4" />
-            <span className="hidden sm:inline">{t('goals.viewTimeline')}</span>
-          </TabsTrigger>
-          <TabsTrigger value="calendar" className="gap-1.5">
-            <Calendar className="size-4" />
-            <span className="hidden sm:inline">{t('goals.viewCalendar')}</span>
-          </TabsTrigger>
-        </TabsList>
-      </Tabs>
-
       {/* Backfill: extend history one year before the goal's creation */}
-      <Card className="flex flex-row items-center justify-between gap-3 px-4 py-2.5">
-        <p className="text-sm text-muted-foreground">{t('goals.backfillHint')}</p>
+      <Card className="flex-row flex-wrap items-center justify-between gap-3 px-4">
+        <p className="min-w-0 flex-[1_1_16rem] text-sm text-pretty text-muted-foreground">{t('goals.backfillHint')}</p>
         <Button
           variant="outline"
-          size="sm"
+          size="xs"
           className="shrink-0"
           disabled={extendHistory.isPending}
           onClick={() => extendHistory.mutate(goalId)}
@@ -667,8 +679,8 @@ export function GoalCalendarPage() {
           {selectedEntry ? (
             <MonthDetailPanel goalId={goalId} entry={selectedEntry} onClose={() => setSelectedYm(null)} />
           ) : (
-            <Card className="flex items-center justify-center p-6">
-              <p className="text-center text-sm text-muted-foreground">{t('goals.clickMonthHint')}</p>
+            <Card className="items-center justify-center px-6 py-8">
+              <p className="text-center text-sm text-pretty text-muted-foreground">{t('goals.clickMonthHint')}</p>
             </Card>
           )}
         </div>
@@ -693,7 +705,7 @@ export function GoalCalendarPage() {
               goalId={goalId}
               entry={selectedEntry}
               onClose={() => setSelectedYm(null)}
-              className={cn('border-0 bg-transparent shadow-none')}
+              className="bg-transparent py-0 ring-0"
             />
           )}
         </SheetContent>

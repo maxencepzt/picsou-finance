@@ -935,7 +935,7 @@
     "card": {
       "active": "Activo",
       "upcoming": "Próximamente",
-      "perMonth": "{{value}} / mes",
+      "perMonth": "{{value}} / mes",
       "into": "en {{account}}",
       "required": "Esfuerzo necesario",
       "average": "Aportado de media",
@@ -965,7 +965,8 @@
       "onTime": "Alcanzado en {{month}} al ritmo medio de {{pace}}",
       "late": "{{count}} mes de retraso: alcanzado en {{month}} al ritmo medio de {{pace}}",
       "late_other": "{{count}} meses de retraso: alcanzado en {{month}} al ritmo medio de {{pace}}",
-      "never": "No se alcanza al ritmo medio de {{pace}}"
+      "never": "No se alcanza al ritmo medio de {{pace}}",
+      "shrinking": "No alcanzado: el ahorro vinculado baja {{pace}} de media"
     },
     "planStats": {
       "title": "Compras desde el {{date}}",
@@ -977,7 +978,9 @@
       "noPurchase": "Ninguna compra de este plan en el periodo.",
       "needsSplit": "Reparta el plan entre posiciones para seguir sus compras.",
       "error": "Seguimiento de compras no disponible."
-    }
+    },
+    "objectiveShort": "obj. {{value}}",
+    "nameLabel": "Nombre del objetivo"
   },
   "addAccount": {
     "title": "Añadir cuenta",

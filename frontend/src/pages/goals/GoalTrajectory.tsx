@@ -95,15 +95,16 @@ function ReachLine({ goal, today }: { goal: GoalProgress; today: string }) {
   const money = useMoney()
   const reach = projectReach(goal, today)
   if (reach == null) return null
+  const average = goal.avgMonthlyContribution ?? 0
   const pace = t('goals.card.perMonth', {
-    value: money.amount(goal.avgMonthlyContribution ?? 0, 'EUR', { maximumFractionDigits: 0 }),
+    value: money.amount(Math.abs(average), 'EUR', { maximumFractionDigits: 0 }),
   })
 
   if (reach.kind === 'onTime') {
     return (
       <p className="flex items-start gap-1.5 text-[13px] text-muted-foreground">
         <CalendarCheck className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
-        <span>{t('goals.trajectory.onTime', { month: formatMonthYear(reach.month), pace })}</span>
+        <span className="text-pretty">{t('goals.trajectory.onTime', { month: formatMonthYear(reach.month), pace })}</span>
       </p>
     )
   }
@@ -111,10 +112,13 @@ function ReachLine({ goal, today }: { goal: GoalProgress; today: string }) {
   return (
     <p className="flex items-start gap-1.5 text-[13px] text-warning">
       <Icon className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
-      <span>
+      <span className="text-pretty">
         {reach.kind === 'late'
           ? t('goals.trajectory.late', { count: reach.monthsLate, month: formatMonthYear(reach.month), pace })
-          : t('goals.trajectory.never', { pace })}
+          // A falling balance has no pace to reach anything at: say it falls, not "a pace of -3 €".
+          : average < 0
+            ? t('goals.trajectory.shrinking', { pace })
+            : t('goals.trajectory.never', { pace })}
       </span>
     </p>
   )
