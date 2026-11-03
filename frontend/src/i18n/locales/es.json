@@ -353,6 +353,14 @@
       "amountDue": "Importe a pagar",
       "dueDate": "Fecha de domiciliación",
       "miles": "Millas ganadas este ciclo"
+    },
+    "kpi": {
+      "tracked": "Cuentas seguidas",
+      "manual": "de ellas {{count}} manual",
+      "manual_other": "de ellas {{count}} manuales",
+      "upToDate": "Al día",
+      "upToDateHint": "Sincronizadas en las últimas 24 h",
+      "noSynced": "Ninguna cuenta sincronizada"
     }
   },
   "analysis": {
@@ -2985,10 +2993,6 @@
     "revokeTitle": "Revoke access for this app?",
     "revokeDescription": "This app immediately loses access to your data. You can reconnect it later from the app.",
     "error": "Could not revoke access. Please try again."
-  },
-  "pockets": {
-    "subAccountsCount": "{{count}} subcuenta",
-    "subAccountsCount_other": "{{count}} subcuentas"
   },
   "savings": {
     "configSection": "Savings configuration",

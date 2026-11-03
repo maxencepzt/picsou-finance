@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { Fragment, useState, useMemo } from 'react'
 import { useNavigate } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { useAccounts, useAccountTree, useAccountDeletionImpact, useUpdateAccount, useDeleteAccount, useUpdateDebtMetadata } from '@/features/accounts/hooks'
@@ -9,22 +9,26 @@ import { AddAccountModal } from '@/components/shared/AddAccountModal'
 import { AddPropertyModal } from '@/components/property/AddPropertyModal'
 import { ExportAccountsModal } from '@/components/shared/ExportAccountsModal'
 import { AddScpiModal } from '@/components/scpi/AddScpiModal'
-import { AccountCard } from '@/components/shared/AccountCard'
 import { AccountsStackedChart } from '@/components/shared/AccountsStackedChart'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { CurrencyDisplay } from '@/components/shared/CurrencyDisplay'
+import { Delta } from '@/components/shared/Delta'
 import { EmptyState } from '@/components/shared/EmptyState'
+import { KpiTile } from '@/components/shared/KpiTile'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { ScrollStrip } from '@/components/shared/ScrollStrip'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Plus, Wallet, Pencil, Trash2, TrendingUp, TrendingDown, Download } from 'lucide-react'
-import { cn, formatPercent } from '@/lib/utils'
+import { Plus, Wallet, Download } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { assetClassColor } from '@/lib/asset-classes'
 import { HOLDING_ACCOUNT_TYPES, LIABILITY_ACCOUNT_TYPES } from '@/lib/constants'
 import { accountInvestedAt, accountPnlAt, hasMeasurableGain } from '@/features/accounts/pnl'
 import { useAppStore } from '@/stores/app-store'
 import type { Account, AccountRequest, AccountType } from '@/types/api'
+import { accountKpis, groupByAssetClass } from './account-groups'
+import { AccountRow } from './AccountRow'
 
 type AssetFilter = 'ALL' | 'STOCKS' | 'METALS' | 'SAVINGS' | 'CHECKING' | 'CRYPTO' | 'REAL_ESTATE' | 'DEBTS'
 
@@ -42,13 +46,13 @@ const ASSET_FILTER_MAP: Record<AssetFilter, AccountType[] | null> = {
 }
 
 const TYPE_GROUP_META: Record<string, { key: string; labelKey: string; color: string }> = {
-  STOCKS:      { key: 'STOCKS',      labelKey: 'accounts.filters.STOCKS',      color: '#6366f1' },
-  METALS:      { key: 'METALS',      labelKey: 'accounts.filters.METALS',      color: '#eab308' },
-  SAVINGS:     { key: 'SAVINGS',     labelKey: 'accounts.filters.SAVINGS',     color: '#22c55e' },
-  CHECKING:    { key: 'CHECKING',    labelKey: 'accounts.filters.CHECKING',    color: '#0ea5e9' },
-  CRYPTO:      { key: 'CRYPTO',      labelKey: 'accounts.filters.CRYPTO',      color: '#f97316' },
-  REAL_ESTATE: { key: 'REAL_ESTATE', labelKey: 'accounts.filters.REAL_ESTATE', color: '#a855f7' },
-  DEBTS:       { key: 'DEBTS',       labelKey: 'accounts.filters.DEBTS',       color: '#ef4444' },
+  STOCKS:      { key: 'STOCKS',      labelKey: 'accounts.filters.STOCKS',      color: assetClassColor('equity') },
+  METALS:      { key: 'METALS',      labelKey: 'accounts.filters.METALS',      color: assetClassColor('other') },
+  SAVINGS:     { key: 'SAVINGS',     labelKey: 'accounts.filters.SAVINGS',     color: assetClassColor('savings') },
+  CHECKING:    { key: 'CHECKING',    labelKey: 'accounts.filters.CHECKING',    color: assetClassColor('cash') },
+  CRYPTO:      { key: 'CRYPTO',      labelKey: 'accounts.filters.CRYPTO',      color: assetClassColor('crypto') },
+  REAL_ESTATE: { key: 'REAL_ESTATE', labelKey: 'accounts.filters.REAL_ESTATE', color: assetClassColor('realestate') },
+  DEBTS:       { key: 'DEBTS',       labelKey: 'accounts.filters.DEBTS',       color: 'var(--loss)' },
 }
 
 const TYPE_TO_GROUP: Record<AccountType, string> = {
@@ -74,11 +78,6 @@ const TYPE_TO_GROUP: Record<AccountType, string> = {
 }
 
 
-// The edit / delete buttons over each card show on hover; a touch screen has no
-// hover, so they stay visible there, and when keyboard focus is inside the card.
-const CARD_ACTIONS_CLASS =
-  'absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 pointer-coarse:opacity-100 transition-opacity'
-
 type AccountFormData = {
   name: string
   type: AccountType
@@ -99,30 +98,6 @@ type AccountFormData = {
   endDate?: string
   linkedAccountId?: number
   openedAt?: string
-}
-
-// ─── Inline pocket card (smaller, with "alloué" tooltip) ─────────────────────
-
-function PocketCard({ account, onClick }: { account: Account; onClick?: () => void }) {
-  return (
-    <Card
-      className="cursor-pointer transition-shadow hover:shadow-md"
-      onClick={onClick}
-    >
-      <CardContent className="flex items-start gap-3 p-3 sm:p-4">
-        <div
-          className="mt-1 h-8 w-1 shrink-0 rounded-full"
-          style={{ backgroundColor: account.color }}
-        />
-        <div className="min-w-0 flex-1">
-          <span className="truncate text-sm font-medium">{account.name}</span>
-          <div className="mt-1">
-            <CurrencyDisplay value={account.currentBalanceEur} className="text-base font-semibold" />
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  )
 }
 
 // ─── Main page ────────────────────────────────────────────────────────────────
@@ -160,6 +135,10 @@ export function AccountsPage() {
   const { nonPocketAccounts, walletGroups: allWalletGroups, standaloneAccounts: allStandaloneAccounts } =
     useAccountTree(accounts)
 
+  // Render time for the freshness grades, kept out of render (React Compiler purity).
+  const [now] = useState(() => Date.now())
+  const kpis = useMemo(() => accountKpis(nonPocketAccounts, now), [nonPocketAccounts, now])
+
   // Deleting the last account on a connection removes that connection too, and a bank one
   // costs a full OAuth re-authorisation to get back -- so the dialog names it first.
   const { data: deletionImpact } = useAccountDeletionImpact(deleteId)
@@ -189,6 +168,11 @@ export function AccountsPage() {
     if (!types) return allStandaloneAccounts
     return allStandaloneAccounts.filter((a) => types.includes(a.type))
   }, [allStandaloneAccounts, filter])
+
+  const groups = useMemo(() => groupByAssetClass([
+    ...walletGroups.map(({ wallet, pockets }) => ({ account: wallet, pockets })),
+    ...standaloneAccounts.map((account) => ({ account, pockets: [] })),
+  ]), [walletGroups, standaloneAccounts])
 
   // Whether the current filter has a gain/loss worth showing: an investment account, whose
   // basis comes from its holdings, or a property, whose basis is its purchase price plus fees.
@@ -236,7 +220,6 @@ export function AccountsPage() {
     return { pnl: pnlSum, pnlPct: pct, totalInvested: inv }
   }, [historyData, filteredNonPockets])
 
-  const pnlPositive = pnl !== null && pnl >= 0
 
   // Chart accounts: grouped by type when ALL, individual accounts otherwise
   const chartAccounts = useMemo(() => {
@@ -462,8 +445,8 @@ export function AccountsPage() {
 
       {/* Savings suggestions banner */}
       {hasSavingsSuggestions && (
-        <div className="flex items-center justify-between rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 dark:border-emerald-900/50 dark:bg-emerald-950/30">
-          <p className="text-sm text-emerald-800 dark:text-emerald-300">
+        <div className="flex items-center justify-between rounded-lg border border-gain/30 bg-gain/10 px-4 py-3">
+          <p className="text-sm text-gain">
             {t('savings.suggestionsBanner', { count: savingsSuggestions!.length })}
           </p>
           <Button
@@ -478,196 +461,154 @@ export function AccountsPage() {
       )}
 
       {hasAnyAccounts && (
-        <>
-          <ScrollStrip activeKey={filter}>
-            <div className="flex w-max items-center gap-1 md:w-auto md:flex-wrap">
-              {FILTER_KEYS.map((f) => (
-                <button
-                  key={f}
-                  aria-pressed={filter === f}
-                  onClick={() => setFilter(f)}
-                  className={cn(
-                    'inline-flex h-10 min-w-32 items-center justify-center rounded-md px-6 text-sm font-medium transition-[background-color,color]',
-                    filter === f
-                      ? 'bg-primary text-primary-foreground shadow-sm'
-                      : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-                  )}
-                >
-                  {t(`accounts.filters.${f}`)}
-                </button>
-              ))}
-            </div>
-          </ScrollStrip>
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <KpiTile
+            label={t('dashboard.kpi.grossAssets')}
+            value={<CurrencyDisplay value={kpis.assets} />}
+            footer={<>{t('common.labelColon', { label: t('dashboard.netWorth') })} <CurrencyDisplay value={kpis.assets - kpis.debts} /></>}
+          />
+          <KpiTile
+            label={t('dashboard.kpi.debts')}
+            value={<CurrencyDisplay value={kpis.debts} />}
+            footer={kpis.debts > 0 ? undefined : t('dashboard.kpi.noLoan')}
+          />
+          <KpiTile
+            label={t('accounts.kpi.tracked')}
+            value={kpis.count}
+            footer={t('accounts.kpi.manual', { count: kpis.manual })}
+          />
+          <KpiTile
+            label={t('accounts.kpi.upToDate')}
+            value={kpis.synced > 0 ? `${kpis.upToDate} / ${kpis.synced}` : '—'}
+            footer={kpis.synced > 0 ? t('accounts.kpi.upToDateHint') : t('accounts.kpi.noSynced')}
+          />
+        </div>
+      )}
 
-          {/* Summary card */}
-          <Card>
-            <CardContent>
-              <CardTitle>{t('accounts.total')}</CardTitle>
-              <CurrencyDisplay value={totalBalance} className="text-4xl font-bold" />
-              {hasPnl && pnl !== null && totalInvested !== null && totalInvested > 0 && (
-                <div className="mt-3 flex items-center gap-2">
-                  {pnlPositive
-                    ? <TrendingUp className="text-emerald-500" size={18} />
-                    : <TrendingDown className="text-red-500" size={18} />}
-                  <span className={`text-sm font-medium ${pnlPositive ? 'text-emerald-500' : 'text-red-500'}`}>
-                    <CurrencyDisplay value={pnl} showSign />
-                    {pnlPct !== null && (
-                      <span className="ml-1 font-normal text-muted-foreground">
-                        ({formatPercent(pnlPct, { signed: true })})
-                      </span>
-                    )}
-                  </span>
-                  <span className="text-sm text-muted-foreground">{t('dashboard.portfolioPerformance')}</span>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* PnL chart */}
-          {hasPnl && (
-            <Card>
-              <CardHeader>
-                <CardTitle>{t('accounts.pnl')}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {isHistoryLoading ? (
-                  <Skeleton className="h-[250px] w-full rounded-xl" />
-                ) : (
-                  <AccountsStackedChart accounts={chartAccounts} data={chartPnlData} />
+      {hasAnyAccounts && (
+        <ScrollStrip activeKey={filter}>
+          <div className="flex w-max items-center gap-1 md:w-auto md:flex-wrap">
+            {FILTER_KEYS.map((f) => (
+              <button
+                key={f}
+                aria-pressed={filter === f}
+                onClick={() => setFilter(f)}
+                className={cn(
+                  'inline-flex h-10 min-w-32 items-center justify-center rounded-md px-6 text-sm font-medium transition-[background-color,color]',
+                  filter === f
+                    ? 'bg-primary/12 text-primary'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground',
                 )}
-              </CardContent>
-            </Card>
-          )}
-        </>
+              >
+                {t(`accounts.filters.${f}`)}
+              </button>
+            ))}
+          </div>
+        </ScrollStrip>
       )}
 
       {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="space-y-2">
           {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton key={i} className="h-32 w-full rounded-xl" />
+            <Skeleton key={i} className="h-14 w-full rounded-xl" />
           ))}
         </div>
-      ) : filteredNonPockets.length === 0 ? (
+      ) : !hasAnyAccounts ? (
         <EmptyState
           className="min-h-[calc(100vh-14rem)]"
           icon={<Wallet className="size-12" />}
           title={t('accounts.noAccounts')}
-          action={{
-            label: addingProperty ? t('property.add.action') : t('accounts.addAccount'),
-            onClick: handleOpenCreate,
-          }}
+          action={{ label: t('accounts.addAccount'), onClick: handleOpenCreate }}
         />
       ) : (
-        <div className="space-y-4">
-          {/* Wallet groups: parent account + nested pocket sub-accounts */}
-          {walletGroups.map(({ wallet, pockets: walletPockets }) => (
-            <div key={wallet.id} className="space-y-2">
-              {/* Parent wallet card */}
-              <div className="relative group">
-                <AccountCard
-                  account={wallet}
-                  onClick={() => navigate(`/accounts/${wallet.id}`)}
-                />
-                <div className={CARD_ACTIONS_CLASS}>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="size-7"
-                    aria-label={t('common.edit')}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleOpenEdit(wallet)
-                    }}
-                  >
-                    <Pencil className="size-3.5" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="size-7 text-destructive hover:text-destructive"
-                    aria-label={t('common.delete')}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setDeleteId(wallet.id)
-                    }}
-                  >
-                    <Trash2 className="size-3.5" />
-                  </Button>
-                </div>
-              </div>
-
-              {/* Pocket sub-accounts */}
-              <div className="ml-3 pl-4 border-l-2 border-border/40 space-y-2">
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  {t('pockets.subAccountsCount', { count: walletPockets.length })}
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {walletPockets.map((pocket) => (
-                    <div key={pocket.id} className="relative group">
-                      <PocketCard
-                        account={pocket}
-                        onClick={() => navigate(`/accounts/${pocket.id}`)}
-                      />
-                      <div className={CARD_ACTIONS_CLASS}>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="size-7"
-                          aria-label={t('common.edit')}
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleOpenEdit(pocket)
-                          }}
-                        >
-                          <Pencil className="size-3.5" />
-                        </Button>
-                      </div>
+        <div className="grid items-start gap-4 lg:grid-cols-12">
+          {filteredNonPockets.length === 0 ? (
+            <EmptyState
+              className="lg:col-span-7"
+              icon={<Wallet className="size-12" />}
+              title={t('accounts.noAccounts')}
+              action={{
+                label: addingProperty ? t('property.add.action') : t('accounts.addAccount'),
+                onClick: handleOpenCreate,
+              }}
+            />
+          ) : (
+            <Card className="py-2 lg:col-span-7">
+              <CardContent className="divide-y divide-border px-2">
+                {groups.map((group) => (
+                  <section key={group.key} aria-labelledby={`group-${group.key}`} className="py-2">
+                    <div className="flex items-center justify-between gap-3 px-3 pt-1 pb-1">
+                      <span id={`group-${group.key}`} className="inline-flex min-w-0 items-center gap-2 text-[13px] font-semibold">
+                        <span
+                          className="size-2.5 shrink-0 rounded-full"
+                          style={{ backgroundColor: group.key === 'debts' ? 'var(--muted-foreground)' : assetClassColor(group.key) }}
+                        />
+                        <span className="truncate">
+                          {group.key === 'debts' ? t('accounts.filters.DEBTS') : t(`assetClasses.${group.key}`)}
+                        </span>
+                      </span>
+                      <CurrencyDisplay value={group.total} className="shrink-0 text-[13px] font-semibold tabular-nums" />
                     </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          ))}
-
-          {/* Standalone accounts — normal responsive grid */}
-          {standaloneAccounts.length > 0 && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {standaloneAccounts.map((account) => (
-                <div key={account.id} className="relative group">
-                  <AccountCard
-                    account={account}
-                    onClick={() => navigate(`/accounts/${account.id}`)}
-                  />
-                  <div className={CARD_ACTIONS_CLASS}>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="size-7"
-                      aria-label={t('common.edit')}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleOpenEdit(account)
-                      }}
-                    >
-                      <Pencil className="size-3.5" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="size-7 text-destructive hover:text-destructive"
-                      aria-label={t('common.delete')}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setDeleteId(account.id)
-                      }}
-                    >
-                      <Trash2 className="size-3.5" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
+                    <ul>
+                      {group.items.map(({ account, pockets }) => (
+                        <Fragment key={account.id}>
+                          <AccountRow
+                            account={account}
+                            now={now}
+                            onOpen={() => navigate(`/accounts/${account.id}`)}
+                            onEdit={() => handleOpenEdit(account)}
+                            onDelete={() => setDeleteId(account.id)}
+                          />
+                          {/* Pockets sit under their wallet; their balance is already in it. */}
+                          {pockets.map((pocket) => (
+                            <AccountRow
+                              key={pocket.id}
+                              account={pocket}
+                              now={now}
+                              nested
+                              onOpen={() => navigate(`/accounts/${pocket.id}`)}
+                              onEdit={() => handleOpenEdit(pocket)}
+                            />
+                          ))}
+                        </Fragment>
+                      ))}
+                    </ul>
+                  </section>
+                ))}
+              </CardContent>
+            </Card>
           )}
+
+          <div className="flex min-w-0 flex-col gap-4 lg:col-span-5">
+            {/* Total of the current filter */}
+            <Card>
+              <CardHeader>
+                <CardTitle>{t('accounts.total')}</CardTitle>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-2">
+                <CurrencyDisplay value={totalBalance} className="text-3xl leading-tight font-semibold tracking-tight tabular-nums" />
+                {hasPnl && pnl !== null && totalInvested !== null && totalInvested > 0 && (
+                  <Delta amount={pnl} percent={pnlPct}>{t('dashboard.portfolioPerformance')}</Delta>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* PnL chart */}
+            {hasPnl && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>{t('accounts.pnl')}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {isHistoryLoading ? (
+                    <Skeleton className="h-[250px] w-full rounded-xl" />
+                  ) : (
+                    <AccountsStackedChart accounts={chartAccounts} data={chartPnlData} />
+                  )}
+                </CardContent>
+              </Card>
+            )}
+          </div>
         </div>
       )}
 

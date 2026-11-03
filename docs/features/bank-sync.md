@@ -1,6 +1,6 @@
 # Feature: Bank Sync
 
-> Last updated: 2026-10-31 (merged account attribution, provider scope, and currency-aware matching)
+> Last updated: 2026-11-03
 
 > **Status (1.0.0).** Enable Banking is the only enabled provider. The Powens
 > adapter ships in the codebase but is **experimental and untested** —
@@ -441,7 +441,7 @@ Because the text fields (Application ID + Redirect URI) live in Postgres while t
 - **`IntegrationsHealthService` queries `/aspsps` unfiltered too**, deliberately:
   it is a JWT/connectivity probe (`toBodilessEntity()`), and leaving a lone
   `psu_type=personal` there would read as an oversight.
-- **Bank logos**: `InstitutionData.logoUrl` (Enable Banking only — Powens hardcodes `null`) is captured at connection time and copied onto each `Account`. See [bank-logos.md](./bank-logos.md) for the capture/backfill flow and the account card fallback to `color`.
+- **Bank logos**: `InstitutionData.logoUrl` (Enable Banking only — Powens hardcodes `null`) is captured at connection time and copied onto each `Account`. See [bank-logos.md](./bank-logos.md) for the capture/backfill flow and the account row's monogram fallback.
 - **Deleting the last account on a requisition deletes the requisition** (see [the account-deletion ADR](../decisions/2026-08-11-account-deletion-removes-its-connection.md)). `upsertAccount` refuses to resurrect a soft-deleted account, so a requisition whose accounts are all deleted can never produce one again — it would sync forever, cost an outbound call per run, and still appear in "Sync accounts" offering to sync something the user removed. `AccountConnectionService` removes it once no live account is left; a requisition backing several accounts survives until the last one goes. The confirmation dialog names the bank first (`GET /accounts/{id}/deletion-impact`), because getting it back means a full OAuth round trip through the bank — unlike a wallet, which is re-added by pasting an address.
 - **`account.requisition_id` is what makes that possible, and it is nullable on purpose**: every other connector is recognisable from `external_account_id` (`wallet_`, `amundi_`, `tr_`, `bd_`, `ibkr_`, `sfin_`, `degiro-portfolio`), but an Enable Banking account holds the bank's own opaque id and carries no namespace. V76 adds the column and `upsertAccount` sets it on **both** the create and the update path, so rows that predate it link themselves on their next sync. The V76 backfill matches `provider` against `institution_name` and deliberately skips members holding several requisitions for one institution — a name cannot say which one, and those rows keep their connection rather than risk removing the wrong one. Do not read `NULL` as "not a bank account".
 
@@ -464,4 +464,4 @@ Because the text fields (Application ID + Redirect URI) live in Postgres while t
 - Related ADR: [Dual bank providers](../decisions/2026-03-01-dual-bank-providers.md)
 - Related ADR: [Ports and adapters](../decisions/2026-01-01-ports-and-adapters.md)
 - Downstream feature: [Budget & Cashflow](./budget.md) (consumes ingested transactions)
-- Related: [bank-logos.md](./bank-logos.md) — logo capture/backfill and account card rendering
+- Related: [bank-logos.md](./bank-logos.md) — logo capture/backfill and account row rendering

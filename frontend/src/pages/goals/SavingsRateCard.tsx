@@ -74,7 +74,7 @@ export function SavingsRateCard({
         <div className="min-w-0">
           <div className="flex items-center gap-1.5">
             <p className="text-xs text-muted-foreground">{t('goals.savingsRate.title')}</p>
-            {/* Wrapped locally like PriceFreshnessDot and AccountCard: providers.tsx already
+            {/* Wrapped locally like PriceFreshnessDot and AccountRow: providers.tsx already
                 supplies one app-wide, but this keeps the card renderable on its own. */}
             <TooltipProvider>
               <Tooltip>

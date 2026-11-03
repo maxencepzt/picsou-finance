@@ -353,6 +353,14 @@
       "amountDue": "Zu zahlender Betrag",
       "dueDate": "Lastschriftdatum",
       "miles": "In diesem Zeitraum gesammelte Meilen"
+    },
+    "kpi": {
+      "tracked": "Erfasste Konten",
+      "manual": "davon {{count}} manuell",
+      "manual_other": "davon {{count}} manuell",
+      "upToDate": "Aktuell",
+      "upToDateHint": "In den letzten 24 h synchronisiert",
+      "noSynced": "Kein synchronisiertes Konto"
     }
   },
   "analysis": {
@@ -2985,10 +2993,6 @@
     "revokeTitle": "Revoke access for this app?",
     "revokeDescription": "This app immediately loses access to your data. You can reconnect it later from the app.",
     "error": "Could not revoke access. Please try again."
-  },
-  "pockets": {
-    "subAccountsCount": "{{count}} Unterkonto",
-    "subAccountsCount_other": "{{count}} Unterkonten"
   },
   "savings": {
     "configSection": "Savings configuration",

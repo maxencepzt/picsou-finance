@@ -43,6 +43,7 @@ test.describe('Analysis', () => {
   })
 
   // The diversification breakdown moved to Investissements with the redesign.
+  // The diversification breakdown moved to Investissements with the redesign.
   test('should show the sector and geographic breakdowns', async ({ page }) => {
     await page.goto('/investments')
     await expect(page.getByText('Diversification')).toBeVisible()

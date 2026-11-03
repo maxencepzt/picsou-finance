@@ -364,6 +364,14 @@
       "amountDue": "Amount to pay",
       "dueDate": "Direct debit date",
       "miles": "Miles earned this cycle"
+    },
+    "kpi": {
+      "tracked": "Tracked accounts",
+      "manual": "including {{count}} manual",
+      "manual_other": "including {{count}} manual",
+      "upToDate": "Up to date",
+      "upToDateHint": "Synced within the last 24 h",
+      "noSynced": "No synced account"
     }
   },
   "analysis": {
@@ -2656,10 +2664,6 @@
       "cta": "Enable Fortuneo",
       "skip": "Don't enable Fortuneo"
     }
-  },
-  "pockets": {
-    "subAccountsCount": "{{count}} pocket",
-    "subAccountsCount_other": "{{count}} pockets"
   },
   "savings": {
     "configSection": "Savings configuration",

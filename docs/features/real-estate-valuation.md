@@ -1,6 +1,6 @@
 # Feature: Real estate valuation
 
-> Last updated: 2026-08-10
+> Last updated: 2026-11-03
 
 ## Context
 
@@ -62,7 +62,7 @@ Daily snapshot job (unchanged) picks up the new balance -> gain curve for free
 
 **Frontend**
 - `lib/property-icons.ts` — `PROPERTY_KIND_ICONS`, one lucide glyph per `PropertyKind`,
-  shared by the add-property picker and the account card
+  shared by the add-property picker and the account row (`AccountMark`)
 - `components/property/PropertyDetailSection.tsx` — mounted from `AccountDetailPage` on
   `type === 'REAL_ESTATE'`
 - `components/property/PropertyMetadataForm.tsx` — RHF + zod, five sections
@@ -70,12 +70,13 @@ Daily snapshot job (unchanged) picks up the new balance -> gain curve for free
 - `components/property/PropertyValuationCard.tsx` — estimate, band, method disclosure
 - `components/property/PropertyValuationChart.tsx` — value over time vs cost basis
 - `components/property/PropertyFinancingCard.tsx` — linked loans and equity
-- `components/property/RealEstateSummaryCard.tsx` — dashboard roll-up
+  since the redesign; the Property & loans page ([real-estate-page.md](./real-estate-page.md))
+  shows the same figures
 
 ### What the account list sees
 
 `RealEstateMetadataResponse` carries two fields the estimator does not use, both read by the
-account card (see [accounts-overview.md](./accounts-overview.md#account-card-anatomy)):
+account row (see [accounts-overview.md](./accounts-overview.md#account-row-anatomy)):
 
 - **`propertyKind`** — `property_type` run through `PropertyKind.parse`. The raw column stays
   on the response for the form, but anything branching on the kind reads the parsed value, so
@@ -167,11 +168,11 @@ account card (see [accounts-overview.md](./accounts-overview.md#account-card-ana
   intentional — the lock protects a figure the user gave, and a zero is the absence of one —
   and it only ever lifts a zero. See `ValuationMode`'s javadoc.
 - **`lastValuedAt` is a valuation date, not a sync date.** Nothing writes `lastSyncedAt` on a
-  property account — a property described but never valued has neither, and its card renders
-  without a freshness line, like any other manual account.
-- **The account card grades it on a monthly scale, not the sync one.** `AccountCard` colours the
-  freshness line by age, and a valuation is judged against `VALUATION_FRESHNESS_BOUNDS_MS`
-  (green < 35 d, yellow < 60 d, orange < 90 d, red beyond) rather than the daily-cadence sync
+  property account — a property described but never valued has neither, and its row renders
+  without a freshness dot, like any other manual account.
+- **The account row grades it on a monthly scale, not the sync one.** `AccountRow` colours the
+  freshness dot by age, and a valuation is judged against `VALUATION_FRESHNESS_BOUNDS_MS`
+  (`gain` < 35 d, `warning` < 90 d, `loss` beyond) rather than the daily-cadence sync
   bounds. `monthlyPropertyValuation` runs on the 1st of each month, against sources that refresh
   twice a year at best, so a 40-day-old estimate is this feature working as designed — on the
   sync scale it would be permanently red, and a warning that is always on is one nobody reads.

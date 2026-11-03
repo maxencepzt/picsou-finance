@@ -364,6 +364,14 @@
       "amountDue": "Montant à payer",
       "dueDate": "Date de prélèvement",
       "miles": "Miles gagnés ce cycle"
+    },
+    "kpi": {
+      "tracked": "Comptes suivis",
+      "manual": "dont {{count}} manuel",
+      "manual_other": "dont {{count}} manuels",
+      "upToDate": "À jour",
+      "upToDateHint": "Synchronisés depuis moins de 24 h",
+      "noSynced": "Aucun compte synchronisé"
     }
   },
   "analysis": {
@@ -2656,10 +2664,6 @@
       "cta": "Activer Fortuneo",
       "skip": "Ne pas activer Fortuneo"
     }
-  },
-  "pockets": {
-    "subAccountsCount": "{{count}} sous-compte",
-    "subAccountsCount_other": "{{count}} sous-comptes"
   },
   "savings": {
     "configSection": "Configuration livret",
