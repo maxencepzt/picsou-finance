@@ -176,9 +176,12 @@ The figure is offered, never stored: accepting it is a `PUT`.
 - **Pyramide patrimoniale**: the four investment tiers from riskiest to safest (crypto,
   alternatives, equity, property). Each row has its value and its target in euros, a bar of its
   actual share with the target as a marker on it, and the gap in points only when it is at least
-  `NOTABLE_GAP` (5) — `warning` when over target, `primary` when under. The safety net is the
+  `NOTABLE_GAP` (5) — `warning` when over target, ink when under (blue is kept for controls). The safety net is the
   base box under the tiers: euros against its target, a coverage bar, a short / excess / covered
   badge, and the current-account cash (`dailyCashEur`) when there is some.
+
+The targets dialog (`AllocationTargetsModal`) lists the four tiers with their colour dot and a
+right-aligned field with a `%` suffix; the expense suggestion's "Use" button is the compact size.
 
 Tier colours come from `pages/analysis/tier-colors.ts` (`TIER_COLORS`), one asset-class token per
 tier, so the same money keeps the same colour across the app. Below the two cards the page shows

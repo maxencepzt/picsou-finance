@@ -589,7 +589,7 @@
         "expensesDefault": "Nicht angegeben: Standardwert",
         "withdrawal": "Entnahmerate",
         "withdrawalHint": "Jährlich entnommener Anteil des Kapitals",
-        "perMonth": "{{value}} / Monat",
+        "perMonth": "{{value}} / Monat",
         "presets": "Schnellbeträge",
         "todayPreset": "{{value}} · heute",
         "earlier": "{{count}} Jahr früher als im aktuellen Tempo",

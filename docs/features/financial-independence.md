@@ -25,6 +25,8 @@ The projection says how much the investable wealth may be worth; it does not say
 
 `FinancialIndependenceCard` uses the defaults (5 % return, 4 % withdrawal): target, financial assets and progress toward it, estimated age (or duration without a birth date) and the stated retirement age. `FinancialIndependenceSimulator` has four sliders (savings 0–3 000 €/month, return 0–10 %, expenses 1 000–5 000 €, withdrawal 2.5–5 %), savings presets, and compares the result with the current pace on one time axis, with the retirement age as a marker. Slider moves are stored as overrides on top of the baseline, so untouched hypotheses follow the profile and budget when they arrive; Reset clears them.
 
+The "4 % rule" tag on the card is a neutral muted chip (it was tinted blue like a status), the financial assets figure is semibold ink, and the simulator states its change against the current pace as a signed movement — arrow up in `gain` when earlier, down in `loss` when later, muted when the same — rather than a filled badge. The per-month captions use non-breaking spaces.
+
 The sliders are `range-input`s (`index.css`) with a heavier 6px track and a 20px ink thumb ringed in the card colour. The unfilled part of the track is `--muted-foreground` at 75 % (`color-mix(… transparent)`), not `--input`: checked in light mode, `--input` measured 1.3:1 against the card, under the 3:1 a control's boundary needs; slate at 75 % gives 3.5:1 in light and 4.6:1 in dark. The blue fill (6.8:1) and the ink thumb (15:1 and more) were already above it. The same block styles the budget page's slider, which gains the same track.
 
 ### Key files

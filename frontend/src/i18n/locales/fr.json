@@ -600,7 +600,7 @@
         "expensesDefault": "Non déclarées : valeur par défaut",
         "withdrawal": "Taux de retrait",
         "withdrawalHint": "Part du capital dépensée chaque année",
-        "perMonth": "{{value}} / mois",
+        "perMonth": "{{value}} / mois",
         "presets": "Montants rapides",
         "todayPreset": "{{value}} · aujourd'hui",
         "earlier": "{{count}} an plus tôt qu'au rythme actuel",

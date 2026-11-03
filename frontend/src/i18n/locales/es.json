@@ -589,7 +589,7 @@
         "expensesDefault": "No indicados: valor por defecto",
         "withdrawal": "Tasa de retirada",
         "withdrawalHint": "Parte del capital gastada cada año",
-        "perMonth": "{{value}} / mes",
+        "perMonth": "{{value}} / mes",
         "presets": "Importes rápidos",
         "todayPreset": "{{value}} · hoy",
         "earlier": "{{count}} año antes que al ritmo actual",

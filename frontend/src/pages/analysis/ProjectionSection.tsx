@@ -328,7 +328,7 @@ export function ProjectionSection({ className }: { className?: string }) {
                 and so scrambles a series whose whole meaning is its order. Each entry is also the
                 control for its curve: four scenarios plus contributions is more than a 320px
                 chart can separate, and comparing two of them means removing the other three. */}
-            <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1">
+            <ul className="mt-2 flex flex-wrap gap-x-4">
               {legend.map((entry) => {
                 const shown = !hidden.has(entry.key)
                 return (
@@ -338,7 +338,8 @@ export function ProjectionSection({ className }: { className?: string }) {
                       aria-pressed={shown}
                       onClick={() => toggle(entry.key)}
                       className={cn(
-                        'flex items-center gap-1.5 text-xs font-medium transition-[color] hover:text-foreground',
+                        // The row is dense; the padding gives each toggle a finger-sized target.
+                        '-mx-1 flex min-h-8 items-center gap-1.5 rounded-md px-1 text-xs font-medium transition-[color] hover:text-foreground',
                         shown ? 'text-foreground' : 'text-muted-foreground line-through',
                       )}
                     >

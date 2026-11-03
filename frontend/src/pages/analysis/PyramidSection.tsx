@@ -85,7 +85,8 @@ function TierRow({ line }: { line: WealthTierLine }) {
           · {t('analysis.targetShort', { value: formatPercent(line.targetPercent, { fractionDigits: 0 }) })}
         </span>
         {notable && (
-          <span className={cn('font-semibold', line.gapPercent > 0 ? 'text-warning' : 'text-primary')}>
+          // Over target is the exposure to watch; under target is room to fill, in ink. Blue stays for controls.
+          <span className={cn('font-semibold', line.gapPercent > 0 ? 'text-warning' : 'text-foreground')}>
             {' · '}{line.gapPercent > 0 ? '+' : ''}{formatDecimal(line.gapPercent, 1)} {t('analysis.points')}
           </span>
         )}

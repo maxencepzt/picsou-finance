@@ -1,8 +1,8 @@
 import { useState, type CSSProperties, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
+import { ArrowDown, ArrowUp } from 'lucide-react'
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { useMoney } from '@/hooks/use-money'
@@ -17,8 +17,6 @@ import {
   yearsToTarget,
   type FiBaseline,
 } from './fi-math'
-
-const BADGE = 'h-[22px] px-2 text-xs font-semibold'
 
 /** [min, max, step] of each hypothesis. */
 const BOUNDS = {
@@ -76,9 +74,9 @@ export function FinancialIndependenceCard({ baseline, className }: { baseline: F
       <CardHeader>
         <CardTitle>{t('analysis.fi.title')}</CardTitle>
         <CardAction>
-          <Badge variant="secondary" className={cn(BADGE, 'bg-primary/12 text-foreground')}>
+          <span className="rounded-md bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">
             {t('analysis.fi.rule', { value: rate })}
-          </Badge>
+          </span>
         </CardAction>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
@@ -96,7 +94,7 @@ export function FinancialIndependenceCard({ baseline, className }: { baseline: F
         <div className="flex flex-col gap-1.5">
           <div className="flex justify-between gap-2 text-[13px]">
             <span className="font-semibold">{t('analysis.fi.assets')}</span>
-            <span className="tabular-nums">{eur(start)}</span>
+            <span className="font-semibold tabular-nums">{eur(start)}</span>
           </div>
           <Progress value={progress} className="h-1.5" aria-label={t('analysis.fi.assets')} />
           <span className="text-xs text-muted-foreground">
@@ -126,7 +124,7 @@ export function FinancialIndependenceCard({ baseline, className }: { baseline: F
         {age == null && (
           <p className="text-xs text-muted-foreground">
             {t('analysis.fi.fillProfile')}{' '}
-            <Link to="/settings" className="font-medium text-primary hover:text-foreground">
+            <Link to="/settings?section=profile" className="font-medium text-primary hover:text-foreground">
               {t('analysis.fi.goToProfile')}
             </Link>
           </p>
@@ -323,17 +321,22 @@ export function FinancialIndependenceSimulator({ baseline }: { baseline: FiBasel
                 <span className="text-[15px] text-muted-foreground">{t('analysis.fi.inYear', { year: thisYear + simYears })}</span>
               )}
             </div>
+            {/* A movement, so a sign-bearing arrow and the gain / loss colour, never a filled badge. */}
             {delta != null && (
-              <Badge
-                variant="secondary"
-                className={cn(BADGE, delta > 0 && 'bg-gain/10 text-gain', delta < 0 && 'bg-loss/10 text-loss', delta === 0 && 'bg-card')}
+              <span
+                className={cn(
+                  'inline-flex items-center gap-1 text-[13px] font-semibold',
+                  delta > 0 ? 'text-gain' : delta < 0 ? 'text-loss' : 'text-muted-foreground',
+                )}
               >
+                {delta > 0 && <ArrowUp className="size-3.5 shrink-0" aria-hidden="true" />}
+                {delta < 0 && <ArrowDown className="size-3.5 shrink-0" aria-hidden="true" />}
                 {delta > 0
                   ? t('analysis.fi.sim.earlier', { count: delta })
                   : delta < 0
                     ? t('analysis.fi.sim.later', { count: -delta })
                     : t('analysis.fi.sim.same')}
-              </Badge>
+              </span>
             )}
           </div>
 

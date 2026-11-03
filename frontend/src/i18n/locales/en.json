@@ -600,7 +600,7 @@
         "expensesDefault": "Not stated: default value",
         "withdrawal": "Withdrawal rate",
         "withdrawalHint": "Share of the capital spent each year",
-        "perMonth": "{{value}} / month",
+        "perMonth": "{{value}} / month",
         "presets": "Quick amounts",
         "todayPreset": "{{value}} · today",
         "earlier": "{{count}} year earlier than your current pace",
