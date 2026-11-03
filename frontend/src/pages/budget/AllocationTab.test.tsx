@@ -1,5 +1,4 @@
 import '@testing-library/jest-dom'
-import type { ReactNode } from 'react'
 import { act, cleanup, render, screen } from '@testing-library/react'
 import { createInstance } from 'i18next'
 import { I18nextProvider } from 'react-i18next'
@@ -30,18 +29,10 @@ vi.mock('@/features/budget/hooks', () => ({
   }),
 }))
 
-// Recharts does not lay out in jsdom. Exercise the actual label callback with a donut viewBox.
-vi.mock('recharts', () => ({
-  PieChart: ({ children }: { children: ReactNode }) => <>{children}</>,
-  Pie: ({ children }: { children: ReactNode }) => <>{children}</>,
-  Cell: () => null,
-  Label: ({ content }: { content: (props: object) => ReactNode }) => (
-    <g data-testid="allocation-total">{content({ viewBox: { cx: 100, cy: 100 } })}</g>
-  ),
-}))
-vi.mock('@/components/ui/chart', () => ({
-  ChartContainer: ({ children }: { children: ReactNode }) => <svg>{children}</svg>,
-  ChartTooltip: () => null,
+// Recharts does not lay out in jsdom; the donut's picture is irrelevant, its centre total is not.
+vi.mock('@/components/shared/BreakdownChart', () => ({
+  BreakdownDonut: () => null,
+  BreakdownTreemap: () => null,
 }))
 
 const { AllocationTab } = await import('./AllocationTab')
@@ -65,11 +56,16 @@ describe('AllocationTab total', () => {
     return render(<I18nextProvider i18n={i18n}><AllocationTab /></I18nextProvider>)
   }
 
+  /** The total written in the donut's centre, under its label. */
+  function centre() {
+    return screen.getByText(i18n.t('budget.overview.investable')).nextElementSibling as HTMLElement
+  }
+
   it('masks the donut centre when privacy mode is toggled and restores it when revealed', () => {
     renderTab()
-    const total = screen.getByTestId('allocation-total')
+    const total = centre()
     const visible = total.textContent
-    expect(visible).toContain('12.5K')
+    expect(visible).toContain('12,500')
     expect(visible).toContain('€')
 
     act(() => { useAppStore.getState().setHideAmounts(true) })
@@ -80,20 +76,25 @@ describe('AllocationTab total', () => {
     expect(total.textContent).toBe(visible)
   })
 
-  it('also masks zero when mounted with privacy mode enabled', () => {
-    state.totalStock = 0
+  it('also masks the total when mounted with privacy mode enabled', () => {
     useAppStore.getState().setHideAmounts(true)
     renderTab()
-    expect(screen.getByTestId('allocation-total')).toHaveTextContent(AMOUNT_MASK)
-    expect(screen.getByTestId('allocation-total').textContent).not.toMatch(/\d/)
+    expect(centre()).toHaveTextContent(AMOUNT_MASK)
+    expect(centre().textContent).not.toMatch(/\d/)
+  })
+
+  it('shows the empty state, not a zero donut, when nothing is held', () => {
+    state.totalStock = 0
+    renderTab()
+    expect(screen.getByText(en.budget.allocation.noStock)).toBeInTheDocument()
   })
 
   it('uses the app locale when the mounted view switches languages', async () => {
     renderTab()
     await act(async () => { await i18n.changeLanguage('de') })
-    expect(screen.getByTestId('allocation-total')).toHaveTextContent('12.500')
+    expect(centre()).toHaveTextContent('12.500')
 
     await act(async () => { await i18n.changeLanguage('es') })
-    expect(screen.getByTestId('allocation-total')).toHaveTextContent('12,5')
+    expect(centre()).toHaveTextContent('12.500')
   })
 })

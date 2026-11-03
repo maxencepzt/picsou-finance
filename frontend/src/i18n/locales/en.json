@@ -1028,7 +1028,8 @@
       "ytd": "Year",
       "prev": "Previous period",
       "next": "Next period",
-      "jump": "Jump to…"
+      "jump": "Jump to…",
+      "label": "Period"
     },
     "asset": {
       "current": "Checking",
@@ -1192,7 +1193,10 @@
         "autoConfirmedDesc": "Detected and confirmed automatically",
         "priceChangeDesc": "Price went from {{from}} to {{to}}",
         "acknowledge": "Got it"
-      }
+      },
+      "seriesCount": "{{count}} tracked series",
+      "seriesCount_other": "{{count}} tracked series",
+      "addTitle": "New recurring payment"
     },
     "categorize": {
       "subtitle": "Assign a category to unclassified transactions.",

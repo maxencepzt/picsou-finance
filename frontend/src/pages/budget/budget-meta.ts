@@ -16,11 +16,11 @@ import type {
 /** Fallback swatch colour when a category has no colour set. */
 export const FALLBACK_COLOR = '#6366f1'
 
-/** i18n key + semantic tone for each category kind. */
-export const KIND_META: Record<CategoryKind, { labelKey: string; tone: string }> = {
-  INCOME: { labelKey: 'budget.kind.income', tone: 'text-gain' },
-  EXPENSE: { labelKey: 'budget.kind.expense', tone: 'text-foreground' },
-  TRANSFER: { labelKey: 'budget.kind.transfer', tone: 'text-sky-600 dark:text-sky-400' },
+/** i18n key for each category kind. */
+export const KIND_META: Record<CategoryKind, { labelKey: string }> = {
+  INCOME: { labelKey: 'budget.kind.income' },
+  EXPENSE: { labelKey: 'budget.kind.expense' },
+  TRANSFER: { labelKey: 'budget.kind.transfer' },
 }
 
 export const CADENCE_LABEL_KEY: Record<RecurringCadence, string> = {
@@ -37,26 +37,27 @@ export const STATUS_LABEL_KEY: Record<RecurringStatus, string> = {
   IGNORED: 'budget.recurring.status.ignored',
 }
 
+/** Tone of a status word: its dot and text colour. */
+export type StatusTone = 'gain' | 'warning' | 'loss' | 'muted'
+
+/** Series status as a dot and a word: confirmed reads as settled, suggested asks for a look. */
+export const STATUS_TONE: Record<RecurringStatus, StatusTone> = {
+  CONFIRMED: 'gain',
+  SUGGESTED: 'warning',
+  IGNORED: 'muted',
+}
+
 /**
- * Runtime urgency badge presentation. SCHEDULED is the quiet default and renders no badge, so it
- * carries no label key — only STALE, LATE and DUE_SOON surface a chip on the subscription card.
+ * Runtime urgency of a series. SCHEDULED is the quiet default and shows nothing, so it carries no
+ * label key — only STALE, LATE and DUE_SOON surface a status on the subscription row.
  */
 export const RUNTIME_STATUS_META: Record<
   Exclude<RecurringRuntimeStatus, 'SCHEDULED'>,
-  { labelKey: string; className: string }
+  { labelKey: string; tone: StatusTone }
 > = {
-  STALE: {
-    labelKey: 'budget.recurring.runtime.stale',
-    className: 'border-transparent bg-slate-500/15 text-slate-500 dark:text-slate-400',
-  },
-  LATE: {
-    labelKey: 'budget.recurring.runtime.late',
-    className: 'border-transparent bg-loss/15 text-loss',
-  },
-  DUE_SOON: {
-    labelKey: 'budget.recurring.runtime.dueSoon',
-    className: 'border-transparent bg-warning/15 text-warning',
-  },
+  STALE: { labelKey: 'budget.recurring.runtime.stale', tone: 'muted' },
+  LATE: { labelKey: 'budget.recurring.runtime.late', tone: 'loss' },
+  DUE_SOON: { labelKey: 'budget.recurring.runtime.dueSoon', tone: 'warning' },
 }
 
 export const ACTIVITY_TYPE_LABEL_KEY: Record<RecurringActivityType, string> = {
@@ -71,10 +72,10 @@ export const ASSET_CLASS_LABEL_KEY: Record<AssetClass, string> = {
   OTHER: 'budget.asset.other',
 }
 
-/** Stable palette for asset-class slices (used by the allocation donut). */
+/** The app's fixed asset-class colours (DESIGN.md), so the same money keeps its colour here too. */
 export const ASSET_CLASS_COLOR: Record<AssetClass, string> = {
-  CURRENT: '#0ea5e9',
-  SAVINGS: '#22c55e',
-  INVESTMENT: '#8b5cf6',
-  OTHER: '#94a3b8',
+  CURRENT: 'var(--class-cash)',
+  SAVINGS: 'var(--class-savings)',
+  INVESTMENT: 'var(--class-equity)',
+  OTHER: 'var(--class-other)',
 }

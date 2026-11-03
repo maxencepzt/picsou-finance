@@ -2890,7 +2890,8 @@
       "ytd": "Year",
       "prev": "Previous period",
       "next": "Next period",
-      "jump": "Jump to…"
+      "jump": "Jump to…",
+      "label": "Periodo"
     },
     "asset": {
       "current": "Checking",
@@ -3054,7 +3055,10 @@
         "priceChangeDesc": "Price went from {{from}} to {{to}}",
         "acknowledge": "Got it"
       },
-      "creditCardPayment": "Pago con tarjeta de crédito"
+      "creditCardPayment": "Pago con tarjeta de crédito",
+      "seriesCount": "{{count}} serie seguida",
+      "seriesCount_other": "{{count}} series seguidas",
+      "addTitle": "Nuevo pago recurrente"
     },
     "categorize": {
       "subtitle": "Assign a category to unclassified transactions.",

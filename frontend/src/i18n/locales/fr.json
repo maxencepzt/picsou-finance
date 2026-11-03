@@ -1028,7 +1028,8 @@
       "ytd": "Année",
       "prev": "Période précédente",
       "next": "Période suivante",
-      "jump": "Aller à…"
+      "jump": "Aller à…",
+      "label": "Période"
     },
     "asset": {
       "current": "Comptes courants",
@@ -1192,7 +1193,10 @@
         "priceChangeDesc": "Prix passé de {{from}} à {{to}}",
         "acknowledge": "OK"
       },
-      "creditCardPayment": "Paiement carte bancaire"
+      "creditCardPayment": "Paiement carte bancaire",
+      "seriesCount": "{{count}} série suivie",
+      "seriesCount_other": "{{count}} séries suivies",
+      "addTitle": "Nouveau prélèvement récurrent"
     },
     "categorize": {
       "subtitle": "Affectez une catégorie aux transactions non classées.",

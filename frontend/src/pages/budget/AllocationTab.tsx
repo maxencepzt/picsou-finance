@@ -1,161 +1,120 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Cell, Label, Pie, PieChart } from 'recharts'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import {
-  type ChartConfig,
-  ChartContainer,
-  ChartTooltip,
-} from '@/components/ui/chart'
+import { PiggyBank } from 'lucide-react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Breakdown } from '@/components/shared/Breakdown'
 import { CurrencyDisplay } from '@/components/shared/CurrencyDisplay'
-import { MoneyChartTooltip } from '@/components/shared/MoneyChartTooltip'
-import { formatPercent } from '@/lib/utils'
-import { useMoney } from '@/hooks/use-money'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { ErrorState } from '@/components/shared/ErrorState'
-import { Skeleton } from '@/components/ui/skeleton'
-import { PiggyBank } from 'lucide-react'
 import { useAllocation } from '@/features/budget/hooks'
+import { formatPercent } from '@/lib/utils'
 import type { CashflowPeriod } from '@/types/api'
-import { ColorDot, PeriodToggle } from './budget-utils'
+import { BudgetToolbar, ColorDot, PeriodToggle } from './budget-utils'
 import { PeriodNavigator } from './PeriodNavigator'
 import { ASSET_CLASS_COLOR, ASSET_CLASS_LABEL_KEY } from './budget-meta'
 import { useBudgetPeriod } from './BudgetPeriodContext'
 
-const chartConfig = { amount: { label: 'Amount' } } satisfies ChartConfig
-
+/** Where the surplus sits (stock, by asset class) and where this period's savings went (flow, by account). */
 export function AllocationTab() {
   const { t } = useTranslation()
-  const money = useMoney()
   const [period, setPeriod] = useState<CashflowPeriod>('CYCLE')
   const { anchor, setAnchor } = useBudgetPeriod()
   const { data, isLoading, isError, refetch } = useAllocation(period, anchor)
 
-  const stockData = (data?.stock ?? []).map((s) => ({
-    ...s,
-    name: t(ASSET_CLASS_LABEL_KEY[s.assetClass]),
-    color: ASSET_CLASS_COLOR[s.assetClass],
-  }))
+  const stockItems = (data?.stock ?? [])
+    .filter((s) => s.amount > 0)
+    .map((s) => ({
+      key: s.assetClass,
+      label: t(ASSET_CLASS_LABEL_KEY[s.assetClass]),
+      amount: s.amount,
+      color: ASSET_CLASS_COLOR[s.assetClass],
+    }))
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm text-muted-foreground">{t('budget.allocation.subtitle')}</p>
-        <div className="flex flex-wrap items-center gap-2">
-          <PeriodNavigator
-            period={period}
-            from={data?.from}
-            to={data?.to}
-            onAnchorChange={setAnchor}
-          />
-          <PeriodToggle value={period} onChange={(p) => { setPeriod(p); setAnchor(undefined) }} />
-        </div>
-      </div>
+      <BudgetToolbar lead={t('budget.allocation.subtitle')}>
+        <PeriodNavigator
+          period={period}
+          from={data?.from}
+          to={data?.to}
+          onAnchorChange={setAnchor}
+        />
+        <PeriodToggle value={period} onChange={(p) => { setPeriod(p); setAnchor(undefined) }} />
+      </BudgetToolbar>
 
       {isError && <ErrorState message={t('budget.allocation.error')} onRetry={() => refetch()} />}
 
       {isLoading && (
         <div className="grid gap-4 md:grid-cols-2">
-          <Skeleton className="h-72 w-full rounded-xl" />
-          <Skeleton className="h-72 w-full rounded-xl" />
+          <Skeleton className="h-72 w-full rounded-2xl" />
+          <Skeleton className="h-72 w-full rounded-2xl" />
         </div>
       )}
 
       {data && (
-        <div className="grid gap-4 md:grid-cols-2">
-          {/* Stock donut */}
+        <div className="grid items-start gap-4 md:grid-cols-2">
+          {/* Stock — a part-to-whole, drawn by the app's Breakdown (bar · donut · treemap + legend). */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">{t('budget.allocation.stock')}</CardTitle>
+              <CardTitle>{t('budget.allocation.stock')}</CardTitle>
             </CardHeader>
             <CardContent>
-              {stockData.length === 0 ? (
-                <EmptyState icon={<PiggyBank className="size-10" />}
+              {stockItems.length === 0 ? (
+                <EmptyState className="py-8" icon={<PiggyBank className="size-8" />}
                   title={t('budget.allocation.noStock')} />
               ) : (
-                <>
-                  <ChartContainer config={chartConfig} className="mx-auto h-[220px] w-full">
-                    <PieChart>
-                      <ChartTooltip content={<MoneyChartTooltip config={chartConfig} hideLabel />} />
-                      <Pie data={stockData} dataKey="amount" nameKey="name"
-                        cx="50%" cy="50%" innerRadius={55} outerRadius={85} paddingAngle={2}
-                        strokeWidth={0}>
-                        {stockData.map((entry) => (
-                          <Cell key={entry.assetClass} fill={entry.color} />
-                        ))}
-                        <Label content={({ viewBox }) => {
-                          if (viewBox && 'cx' in viewBox && 'cy' in viewBox) {
-                            return (
-                              <text x={viewBox.cx} y={viewBox.cy} textAnchor="middle"
-                                dominantBaseline="middle">
-                                <tspan x={viewBox.cx} y={viewBox.cy}
-                                  className="fill-foreground text-lg font-bold">
-                                  {money.compact(data.totalStock, { maximumFractionDigits: 1 })}
-                                </tspan>
-                              </text>
-                            )
-                          }
-                        }} />
-                      </Pie>
-                    </PieChart>
-                  </ChartContainer>
-                  <div className="mt-2 space-y-1">
-                    {stockData.map((s) => (
-                      <div key={s.assetClass} className="flex items-center gap-2 text-sm">
-                        <ColorDot color={s.color} />
-                        <span className="truncate">{s.name}</span>
-                        <span className="ml-auto tabular-nums text-muted-foreground">
-                          {formatPercent(s.percent, { fractionDigits: 2 })}
-                        </span>
-                        <span className="w-24 text-right tabular-nums">
-                          <CurrencyDisplay value={s.amount} />
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </>
+                <Breakdown
+                  items={stockItems}
+                  centerLabel={t('budget.overview.investable')}
+                  ariaLabel={t('budget.allocation.stock')}
+                />
               )}
             </CardContent>
           </Card>
 
-          {/* Contributions (flux) */}
+          {/* Contributions (flow) */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">{t('budget.allocation.contributions')}</CardTitle>
+              <CardTitle>{t('budget.allocation.contributions')}</CardTitle>
+              {data.contributions.length > 0 && (
+                <CardDescription>
+                  {t('budget.allocation.totalContributed')}{' '}
+                  <CurrencyDisplay value={data.totalContributions} className="font-semibold text-foreground" />
+                </CardDescription>
+              )}
             </CardHeader>
             <CardContent>
               {data.contributions.length === 0 ? (
-                <EmptyState icon={<PiggyBank className="size-10" />}
+                <EmptyState className="py-8" icon={<PiggyBank className="size-8" />}
                   title={t('budget.allocation.noContributions')}
                   description={t('budget.allocation.noContributionsHint')} />
               ) : (
-                <div className="space-y-3">
-                  <p className="text-sm text-muted-foreground">
-                    {t('budget.allocation.totalContributed')}{' '}
-                    <span className="font-semibold text-foreground">
-                      <CurrencyDisplay value={data.totalContributions} />
-                    </span>
-                  </p>
+                <ul className="flex flex-col gap-3.5">
                   {data.contributions.map((c) => {
                     const pct = data.totalContributions > 0
                       ? (c.amount / data.totalContributions) * 100 : 0
+                    const color = c.color || ASSET_CLASS_COLOR[c.assetClass]
                     return (
-                      <div key={c.accountId} className="space-y-1">
-                        <div className="flex items-center gap-2 text-sm">
-                          <ColorDot color={c.color} />
-                          <span className="truncate">{c.accountName}</span>
-                          <span className="ml-auto tabular-nums">
-                            <CurrencyDisplay value={c.amount} />
+                      <li key={c.accountId} className="flex flex-col gap-1.5">
+                        <div className="flex items-baseline gap-2 text-[13px]">
+                          <span className="flex min-w-0 flex-1 items-center gap-2">
+                            <ColorDot color={color} />
+                            <span className="truncate font-semibold">{c.accountName}</span>
+                          </span>
+                          <CurrencyDisplay value={c.amount} className="shrink-0 font-semibold tabular-nums text-foreground" />
+                          {/* A share, so it stays legible in privacy mode. */}
+                          <span className="w-9 shrink-0 text-right text-xs text-muted-foreground tabular-nums">
+                            {formatPercent(pct, { fractionDigits: 0 })}
                           </span>
                         </div>
-                        <div className="h-1.5 w-full overflow-hidden rounded-md bg-muted">
-                          <div className="h-full rounded-md"
-                            style={{ width: `${pct}%`, backgroundColor: c.color || ASSET_CLASS_COLOR[c.assetClass] }} />
+                        <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted" aria-hidden="true">
+                          <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: color }} />
                         </div>
-                      </div>
+                      </li>
                     )
                   })}
-                </div>
+                </ul>
               )}
             </CardContent>
           </Card>

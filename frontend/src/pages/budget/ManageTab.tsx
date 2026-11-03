@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Archive, ArchiveRestore, Pencil, Plus, Trash2 } from 'lucide-react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Archive, ArchiveRestore, ArrowRight, ListFilter, Pencil, Plus, Trash2 } from 'lucide-react'
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
-import { Badge } from '@/components/ui/badge'
 import { ColorPicker } from '@/components/shared/ColorPicker'
+import { EmptyState } from '@/components/shared/EmptyState'
 import { ErrorState } from '@/components/shared/ErrorState'
 import { NativeSelect } from '@/components/shared/NativeSelect'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -31,7 +31,7 @@ import {
   useUpdateBudgetSettings,
   useUpdateCategory,
 } from '@/features/budget/hooks'
-import { formatDate, formatPercent, getLocale } from '@/lib/utils'
+import { cn, formatDate, formatPercent, getLocale } from '@/lib/utils'
 import type { AiCategorizationMode, Category, CategoryKind, RuleMatchType } from '@/types/api'
 import { ColorDot } from './budget-utils'
 import { KIND_META } from './budget-meta'
@@ -58,13 +58,13 @@ function CycleSettingsCard() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">{t('budget.settings.cycleTitle')}</CardTitle>
+        <CardTitle>{t('budget.settings.cycleTitle')}</CardTitle>
         <CardDescription>{t('budget.settings.cycleHint')}</CardDescription>
       </CardHeader>
       <CardContent>
         {isLoading && <Skeleton className="h-9 w-full rounded-md" />}
         {!isLoading && isError && !data && (
-          <ErrorState message={t('budget.settings.error')} onRetry={() => void refetch()} />
+          <ErrorState messageOnly message={t('budget.settings.error')} onRetry={() => void refetch()} />
         )}
         {data && (
           <div className="flex flex-wrap items-end gap-3">
@@ -107,13 +107,13 @@ function LogoSettingsCard() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">{t('budget.settings.logoTitle')}</CardTitle>
+        <CardTitle>{t('budget.settings.logoTitle')}</CardTitle>
         <CardDescription>{t('budget.settings.logoHint')}</CardDescription>
       </CardHeader>
       <CardContent>
         {isLoading && <Skeleton className="h-9 w-full rounded-md" />}
         {!isLoading && isError && !data && (
-          <ErrorState message={t('budget.settings.error')} onRetry={() => void refetch()} />
+          <ErrorState messageOnly message={t('budget.settings.error')} onRetry={() => void refetch()} />
         )}
         {data && (
           <div className="flex items-center justify-between gap-4">
@@ -179,13 +179,13 @@ function AiCategorizationCard() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">{t('budget.settings.aiTitle')}</CardTitle>
+        <CardTitle>{t('budget.settings.aiTitle')}</CardTitle>
         <CardDescription>{t('budget.settings.aiHint')}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {isLoading && <Skeleton className="h-9 w-full rounded-md" />}
         {!isLoading && isError && !data && (
-          <ErrorState message={t('budget.settings.error')} onRetry={() => void refetch()} />
+          <ErrorState messageOnly message={t('budget.settings.error')} onRetry={() => void refetch()} />
         )}
         {data && (
           <>
@@ -291,7 +291,7 @@ function CategoryForm({ open, onOpenChange, editing }: {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
             {editing ? t('budget.category.edit') : t('budget.category.add')}
@@ -371,74 +371,65 @@ function CategoriesCard() {
 
   function row(c: Category, child: boolean) {
     return (
-      <div key={c.id} className={`flex items-center gap-3 py-2.5 ${child ? 'pl-5 sm:pl-7' : ''}`}>
-        {child && <span aria-hidden className="-ml-2 text-muted-foreground/50">↳</span>}
-        <ColorDot color={c.color} className="size-3 shrink-0 rounded-full" />
-        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1">
-          <span className={`max-w-full truncate ${c.archived ? 'text-muted-foreground line-through' : ''}`}>
+      <li key={c.id} className={cn('flex items-center gap-3 rounded-xl py-1 pr-1 pl-3 transition-colors hover:bg-muted/50', child && 'ml-5 sm:ml-7')}>
+        <ColorDot color={c.color} />
+        <div className="flex min-w-0 flex-1 flex-col">
+          <span className={cn('truncate text-sm font-semibold', c.archived && 'text-muted-foreground line-through')}>
             {c.name}
           </span>
-          {child ? (
-            <Badge variant="ghost" className="text-muted-foreground">{t('budget.category.subcategory')}</Badge>
-          ) : (
-            <Badge variant="outline" className={KIND_META[c.kind].tone}>
-              {t(KIND_META[c.kind].labelKey)}
-            </Badge>
-          )}
-          {c.isDefault && (
-            <Badge variant="ghost" className="text-muted-foreground">
-              {t('budget.category.default')}
-            </Badge>
-          )}
+          <span className="truncate text-xs font-medium text-muted-foreground">
+            {[
+              child ? t('budget.category.subcategory') : t(KIND_META[c.kind].labelKey),
+              c.isDefault ? t('budget.category.default') : null,
+            ].filter(Boolean).join(' · ')}
+          </span>
         </div>
-        <div className="flex shrink-0 items-center gap-1">
+        <div className="flex shrink-0 items-center">
           <Button size="icon" variant="ghost" onClick={() => open(c)}
+            className="text-muted-foreground hover:text-foreground"
             aria-label={t('budget.a11y.edit', { name: c.name })}>
             <Pencil className="size-4" />
           </Button>
           {c.archived ? (
             <Button size="icon" variant="ghost"
+              className="text-muted-foreground hover:text-foreground"
               aria-label={t('budget.a11y.unarchive', { name: c.name })}
               disabled={unarchive.isPending} onClick={() => unarchive.mutate(c.id)}>
               <ArchiveRestore className="size-4" />
             </Button>
           ) : (
             <Button size="icon" variant="ghost"
+              className="text-muted-foreground hover:text-foreground"
               aria-label={t('budget.a11y.archive', { name: c.name })}
               disabled={archive.isPending} onClick={() => archive.mutate(c.id)}>
               <Archive className="size-4" />
             </Button>
           )}
         </div>
-      </div>
+      </li>
     )
   }
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
-        <div>
-          <CardTitle className="text-base">{t('budget.category.title')}</CardTitle>
-          <CardDescription>{t('budget.category.hint')}</CardDescription>
-        </div>
-        <Button size="sm" onClick={() => open(null)}>
-          <Plus className="size-4" /> {t('budget.category.add')}
-        </Button>
+      <CardHeader>
+        <CardTitle>{t('budget.category.title')}</CardTitle>
+        <CardDescription>{t('budget.category.hint')}</CardDescription>
+        <CardAction>
+          <Button size="xs" onClick={() => open(null)}>
+            <Plus className="size-4" /> {t('budget.category.add')}
+          </Button>
+        </CardAction>
       </CardHeader>
       <CardContent>
-        {isLoading && <Skeleton className="h-24 w-full rounded-xl" />}
+        {isLoading && <Skeleton className="h-40 w-full rounded-xl" />}
         {!isLoading && isError && !categories && (
-          <ErrorState message={t('budget.category.error')} onRetry={() => void refetch()} />
+          <ErrorState messageOnly message={t('budget.category.error')} onRetry={() => void refetch()} />
         )}
         {categories && (
-          <div className="divide-y divide-border">
-            {roots.map((r) => (
-              <div key={r.id} className="divide-y divide-border/40">
-                {row(r, false)}
-                {childrenOf(r.id).map((c) => row(c, true))}
-              </div>
-            ))}
-          </div>
+          <ul className="-mx-3 flex flex-col">
+            {roots.map((r) => [row(r, false), ...childrenOf(r.id).map((c) => row(c, true))])}
+          </ul>
         )}
       </CardContent>
       <CategoryForm key={formKey} open={formOpen} onOpenChange={setFormOpen} editing={editing} />
@@ -470,7 +461,7 @@ function RuleForm({ open, onOpenChange }: {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{t('budget.rule.add')}</DialogTitle>
           <DialogDescription>{t('budget.rule.formHint')}</DialogDescription>
@@ -518,49 +509,55 @@ function RuleForm({ open, onOpenChange }: {
 function RulesCard() {
   const { t } = useTranslation()
   const { data: rules, isLoading, isError, refetch } = useRules()
+  const { data: categories } = useCategories()
   const deleteRule = useDeleteRule()
   const [formOpen, setFormOpen] = useState(false)
+  const colorOf = (id: number) => categories?.find((c) => c.id === id)?.color
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
-        <div>
-          <CardTitle className="text-base">{t('budget.rule.title')}</CardTitle>
-          <CardDescription>{t('budget.rule.hint')}</CardDescription>
-        </div>
-        <Button size="sm" onClick={() => setFormOpen(true)}>
-          <Plus className="size-4" /> {t('budget.rule.add')}
-        </Button>
+      <CardHeader>
+        <CardTitle>{t('budget.rule.title')}</CardTitle>
+        <CardDescription>{t('budget.rule.hint')}</CardDescription>
+        <CardAction>
+          <Button size="xs" className="max-sm:w-9 max-sm:px-0" onClick={() => setFormOpen(true)} aria-label={t('budget.rule.add')}>
+            <Plus className="size-4" aria-hidden="true" />
+            <span className="max-sm:sr-only">{t('budget.rule.add')}</span>
+          </Button>
+        </CardAction>
       </CardHeader>
       <CardContent>
         {isLoading && <Skeleton className="h-20 w-full rounded-xl" />}
         {!isLoading && isError && !rules && (
-          <ErrorState message={t('budget.rule.error')} onRetry={() => void refetch()} />
+          <ErrorState messageOnly message={t('budget.rule.error')} onRetry={() => void refetch()} />
         )}
         {!isLoading && !isError && (rules?.length ?? 0) === 0 && (
-          <p className="py-4 text-center text-sm text-muted-foreground">{t('budget.rule.empty')}</p>
+          <EmptyState className="py-8" icon={<ListFilter className="size-8" />} title={t('budget.rule.empty')} />
         )}
         {rules && rules.length > 0 && (
-          <div className="divide-y divide-border">
+          <ul className="-mx-3 flex flex-col">
             {rules.map((r) => (
-              <div key={r.id} className="flex items-center gap-3 py-2.5 text-sm">
-                <Badge variant="outline">{t(`budget.rule.match.${r.matchType.toLowerCase()}`)}</Badge>
-                <span className="truncate font-mono text-xs">{r.pattern}</span>
-                <span className="text-muted-foreground">→</span>
-                <span className="truncate">{r.categoryName}</span>
-                {r.source === 'AUTO' && (
-                  <Badge variant="ghost" className="text-muted-foreground">
-                    {t('budget.rule.learned')}
-                  </Badge>
-                )}
-                <Button size="icon" variant="ghost" className="ml-auto"
+              <li key={r.id} className="flex items-center gap-3 rounded-xl py-1 pr-1 pl-3 transition-colors hover:bg-muted/50">
+                <div className="flex min-w-0 flex-1 flex-col">
+                  <span className="flex min-w-0 items-center gap-2 text-sm">
+                    <code className="truncate font-mono text-[13px] font-semibold">{r.pattern}</code>
+                    <ArrowRight className="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+                    <ColorDot color={colorOf(r.categoryId)} />
+                    <span className="truncate">{r.categoryName}</span>
+                  </span>
+                  <span className="truncate text-xs font-medium text-muted-foreground">
+                    {t(`budget.rule.match.${r.matchType.toLowerCase()}`)}
+                    {r.source === 'AUTO' && ` · ${t('budget.rule.learned')}`}
+                  </span>
+                </div>
+                <Button size="icon" variant="ghost" className="shrink-0 text-muted-foreground hover:text-destructive"
                   aria-label={t('budget.a11y.delete', { name: r.pattern })}
                   disabled={deleteRule.isPending} onClick={() => deleteRule.mutate(r.id)}>
                   <Trash2 className="size-4" />
                 </Button>
-              </div>
+              </li>
             ))}
-          </div>
+          </ul>
         )}
       </CardContent>
       <RuleForm open={formOpen} onOpenChange={setFormOpen} />
@@ -569,13 +566,18 @@ function RulesCard() {
 }
 
 export function ManageTab() {
+  // The lists the member edits often on the left, the set-once switches on the right.
   return (
-    <div className="space-y-4">
-      <CycleSettingsCard />
-      <LogoSettingsCard />
-      <AiCategorizationCard />
-      <CategoriesCard />
-      <RulesCard />
+    <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-12">
+      <div className="flex min-w-0 flex-col gap-4 lg:col-span-7">
+        <CategoriesCard />
+        <RulesCard />
+      </div>
+      <div className="flex min-w-0 flex-col gap-4 lg:col-span-5">
+        <CycleSettingsCard />
+        <LogoSettingsCard />
+        <AiCategorizationCard />
+      </div>
     </div>
   )
 }

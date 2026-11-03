@@ -32,9 +32,11 @@ aggregations over the `transaction` table sliced by the **pay cycle** and the ca
 
 ### Information architecture (`/budget/*`)
 
-A single `BudgetLayout` (segmented sub-nav on desktop, bottom bar on mobile — same pattern as
-`/setup`) owns an `<Outlet/>` over nested routes (`app/routes.tsx`, nav in
-`pages/budget/budget-nav.ts`):
+A single `BudgetLayout` owns an `<Outlet/>` over nested routes (`app/routes.tsx`, nav in
+`pages/budget/budget-nav.ts`). Its section switch is one row of links in a `ScrollStrip`, drawn
+like `SegmentedControl` (muted track, the current section on the card surface with a hairline)
+at the 40px page rhythm; the review count is a small warning-tinted number, and the strip scrolls
+the current section into view on a phone:
 
 | Route | Page | Content |
 |-------|------|---------|
@@ -224,6 +226,36 @@ without replacing the recap.
 - `pages/goals/SavingsRateCard.tsx` is a different card: the share of income the recurring plans
   pay in (see [goal-recurring-investment.md](./goal-recurring-investment.md)).
 
+### Sub-pages (polish pass, 2026-11-03)
+
+Every sub-page now has the Overview's anatomy. Shared pieces live in `budget-utils.tsx`:
+
+- **`BudgetToolbar`** — the row under the section switch: the page's one-line description (or the
+  way back) on the left, its controls on the right; on a phone the controls take the full width
+  under it. Spending, the category drill, Allocation, Subscriptions and Review use it.
+- **`PeriodToggle`** is the compact `SegmentedControl` (Cycle / Year), and **`PeriodNavigator`**
+  is drawn as the same muted 32px track (prev · label with the jump menu · next), so the two sit
+  side by side at one height.
+- **`StatusDot`** — a status word with its dot (`gain` / `warning` / `loss` / muted), never a
+  filled badge: series status (`STATUS_TONE`), runtime urgency (`RUNTIME_STATUS_META.tone`).
+  `budget-meta.ts` has no raw palette class left; `ASSET_CLASS_COLOR` maps to the `--class-*`
+  tokens.
+
+Per page:
+
+| Page | Layout |
+|------|--------|
+| Spending | Toolbar (description, link to the transactions, navigator + toggle); flow card whose summary shows income and expenses in ink and the net as a `Delta`; breakdown rows with amount and share (the count hides on a phone so names do not truncate). |
+| Category drill | Toolbar with the back link; a headline card (dot, name, count, total in ink); sub-category rows with amount and share; an `EmptyState` card when the period has nothing. |
+| Transactions | Date, account and category filters in one row above the list (two pairs on a phone); empty state in a card. |
+| Subscriptions | Toolbar (Detect, Add); "What changed" card; then the series list (7/12) beside the upcoming agenda (5/12). A series row: merchant mark, name + status, meta line (cadence · next date · variable · runtime status), the auto-confirm / price-change line, the amount in ink with its sign, then the actions in a fixed-width column so the amounts line up. |
+| Envelopes | One card listing every envelope with the Overview's row (spent / limit, bar amber from 80 %, loss past 100 %, remaining line), edit and delete on the row, Add in the card header; Allocation below with its toolbar, the stock drawn by `Breakdown` (bar · donut · treemap, class colours, legend) and the contributions as share rows. |
+| Review | One "To categorise" card; a row per transaction: mark, label, date and the AI suggestion on the meta line, signed amount, then category select, rule and assign (one row on a desktop, the select over the two buttons on a phone). The rule picker's dialog / sheet names the transaction. |
+| Settings | Categories and rules (7/12) beside pay cycle, logos and AI (5/12). Category and rule rows: dot, name, meta line (kind · default, match type · learned), icon actions. |
+
+Dialogs use `NativeSelect` (40px) instead of hand-made `h-9` selects, and stack their two-column
+fields on a phone.
+
 ### Period navigation
 
 All five period-aware budget views — Overview (cycle only; its by-cycle charts follow the same anchor), Spending flow, Allocation,
@@ -256,6 +288,8 @@ label and step size from them rather than recomputing on the client.
 - **Prev / Next arrows** — step to the immediately preceding or following cycle (month) or year.
 - **Jump dropdown** — lists a fixed set of recent months (cycle mode) or years (year mode) for
   direct navigation without repeated clicking.
+- **Look** — one muted 32px track like `SegmentedControl`, so it lines up with the Cycle / Year
+  switch (`PeriodToggle`, itself a `SegmentedControl`).
 - **No future periods** — the Next arrow is disabled when the current anchor is at or past the
   current period; the user cannot navigate into the future.
 - **Cycle↔Year reset** — switching the Cycle / Year toggle resets the anchor to today so the

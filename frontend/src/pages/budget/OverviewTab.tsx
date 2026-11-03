@@ -1,10 +1,8 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
-import { ArrowRight, Coins, Inbox } from 'lucide-react'
+import { ArrowRight, Inbox } from 'lucide-react'
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { CashflowSankey } from '@/components/shared/CashflowSankey'
 import { CurrencyDisplay } from '@/components/shared/CurrencyDisplay'
@@ -52,53 +50,55 @@ function CapitalIncomeAhead() {
 
   return (
     <Card role="region" aria-labelledby="capital-income-heading">
-      <CardContent className="pt-6">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Coins className="size-4" />
-          <span id="capital-income-heading">{t('budget.overview.capitalIncome')}</span>
-        </div>
+      <CardHeader>
+        <CardTitle id="capital-income-heading">{t('budget.overview.capitalIncome')}</CardTitle>
+      </CardHeader>
+      <CardContent>
         {dividendsQ.isLoading ? (
-          <Skeleton className="mt-2 h-8 w-32" />
+          <Skeleton className="h-8 w-32" />
         ) : dividendsQ.isError ? (
-          <p className="mt-2 text-sm text-muted-foreground">{t('accounts.dividends.error')}</p>
+          <p className="text-sm text-muted-foreground">{t('accounts.dividends.error')}</p>
         ) : quiet ? (
-          <p className="mt-2 text-sm text-muted-foreground">{t('budget.overview.capitalIncomeEmpty')}</p>
+          <p className="text-sm text-muted-foreground">{t('budget.overview.capitalIncomeEmpty')}</p>
         ) : (
-          <>
-            <p className="mt-2 text-2xl font-bold">
-              <CurrencyDisplay value={budgetTotal} showSign />
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">{t('budget.overview.capitalIncomeGross')}</p>
-            {lockedTotal > 0 && (
-              <p className="mt-1 text-xs text-muted-foreground">
-                <CurrencyDisplay value={lockedTotal} showSign />
-                {' '}
-                {t('budget.overview.capitalizedOutside')}
+          <div className="flex flex-wrap items-start gap-x-10 gap-y-4">
+            <div className="min-w-0">
+              <p className="text-[22px] leading-tight font-semibold tracking-tight tabular-nums">
+                <CurrencyDisplay value={budgetTotal} showSign />
               </p>
-            )}
-            <ul className="mt-3 space-y-2">
+              <p className="mt-1 text-xs text-muted-foreground">{t('budget.overview.capitalIncomeGross')}</p>
+              {lockedTotal > 0 && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  <CurrencyDisplay value={lockedTotal} showSign />
+                  {' '}
+                  {t('budget.overview.capitalizedOutside')}
+                </p>
+              )}
+            </div>
+            <ul className="flex min-w-0 flex-[1_1_20rem] flex-col gap-2">
               {rows.slice(0, 3).map((row) => (
-                <li key={row.id} className="flex items-center gap-2 text-sm">
-                  <span className="shrink-0 tabular-nums text-muted-foreground">{formatDate(row.expectedDate)}</span>
-                  <span className="truncate">{row.name}</span>
+                <li key={row.id} className="flex items-center gap-2 text-[13px]">
+                  <span className="w-20 shrink-0 text-xs text-muted-foreground tabular-nums">{formatDate(row.expectedDate)}</span>
+                  <span className="truncate font-medium">{row.name}</span>
                   {row.reinvested && (
-                    <Badge variant="secondary">{t('budget.overview.reinvested')}</Badge>
+                    <span className="shrink-0 text-xs text-muted-foreground">{t('budget.overview.reinvested')}</span>
                   )}
                   {!row.reinvested && !row.countsInBudget && (
-                    <Badge variant="outline">{t('budget.overview.staysInEnvelope')}</Badge>
+                    <span className="shrink-0 text-xs text-muted-foreground">{t('budget.overview.staysInEnvelope')}</span>
                   )}
-                  <span className="ml-auto shrink-0 tabular-nums">
-                    <CurrencyDisplay value={row.amountEur} />
-                  </span>
+                  <CurrencyDisplay value={row.amountEur} className="ml-auto shrink-0 font-semibold tabular-nums text-foreground" />
                 </li>
               ))}
             </ul>
-          </>
+          </div>
         )}
       </CardContent>
     </Card>
   )
 }
+
+/** The card-header link of the dashboard cards, here a button because the cards navigate. */
+const VIEW_ALL = 'text-sm font-medium text-primary transition-colors hover:text-foreground'
 
 /** First-load skeleton mirroring the KPI row so the layout doesn't jump. */
 function OverviewSkeleton() {
@@ -243,9 +243,9 @@ export function OverviewTab() {
       {/* To-categorize nudge */}
       {(uncategorized?.length ?? 0) > 0 && (
         <button type="button" onClick={() => navigate('review')} className="block w-full text-left">
-          <Card className="border-warning/40 bg-warning/5 transition-colors hover:bg-warning/10">
-            <CardContent className="flex items-center gap-3 py-4">
-              <Inbox className="size-5 text-warning" />
+          <Card className="bg-warning/5 ring-warning/30 transition-colors hover:bg-warning/10">
+            <CardContent className="flex items-center gap-3">
+              <Inbox className="size-4 shrink-0 text-warning" aria-hidden="true" />
               <span className="text-sm font-medium">
                 {t('budget.overview.toCategorize', { count: uncategorized!.length })}
               </span>
@@ -260,7 +260,7 @@ export function OverviewTab() {
           <CardHeader>
             <CardTitle>{t('budget.flow.diagram')}</CardTitle>
             <CardAction>
-              <Button variant="ghost" size="sm" onClick={() => navigate('spending')}>{t('dashboard.viewAll')}</Button>
+              <button type="button" className={VIEW_ALL} onClick={() => navigate('spending')}>{t('dashboard.viewAll')}</button>
             </CardAction>
           </CardHeader>
           <CardContent>
@@ -289,7 +289,7 @@ export function OverviewTab() {
                   : t('budget.overview.onTrack')}
               </CardDescription>
               <CardAction>
-                <Button variant="ghost" size="sm" onClick={() => navigate('envelopes')}>{t('dashboard.viewAll')}</Button>
+                <button type="button" className={VIEW_ALL} onClick={() => navigate('envelopes')}>{t('dashboard.viewAll')}</button>
               </CardAction>
             </CardHeader>
             <CardContent>

@@ -1,6 +1,5 @@
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
-import { Button } from '@/components/ui/button'
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { CurrencyDisplay } from '@/components/shared/CurrencyDisplay'
@@ -26,7 +25,7 @@ export function SubscriptionsSummaryCard() {
           <CardDescription>{t('budget.overview.subscriptions.count', { count: summary.count })}</CardDescription>
         )}
         <CardAction>
-          <Button variant="ghost" size="sm" onClick={() => navigate('subscriptions')}>{t('dashboard.viewAll')}</Button>
+          <button type="button" className="text-sm font-medium text-primary transition-colors hover:text-foreground" onClick={() => navigate('subscriptions')}>{t('dashboard.viewAll')}</button>
         </CardAction>
       </CardHeader>
       <CardContent>
