@@ -1,6 +1,6 @@
 # Feature: First-launch Setup Wizard
 
-> Last updated: 2026-10-31
+> Last updated: 2026-11-03
 
 ## Context
 
@@ -55,14 +55,29 @@ Backend:
   prints an `.env.local` to stdout.
 
 Frontend:
-- `frontend/src/pages/setup/SetupLayout.tsx` — the centered hero layout, top progress
-  bar, language switcher, step pill, font preload.
+- `frontend/src/pages/setup/SetupLayout.tsx` — the shell: Picsou logo, compact
+  language switch (a `radiogroup` drawn like `SegmentedControl`), a five-step
+  indicator (numbered dots joined by lines, labels from `md`, an "Step N of 5 · label"
+  caption below on phones), then the step, font preload. Flat graphite background;
+  `overflow-x-clip` keeps the last step's confetti from widening the page.
+- `frontend/src/pages/setup/components/SetupCard.tsx` — `SetupCard` (every step but
+  the welcome: flat card with icon or logo tile, eyebrow, title, description, body, and
+  a hairline footer whose primary button sits right on desktop and on top on phones)
+  and `SetupNote` (info / warning / success / error row: the icon carries the tone,
+  the text stays in ink).
+- `frontend/src/pages/setup/components/IntegrationCard.tsx` + `IntegrationMark.tsx` —
+  the picker row (logo or monogram, name, description, check box; `role="switch"`) in
+  a divided list, and the mark reused by the integration steps, the summary of the
+  last step and the admin Integrations section.
 - `frontend/src/pages/setup/HelloGreeting.tsx` — 12-greeting multilingual opener in
   Homemade Apple font, `prefers-reduced-motion` aware.
 - `frontend/src/pages/setup/SetupStep{Intro,Admin,Security,Integrations,Complete}.tsx`
   — the main-line steps.
 - `frontend/src/pages/setup/integrations/SetupStepEnableBanking.tsx` + 5 substep
-  components under `enablebanking/` — the guided EB flow.
+  components under `enablebanking/` — the guided EB flow. `EBSubstepShell` wraps each
+  sub-step in a `SetupCard` with a five-segment sub-progress, the "Step X of 5 —
+  Enable Banking" eyebrow with "Skip this integration" beside it, and the sub-step's
+  Back / Continue footer.
 - `frontend/src/pages/setup/integrations/SetupStep{BoursoBank,BourseDirect,TradeRepublic,Finary,Crypto}.tsx`
   — the other integration substeps.
 - `frontend/src/features/setup/{api,hooks,schemas,guards}.tsx` — dedicated axios
@@ -211,8 +226,10 @@ future work):
 - Full keyboard traversal works on every step (Tab / Shift+Tab / Enter / Space / Esc).
 - The admin password field includes a keyboard-focusable visibility toggle with a
   translated `aria-label`; toggling it only changes the input type (`password`/`text`).
-- `role="switch"` on the `IntegrationCard` with `aria-checked`; the whole card is the
+- `role="switch"` on the `IntegrationCard` with `aria-checked`; the whole row is the
   hit target.
+- The step indicator is an `<ol>` inside a labelled `<nav>`; the current step carries
+  `aria-current="step"`.
 - `aria-live="polite"` on the greeting announcer, the integrations-selected counter,
   and the EB test result card.
 - `prefers-reduced-motion` honored by: HelloGreeting (collapses to a static render),

@@ -44,6 +44,13 @@ beforeAll(async () => {
 })
 
 beforeEach(() => {
+  // The credentials step's shadcn Checkbox measures itself; jsdom has no ResizeObserver.
+  // Stubbed per test because one test unstubs every global when it ends.
+  vi.stubGlobal('ResizeObserver', class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  })
   useSetupFlowStore.getState().reset()
 })
 

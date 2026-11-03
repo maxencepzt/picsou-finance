@@ -2860,7 +2860,6 @@
         "running": "Testing...",
         "success": "Enable Banking is configured",
         "retry": "Retry test",
-        "backToPrevious": "Back to previous step",
         "activationNotice": "Before testing, use \"Activate by linking accounts\" in the Enable Banking Control Panel and authorise your own accounts. Restricted mode only allows those linked accounts. \"Request activation\" is the commercial path.",
         "hints": {
           "invalid_application_id": "The Application ID doesn't match what Enable Banking has on file. Double-check it on the credentials step.",
@@ -2901,7 +2900,6 @@
       "skip": "Don't enable Trade Republic"
     },
     "revolut": {
-      "surtitle": "REVOLUT",
       "title": "Revolut is ready to go.",
       "body": "Nothing to configure here — you'll connect Revolut with your phone number and passcode, then an approval from your mobile app, when you add the account.",
       "tip": "Head to Accounts → Add account → Revolut once setup is done.",

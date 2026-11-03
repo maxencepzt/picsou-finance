@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Eye, EyeOff } from 'lucide-react'
+import { Eye, EyeOff, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -13,6 +13,7 @@ import { setupAdminSchema, type SetupAdminFormValues } from '@/features/setup/sc
 import { useSubmitAdmin } from '@/features/setup/hooks'
 import { useSetupFlowStore } from '@/stores/setup-flow-store'
 import { stashSetupCredentials } from '@/stores/setup-credentials'
+import { SetupCard, SetupNote } from './components/SetupCard'
 
 /**
  * Palette of 6 avatar colors pulled from Tailwind's semantic tokens.
@@ -96,29 +97,30 @@ export function SetupStepAdmin() {
   })
 
   return (
-    <div className="space-y-8">
-      <div className="text-center space-y-2">
-        <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight">
-          {t('setup.admin.title')}
-        </h1>
-        <p className="mx-auto max-w-md text-sm text-muted-foreground">
-          {t('setup.admin.subtitle')}
-        </p>
-      </div>
-
-      <form onSubmit={onSubmit} className="mx-auto w-full max-w-2xl space-y-5" noValidate>
+    <form onSubmit={onSubmit} noValidate>
+      <SetupCard
+        title={t('setup.admin.title')}
+        description={t('setup.admin.subtitle')}
+        footer={
+          <Button type="submit" disabled={submitAdmin.isPending || !formState.isValid} className="w-full sm:w-auto">
+            {submitAdmin.isPending && <Loader2 className="animate-spin" aria-hidden="true" />}
+            {submitAdmin.isPending ? t('setup.admin.creating') : t('setup.admin.cta')}
+          </Button>
+        }
+      >
         <div className="space-y-2">
-          <Label htmlFor="setup-username" className="text-sm font-semibold">
-            {t('setup.admin.username')}
-          </Label>
+          <Label htmlFor="setup-username">{t('setup.admin.username')}</Label>
           <Input
             id="setup-username"
             autoComplete="username"
+            autoCapitalize="none"
+            spellCheck={false}
             autoFocus
             aria-invalid={showUsernameError}
+            aria-describedby="setup-username-hint"
             {...register('username')}
           />
-          <p className="text-xs text-muted-foreground">
+          <p id="setup-username-hint" className={cn('text-[13px]', showUsernameError ? 'text-destructive' : 'text-muted-foreground')}>
             {showUsernameError
               ? t(usernameErrorKey ?? 'setup.admin.usernameHint')
               : t('setup.admin.usernameHint')}
@@ -126,16 +128,15 @@ export function SetupStepAdmin() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="setup-password" className="text-sm font-semibold">
-            {t('setup.admin.password')}
-          </Label>
+          <Label htmlFor="setup-password">{t('setup.admin.password')}</Label>
           <div className="relative">
             <Input
               id="setup-password"
               type={showPassword ? 'text' : 'password'}
               autoComplete="new-password"
               aria-invalid={showPasswordError}
-              className="pr-14"
+              aria-describedby="setup-password-hint"
+              className="pr-11"
               {...register('password')}
             />
             <button
@@ -143,11 +144,7 @@ export function SetupStepAdmin() {
               aria-label={showPassword ? t('setup.admin.hidePassword') : t('setup.admin.showPassword')}
               aria-pressed={showPassword}
               onClick={() => setShowPassword((value) => !value)}
-              className={cn(
-                'absolute right-2 top-1/2 inline-flex h-10 w-10 -translate-y-1/2',
-                'items-center justify-center rounded-full text-muted-foreground',
-                'transition-colors hover:bg-muted hover:text-foreground'
-              )}
+              className="absolute inset-y-0 right-0 grid w-10 place-items-center rounded-r-md text-muted-foreground transition-colors hover:text-foreground"
             >
               {showPassword ? (
                 <EyeOff className="size-4" aria-hidden="true" />
@@ -169,7 +166,7 @@ export function SetupStepAdmin() {
               ))}
             </div>
           ) : null}
-          <p className="text-xs text-muted-foreground">
+          <p id="setup-password-hint" className={cn('text-[13px]', showPasswordError ? 'text-destructive' : 'text-muted-foreground')}>
             {passwordHasInput
               ? showPasswordError
                 ? t(passwordErrorKey ?? 'setup.admin.passwordHint')
@@ -179,21 +176,20 @@ export function SetupStepAdmin() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="setup-display-name" className="text-sm font-semibold">
-            {t('setup.admin.displayName')}
-          </Label>
+          <Label htmlFor="setup-display-name">{t('setup.admin.displayName')}</Label>
           <Input
             id="setup-display-name"
             autoComplete="name"
+            aria-describedby="setup-display-name-hint"
             {...register('displayName')}
           />
-          <p className="text-xs text-muted-foreground">
+          <p id="setup-display-name-hint" className="text-[13px] text-muted-foreground">
             {t('setup.admin.displayNameHint')}
           </p>
         </div>
 
-        <fieldset className="space-y-2">
-          <legend className="text-sm font-semibold">{t('setup.admin.avatarColor')}</legend>
+        <fieldset className="space-y-3">
+          <legend className="mb-3 text-sm font-medium">{t('setup.admin.avatarColor')}</legend>
           <div className="flex flex-wrap gap-3">
             {AVATAR_SWATCHES.map((hex) => {
               const active = avatarColor === hex
@@ -205,8 +201,8 @@ export function SetupStepAdmin() {
                   aria-label={hex}
                   aria-pressed={active}
                   className={cn(
-                    'size-10 rounded-full border-2 transition-[border-color,box-shadow]',
-                    active ? 'border-background ring-2 ring-foreground' : 'border-transparent'
+                    'size-10 rounded-full ring-offset-2 ring-offset-card transition-[box-shadow]',
+                    active && 'ring-2 ring-foreground'
                   )}
                   style={{ backgroundColor: hex }}
                 />
@@ -216,21 +212,11 @@ export function SetupStepAdmin() {
         </fieldset>
 
         {submitAdmin.error && (
-          <p role="alert" className="text-sm text-destructive">
+          <SetupNote tone="error" role="alert">
             {formatApiError(submitAdmin.error, t, 'setup.admin.submitError')}
-          </p>
+          </SetupNote>
         )}
-
-        <div className="pt-2">
-          <Button
-            type="submit"
-            disabled={submitAdmin.isPending || !formState.isValid}
-            className="w-full rounded-full"
-          >
-            {submitAdmin.isPending ? t('setup.admin.creating') : t('setup.admin.cta')}
-          </Button>
-        </div>
-      </form>
-    </div>
+      </SetupCard>
+    </form>
   )
 }

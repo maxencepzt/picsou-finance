@@ -14,7 +14,8 @@ interface ConfettiProps {
  */
 export function Confetti({ count = 40 }: ConfettiProps) {
   const [pieces] = useState(() => {
-    const palette = ['#6366f1', '#ec4899', '#10b981', '#f59e0b', '#ef4444', '#3b82f6']
+    // The asset-class colours: the one decorative palette the theme defines.
+    const palette = ['cash', 'savings', 'equity', 'crypto', 'funds', 'scpi'].map((c) => `var(--class-${c})`)
     return Array.from({ length: count }, (_, i) => {
       const dx = Math.round((Math.random() - 0.5) * 600)
       const dy = Math.round(200 + Math.random() * 300)

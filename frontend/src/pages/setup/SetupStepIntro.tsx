@@ -26,29 +26,28 @@ export function SetupStepIntro() {
               type="button"
               onClick={() => setPhase('content')}
               aria-label={t('setup.intro.skipAria')}
-              className="rounded-full px-3 py-1 text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+              className="inline-flex min-h-10 items-center rounded-md px-3 text-[13px] text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
             >
               {t('setup.intro.skip')}
             </button>
           </div>
         </>
       ) : (
-        <div className="text-center space-y-8 animate-hello-in">
-          <h1 className="text-4xl sm:text-5xl font-semibold tracking-tight leading-[1.05]">
+        <div className="space-y-6 text-center animate-hello-in">
+          <h1 className="text-4xl leading-[1.05] font-bold tracking-tight text-balance text-foreground sm:text-[44px]">
             {t('setup.intro.title')}
           </h1>
-          <p className="mx-auto max-w-md text-base sm:text-lg text-muted-foreground">
+          <p className="mx-auto max-w-md text-base text-pretty text-muted-foreground">
             {t('setup.intro.subtitle')}
           </p>
           <div className="pt-2">
             <Button
-              size="lg"
               onClick={() =>
                 navigate(
                   setupStatus?.state === 'IN_PROGRESS' ? '/setup/security' : '/setup/admin'
                 )
               }
-              className="h-10 min-w-44 px-8 text-sm"
+              className="min-w-44"
             >
               {t('setup.intro.cta')}
             </Button>
