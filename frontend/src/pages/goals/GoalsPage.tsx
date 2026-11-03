@@ -68,7 +68,7 @@ export function GoalsPage() {
 
   const { data: goals, isLoading } = useGoals()
   const { data: accounts } = useAccounts()
-  const { data: profile } = useMemberProfile()
+  const { data: profile, isPending: profilePending } = useMemberProfile()
   const createGoal = useCreateGoal()
   const updateGoal = useUpdateGoal()
   const deleteGoal = useDeleteGoal()
@@ -246,12 +246,15 @@ export function GoalsPage() {
                 />
               ))}
               {/* What the plans add up to against income: a cell of the grid, not a full-width band. */}
-              <SavingsRateCard
-                plans={recurringPlans}
-                monthlyNetIncome={profile?.monthlyNetIncome ?? null}
-                today={today}
-                onOpenSettings={() => navigate('/settings?section=profile')}
-              />
+              {/* Not before the profile arrives: an unknown income would flash the "fill in your profile" prompt. */}
+              {!profilePending && (
+                <SavingsRateCard
+                  plans={recurringPlans}
+                  monthlyNetIncome={profile?.monthlyNetIncome ?? null}
+                  today={today}
+                  onOpenSettings={() => navigate('/settings?section=profile')}
+                />
+              )}
               </div>
             </section>
           )}

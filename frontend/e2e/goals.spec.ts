@@ -85,7 +85,7 @@ test.describe('Goals page', () => {
   })
 
   test('should compare the savings rate against the French average', async ({ page }) => {
-    await expect(page.getByText("Taux d'épargne")).toBeVisible()
+    await expect(page.getByText("Taux d'épargne", { exact: true })).toBeVisible()
     // The benchmark is indicative only, so it is quoted in a tooltip rather than as a verdict.
     await page.getByRole('button', { name: 'À propos de la moyenne française' }).hover()
     await expect(page.getByRole('tooltip')).toContainText(/ménages en France.*17[.,]5\s%/)
