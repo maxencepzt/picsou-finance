@@ -45,6 +45,9 @@ async function open(page: Page, path: string) {
 // Each page with the label that used to be cut, waited for since demo data arrives late.
 const PAGES = [
   ['/settings', 'Système'],
+  ['/settings?section=profile', 'Revenu brut annuel'],
+  ['/settings?section=security', 'Appareils connectés'],
+  ['/settings?section=mcp', 'Connecter votre client MCP'],
   ['/settings/family', 'Sélectionner'],
   ['/analysis', '30 ans'],
   ['/accounts/2', 'Ajouter'],
@@ -89,6 +92,15 @@ test.describe('Phone layout (360px)', () => {
     for (const code of ['FR', 'EN', 'DE', 'ES']) {
       await expect(page.getByRole('main').getByRole('button', { name: code, exact: true })).toBeInViewport({ ratio: 1 })
     }
+  })
+
+  test('the settings section picker opens the section it names, by URL', async ({ page }) => {
+    await open(page, '/settings?section=security')
+    const picker = page.getByRole('main').getByRole('combobox').first()
+    await expect(picker).toHaveValue('security')
+    await picker.selectOption('profile')
+    await expect(page).toHaveURL(/section=profile/)
+    await expect(page.getByRole('main').getByText('Revenu brut annuel')).toBeVisible()
   })
 
   test('sync providers sit on one swipeable row', async ({ page }) => {

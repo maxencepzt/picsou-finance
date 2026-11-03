@@ -17,7 +17,7 @@ Theme is stored in `localStorage` under the key `'theme'` (`'light' | 'dark' | '
 - `frontend/src/hooks/use-dark-theme.ts` — observes the root `.dark` class for components that need the applied palette in JavaScript
 - `frontend/src/components/shared/Toaster.tsx` — passes the applied palette to Sonner through `useDarkTheme()`
 - `frontend/src/main.tsx` — calls `initSystemThemeListener()` + `applyTheme(getStoredTheme())` once at startup
-- `frontend/src/pages/settings/SettingsPage.tsx` — UI toggle, reads/writes via `lib/theme`
+- `frontend/src/pages/settings/sections/AppearanceSection.tsx` — the Thème row (Clair / Sombre / Système `SegmentedControl`) of Settings → Apparence, reads/writes via `lib/theme`
 - `frontend/src/index.css` — CSS variables under `:root` (light, `@custom-variant dark (&:is(.dark *))`) and `.dark` (dark)
 - Theme-adaptive assets/components: `AppSidebar.tsx`, `MobileBottomNav.tsx`, `ConnectionGuard.tsx`, `ErrorBoundary.tsx` (logo), `frontend/src/components/ui/dropdown-menu.tsx` (popover panel)
 
@@ -34,7 +34,7 @@ React mounts
        └─ watches matchMedia change
        └─ re-applies theme when OS preference changes (only if theme = 'system')
 
-User changes theme (SettingsPage)
+User changes theme (Settings → Apparence)
   └─ setTheme(value)
   └─ useEffect → applyTheme(theme)
        └─ toggles .dark class on document.documentElement

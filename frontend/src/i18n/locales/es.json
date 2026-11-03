@@ -1777,9 +1777,8 @@
     "adminButton": "Abrir administración",
     "family": "Familia",
     "familyDescription": "Gestionar los miembros y los ajustes de compartición",
-    "familyManage": "Gestionar miembros y comparticiones",
     "security": "Seguridad",
-    "securityDescription": "Autenticación en dos pasos y dispositivos de confianza",
+    "securityDescription": "Autenticación en dos pasos, dispositivos conectados y exportación de datos",
     "mfaStatus": "Autenticación en dos pasos",
     "mfaEnabled": "Activada",
     "mfaDisabled": "Desactivada",
@@ -1813,7 +1812,6 @@
     "exportTitle": "Exportar mis datos",
     "exportShortDesc": "Descarga un archivo completo (JSON + CSV) con todo lo que guardamos de tu cuenta.",
     "exportDesc": "Vuelve a autenticarte para descargar un archivo ZIP con todos tus datos. Las credenciales sensibles (hash de contraseña, secreto 2FA, tokens bancarios) quedan excluidas.",
-    "exportButton": "Exportar datos",
     "exportDownload": "Descargar",
     "exportIncludeSnapshots": "Incluir el historial diario de saldos",
     "exportIncludeSnapshotsHint": "Desactivado por defecto. Añade los registros diarios por cuenta que usan los gráficos — puede ocupar mucho en cuentas antiguas.",
@@ -1832,9 +1830,6 @@
     "sessionsRevoke": "Revocar",
     "sessionsRevokeAllOthers": "Cerrar sesión en otros dispositivos",
     "sessionsRevoking": "Revocando...",
-    "amounts": "Importes",
-    "amountsVisible": "Visibles",
-    "amountsHidden": "Ocultos",
     "profile": {
       "title": "Perfil",
       "description": "Tu contexto personal y fiscal",
@@ -1850,14 +1845,14 @@
       },
       "taxHouseholdParts": "Partes fiscales",
       "dependents": "Personas a cargo",
-      "annualGrossIncome": "Ingresos brutos anuales (€)",
+      "annualGrossIncome": "Ingresos brutos anuales",
       "incomeHint": "El importe bruto de tu nómina. Contexto fiscal — la tasa de ahorro se calcula sobre el neto de abajo.",
       "netPay": "Lo que llega realmente a la cuenta",
       "netPayHint": "Ambas cifras están en tu nómina. El bruto no basta: primero se descuentan las cotizaciones sociales, a un tipo que depende de tu situación.",
-      "monthlyNetBeforeTax": "Neto mensual antes de impuestos (€)",
-      "withholdingTaxRate": "Tipo de retención (%)",
+      "monthlyNetBeforeTax": "Neto mensual antes de impuestos",
+      "withholdingTaxRate": "Tipo de retención",
       "netIncomeDerived": "Neto mensual percibido:",
-      "savingsCapacity": "Capacidad de ahorro mensual (€)",
+      "savingsCapacity": "Capacidad de ahorro mensual",
       "riskProfile": "Perfil de riesgo",
       "risk": {
         "PRUDENT": "Prudente",
@@ -1865,8 +1860,32 @@
         "DYNAMIC": "Dinámico",
         "AGGRESSIVE": "Agresivo"
       },
-      "saved": "Perfil guardado"
-    }
+      "saved": "Perfil guardado",
+      "groupHousehold": "Hogar y fiscalidad",
+      "groupIncome": "Ingresos",
+      "groupPlan": "Ahorro y horizonte",
+      "unitEur": "€",
+      "unitYears": "años",
+      "saving": "Guardando…",
+      "unsaved": "Cambios sin guardar"
+    },
+    "sectionsNav": "Secciones de ajustes",
+    "themeHint": "Oscuro por defecto; «Sistema» sigue tu dispositivo.",
+    "languageHint": "Idioma de la interfaz.",
+    "dateFormatHint": "Cómo se muestran las fechas en Picsou.",
+    "amountsHint": "Oculta todos los importes en pantalla, útil en público.",
+    "sidebarStyleHint": "Presentación del menú de navegación en el ordenador.",
+    "usernameHint": "Tu nombre para iniciar sesión.",
+    "dangerZone": "Zona sensible",
+    "otherDevices": "Otros dispositivos",
+    "otherDevicesHint": "Cierra las sesiones «Recuérdame» abiertas en otros dispositivos.",
+    "otherDevicesNone": "Ningún otro dispositivo tiene la sesión abierta.",
+    "logoutHint": "Cierra tu sesión en este dispositivo.",
+    "mfaEnabledHint": "Se pide un código de tu app de autenticación en cada inicio de sesión.",
+    "mfaDisabledHint": "Solo tu contraseña protege esta cuenta.",
+    "mfaRecoveryCodes": "Códigos de recuperación",
+    "dataTitle": "Tus datos",
+    "exportAction": "Exportar"
   },
   "accessKeys": {
     "sectionTitle": "Claves de acceso y MCP",
@@ -2013,7 +2032,8 @@
         "label": "Categorización con IA",
         "desc": "Iniciar la categorización con IA de las transacciones sin categoría y consultar su progreso"
       }
-    }
+    },
+    "keysTitle": "Claves de acceso"
   },
   "telemetry": {
     "consent": {
@@ -2213,7 +2233,6 @@
       "contributions": "Aportaciones"
     },
     "settings": {
-      "title": "Familia",
       "members": "Miembros de la familia",
       "membersDesc": "Añade y gestiona los miembros y los perfiles gestionados.",
       "you": "tú",
@@ -2231,7 +2250,9 @@
       "shareGoals": "Compartir objetivos",
       "shareNone": "Privado",
       "shareAll": "Compartir todo",
-      "shareManual": "Seleccionar"
+      "shareManual": "Seleccionar",
+      "sharing": "Compartir con la familia",
+      "sharingDesc": "Lo que los demás miembros ven de tus cuentas y objetivos."
     }
   },
   "setup": {

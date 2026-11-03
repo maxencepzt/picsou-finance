@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Plus, Trash2, Copy, Check, Server, ShieldAlert } from 'lucide-react'
+import { Plus, Trash2, Copy, Check, ShieldAlert } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -21,11 +21,23 @@ import { useAccessKeys, useCreateAccessKey, useRevokeAccessKey } from '@/feature
 import { READ_SCOPES, WRITE_SCOPES, scopeI18nKey } from '@/features/accessKeys/scopes'
 import { keyStatus, type KeyStatus } from '@/features/accessKeys/status'
 import type { AccessKeyCreated } from '@/features/accessKeys/api'
+import { ROW_BUTTON, SettingsCard, StatusDot } from '../SettingRow'
 
-const STATUS_BADGE: Record<KeyStatus, { variant: 'secondary' | 'outline' | 'destructive'; key: string }> = {
-  active: { variant: 'secondary', key: 'statusActive' },
-  expired: { variant: 'outline', key: 'statusExpired' },
-  revoked: { variant: 'destructive', key: 'statusRevoked' },
+const STATUS_TONE: Record<KeyStatus, 'on' | 'warn' | 'off'> = { active: 'on', expired: 'warn', revoked: 'off' }
+const STATUS_LABEL: Record<KeyStatus, string> = {
+  active: 'accessKeys.statusActive',
+  expired: 'accessKeys.statusExpired',
+  revoked: 'accessKeys.statusRevoked',
+}
+
+function CopyButton({ copied, onClick }: { copied: boolean; onClick: () => void }) {
+  const { t } = useTranslation()
+  return (
+    <Button variant="outline" size="xs" className={cn(ROW_BUTTON, 'shrink-0 self-start @md:self-auto')} onClick={onClick}>
+      {copied ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
+      {copied ? t('accessKeys.copied') : t('accessKeys.copy')}
+    </Button>
+  )
 }
 
 // One accessible, checkbox-like toggle for a single scope. No native checkbox
@@ -49,24 +61,24 @@ function ScopeToggle({
       aria-checked={checked}
       onClick={onToggle}
       className={cn(
-        'flex w-full flex-col items-start gap-0.5 rounded-lg border p-3 text-left transition-colors',
+        'flex w-full items-start gap-2.5 rounded-lg border p-3 text-left transition-colors',
         checked ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted',
       )}
     >
-      <span className="flex items-center gap-2 text-sm font-medium">
-        <span
-          className={cn(
-            'flex size-4 shrink-0 items-center justify-center rounded border',
-            checked ? 'border-primary bg-primary text-primary-foreground' : 'border-muted-foreground/40',
-          )}
-          aria-hidden
-        >
-          {checked && <Check className="size-3" />}
-        </span>
-        {t(`accessKeys.scopes.${k}.label`)}
-        <code className="text-[10px] font-normal text-muted-foreground">{scope}</code>
+      <span
+        className={cn(
+          'mt-0.5 flex size-4 shrink-0 items-center justify-center rounded border',
+          checked ? 'border-primary bg-primary text-primary-foreground' : 'border-muted-foreground/40',
+        )}
+        aria-hidden
+      >
+        {checked && <Check className="size-3" />}
       </span>
-      <span className="pl-6 text-xs text-muted-foreground">{t(`accessKeys.scopes.${k}.desc`)}</span>
+      <span className="min-w-0 space-y-0.5">
+        <span className="block text-sm font-medium text-foreground">{t(`accessKeys.scopes.${k}.label`)}</span>
+        <span className="block text-xs text-muted-foreground">{t(`accessKeys.scopes.${k}.desc`)}</span>
+        <code className="block break-all font-mono text-[10px] text-muted-foreground">{scope}</code>
+      </span>
     </button>
   )
 }
@@ -159,117 +171,96 @@ export function AccessKeysSection() {
   const canSubmit = !!name.trim() && selectedScopes.length > 0 && !createKey.isPending
 
   return (
-    <div className="space-y-5">
-      {/* Create -------------------------------------------------------------- */}
-      <div className="flex justify-end">
-        <Button onClick={openCreate} className="w-full sm:w-auto">
-          <Plus className="size-4" />
-          {t('accessKeys.newKey')}
-        </Button>
-      </div>
-
-      {/* List ---------------------------------------------------------------- */}
-      {isLoading ? (
-        <p className="text-sm text-muted-foreground">{t('accessKeys.loading')}</p>
-      ) : !Array.isArray(keys) || keys.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{t('accessKeys.empty')}</p>
-      ) : (
-        <ul className="divide-y rounded-lg border">
-          {keys.map((k) => {
-            const status = keyStatus(k)
-            const badge = STATUS_BADGE[status]
-            return (
-              <li
-                key={k.id}
-                className="flex flex-col gap-3 p-3 sm:flex-row sm:items-start sm:justify-between"
-              >
-                <div className="min-w-0 space-y-1.5">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-medium truncate">{k.name}</span>
-                    <Badge variant={badge.variant}>{t(`accessKeys.${badge.key}`)}</Badge>
-                    <code className="font-mono text-xs text-muted-foreground">{k.keyPrefix}…</code>
+    <>
+      <SettingsCard
+        title={t('accessKeys.keysTitle')}
+        action={
+          <Button size="xs" className={ROW_BUTTON} onClick={openCreate}>
+            <Plus aria-hidden="true" />
+            {t('accessKeys.newKey')}
+          </Button>
+        }
+      >
+        {isLoading ? (
+          <p className="text-sm text-muted-foreground">{t('accessKeys.loading')}</p>
+        ) : !Array.isArray(keys) || keys.length === 0 ? (
+          <p className="text-sm text-muted-foreground">{t('accessKeys.empty')}</p>
+        ) : (
+          <ul className="divide-y divide-border">
+            {keys.map((k) => {
+              const status = keyStatus(k)
+              return (
+                <li key={k.id} className="flex flex-wrap items-start gap-x-3 gap-y-2 py-3 first:pt-0 last:pb-0">
+                  <div className="min-w-56 flex-1 space-y-1.5">
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                      <span className="truncate text-sm font-medium text-foreground">{k.name}</span>
+                      <StatusDot tone={STATUS_TONE[status]}>{t(STATUS_LABEL[status])}</StatusDot>
+                      <code className="font-mono text-xs text-muted-foreground">{k.keyPrefix}…</code>
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {k.scopes.map((s) => (
+                        <Badge key={s} variant="secondary" className="font-mono text-[10px]">
+                          {s}
+                        </Badge>
+                      ))}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {k.lastUsedAt
+                        ? t('accessKeys.lastUsed', { value: formatTimeAgo(k.lastUsedAt) })
+                        : t('accessKeys.lastUsedNever')}
+                      <span className="mx-1.5" aria-hidden="true">·</span>
+                      {k.expiresAt
+                        ? t('accessKeys.expires', { value: formatDate(k.expiresAt) })
+                        : t('accessKeys.expiresNever')}
+                    </p>
                   </div>
-                  <div className="flex flex-wrap gap-1">
-                    {k.scopes.map((s) => (
-                      <Badge key={s} variant="secondary" className="font-mono text-[10px]">
-                        {s}
-                      </Badge>
-                    ))}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {k.lastUsedAt
-                      ? t('accessKeys.lastUsed', { value: formatTimeAgo(k.lastUsedAt) })
-                      : t('accessKeys.lastUsedNever')}
-                    <span className="mx-2">·</span>
-                    {k.expiresAt
-                      ? t('accessKeys.expires', { value: formatDate(k.expiresAt) })
-                      : t('accessKeys.expiresNever')}
-                  </p>
-                </div>
-                {status !== 'revoked' && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="shrink-0 text-destructive hover:text-destructive"
-                    onClick={() => setRevokingId(k.id)}
-                  >
-                    <Trash2 className="size-3.5" />
-                    {t('accessKeys.revoke')}
-                  </Button>
-                )}
-              </li>
-            )
-          })}
-        </ul>
-      )}
+                  {status !== 'revoked' && (
+                    <Button
+                      variant="ghost"
+                      size="xs"
+                      className={cn(ROW_BUTTON, 'ml-auto shrink-0 text-destructive hover:text-destructive')}
+                      onClick={() => setRevokingId(k.id)}
+                    >
+                      <Trash2 aria-hidden="true" />
+                      {t('accessKeys.revoke')}
+                    </Button>
+                  )}
+                </li>
+              )
+            })}
+          </ul>
+        )}
+      </SettingsCard>
 
       {/* Connect your MCP client -------------------------------------------- */}
-      <div className="space-y-4 rounded-2xl border bg-muted/40 p-4">
-        <div className="flex items-center gap-2 text-base font-medium">
-          <Server className="size-4 text-muted-foreground" />
-          {t('accessKeys.connectTitle')}
-        </div>
-        <p className="text-sm text-muted-foreground">{t('accessKeys.connectIntro')}</p>
-
-        <div className="space-y-2">
-          <Label className="text-muted-foreground">{t('accessKeys.connectEndpointLabel')}</Label>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <code className="flex min-h-10 flex-1 items-center break-all rounded-xl bg-background px-4 py-2 font-mono text-sm">
-              {endpoint}
-            </code>
-            <Button
-              variant="outline"
-              className="w-full shrink-0 sm:w-auto sm:min-w-36"
-              onClick={() => handleCopy(endpoint, setEndpointCopied)}
-            >
-              {endpointCopied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
-              {endpointCopied ? t('accessKeys.copied') : t('accessKeys.copy')}
-            </Button>
+      <SettingsCard title={t('accessKeys.connectTitle')} description={t('accessKeys.connectIntro')}>
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <p className="text-[13px] font-medium text-muted-foreground">{t('accessKeys.connectEndpointLabel')}</p>
+            <div className="flex flex-col gap-2 @md:flex-row @md:items-center">
+              <code className="flex min-h-9 flex-1 items-center break-all rounded-lg bg-muted px-3 py-1.5 font-mono text-[13px] text-foreground">
+                {endpoint}
+              </code>
+              <CopyButton copied={endpointCopied} onClick={() => handleCopy(endpoint, setEndpointCopied)} />
+            </div>
           </div>
-        </div>
 
-        <div className="space-y-2">
-          <Label className="text-muted-foreground">{t('accessKeys.connectSnippetLabel')}</Label>
-          <div className="relative space-y-2 sm:space-y-0">
-            <pre className="min-h-10 overflow-x-auto rounded-xl bg-background p-4 font-mono text-sm leading-relaxed sm:pr-40">
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-[13px] font-medium text-muted-foreground">{t('accessKeys.connectSnippetLabel')}</p>
+              <CopyButton copied={snippetCopied} onClick={() => handleCopy(snippet, setSnippetCopied)} />
+            </div>
+            <pre className="overflow-x-auto rounded-lg bg-muted p-3 font-mono text-[13px] leading-relaxed text-foreground">
               {snippet}
             </pre>
-            <Button
-              variant="outline"
-              className="w-full sm:absolute sm:right-3 sm:top-3 sm:w-auto sm:min-w-36"
-              onClick={() => handleCopy(snippet, setSnippetCopied)}
-            >
-              {snippetCopied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
-              {snippetCopied ? t('accessKeys.copied') : t('accessKeys.copy')}
-            </Button>
           </div>
-        </div>
 
-        <p className="flex items-start gap-2 text-sm text-warning">
-          <ShieldAlert className="mt-0.5 size-3.5 shrink-0" />
-          {t('accessKeys.connectHttpsWarning')}
-        </p>
-      </div>
+          <p className="flex items-start gap-2 text-[13px] text-warning">
+            <ShieldAlert className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
+            {t('accessKeys.connectHttpsWarning')}
+          </p>
+        </div>
+      </SettingsCard>
 
       {/* Create / secret dialog --------------------------------------------- */}
       <Dialog open={createOpen} onOpenChange={(o) => { if (!o) setCreateOpen(false) }}>
@@ -395,6 +386,6 @@ export function AccessKeysSection() {
         error={revokeKey.isError ? formatApiError(revokeKey.error, t) : undefined}
         variant="destructive"
       />
-    </div>
+    </>
   )
 }

@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Loader2 } from 'lucide-react'
 import { useMfaDisable } from '@/features/mfa/hooks'
-import { getErrorStatus, getErrorDetail } from '@/lib/errors'
+import { formatApiError, getErrorStatus, getErrorDetail } from '@/lib/errors'
 
 export function MfaDisableDialog({
   open,
@@ -51,7 +51,7 @@ export function MfaDisableDialog({
     } catch (err: unknown) {
       const status = getErrorStatus(err)
       if (status === 400) setError(getErrorDetail(err) ?? t('auth.mfaInvalidCode'))
-      else setError(`${status ?? ''} — ${(err as { message?: string })?.message ?? 'Error'}`)
+      else setError(formatApiError(err, t))
     }
   }
 
@@ -108,14 +108,14 @@ export function MfaDisableDialog({
             {isRecoveryCode ? t('auth.mfaUseTotp') : t('auth.mfaUseRecovery')}
           </button>
 
-          {error && <p className="text-sm text-destructive">{error}</p>}
+          {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
 
-          <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
-            <Button type="button" variant="ghost" onClick={close}>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={close}>
               {t('settings.mfaCancel')}
             </Button>
             <Button type="submit" variant="destructive" disabled={disable.isPending}>
-              {disable.isPending && <Loader2 size={14} className="mr-1.5 animate-spin" />}
+              {disable.isPending && <Loader2 className="animate-spin" aria-hidden="true" />}
               {t('settings.mfaDisable')}
             </Button>
           </DialogFooter>

@@ -2086,9 +2086,8 @@
     "adminButton": "Open administration",
     "family": "Family",
     "familyDescription": "Manage members and sharing settings",
-    "familyManage": "Manage family members and sharing",
     "security": "Security",
-    "securityDescription": "Two-factor authentication and trusted devices",
+    "securityDescription": "Two-factor authentication, connected devices and data export",
     "mfaStatus": "Two-factor authentication",
     "mfaEnabled": "Enabled",
     "mfaDisabled": "Disabled",
@@ -2122,7 +2121,6 @@
     "exportTitle": "Export my data",
     "exportShortDesc": "Download a complete archive (JSON + CSV) of everything we hold for your account.",
     "exportDesc": "Re-authenticate to download a ZIP archive containing your full data. Sensitive credentials (password hash, 2FA secret, bank tokens) are excluded.",
-    "exportButton": "Export data",
     "exportDownload": "Download",
     "exportIncludeSnapshots": "Include daily balance history",
     "exportIncludeSnapshotsHint": "Off by default. Adds the per-account daily snapshots used by charts — large for long-running accounts.",
@@ -2141,9 +2139,6 @@
     "sessionsRevoke": "Revoke",
     "sessionsRevokeAllOthers": "Sign out other devices",
     "sessionsRevoking": "Revoking...",
-    "amounts": "Amounts",
-    "amountsVisible": "Visible",
-    "amountsHidden": "Hidden",
     "profile": {
       "title": "Profile",
       "description": "Your personal and tax context",
@@ -2159,14 +2154,14 @@
       },
       "taxHouseholdParts": "Tax household shares",
       "dependents": "Dependents",
-      "annualGrossIncome": "Annual gross income (€)",
+      "annualGrossIncome": "Annual gross income",
       "incomeHint": "The gross figure from your payslip. Fiscal context — the savings rate is computed on the net below.",
       "netPay": "What actually reaches the account",
       "netPayHint": "Both figures are on your payslip. Gross is not enough: social contributions come off first, at a rate that depends on your status.",
-      "monthlyNetBeforeTax": "Monthly net before tax (€)",
-      "withholdingTaxRate": "Withholding tax rate (%)",
+      "monthlyNetBeforeTax": "Monthly net before tax",
+      "withholdingTaxRate": "Withholding tax rate",
       "netIncomeDerived": "Monthly net received:",
-      "savingsCapacity": "Monthly savings capacity (€)",
+      "savingsCapacity": "Monthly savings capacity",
       "riskProfile": "Risk profile",
       "risk": {
         "PRUDENT": "Cautious",
@@ -2174,8 +2169,32 @@
         "DYNAMIC": "Dynamic",
         "AGGRESSIVE": "Aggressive"
       },
-      "saved": "Profile saved"
-    }
+      "saved": "Profile saved",
+      "groupHousehold": "Household and tax",
+      "groupIncome": "Income",
+      "groupPlan": "Savings and horizon",
+      "unitEur": "€",
+      "unitYears": "years",
+      "saving": "Saving…",
+      "unsaved": "Unsaved changes"
+    },
+    "sectionsNav": "Settings sections",
+    "themeHint": "Dark by default; “System” follows your device.",
+    "languageHint": "Interface language.",
+    "dateFormatHint": "How dates are shown across Picsou.",
+    "amountsHint": "Hides every amount on screen, handy in public.",
+    "sidebarStyleHint": "Layout of the navigation menu on a computer.",
+    "usernameHint": "The name you sign in with.",
+    "dangerZone": "Sensitive zone",
+    "otherDevices": "Other devices",
+    "otherDevicesHint": "Closes the “Remember me” sessions open elsewhere.",
+    "otherDevicesNone": "No other device is signed in.",
+    "logoutHint": "Ends your session on this device.",
+    "mfaEnabledHint": "A code from your authenticator app is required at every sign-in.",
+    "mfaDisabledHint": "Only your password protects this account.",
+    "mfaRecoveryCodes": "Recovery codes",
+    "dataTitle": "Your data",
+    "exportAction": "Export"
   },
   "accessKeys": {
     "sectionTitle": "Access keys & MCP",
@@ -2322,7 +2341,8 @@
         "label": "AI categorization",
         "desc": "Start AI categorization of uncategorized transactions and read its progress"
       }
-    }
+    },
+    "keysTitle": "Access keys"
   },
   "oauthConsent": {
     "title": "Allow {{app}} to access your Picsou data?",
@@ -2547,7 +2567,6 @@
       "contributions": "Contributions"
     },
     "settings": {
-      "title": "Family",
       "members": "Family members",
       "membersDesc": "Add and manage family members and managed profiles.",
       "you": "you",
@@ -2565,7 +2584,9 @@
       "shareGoals": "Share goals",
       "shareNone": "Private",
       "shareAll": "Share all",
-      "shareManual": "Select"
+      "shareManual": "Select",
+      "sharing": "Sharing with the family",
+      "sharingDesc": "What the other members see of your accounts and goals."
     }
   },
   "setup": {

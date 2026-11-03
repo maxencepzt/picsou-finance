@@ -117,7 +117,7 @@ export function ExportDataDialog({
             </div>
           )}
 
-          <div className="flex items-start gap-3 rounded-md border p-3">
+          <div className="flex items-start gap-3 rounded-xl bg-muted/50 p-3">
             <Switch
               id="export-snapshots"
               checked={includeBalanceSnapshots}
@@ -133,17 +133,17 @@ export function ExportDataDialog({
             </div>
           </div>
 
-          {error && <p className="text-sm text-destructive">{error}</p>}
+          {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
 
-          <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
-            <Button type="button" variant="ghost" onClick={close}>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={close}>
               {t('settings.mfaCancel')}
             </Button>
             <Button type="submit" disabled={exportMutation.isPending}>
               {exportMutation.isPending ? (
-                <Loader2 size={14} className="mr-1.5 animate-spin" />
+                <Loader2 className="animate-spin" aria-hidden="true" />
               ) : (
-                <Download size={14} className="mr-1.5" />
+                <Download aria-hidden="true" />
               )}
               {t('settings.exportDownload')}
             </Button>

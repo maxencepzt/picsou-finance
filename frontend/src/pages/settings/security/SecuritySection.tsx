@@ -1,8 +1,11 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
-import { Loader2, ShieldCheck, ShieldOff, KeyRound, Download } from 'lucide-react'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Download, KeyRound } from 'lucide-react'
 import { useMfaStatus } from '@/features/mfa/hooks'
+import { cn } from '@/lib/utils'
+import { ROW_BUTTON, SettingRow, SettingsCard } from '../SettingRow'
 import { MfaEnrollDialog } from './MfaEnrollDialog'
 import { MfaDisableDialog } from './MfaDisableDialog'
 import { RecoveryCodesDialog } from './RecoveryCodesDialog'
@@ -10,12 +13,9 @@ import { SessionsList } from './SessionsList'
 import { ExportDataDialog } from './ExportDataDialog'
 
 /**
- * Top-level "Security" panel rendered as the contents of the SectionCard in
- * SettingsPage. Splits into two visual blocks:
- *   - 2FA status + actions (enable/disable/regenerate codes)
- *   - persistent session list (Remember Me devices)
- * Mobile-responsive throughout: dialogs scroll, buttons stack on narrow
- * widths, and session rows reflow into a vertical layout.
+ * The Security section of Settings, three cards: two-factor authentication (status, enable or
+ * disable, recovery codes), the "Remember me" devices, and the GDPR data export. Closing every
+ * other session lives in the account section's sensitive zone.
  */
 export function SecuritySection() {
   const { t } = useTranslation()
@@ -26,98 +26,61 @@ export function SecuritySection() {
   const [exportOpen, setExportOpen] = useState(false)
 
   return (
-    <div className="space-y-6">
-      {/* ── 2FA block ─────────────────────────────────────────────────── */}
-      <div className="space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div className="flex items-center gap-2">
+    <>
+      <SettingsCard title={t('settings.mfaStatus')}>
+        {isLoading ? (
+          <Skeleton className="h-10 w-full" />
+        ) : (
+          <SettingRow
+            label={
+              <span className="inline-flex items-center gap-2">
+                <span className={cn('size-2 rounded-full', status?.enabled ? 'bg-gain' : 'bg-muted-foreground')} aria-hidden="true" />
+                {status?.enabled ? t('settings.mfaEnabled') : t('settings.mfaDisabled')}
+              </span>
+            }
+            description={status?.enabled ? t('settings.mfaEnabledHint') : t('settings.mfaDisabledHint')}
+          >
             {status?.enabled ? (
-              <ShieldCheck className="size-5 text-gain" />
+              <Button variant="destructive" size="xs" className={ROW_BUTTON} onClick={() => setDisableOpen(true)}>
+                {t('settings.mfaDisable')}
+              </Button>
             ) : (
-              <ShieldOff className="size-5 text-muted-foreground" />
+              <Button size="xs" className={ROW_BUTTON} onClick={() => setEnrollOpen(true)}>
+                {t('settings.mfaEnable')}
+              </Button>
             )}
-            <div>
-              <p className="text-sm font-medium">{t('settings.mfaStatus')}</p>
-              <p className="text-xs text-muted-foreground">
-                {isLoading
-                  ? '...'
-                  : status?.enabled
-                    ? t('settings.mfaEnabled')
-                    : t('settings.mfaDisabled')}
-                {status?.enabled && (
-                  <>
-                    {' · '}
-                    {t('settings.mfaRecoveryCodesRemaining', {
-                      count: status.remainingRecoveryCodes,
-                    })}
-                  </>
-                )}
-              </p>
-            </div>
-          </div>
-
-          {isLoading ? (
-            <Loader2 size={16} className="animate-spin text-muted-foreground" />
-          ) : status?.enabled ? (
-            <Button variant="destructive" size="sm" onClick={() => setDisableOpen(true)}>
-              {t('settings.mfaDisable')}
-            </Button>
-          ) : (
-            <Button size="sm" onClick={() => setEnrollOpen(true)}>
-              {t('settings.mfaEnable')}
-            </Button>
-          )}
-        </div>
-
-        {status?.enabled && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setRegenerateOpen(true)}
-            className="w-full sm:w-auto"
-          >
-            <KeyRound size={14} className="mr-1.5" />
-            {t('settings.mfaRegenerate')}
-          </Button>
+          </SettingRow>
         )}
-      </div>
-
-      {/* ── GDPR data export block ───────────────────────────────────── */}
-      <div className="space-y-2 pt-4 border-t">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div>
-            <p className="text-sm font-medium">{t('settings.exportTitle')}</p>
-            <p className="text-xs text-muted-foreground">
-              {t('settings.exportShortDesc')}
-            </p>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setExportOpen(true)}
-            className="w-full sm:w-auto"
+        {status?.enabled && (
+          <SettingRow
+            label={t('settings.mfaRecoveryCodes')}
+            description={t('settings.mfaRecoveryCodesRemaining', { count: status.remainingRecoveryCodes })}
           >
-            <Download size={14} className="mr-1.5" />
-            {t('settings.exportButton')}
-          </Button>
-        </div>
-      </div>
+            <Button variant="outline" size="xs" className={ROW_BUTTON} onClick={() => setRegenerateOpen(true)}>
+              <KeyRound aria-hidden="true" />
+              {t('settings.mfaRegenerate')}
+            </Button>
+          </SettingRow>
+        )}
+      </SettingsCard>
 
-      {/* ── Persistent sessions block ────────────────────────────────── */}
-      <div className="space-y-2 pt-4 border-t">
-        <div>
-          <p className="text-sm font-medium">{t('settings.sessions')}</p>
-          <p className="text-xs text-muted-foreground">
-            {t('settings.sessionsDescription')}
-          </p>
-        </div>
+      <SettingsCard title={t('settings.sessions')} description={t('settings.sessionsDescription')}>
         <SessionsList />
-      </div>
+      </SettingsCard>
+
+      <SettingsCard title={t('settings.dataTitle')}>
+        <SettingRow label={t('settings.exportTitle')} description={t('settings.exportShortDesc')}>
+          <Button variant="outline" size="xs" className={ROW_BUTTON} onClick={() => setExportOpen(true)}>
+            <Download aria-hidden="true" />
+            {t('settings.exportAction')}
+          </Button>
+        </SettingRow>
+      </SettingsCard>
 
       <MfaEnrollDialog open={enrollOpen} onOpenChange={setEnrollOpen} />
       <MfaDisableDialog open={disableOpen} onOpenChange={setDisableOpen} />
       <RecoveryCodesDialog open={regenerateOpen} onOpenChange={setRegenerateOpen} />
       <ExportDataDialog open={exportOpen} onOpenChange={setExportOpen} />
-    </div>
+    </>
   )
 }

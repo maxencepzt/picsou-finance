@@ -96,14 +96,14 @@ export function RecoveryCodesDialog({
               />
             </div>
 
-            {error && <p className="text-sm text-destructive">{error}</p>}
+            {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
 
-            <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
-              <Button type="button" variant="ghost" onClick={close}>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={close}>
                 {t('settings.mfaCancel')}
               </Button>
               <Button type="submit" disabled={regenerate.isPending || code.length !== 6}>
-                {regenerate.isPending && <Loader2 size={14} className="mr-1.5 animate-spin" />}
+                {regenerate.isPending && <Loader2 className="animate-spin" aria-hidden="true" />}
                 {t('settings.mfaRegenerate')}
               </Button>
             </DialogFooter>

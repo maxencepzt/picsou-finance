@@ -2086,9 +2086,8 @@
     "adminButton": "Ouvrir l'administration",
     "family": "Famille",
     "familyDescription": "Gérer les membres et les paramètres de partage",
-    "familyManage": "Gérer les membres et les partages",
     "security": "Sécurité",
-    "securityDescription": "Authentification à deux facteurs et appareils de confiance",
+    "securityDescription": "Double authentification, appareils connectés et export de vos données",
     "mfaStatus": "Authentification à deux facteurs",
     "mfaEnabled": "Activée",
     "mfaDisabled": "Désactivée",
@@ -2122,7 +2121,6 @@
     "exportTitle": "Exporter mes données",
     "exportShortDesc": "Téléchargez une archive complète (JSON + CSV) de toutes les données associées à votre compte.",
     "exportDesc": "Réauthentifiez-vous pour télécharger une archive ZIP contenant l'intégralité de vos données. Les identifiants sensibles (hash du mot de passe, secret 2FA, jetons bancaires) sont exclus.",
-    "exportButton": "Exporter mes données",
     "exportDownload": "Télécharger",
     "exportIncludeSnapshots": "Inclure l'historique quotidien des soldes",
     "exportIncludeSnapshotsHint": "Désactivé par défaut. Ajoute les snapshots quotidiens par compte utilisés pour les graphiques — volumineux pour les comptes anciens.",
@@ -2141,9 +2139,6 @@
     "sessionsRevoke": "Révoquer",
     "sessionsRevokeAllOthers": "Déconnecter les autres appareils",
     "sessionsRevoking": "Révocation...",
-    "amounts": "Montants",
-    "amountsVisible": "Visibles",
-    "amountsHidden": "Masqués",
     "profile": {
       "title": "Profil",
       "description": "Votre contexte personnel et fiscal",
@@ -2159,14 +2154,14 @@
       },
       "taxHouseholdParts": "Parts fiscales",
       "dependents": "Personnes à charge",
-      "annualGrossIncome": "Revenu brut annuel (€)",
+      "annualGrossIncome": "Revenu brut annuel",
       "incomeHint": "Le brut de votre fiche de paie. Sert de contexte fiscal ; le taux d'épargne, lui, se calcule sur le net ci-dessous.",
       "netPay": "Ce qui tombe réellement sur le compte",
       "netPayHint": "Les deux chiffres figurent sur votre fiche de paie. Le brut ne suffit pas : les cotisations sociales s'en déduisent d'abord, à un taux qui dépend de votre statut.",
-      "monthlyNetBeforeTax": "Net mensuel avant impôt (€)",
-      "withholdingTaxRate": "Taux de prélèvement à la source (%)",
+      "monthlyNetBeforeTax": "Net mensuel avant impôt",
+      "withholdingTaxRate": "Taux de prélèvement à la source",
       "netIncomeDerived": "Net mensuel perçu :",
-      "savingsCapacity": "Capacité d'épargne mensuelle (€)",
+      "savingsCapacity": "Capacité d'épargne mensuelle",
       "riskProfile": "Profil de risque",
       "risk": {
         "PRUDENT": "Prudent",
@@ -2174,8 +2169,32 @@
         "DYNAMIC": "Dynamique",
         "AGGRESSIVE": "Offensif"
       },
-      "saved": "Profil enregistré"
-    }
+      "saved": "Profil enregistré",
+      "groupHousehold": "Foyer et fiscalité",
+      "groupIncome": "Revenus",
+      "groupPlan": "Épargne et horizon",
+      "unitEur": "€",
+      "unitYears": "ans",
+      "saving": "Enregistrement…",
+      "unsaved": "Modifications non enregistrées"
+    },
+    "sectionsNav": "Sections des paramètres",
+    "themeHint": "Sombre par défaut ; « Système » suit le réglage de votre appareil.",
+    "languageHint": "Langue de l'interface.",
+    "dateFormatHint": "Comment les dates s'affichent partout dans Picsou.",
+    "amountsHint": "Cache chaque montant à l'écran, utile en public.",
+    "sidebarStyleHint": "Présentation du menu de navigation sur ordinateur.",
+    "usernameHint": "Votre identifiant de connexion.",
+    "dangerZone": "Zone sensible",
+    "otherDevices": "Autres appareils",
+    "otherDevicesHint": "Ferme les sessions « Se souvenir de moi » ouvertes ailleurs.",
+    "otherDevicesNone": "Aucun autre appareil n'est connecté.",
+    "logoutHint": "Ferme votre session sur cet appareil.",
+    "mfaEnabledHint": "Un code de votre application d'authentification est demandé à chaque connexion.",
+    "mfaDisabledHint": "Seul votre mot de passe protège ce compte.",
+    "mfaRecoveryCodes": "Codes de récupération",
+    "dataTitle": "Vos données",
+    "exportAction": "Exporter"
   },
   "accessKeys": {
     "sectionTitle": "Clés d'accès & MCP",
@@ -2322,7 +2341,8 @@
         "label": "Catégorisation IA",
         "desc": "Lancer la catégorisation IA des transactions non catégorisées et suivre sa progression"
       }
-    }
+    },
+    "keysTitle": "Clés d'accès"
   },
   "oauthConsent": {
     "title": "Autoriser {{app}} à accéder à vos données Picsou ?",
@@ -2547,7 +2567,6 @@
       "contributions": "Contributions"
     },
     "settings": {
-      "title": "Famille",
       "members": "Membres de la famille",
       "membersDesc": "Ajoutez et gérez les membres et les profils gérés.",
       "you": "vous",
@@ -2565,7 +2584,9 @@
       "shareGoals": "Partager des objectifs",
       "shareNone": "Privé",
       "shareAll": "Tout partager",
-      "shareManual": "Sélectionner"
+      "shareManual": "Sélectionner",
+      "sharing": "Partage avec la famille",
+      "sharingDesc": "Ce que les autres membres voient de vos comptes et objectifs."
     }
   },
   "setup": {

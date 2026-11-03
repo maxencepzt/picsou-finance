@@ -1,6 +1,6 @@
 # Feature: Member profile (personal and fiscal context)
 
-> Last updated: 2026-08-19
+> Last updated: 2026-11-03
 
 ## Context
 
@@ -10,7 +10,14 @@ means something different at 25 in the 11 % bracket than at 58 in the 41 % one, 
 something — that has to tell the two apart.
 
 `member_profile` records that context: date of birth, marginal tax rate, household, income,
-savings capacity, retirement horizon, risk profile. It is edited from a card in Settings.
+savings capacity, retirement horizon, risk profile. It is edited in the **Profil** section of
+Settings (`/settings?section=profile`): three grouped cards (household and tax, income, savings
+and horizon) in a two-column form, each amount or rate with its unit drawn inside the field
+(€, %, years — the unit strings are translation keys, never a literal `€` in TSX), the
+single-choice answers as a `SegmentedControl` that clears when the selected option is clicked
+again, and a save bar that says "unsaved changes" as soon as a field differs from the stored
+profile, "saving…" while the request runs and "profile saved" once it succeeded (errors stay a
+toast).
 
 The first consumer shipped alongside it is the **savings rate** on the Goals page, which needs a
 denominator (see [goal-recurring-investment.md](./goal-recurring-investment.md)). Wiring the
@@ -124,7 +131,7 @@ only exists if the two are recorded apart.
 **Frontend**
 - `features/profile/{api,hooks}.ts` — `useMemberProfile`, `useSaveMemberProfile`, key `['me','profile']`
 - `pages/settings/sections/ProfileSection.tsx` — the form
-- `pages/settings/SettingsPage.tsx` — the `SectionCard` it sits in
+- `pages/settings/SettingsPage.tsx` + `SettingsShell.tsx` — the settings frame and the `?section=profile` route
 - `demo/data/profile.ts`, `demo/index.ts` — the mock and its `GET`/`PUT` handlers
 
 ## Technical choices

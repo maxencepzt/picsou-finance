@@ -41,7 +41,7 @@ placement and the entire total responds immediately to the privacy toggle.
 - `frontend/src/components/shared/MoneyChartTooltip.tsx` — for charts that relied on the shadcn default
 - `frontend/src/stores/app-store.ts` — `hideAmounts`, `toggleHideAmounts`, `setHideAmounts`
 - `frontend/src/components/layout/AppTopBar.tsx` — the eye button (`PrivacyToggle`)
-- `frontend/src/pages/settings/SettingsPage.tsx` — the second entry point, reachable on mobile
+- `frontend/src/pages/settings/sections/AppearanceSection.tsx` — the second entry point: the "Masquer les montants" switch of Settings → Apparence
 
 ## What is masked, and what is not
 
