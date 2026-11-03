@@ -25,6 +25,8 @@ The projection says how much the investable wealth may be worth; it does not say
 
 `FinancialIndependenceCard` uses the defaults (5 % return, 4 % withdrawal): target, financial assets and progress toward it, estimated age (or duration without a birth date) and the stated retirement age. `FinancialIndependenceSimulator` has four sliders (savings 0–3 000 €/month, return 0–10 %, expenses 1 000–5 000 €, withdrawal 2.5–5 %), savings presets, and compares the result with the current pace on one time axis, with the retirement age as a marker. Slider moves are stored as overrides on top of the baseline, so untouched hypotheses follow the profile and budget when they arrive; Reset clears them.
 
+The sliders are `range-input`s (`index.css`) with a heavier 6px track and a 20px ink thumb ringed in the card colour. The unfilled part of the track is `--muted-foreground` at 75 % (`color-mix(… transparent)`), not `--input`: checked in light mode, `--input` measured 1.3:1 against the card, under the 3:1 a control's boundary needs; slate at 75 % gives 3.5:1 in light and 4.6:1 in dark. The blue fill (6.8:1) and the ink thumb (15:1 and more) were already above it. The same block styles the budget page's slider, which gains the same track.
+
 ### Key files
 
 - `frontend/src/pages/analysis/fi-math.ts` — `financialAssets`, `currentPace`, `fiTarget`, `capitalAfter`, `yearsToTarget`, `snap`, defaults
@@ -39,6 +41,7 @@ The projection says how much the investable wealth may be worth; it does not say
 | Financial assets only | What a retirement can be drawn from by selling it off; property and SCPI are left out | Net worth |
 | A labelled default for expenses | The card stays useful before the targets are filled, and says the figure is not the member's | No card until expenses are stated |
 | Durations instead of ages without a birth date | An age needs one; the card links to Settings to add it | Hiding the result |
+| Unfilled track from `--muted-foreground` at 75 % | Reaches 3:1 against a card in both themes from an existing token; `index.css` keeps one theme block per mode | A new `--range-track` token per theme |
 
 ## Gotchas / Pitfalls
 
@@ -50,6 +53,7 @@ The projection says how much the investable wealth may be worth; it does not say
 
 - `pages/analysis/fi-math.test.ts` — target, compounding, years to target, out of reach, financial assets only, pace fallback, slider snap.
 - `pages/analysis/FinancialIndependence.test.tsx` — age at the current pace, duration and profile link without a birth date, a higher savings rate against the current pace, then reset.
+- `src/theme-contrast.test.ts` (range input) — the unfilled track (its alpha read from `index.css`), the fill and the ink thumb each reach 3:1 against a card, in both themes.
 
 ## Links
 

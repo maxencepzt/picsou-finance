@@ -117,3 +117,17 @@ describe('.dark chart series', () => {
     expect(contrast(t[token]!, netWorthArea)).toBeGreaterThanOrEqual(3)
   })
 })
+
+describe.each([':root', '.dark'])('%s range input', (selector) => {
+  const t = themeTokens(selector)
+  // The unfilled track is `color-mix(… var(--muted-foreground) N%, transparent)` over the card.
+  const trackAlpha = Number(/\.range-input::-webkit-slider-runnable-track \{[\s\S]*?var\(--muted-foreground\) (\d+)%/.exec(css)?.[1]) / 100
+
+  it('track, fill and thumb stand out from a card (3:1)', () => {
+    expect(trackAlpha).toBeGreaterThan(0)
+    expect(contrast(tint(t['muted-foreground']!, t.card!, trackAlpha), t.card!)).toBeGreaterThanOrEqual(3)
+    expect(contrast(t.primary!, t.card!)).toBeGreaterThanOrEqual(3)
+    // The simulator's ink thumb, ringed with the card colour, so the card is what it sits on.
+    expect(contrast(t.foreground!, t.card!)).toBeGreaterThanOrEqual(3)
+  })
+})
