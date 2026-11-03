@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts'
+import { CartesianGrid, Line, LineChart, XAxis, YAxis, usePlotArea, useXAxisScale, useYAxisScale } from 'recharts'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { CurrencyDisplay } from '@/components/shared/CurrencyDisplay'
 import { SegmentedControl } from '@/components/shared/SegmentedControl'
@@ -12,11 +12,13 @@ import {
 } from '@/components/ui/chart'
 import { useProjection, useProjectionDateLabel } from '@/features/analysis/hooks'
 import { useMoney } from '@/hooks/use-money'
+import { useIsMobile } from '@/hooks/use-mobile'
 import { MONEY_AXIS_WIDTH } from '@/lib/money'
 import { MoneyChartTooltip } from '@/components/shared/MoneyChartTooltip'
 import { cn, formatPercent } from '@/lib/utils'
 import type { ProjectionScenario } from '@/types/api'
 import { AXIS_PROPS, AXIS_PROPS_FLUSH } from '@/lib/chart-axis'
+import { labelGutter, spreadLabels } from './projection-labels'
 
 const HORIZONS = [10, 20, 30] as const
 
@@ -37,6 +39,55 @@ const CONTRIBUTED_COLOR = 'var(--chart-5)'
 
 /** The series the legend can toggle: contributions first, then the scenarios in payload order. */
 const CONTRIBUTED_KEY = 'contributed'
+
+/** Vertical room per end label: 11px text plus air. */
+const LABEL_GAP = 14
+
+interface ScenarioEnd {
+  key: string
+  date: string
+  value: number
+  text: string
+  color: string
+}
+
+/**
+ * The final value of each visible scenario, written at the right end of its line and spread so
+ * no two overlap. A dot marks the line's real end and a short leader joins it to a label that
+ * had to move. Rendered inside the chart, where Recharts' hooks give the scales.
+ */
+function ScenarioEndLabels({ ends }: { ends: ScenarioEnd[] }) {
+  const xScale = useXAxisScale()
+  const yScale = useYAxisScale()
+  const plot = usePlotArea()
+  if (!xScale || !yScale || !plot) return null
+  const anchored = ends.flatMap((end) => {
+    const x = xScale(end.date)
+    const y = yScale(end.value)
+    return x == null || y == null ? [] : [{ ...end, x, y }]
+  })
+  const placed = spreadLabels(anchored, LABEL_GAP, plot.y + LABEL_GAP / 2, plot.y + plot.height - LABEL_GAP / 2)
+  return (
+    <g aria-hidden="true">
+      {placed.map((end) => (
+        <g key={end.key}>
+          <circle cx={end.x} cy={end.y} r={2.5} fill={end.color} />
+          {Math.abs(end.labelY - end.y) > 1 && (
+            <line x1={end.x + 2} y1={end.y} x2={end.x + 6} y2={end.labelY} stroke={end.color} strokeWidth={1} />
+          )}
+          <text
+            x={end.x + 8}
+            y={end.labelY}
+            dominantBaseline="central"
+            className="fill-foreground text-[11px] font-semibold tabular-nums"
+          >
+            {end.text}
+          </text>
+        </g>
+      ))}
+    </g>
+  )
+}
 
 /**
  * The next round number at or above a value — 1, 2, 2.5 or 5 times a power of ten.
@@ -63,6 +114,8 @@ export function ProjectionSection({ className }: { className?: string }) {
   // added later to the payload appears without anyone remembering to opt it in.
   const [hidden, setHidden] = useState<Set<string>>(() => new Set())
   const money = useMoney()
+  // A phone's chart has no room beside the lines; the legend and the tooltip still carry the values.
+  const showEndLabels = !useIsMobile()
   const projection = useProjection(years)
 
   const config = useMemo<ChartConfig>(() => {
@@ -131,6 +184,20 @@ export function ProjectionSection({ className }: { className?: string }) {
     [projection.data, t],
   )
 
+  const ends = useMemo<ScenarioEnd[]>(() => {
+    const last = rows.at(-1)
+    if (!last) return []
+    return Object.keys(config)
+      .filter((key) => !hidden.has(key))
+      .map((key) => ({
+        key,
+        date: String(last.date),
+        value: Number(last[key] ?? 0),
+        text: money.compact(Number(last[key] ?? 0)),
+        color: SCENARIO_COLORS[key as ProjectionScenario['key']],
+      }))
+  }, [rows, config, hidden, money])
+
   const toggle = (key: string) =>
     setHidden((previous) => {
       const next = new Set(previous)
@@ -195,8 +262,19 @@ export function ProjectionSection({ className }: { className?: string }) {
               <AllocationTrajectory allocation={projection.data.allocation} />
             ) : (
               <>
-            <ChartContainer config={config} className="h-[300px] w-full">
-              <LineChart data={rows} margin={{ left: 4, right: 8, top: 8, bottom: 0 }}>
+            <ChartContainer
+              config={config}
+              className="h-[300px] w-full"
+              role="img"
+              aria-label={t('analysis.projection.chartLabel', {
+                years,
+                values: ends.map((end) => `${config[end.key]?.label ?? end.key} ${end.text}`).join(', '),
+              })}
+            >
+              <LineChart
+                data={rows}
+                margin={{ left: 4, right: showEndLabels && ends.length > 0 ? labelGutter(ends.map((end) => end.text)) : 8, top: 8, bottom: 0 }}
+              >
                 <CartesianGrid vertical={false} />
                 <XAxis
                   dataKey="date"
@@ -242,6 +320,7 @@ export function ProjectionSection({ className }: { className?: string }) {
                       dot={false}
                     />
                   ))}
+                {showEndLabels && <ScenarioEndLabels ends={ends} />}
               </LineChart>
             </ChartContainer>
 

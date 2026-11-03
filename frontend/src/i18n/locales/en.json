@@ -519,7 +519,8 @@
       "atHorizon": "In {{count}} years",
       "atAge": "age {{age}}",
       "viewLabel": "View",
-      "horizonLabel": "Horizon"
+      "horizonLabel": "Horizon",
+      "chartLabel": "Projected wealth in {{years}} years: {{values}}"
     },
     "classification": {
       "title": "Classify this security",

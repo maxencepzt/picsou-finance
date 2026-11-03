@@ -11,6 +11,9 @@ vi.mock('@/features/analysis/hooks', () => ({
   useProjectionDateLabel: () => (date: string) => date,
 }))
 
+// jsdom has no matchMedia; the end labels' phone check is not what these tests are about.
+vi.mock('@/hooks/use-mobile', () => ({ useIsMobile: () => false }))
+
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string, opts?: Record<string, unknown>) =>

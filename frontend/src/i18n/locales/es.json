@@ -508,7 +508,8 @@
       "atHorizon": "En {{count}} años",
       "atAge": "{{age}} años",
       "viewLabel": "Vista",
-      "horizonLabel": "Horizonte"
+      "horizonLabel": "Horizonte",
+      "chartLabel": "Patrimonio proyectado en {{years}} años: {{values}}"
     },
     "classification": {
       "title": "Clasificar este valor",

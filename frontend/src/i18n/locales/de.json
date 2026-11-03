@@ -508,7 +508,8 @@
       "atHorizon": "In {{count}} Jahren",
       "atAge": "{{age}} Jahre",
       "viewLabel": "Ansicht",
-      "horizonLabel": "Horizont"
+      "horizonLabel": "Horizont",
+      "chartLabel": "Prognostiziertes Vermögen in {{years}} Jahren: {{values}}"
     },
     "classification": {
       "title": "Wertpapier einordnen",

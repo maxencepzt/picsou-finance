@@ -519,7 +519,8 @@
       "atHorizon": "À {{count}} ans",
       "atAge": "{{age}} ans",
       "viewLabel": "Vue",
-      "horizonLabel": "Horizon"
+      "horizonLabel": "Horizon",
+      "chartLabel": "Patrimoine projeté dans {{years}} ans : {{values}}"
     },
     "classification": {
       "title": "Classer ce titre",
