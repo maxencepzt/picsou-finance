@@ -107,7 +107,7 @@ describe('nothing bypasses the masked formatter', () => {
     source.match(new RegExp(`<${tag}\\b[\\s\\S]*?(?:/>|</${tag}>)`, 'g')) ?? []
   // Their scale and tooltip are a share of the portfolio, in percent: there is no magnitude to hide.
   // PerformanceChart's is a base-100 index, which reveals no amount either.
-  const percentCharts = ['src/pages/analysis/AllocationTrajectory.tsx', 'src/pages/investments/PerformanceChart.tsx']
+  const percentCharts = ['src/pages/analysis/AllocationTrajectory.tsx', 'src/pages/budget/SavingsRateCard.tsx', 'src/pages/investments/PerformanceChart.tsx']
 
   it('makes every amount axis go through the formatter', () => {
     const offenders = files((s) => elements(s, 'YAxis').some((axis) => !axis.includes('tickFormatter={money.tick}')))

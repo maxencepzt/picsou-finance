@@ -25,6 +25,8 @@ import type { Budget } from '@/types/api'
 import { ColorDot } from './budget-utils'
 import { CashflowTab } from './CashflowTab'
 import { SavingsRateCard } from './SavingsRateCard'
+import { SubscriptionsSummaryCard } from './SubscriptionsSummaryCard'
+import { TopMerchantsCard } from './TopMerchantsCard'
 import { PeriodNavigator } from './PeriodNavigator'
 import { useBudgetPeriod } from './BudgetPeriodContext'
 import { previousBucket, savingsRate } from './savings-rate'
@@ -253,7 +255,7 @@ export function OverviewTab() {
         </button>
       )}
 
-      <div className="grid gap-4 lg:grid-cols-12">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
         <Card className={showEnvelopes ? 'lg:col-span-7' : 'lg:col-span-12'}>
           <CardHeader>
             <CardTitle>{t('budget.flow.diagram')}</CardTitle>
@@ -304,11 +306,17 @@ export function OverviewTab() {
       ) : seriesQ.isLoading ? (
         <Skeleton className="h-[340px] w-full rounded-xl" />
       ) : (
-        <div className="grid gap-4 lg:grid-cols-12">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
           <div className="*:h-full lg:col-span-8"><CashflowTab series={series} /></div>
           <div className="*:h-full lg:col-span-4"><SavingsRateCard series={series} /></div>
         </div>
       )}
+
+      {/* Merchants follow the displayed cycle; the subscriptions are today's, so current cycle only. */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+        <div className={cn('*:h-full', viewingPast ? 'lg:col-span-12' : 'lg:col-span-7')}><TopMerchantsCard anchor={anchor} /></div>
+        {!viewingPast && <div className="*:h-full lg:col-span-5"><SubscriptionsSummaryCard /></div>}
+      </div>
 
       {/* Capital-income forecast — current window only, and never part of the core gate. */}
       {!viewingPast && <CapitalIncomeAhead />}

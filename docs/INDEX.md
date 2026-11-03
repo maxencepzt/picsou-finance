@@ -155,6 +155,7 @@
 | Property & loans page (Immobilier & prêts) | 2026-11-03 | [real-estate-page.md](./features/real-estate-page.md) |
 | Investment performance, index comparison and fund fees (TWR, XIRR, drawdown, TER) | 2026-11-03 | [investment-performance.md](./features/investment-performance.md) |
 | Dashboard movers (day-over-day moves of held securities) | 2026-11-03 | [dashboard-movers.md](./features/dashboard-movers.md) |
+| Spending by merchant (budget overview) | 2026-11-03 | [spending-by-merchant.md](./features/spending-by-merchant.md) |
 | UI control shape (shadcn theme radius) | 2026-08-10 | [ui-control-shape-system.md](./features/ui-control-shape-system.md) |
 | Privacy mode (hiding amounts for demos) | 2026-10-31 | [privacy-mode.md](./features/privacy-mode.md) |
 | Multi-account family system | 2026-07-07 | [multi-account-family.md](./features/multi-account-family.md) |

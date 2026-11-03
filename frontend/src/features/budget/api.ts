@@ -14,6 +14,7 @@ import type {
   CategorizationRuleRequest,
   CategoryRequest,
   CategorizeRequest,
+  MerchantSpending,
   RecurringActivity,
   RecurringOccurrence,
   RecurringSeries,
@@ -99,6 +100,9 @@ export const budgetApi = {
   // ─── Spending breakdown & drill ───────────────────────────────────────────
   getSpendingByCategory: (period: CashflowPeriod, anchor?: string) =>
     api.get<SpendingByCategoryResponse>('/spending/by-category', { params: { period, ...(anchor ? { anchor } : {}) } })
+      .then(r => r.data),
+  getSpendingByMerchant: (period: CashflowPeriod, anchor: string | undefined, limit: number) =>
+    api.get<MerchantSpending>('/spending/by-merchant', { params: { period, limit, ...(anchor ? { anchor } : {}) } })
       .then(r => r.data),
   getCategoryDetail: (categoryId: number, period: CashflowPeriod, anchor?: string) =>
     api.get<SpendingDetailResponse>(`/spending/category/${categoryId}`, { params: { period, ...(anchor ? { anchor } : {}) } })

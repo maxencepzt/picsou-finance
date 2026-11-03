@@ -38,6 +38,8 @@ vi.mock('@/components/shared/CurrencyDisplay', () => ({
 vi.mock('@/components/shared/CashflowSankey', () => ({ CashflowSankey: () => <div>sankey</div> }))
 vi.mock('./CashflowTab', () => ({ CashflowTab: () => null }))
 vi.mock('./SavingsRateCard', () => ({ SavingsRateCard: () => null }))
+vi.mock('./TopMerchantsCard', () => ({ TopMerchantsCard: () => null }))
+vi.mock('./SubscriptionsSummaryCard', () => ({ SubscriptionsSummaryCard: () => null }))
 vi.mock('@/features/budget/hooks', () => ({
   useCashflow: (period: string) => ({
     data: state.coreError || state.coreLoading ? undefined : {

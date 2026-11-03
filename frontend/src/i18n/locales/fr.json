@@ -1003,7 +1003,25 @@
       "saved": "Épargné et investi",
       "toPay": "Encore à payer ce cycle",
       "toPayCount": "{{count}} prélèvement prévu",
-      "toPayCount_other": "{{count}} prélèvements prévus"
+      "toPayCount_other": "{{count}} prélèvements prévus",
+      "subscriptions": {
+        "title": "Abonnements et prélèvements",
+        "count": "{{count}} prélèvement récurrent confirmé",
+        "count_other": "{{count}} prélèvements récurrents confirmés",
+        "perMonth": "par mois",
+        "perYear": "Par an",
+        "nextDue": "Prochaines échéances",
+        "empty": "Aucun prélèvement récurrent confirmé pour l'instant."
+      },
+      "merchants": {
+        "title": "Principaux commerçants",
+        "total": "Dépenses du cycle",
+        "count": "{{count}} achat",
+        "count_other": "{{count}} achats",
+        "others": "Autres commerçants",
+        "empty": "Aucune dépense sur ce cycle.",
+        "error": "Impossible de charger les dépenses par commerçant."
+      }
     },
     "cashflow": {
       "subtitle": "Entrées, sorties et solde net (virements exclus).",

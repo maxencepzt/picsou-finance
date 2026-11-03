@@ -262,6 +262,15 @@ export function useSpendingByCategory(period: CashflowPeriod, anchor?: string) {
   })
 }
 
+export function useSpendingByMerchant(period: CashflowPeriod, anchor: string | undefined, limit: number) {
+  return useQuery({
+    queryKey: ['budget', 'spending', 'merchants', period, anchor ?? 'now', limit],
+    queryFn: () => budgetApi.getSpendingByMerchant(period, anchor, limit),
+    staleTime: QUERY_STALE_TIMES.budget,
+    placeholderData: keepPreviousData,
+  })
+}
+
 export function useCategoryDetail(categoryId: number, period: CashflowPeriod, anchor?: string) {
   return useQuery({
     queryKey: ['budget', 'spending', 'category', categoryId, period, anchor ?? 'now'],

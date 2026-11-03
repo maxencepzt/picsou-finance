@@ -2865,7 +2865,25 @@
       "saved": "Gespart und angelegt",
       "toPay": "In diesem Zyklus noch zu zahlen",
       "toPayCount": "{{count}} Abbuchung erwartet",
-      "toPayCount_other": "{{count}} Abbuchungen erwartet"
+      "toPayCount_other": "{{count}} Abbuchungen erwartet",
+      "subscriptions": {
+        "title": "Abos und Lastschriften",
+        "count": "{{count}} bestätigte wiederkehrende Abbuchung",
+        "count_other": "{{count}} bestätigte wiederkehrende Abbuchungen",
+        "perMonth": "pro Monat",
+        "perYear": "Pro Jahr",
+        "nextDue": "Nächste Fälligkeiten",
+        "empty": "Noch keine bestätigte wiederkehrende Abbuchung."
+      },
+      "merchants": {
+        "title": "Top-Händler",
+        "total": "Ausgaben im Zyklus",
+        "count": "{{count}} Einkauf",
+        "count_other": "{{count}} Einkäufe",
+        "others": "Weitere Händler",
+        "empty": "Keine Ausgaben in diesem Zyklus.",
+        "error": "Die Ausgaben nach Händler konnten nicht geladen werden."
+      }
     },
     "cashflow": {
       "subtitle": "Money in, money out and net balance (transfers excluded).",

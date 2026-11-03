@@ -44,12 +44,22 @@ brand with a logo domain and when the member enabled logo fetching
                   "amount": 412.3, "count": 7, "share": 22.48 }] }
 ```
 
+### Frontend
+
+`budgetApi.getSpendingByMerchant` + `useSpendingByMerchant(period, anchor, limit)`
+(`features/budget/`, key `['budget', 'spending', 'merchants', …]`, so the by-category
+invalidations reach it). `pages/budget/TopMerchantsCard.tsx` on the budget overview asks for the
+displayed cycle's top six: logo (`logoUrl`) or monogram via `MerchantAvatar`, amount, purchase
+count and a share bar; `total` minus the listed amounts is the "other merchants" line. See
+[budget.md](./budget.md#overview-coffre-nocturne-redesign).
+
 ### Key files
 
 - `controller/SpendingController.java` — `GET /api/spending/by-merchant`
 - `service/budget/CashflowFlowService.java` — `spendingByMerchant`, shared `range` / `expenses`
 - `service/budget/MerchantNormalizer.java`, `service/budget/MerchantKnowledgeBase.java`
 - `dto/MerchantSpendingResponse.java`
+- `frontend/src/pages/budget/TopMerchantsCard.tsx` — the overview card
 
 ## Technical choices
 

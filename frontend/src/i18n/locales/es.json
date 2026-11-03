@@ -2865,7 +2865,25 @@
       "saved": "Ahorrado e invertido",
       "toPay": "Pendiente de pago este ciclo",
       "toPayCount": "{{count}} cargo previsto",
-      "toPayCount_other": "{{count}} cargos previstos"
+      "toPayCount_other": "{{count}} cargos previstos",
+      "subscriptions": {
+        "title": "Suscripciones y domiciliaciones",
+        "count": "{{count}} cargo recurrente confirmado",
+        "count_other": "{{count}} cargos recurrentes confirmados",
+        "perMonth": "al mes",
+        "perYear": "Al año",
+        "nextDue": "Próximos vencimientos",
+        "empty": "Todavía no hay ningún cargo recurrente confirmado."
+      },
+      "merchants": {
+        "title": "Principales comercios",
+        "total": "Gasto del ciclo",
+        "count": "{{count}} compra",
+        "count_other": "{{count}} compras",
+        "others": "Otros comercios",
+        "empty": "Sin gastos en este ciclo.",
+        "error": "No se pudo cargar el gasto por comercio."
+      }
     },
     "cashflow": {
       "subtitle": "Money in, money out and net balance (transfers excluded).",

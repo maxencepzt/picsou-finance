@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { CartesianGrid, Line, LineChart, ReferenceLine, XAxis } from 'recharts'
+import { CartesianGrid, Line, LineChart, ReferenceLine, XAxis, YAxis } from 'recharts'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { type ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
 import { AXIS_PROPS } from '@/lib/chart-axis'
@@ -27,8 +27,8 @@ export function SavingsRateCard({ series }: { series: CashflowBucket[] }) {
             <LineChart data={points} accessibilityLayer>
               <CartesianGrid vertical={false} />
               <XAxis dataKey="label" {...AXIS_PROPS} fontSize={12} />
-              {/* No YAxis: money-guard requires money.tick on every one; the tooltip and the
-                  caption carry the figures, the 0 % line keeps a negative cycle readable. */}
+              {/* A percent axis: listed in money-guard's percentCharts, there is no amount to mask. */}
+              <YAxis {...AXIS_PROPS} width={44} fontSize={12} tickFormatter={(value: number) => formatPercent(value, { fractionDigits: 0 })} />
               <ReferenceLine y={0} stroke="var(--border)" />
               <ChartTooltip
                 content={

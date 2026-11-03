@@ -1003,7 +1003,25 @@
       "saved": "Saved and invested",
       "toPay": "Still to pay this cycle",
       "toPayCount": "{{count}} debit expected",
-      "toPayCount_other": "{{count}} debits expected"
+      "toPayCount_other": "{{count}} debits expected",
+      "subscriptions": {
+        "title": "Subscriptions and direct debits",
+        "count": "{{count}} confirmed recurring debit",
+        "count_other": "{{count}} confirmed recurring debits",
+        "perMonth": "per month",
+        "perYear": "Per year",
+        "nextDue": "Next due",
+        "empty": "No confirmed recurring debit yet."
+      },
+      "merchants": {
+        "title": "Top merchants",
+        "total": "Spent this cycle",
+        "count": "{{count}} purchase",
+        "count_other": "{{count}} purchases",
+        "others": "Other merchants",
+        "empty": "No spending this cycle.",
+        "error": "Couldn't load spending by merchant."
+      }
     },
     "cashflow": {
       "subtitle": "Money in, money out and net balance (transfers excluded).",
