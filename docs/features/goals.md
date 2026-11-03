@@ -1,6 +1,6 @@
 # Feature: Goals
 
-> Last updated: 2026-08-13 (goals gained a type; see goal-recurring-investment.md)
+> Last updated: 2026-11-03
 
 > **Goals now have a type.** This note describes `SAVINGS_TARGET`, which is what every goal was
 > and still is by default. The second shape — a monthly investment with no target and no deadline
@@ -68,7 +68,7 @@ Users often start a goal in Picsou after they've already been saving for it. The
 - `backend/src/main/java/com/picsou/repository/GoalRepository.java` -- `findAllWithAccounts()` for eager fetching
 - `backend/src/main/java/com/picsou/repository/GoalMonthOverrideRepository.java` -- Override lookup by goal + month
 - `backend/src/main/java/com/picsou/repository/GoalManualContributionRepository.java` -- Contribution lookup by goal + month
-- `frontend/src/pages/goals/GoalsPage.tsx` -- Goal list with cards, CRUD dialog, status badges, account chips
+- `frontend/src/pages/goals/GoalsPage.tsx` -- Grid of goal cards (`GoalCard`), CRUD dialog, status badges
 - `frontend/src/pages/goals/GoalCalendarPage.tsx` -- Monthly calendar view with donut rings, overrides, manual contributions
 
 ### Flow
@@ -117,8 +117,8 @@ GoalService.setMonthOverride(goalId, yearMonth, amount)
 | `isOnTrack` from cumulative past months | Single source of truth with the `/goals/:id/calendar` view; lets the user influence the badge indirectly via overrides + manual contributions | Snapshot-based 3-month average (decoupled from what the calendar shows; could not be influenced by user adjustments) |
 | `null` for no history | Distinguishes "no data yet" from "zero contribution"; `isOnTrack` treats null as "benefit of the doubt" | Return zero (would mark new goals as "not on track") |
 | `liveBalanceEur()` for currentTotal | Holding accounts show real portfolio value with PnL, not stale sync-time balance | `AccountResponse.currentBalanceEur` (does not reflect live prices) |
-| `<Badge variant="secondary">` for account chips | Uses theme semantic tokens (luma preset); consistent with rest of the UI | Per-account pastel `<span>` with `style={{ background: a.color }}` |
-| `<Badge variant="default">` for achieved/on track status | Solid primary color; visible and unambiguous | Pastel `bg-green-500/10` (barely visible, not theme-aware) |
+| Linked accounts listed by name in the card's stats | No per-account colour on a goal card; the names are what the reader looks for | Per-account pastel `<span>` with `style={{ background: a.color }}` |
+| Status badges on semantic tokens (`gain`, `primary`, `warning`) | One badge shape, the colour carries the state in both themes | Raw palette classes (`bg-green-500/10`) |
 
 ## Gotchas / Pitfalls
 
@@ -137,8 +137,8 @@ GoalService.setMonthOverride(goalId, yearMonth, amount)
 
 ## Frontend notes
 
-- **Account chips** use `<Badge variant="secondary">` — theme-aware, no per-account color. The `ACCOUNT_COLORS` palette is still used elsewhere (ColorPicker, DistributionPie, AccountCard, FinaryTab) but not in goal cards.
-- **Status badges**: achieved/on track use `variant="default"` (primary), behind uses `variant="destructive"`, waiting uses `variant="secondary"`.
+- **Goal card** (`GoalCard`, since the "Coffre Nocturne" redesign): current total over target and its percentage, a progress bar, then deadline, **required** monthly effort (`monthlyNeeded`, in `warning` when behind) beside the **average** one (`avgMonthlyContribution`, "–" without history), and the linked accounts by name. Edit, calendar and delete sit in the card footer; a click elsewhere on the card opens `GoalDetailModal`. Cards sit in an auto-fill grid. No per-account colour: the `ACCOUNT_COLORS` palette is still used elsewhere (ColorPicker, the Finary and Actual Budget imports) but not in goal cards.
+- **Status badges**: all `variant="secondary"`, coloured by state — achieved `bg-gain/10 text-gain`, on track `bg-primary/12`, behind `text-warning`, waiting (no average yet) plain.
 - **Calendar badges**: "manu." uses `variant="secondary"`, "modif." uses `variant="outline"` — no raw Tailwind color overrides.
 - **Icons**: `TrendingUp`/`TrendingDown` come from `lucide-react` (not HugeIcons) in the goals pages.
 - **Goal detail chart**: `GoalDetailModal` reuses the shared `NetWorthChart` with the optional `target`, `projection`, and `todayMs` props. The chart draws:

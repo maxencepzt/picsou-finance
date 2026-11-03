@@ -5,7 +5,7 @@ import { useGoals, useCreateGoal, useUpdateGoal, useDeleteGoal } from '@/feature
 import { useAccounts } from '@/features/accounts/hooks'
 import { useMemberProfile } from '@/features/profile/hooks'
 import { AllocationPicker } from './AllocationPicker'
-import { allocatedTotal } from './plan-math'
+import { allocatedTotal, isActiveThisMonth } from './plan-math'
 import { SavingsRateCard } from './SavingsRateCard'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { EmptyState } from '@/components/shared/EmptyState'
@@ -13,12 +13,13 @@ import { PageHeader } from '@/components/shared/PageHeader'
 import { CurrencyDisplay } from '@/components/shared/CurrencyDisplay'
 import { LoadingSkeleton } from '@/components/shared/LoadingSkeleton'
 import { GoalDetailModal } from './GoalDetailModal'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { NumericInput } from '@/components/shared/NumericInput'
 import { DateInput } from '@/components/shared/DateInput'
-import { formatDate, formatPercent, parseAmount } from '@/lib/utils'
+import { formatLocalDate, formatPercent, parseAmount } from '@/lib/utils'
+import { useMoney } from '@/hooks/use-money'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
@@ -37,8 +38,6 @@ import {
   Calendar,
   ChevronDown,
   Loader2,
-  TrendingUp,
-  TrendingDown,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { GoalProgress, GoalType } from '@/types/api'
@@ -206,6 +205,7 @@ export function GoalsPage() {
           {savingsTargets.length > 0 && (
             <section className="flex flex-col gap-4">
               <h2 className="text-sm text-muted-foreground">{t('goals.sections.savings')}</h2>
+              <div className={CARD_GRID}>
               {savingsTargets.map((goal) => (
                 <GoalCard
                   key={goal.id}
@@ -216,6 +216,7 @@ export function GoalsPage() {
                   onOpenDetail={() => setDetailGoalId(goal.id)}
                 />
               ))}
+              </div>
             </section>
           )}
 
@@ -231,14 +232,17 @@ export function GoalsPage() {
                 today={today}
                 onOpenSettings={() => navigate('/settings')}
               />
+              <div className={CARD_GRID}>
               {recurringPlans.map((goal) => (
                 <RecurringPlanCard
                   key={goal.id}
                   goal={goal}
+                  today={today}
                   onEdit={() => openEdit(goal)}
                   onDelete={() => setDeleteId(goal.id)}
                 />
               ))}
+              </div>
             </section>
           )}
         </div>
@@ -432,6 +436,27 @@ export function GoalsPage() {
   )
 }
 
+const CARD_GRID = 'grid grid-cols-[repeat(auto-fill,minmax(min(100%,19rem),1fr))] gap-4'
+const BADGE = 'h-[22px] px-2 text-xs font-semibold'
+
+function Stat({ label, children, className }: { label: string; children: React.ReactNode; className?: string }) {
+  return (
+    <div className="min-w-0">
+      <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
+      <dd className={cn('font-semibold tabular-nums break-words', className)}>{children}</dd>
+    </div>
+  )
+}
+
+/** Edit / delete (and calendar) at the foot of a card; clicks stay off the card's own handler. */
+function CardActions({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="mt-auto flex justify-end gap-0.5 border-t border-border pt-2" onClick={(e) => e.stopPropagation()}>
+      {children}
+    </div>
+  )
+}
+
 /**
  * A recurring plan has no target, no deadline and no progress bar — showing an empty one would
  * be inventing a completion percentage for something with no end. It shows what goes in every
@@ -439,14 +464,17 @@ export function GoalsPage() {
  */
 function RecurringPlanCard({
   goal,
+  today,
   onEdit,
   onDelete,
 }: {
   goal: GoalProgress
+  today: string
   onEdit: () => void
   onDelete: () => void
 }) {
   const { t } = useTranslation()
+  const money = useMoney()
   const [open, setOpen] = useState(false)
   const account = goal.accounts[0]
 
@@ -456,64 +484,69 @@ function RecurringPlanCard({
   // Shown as its own row rather than left implicit: an incomplete split is a legitimate state,
   // and a breakdown that silently does not add up to the amount above it reads as a bug.
   const unallocated = monthlyAmount - allocated
+  const share = (amount: number) => (monthlyAmount > 0 ? (amount / monthlyAmount) * 100 : 0)
+  const color = (i: number) => `var(--slice-${(i % 10) + 1})`
+
+  const state = isActiveThisMonth(goal, today)
+    ? { label: t('goals.card.active'), className: 'bg-primary/12 text-foreground' }
+    : goal.startDate != null && goal.startDate > today
+      ? { label: t('goals.card.upcoming'), className: '' }
+      : { label: t('common.done'), className: '' }
 
   return (
     <Card>
-      <CardContent className="flex flex-col gap-3 py-4">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex min-w-0 items-center gap-2">
-            {detailed && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setOpen(o => !o)}
-                aria-expanded={open}
-                aria-label={t('goals.allocation.toggle')}
-              >
-                <ChevronDown
-                  className={cn('size-4 transition-transform', open && 'rotate-180')}
-                />
-              </Button>
-            )}
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="truncate text-foreground">{goal.name}</span>
-                {account && <Badge variant="secondary">{account.name}</Badge>}
-                {goal.endDate && (
-                  <Badge variant="outline">
-                    {t('goals.until', { date: formatDate(goal.endDate) })}
-                  </Badge>
-                )}
-              </div>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {t('goals.currentTotal')} <CurrencyDisplay value={goal.currentTotal} />
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-6">
-            <div className="text-right">
-              <p className="mb-0.5 text-xs text-muted-foreground">{t('goals.monthlyAmount')}</p>
-              <p className="text-sm font-semibold">
-                <CurrencyDisplay value={monthlyAmount} />
-              </p>
-            </div>
-            <div className="flex gap-1">
-              <Button variant="ghost" size="icon" onClick={onEdit} aria-label={t('common.edit')}>
-                <Pencil className="size-4" />
-              </Button>
-              <Button variant="ghost" size="icon" onClick={onDelete} aria-label={t('common.delete')}>
-                <Trash2 className="size-4" />
-              </Button>
-            </div>
-          </div>
+      <CardHeader>
+        <CardTitle className="line-clamp-2 break-words">{goal.name}</CardTitle>
+        <CardAction>
+          <Badge variant="secondary" className={cn(BADGE, state.className)}>{state.label}</Badge>
+        </CardAction>
+      </CardHeader>
+      <CardContent className="flex flex-1 flex-col gap-3">
+        <div>
+          <p className="text-xs font-medium text-muted-foreground">{t('goals.monthlyAmount')}</p>
+          <p className="flex flex-wrap items-baseline gap-x-2">
+            <span className="text-[22px] font-semibold tracking-tight tabular-nums">
+              {t('goals.card.perMonth', { value: money.amount(monthlyAmount, 'EUR', { maximumFractionDigits: 0 }) })}
+            </span>
+            {account && <span className="text-[13px] text-muted-foreground">{t('goals.card.into', { account: account.name })}</span>}
+          </p>
         </div>
 
+        {detailed && monthlyAmount > 0 && (
+          <div
+            role="img"
+            aria-label={goal.allocations
+              .map((line) => `${line.ticker} ${formatPercent(share(line.monthlyAmount), { fractionDigits: 0 })}`)
+              .join(', ')}
+            className="flex h-2.5 gap-0.5 overflow-hidden rounded-full bg-muted"
+          >
+            {goal.allocations.map((line, i) => (
+              <span key={line.ticker} style={{ width: `${share(line.monthlyAmount)}%`, backgroundColor: color(i) }} />
+            ))}
+          </div>
+        )}
+
+        {detailed && (
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[13px] font-medium text-muted-foreground">{t('goals.allocation.title')}</span>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => setOpen((o) => !o)}
+              aria-expanded={open}
+              aria-label={t('goals.allocation.toggle')}
+            >
+              <ChevronDown className={cn('size-4 transition-transform', open && 'rotate-180')} />
+            </Button>
+          </div>
+        )}
+
         {detailed && open && (
-          <div className="flex flex-col gap-1.5 border-t pt-3">
-            {goal.allocations.map((line) => (
-              <div key={line.ticker} className="flex items-center justify-between gap-3 text-sm">
+          <ul className="flex flex-col gap-1.5 text-[13px]">
+            {goal.allocations.map((line, i) => (
+              <li key={line.ticker} className="flex items-center justify-between gap-3">
                 <span className="flex min-w-0 items-center gap-2">
+                  <span className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: color(i) }} aria-hidden="true" />
                   <span className="font-mono">{line.ticker}</span>
                   <span className="truncate text-muted-foreground">{line.name ?? line.ticker}</span>
                 </span>
@@ -521,21 +554,39 @@ function RecurringPlanCard({
                   {/* A share, so it survives privacy mode; the amount beside it does not. */}
                   {monthlyAmount > 0 && (
                     <span className="text-muted-foreground tabular-nums">
-                      {formatPercent((line.monthlyAmount / monthlyAmount) * 100, { fractionDigits: 0 })}
+                      {formatPercent(share(line.monthlyAmount), { fractionDigits: 0 })}
                     </span>
                   )}
-                  <CurrencyDisplay value={line.monthlyAmount} className="font-medium" />
+                  <CurrencyDisplay value={line.monthlyAmount} className="font-semibold tabular-nums" />
                 </span>
-              </div>
+              </li>
             ))}
             {unallocated > 0.005 && (
-              <div className="flex items-center justify-between gap-3 text-sm text-muted-foreground">
+              <li className="flex items-center justify-between gap-3 text-muted-foreground">
                 <span>{t('goals.allocation.unallocated')}</span>
-                <CurrencyDisplay value={unallocated} />
-              </div>
+                <CurrencyDisplay value={unallocated} className="tabular-nums" />
+              </li>
             )}
-          </div>
+          </ul>
         )}
+
+        <dl className="grid grid-cols-2 gap-2.5 text-[13px]">
+          <Stat label={t('goals.currentTotal')}>
+            <CurrencyDisplay value={goal.currentTotal} />
+          </Stat>
+          {goal.endDate && (
+            <Stat label={t('goals.endDate')}>{formatLocalDate(goal.endDate)}</Stat>
+          )}
+        </dl>
+
+        <CardActions>
+          <Button variant="ghost" size="icon" onClick={onEdit} aria-label={t('common.edit')}>
+            <Pencil className="size-4" />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={onDelete} aria-label={t('common.delete')}>
+            <Trash2 className="size-4" />
+          </Button>
+        </CardActions>
       </CardContent>
     </Card>
   )
@@ -551,118 +602,76 @@ interface GoalCardProps {
 
 function GoalCard({ goal, onEdit, onDelete, onCalendar, onOpenDetail }: GoalCardProps) {
   const { t } = useTranslation()
+  const money = useMoney()
+  const perMonth = (value: number) =>
+    t('goals.card.perMonth', { value: money.amount(value, 'EUR', { maximumFractionDigits: 0 }) })
 
-  const statusBadge = (() => {
-    if ((goal.monthlyNeeded ?? 0) <= 0) {
-      return (
-        <Badge className="gap-1">
-          <TrendingUp className="size-3" />
-          {t('goals.achieved')}
-        </Badge>
-      )
-    }
-    if (goal.avgMonthlyContribution == null) {
-      return (
-        <Badge variant="secondary" className="gap-1">
-          {t('goals.waiting')}
-        </Badge>
-      )
-    }
-    if (goal.isOnTrack) {
-      return (
-        <Badge className="gap-1">
-          <TrendingUp className="size-3" />
-          {t('goals.onTrack')}
-        </Badge>
-      )
-    }
-    return (
-      <Badge variant="destructive" className="gap-1">
-        <TrendingDown className="size-3" />
-        {t('goals.behind')}
-      </Badge>
-    )
-  })()
+  const behind = (goal.monthlyNeeded ?? 0) > 0 && goal.avgMonthlyContribution != null && !goal.isOnTrack
+  const status = (goal.monthlyNeeded ?? 0) <= 0
+    ? { label: t('goals.achieved'), className: 'bg-gain/10 text-gain' }
+    : goal.avgMonthlyContribution == null
+      ? { label: t('goals.waiting'), className: '' }
+      : goal.isOnTrack
+        ? { label: t('goals.onTrack'), className: 'bg-primary/12 text-foreground' }
+        : { label: t('goals.behind'), className: 'text-warning' }
 
   return (
     <Card
-      className="cursor-pointer transition-colors hover:bg-accent/50"
+      className="cursor-pointer transition-[background-color] hover:bg-muted/40"
       onClick={onOpenDetail}
     >
-      <CardContent className="p-4">
-        {/* Header: name + status + actions */}
-        <div className="flex items-start justify-between gap-2 mb-3">
-          <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-            <span className="cn-font-heading line-clamp-2 break-words text-sm font-semibold text-foreground">
-              {goal.name}
+      <CardHeader>
+        <CardTitle className="line-clamp-2 break-words">{goal.name}</CardTitle>
+        <CardAction>
+          <Badge variant="secondary" className={cn(BADGE, status.className)}>{status.label}</Badge>
+        </CardAction>
+      </CardHeader>
+      <CardContent className="flex flex-1 flex-col gap-3">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-3">
+          <span className="flex flex-wrap items-baseline gap-x-1.5 tabular-nums">
+            <CurrencyDisplay value={goal.currentTotal} className="text-[22px] font-semibold tracking-tight" />
+            <span className="text-muted-foreground">
+              / <CurrencyDisplay value={goal.targetAmount ?? 0} />
             </span>
-            {statusBadge}
-          </div>
-          <div className="flex items-center gap-0.5 shrink-0" onClick={(e) => e.stopPropagation()}>
-            <Button variant="ghost" size="icon" onClick={onEdit} aria-label={t('common.edit')}>
-              <Pencil className="size-4" />
-            </Button>
-            <Button variant="ghost" size="icon" onClick={onCalendar} aria-label={t('goals.viewCalendar')}>
-              <Calendar className="size-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-muted-foreground hover:text-destructive"
-              onClick={onDelete}
-              aria-label={t('goals.deleteGoal')}
-            >
-              <Trash2 className="size-4" />
-            </Button>
-          </div>
-        </div>
-
-        {/* Current total */}
-        <CurrencyDisplay
-          value={goal.currentTotal}
-          className="text-3xl font-semibold tabular-nums"
-        />
-
-        {/* Progress bar */}
-        <Progress
-          value={goal.percentComplete}
-          className="h-2.5 mt-3 [&_[data-slot=progress-indicator]]:bg-emerald-500"
-        />
-
-        {/* Footer: percent + target */}
-        <div className="flex items-center justify-between mt-3">
-          <span className="text-sm text-muted-foreground">
-            {formatPercent(goal.percentComplete ?? 0, { fractionDigits: 0 })} {t('dashboard.achieved')}
           </span>
-          <CurrencyDisplay
-            value={goal.targetAmount ?? 0}
-            className="text-sm font-medium tabular-nums"
-          />
+          {/* A ratio, so it stays legible in privacy mode. */}
+          <span className="text-[13px] text-muted-foreground tabular-nums">
+            {formatPercent(goal.percentComplete ?? 0, { fractionDigits: 0 })}
+          </span>
         </div>
 
-        {/* Secondary stats */}
-        <div className="grid grid-cols-3 gap-3 mt-3 pt-3 border-t">
-          <div>
-            <p className="text-xs text-muted-foreground mb-0.5">{t('goals.monthsLeft')}</p>
-            <p className="text-sm font-semibold">{goal.monthsLeft}</p>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground mb-0.5">{t('goals.monthlyNeeded')}</p>
-            <p className="text-sm font-semibold">
-              <CurrencyDisplay value={goal.monthlyNeeded ?? 0} />
-            </p>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground mb-0.5">{t('goals.avgContribution')}</p>
-            <p className="text-sm font-semibold">
-              {goal.avgMonthlyContribution != null ? (
-                <CurrencyDisplay value={goal.avgMonthlyContribution} />
-              ) : (
-                '\u2013'
-              )}
-            </p>
-          </div>
-        </div>
+        <Progress value={goal.percentComplete} className="h-1.5" aria-label={goal.name} />
+
+        <dl className="grid grid-cols-2 gap-2.5 text-[13px]">
+          <Stat label={t('goals.deadline')}>{formatLocalDate(goal.deadline)}</Stat>
+          <Stat label={t('goals.card.required')} className={behind ? 'text-warning' : undefined}>
+            {perMonth(Math.max(0, goal.monthlyNeeded ?? 0))}
+          </Stat>
+          <Stat label={t('goals.card.average')}>
+            {goal.avgMonthlyContribution != null ? perMonth(goal.avgMonthlyContribution) : '\u2013'}
+          </Stat>
+          <Stat label={t('goals.card.accounts', { count: goal.accounts.length })}>
+            {goal.accounts.length > 0 ? goal.accounts.map((a) => a.name).join(', ') : '\u2013'}
+          </Stat>
+        </dl>
+
+        <CardActions>
+          <Button variant="ghost" size="icon" onClick={onEdit} aria-label={t('common.edit')}>
+            <Pencil className="size-4" />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={onCalendar} aria-label={t('goals.viewCalendar')}>
+            <Calendar className="size-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-muted-foreground hover:text-destructive"
+            onClick={onDelete}
+            aria-label={t('goals.deleteGoal')}
+          >
+            <Trash2 className="size-4" />
+          </Button>
+        </CardActions>
       </CardContent>
     </Card>
   )

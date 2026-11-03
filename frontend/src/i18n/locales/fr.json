@@ -886,6 +886,16 @@
       "benchmark": "Le taux d'épargne moyen des ménages en France s'établit autour de {{rate}} de leur revenu disponible brut",
       "needsIncome": "Renseignez votre net mensuel avant impôt et votre taux de prélèvement à la source pour voir votre taux d'épargne.",
       "goToSettings": "Aller aux paramètres"
+    },
+    "card": {
+      "active": "Actif",
+      "upcoming": "À venir",
+      "perMonth": "{{value}} / mois",
+      "into": "sur {{account}}",
+      "required": "Effort requis",
+      "average": "Versé en moyenne",
+      "accounts": "Compte lié",
+      "accounts_other": "Comptes liés"
     }
   },
   "budget": {

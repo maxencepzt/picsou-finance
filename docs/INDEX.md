@@ -122,9 +122,9 @@
 | Wealth pyramid (Analysis) | 2026-11-03 | [wealth-pyramid.md](./features/wealth-pyramid.md) |
 | Financial independence (Analysis: target, card, simulator) | 2026-11-03 | [financial-independence.md](./features/financial-independence.md) |
 | Portfolio diversification (sector + geography, on Investments) | 2026-11-03 | [portfolio-diversification.md](./features/portfolio-diversification.md) |
-| Recurring investment plans + wealth projection | 2026-08-19 | [goal-recurring-investment.md](./features/goal-recurring-investment.md) |
+| Recurring investment plans + wealth projection | 2026-11-03 | [goal-recurring-investment.md](./features/goal-recurring-investment.md) |
 | Member profile (age, TMI, income) | 2026-08-19 | [member-profile.md](./features/member-profile.md) |
-| Savings goals | 2026-06-02 | [goals.md](./features/goals.md) |
+| Savings goals | 2026-11-03 | [goals.md](./features/goals.md) |
 | Goals — Grid view (donuts) | 2026-06-02 | [goal-calendar-donut.md](./features/goal-calendar-donut.md) |
 | Price service | 2026-08-07 | [price-service.md](./features/price-service.md) |
 | Live prices (holdings) | 2026-10-31 | [live-prices-holdings.md](./features/live-prices-holdings.md) |

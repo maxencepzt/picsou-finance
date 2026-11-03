@@ -886,6 +886,16 @@
       "benchmark": "The average savings rate of French households sits at around {{rate}} of their gross disposable income",
       "needsIncome": "Add your monthly net before tax and your withholding rate to see your savings rate.",
       "goToSettings": "Go to settings"
+    },
+    "card": {
+      "active": "Active",
+      "upcoming": "Upcoming",
+      "perMonth": "{{value}} / month",
+      "into": "into {{account}}",
+      "required": "Required effort",
+      "average": "Average paid in",
+      "accounts": "Linked account",
+      "accounts_other": "Linked accounts"
     }
   },
   "budget": {

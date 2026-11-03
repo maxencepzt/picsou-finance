@@ -1,6 +1,6 @@
 # Feature: Recurring investment plans and the wealth projection
 
-> Last updated: 2026-08-19
+> Last updated: 2026-11-03
 
 ## Context
 
@@ -248,7 +248,23 @@ The label lives in the feature's hooks rather than beside either chart so the tw
 card cannot drift apart on how a date is written — they had already drifted once, since only one
 of them went through a formatter at all.
 
+### The Goals page
+
+`GoalsPage.tsx` shows two sections, each a grid of cards. Savings targets: current total over
+target, percentage, progress bar, then the deadline, the **required** monthly effort (in `warning`
+when behind) beside the **average** one, and the linked accounts; edit / calendar / delete sit in
+the card footer and a click on the card opens `GoalDetailModal`. Recurring plans: the
+`SavingsRateCard` above the grid, then one `RecurringPlanCard` per plan with an Active / Upcoming
+/ Done badge (`isActiveThisMonth`, else a future `startDate`, else done), the monthly amount and
+its account, a split bar of the allocation lines (`--slice-*` colours, the list folded behind a
+toggle, the unallocated remainder as its own row), the account's current total and the end date.
+
 ### Reading the chart
+
+The view (wealth / mix) and the horizon (10 / 20 / 30 years, default 20) are two compact
+`SegmentedControl`s in the card header. The scenarios are lines (`LineChart`), not areas: the
+reference scenario is drawn thicker (3px against 2px) because it is the one to read, and the
+contributions are a dashed `--chart-5` line underneath.
 
 Every legend entry is a toggle for its curve, contributions included: five series is more than a
 320 px chart separates, and comparing two of them means removing the other three.
@@ -267,7 +283,7 @@ to a 1 / 2 / 2.5 / 5 × 10ⁿ figure so the ticks stay readable.
 - `backend/src/main/java/com/picsou/model/GoalAllocation.java`
 - `backend/src/main/resources/db/migration/V85__goal_recurring_investment.sql`,
   `V89__goal_allocation.sql`
-- `frontend/src/pages/goals/GoalsPage.tsx` — two sections, two form shapes, `RecurringPlanCard`
+- `frontend/src/pages/goals/GoalsPage.tsx` — two sections, two form shapes, `GoalCard`, `RecurringPlanCard`
 - `frontend/src/pages/goals/AllocationPicker.tsx` — the split editor
 - `frontend/src/pages/goals/SavingsRateCard.tsx`, `plan-math.ts` — the savings rate and its
   pure helpers

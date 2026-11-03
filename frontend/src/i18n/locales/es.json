@@ -875,6 +875,16 @@
       "benchmark": "La tasa de ahorro media de los hogares en Francia se sitúa en torno al {{rate}} de su renta bruta disponible",
       "needsIncome": "Indica tu neto mensual antes de impuestos y tu tipo de retención para ver tu tasa de ahorro.",
       "goToSettings": "Ir a ajustes"
+    },
+    "card": {
+      "active": "Activo",
+      "upcoming": "Próximamente",
+      "perMonth": "{{value}} / mes",
+      "into": "en {{account}}",
+      "required": "Esfuerzo necesario",
+      "average": "Aportado de media",
+      "accounts": "Cuenta vinculada",
+      "accounts_other": "Cuentas vinculadas"
     }
   },
   "addAccount": {

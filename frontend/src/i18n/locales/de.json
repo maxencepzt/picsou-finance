@@ -875,6 +875,16 @@
       "benchmark": "Die durchschnittliche Sparquote der Haushalte in Frankreich liegt bei rund {{rate}} ihres verfügbaren Bruttoeinkommens",
       "needsIncome": "Trage dein monatliches Netto vor Steuern und deinen Quellensteuersatz ein, um deine Sparquote zu sehen.",
       "goToSettings": "Zu den Einstellungen"
+    },
+    "card": {
+      "active": "Aktiv",
+      "upcoming": "Geplant",
+      "perMonth": "{{value}} / Monat",
+      "into": "auf {{account}}",
+      "required": "Erforderlicher Betrag",
+      "average": "Durchschnittlich eingezahlt",
+      "accounts": "Verknüpftes Konto",
+      "accounts_other": "Verknüpfte Konten"
     }
   },
   "addAccount": {
