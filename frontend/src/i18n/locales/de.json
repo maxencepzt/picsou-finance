@@ -3295,6 +3295,69 @@
       },
       "missing": "Eröffnungsdatum nicht angegeben: Das Alter lässt sich nicht berechnen.",
       "setDate": "Unter Konten eintragen"
+    },
+    "dividendsSkipped": "Ohne {{count}} Gutschrift ohne Wechselkurs",
+    "dividendsSkipped_other": "Ohne {{count}} Gutschriften ohne Wechselkurs",
+    "perf": {
+      "title": "Performance",
+      "window": "Vom {{from}} bis {{to}}",
+      "period": "Zeitraum",
+      "periods": {
+        "3": "3M",
+        "6": "6M",
+        "12": "1J",
+        "36": "3J",
+        "60": "5J",
+        "0": "Alle"
+      },
+      "twr": "Performance (TWR)",
+      "twrNote": "Ohne Effekt Ihrer Einzahlungen",
+      "annualized": "Annualisierte Performance",
+      "annualizedNote": "Durchschnitt pro Jahr",
+      "xirr": "Rendite (XIRR)",
+      "xirrNote": "Pro Jahr, nach Ihren Einzahlungen",
+      "volatility": "Volatilität",
+      "volatilityNote": "Schwankungsbreite pro Jahr",
+      "drawdown": "Größter Rückgang",
+      "drawdownDates": "Vom {{from}} bis {{to}}",
+      "noDrawdown": "Kein Rückgang im Zeitraum",
+      "missing": {
+        "history": "Noch nicht genug Verlauf",
+        "year": "Weniger als ein Jahr Verlauf",
+        "xirr": "Verlauf zu kurz oder unvollständig",
+        "returns": "Weniger als 20 Tage Daten"
+      },
+      "explain": "Die TWR misst Ihre Anlagen ohne den Effekt Ihrer Einzahlungen und lässt sich so mit einem Index vergleichen; die XIRR misst, was Ihr Geld eingebracht hat, je nachdem, wann und wie viel Sie eingezahlt haben.",
+      "empty": "Noch kein Performanceverlauf",
+      "emptyHint": "Picsou speichert jeden Tag den Wert Ihrer Anlagen: Die Performance erscheint in wenigen Tagen."
+    },
+    "benchmark": {
+      "compareTo": "Mit einem Index vergleichen",
+      "none": "Kein Index",
+      "portfolio": "Ihr Portfolio",
+      "base": "Basis 100 am {{date}}, ohne Einzahlungen",
+      "gap": "Abstand",
+      "points": "{{value}} Pkt.",
+      "summary": "Im Zeitraum: Ihr Portfolio {{portfolio}}, {{name}} {{benchmark}}, also ein Abstand von {{gap}}.",
+      "empty": "Die Kurse von {{name}} liegen noch nicht vor: Picsou lädt sie mit der Kursaktualisierung. Bis dahin wird Ihr Portfolio allein angezeigt."
+    },
+    "fees": {
+      "title": "Gebühren",
+      "description": "Laufende Kosten der gehaltenen Fonds und Ordergebühren über 12 Monate",
+      "ter": "Durchschnittliche laufende Kosten (TER)",
+      "perYear": "{{value}} pro Jahr",
+      "annualCost": "Also etwa {{amount}} pro Jahr auf Ihren Bestand",
+      "unknown": "Die laufenden Kosten dieser Anlagen sind nicht bekannt: Aktien und Krypto haben keine, und für Ihre Fonds wurde keine TER gefunden.",
+      "coverage": "TER bekannt für {{share}} des Werts",
+      "costliest": "Teuerste Positionen",
+      "lineTer": "TER {{value}}",
+      "costPerYear": "{{amount}} / Jahr",
+      "rest": "{{count}} weitere Position: {{amount}} pro Jahr",
+      "rest_other": "{{count}} weitere Positionen: {{amount}} pro Jahr",
+      "broker": "Ordergebühren über 12 Monate",
+      "brokerCount": "{{count}} Transaktion mit Gebühren",
+      "brokerCount_other": "{{count}} Transaktionen mit Gebühren",
+      "empty": "Noch keine Gebühren anzuzeigen."
     }
   }
 }

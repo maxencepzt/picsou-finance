@@ -88,6 +88,14 @@ and the weekly `SecurityProfileRefreshRunner` → `SecurityProfileService.refres
 field by field so a source without a fee never erases one. No new migration was needed. See
 [portfolio-diversification.md](./portfolio-diversification.md) for the provider order.
 
+### Where it is shown
+
+On `/investments` (see [investments-page.md](./investments-page.md)): `PerformanceCard` shows the
+five metrics for a chosen period, a dash with its reason for every null one, and `PerformanceChart`
+draws `points[].index` against a benchmark rebased to 100 on the first shared date; `FeesCard` shows
+the weighted TER, coverage, the costliest lines and the broker fees over 12 months. The hooks are
+`usePerformance`, `useBenchmark` and `useFees` in `frontend/src/features/analysis/hooks.ts`.
+
 ### Key files
 
 - `backend/src/main/java/com/picsou/controller/AnalysisController.java` — the three GETs

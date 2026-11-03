@@ -3,7 +3,7 @@ import type { PortfolioLine } from '@/features/accounts/hooks'
 import type { RealizedLot } from '@/types/api'
 import {
   concentration, currencySplit, eurRate, investmentLines, maturity, portfolioTotals,
-  realizedInYear, realizedYears, wrapperOf, type RealizedSource,
+  realizedInYear, realizedYears, receivedInEur, wrapperOf, type RealizedSource,
 } from './investments'
 
 function line(over: Partial<PortfolioLine>): PortfolioLine {
@@ -89,6 +89,13 @@ describe('realised gains', () => {
     expect(eurRate({ currency: 'USD', currentBalance: 200, currentBalanceEur: 180 })).toBeCloseTo(0.9)
     expect(eurRate({ currency: 'EUR', currentBalance: 200, currentBalanceEur: 200 })).toBe(1)
     expect(eurRate({ currency: 'USD', currentBalance: 0, currentBalanceEur: 0 })).toBe(1)
+  })
+})
+
+describe('dividends received', () => {
+  it('sums the euro amounts and counts the credits without a rate instead of guessing one', () => {
+    expect(receivedInEur([{ amountEur: 6 }, { amountEur: null }, { amountEur: 3.6 }, { amountEur: null }])).toEqual({ total: 9.6, skipped: 2 })
+    expect(receivedInEur([])).toEqual({ total: 0, skipped: 0 })
   })
 })
 

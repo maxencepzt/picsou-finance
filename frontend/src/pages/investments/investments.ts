@@ -1,6 +1,6 @@
 import type { PortfolioLine } from '@/features/accounts/hooks'
 import { HOLDING_ACCOUNT_TYPES } from '@/lib/constants'
-import type { Account, AccountType, RealizedLot } from '@/types/api'
+import type { Account, AccountType, RealizedLot, ReceivedDividend } from '@/types/api'
 
 /** The wrapper filter of the positions table. */
 export type Wrapper = 'PEA' | 'COMPTE_TITRES' | 'CRYPTO' | 'other'
@@ -84,6 +84,14 @@ export function currencySplit(lines: PortfolioLine[]): { currency: string; amoun
  */
 export function eurRate(account: Pick<Account, 'currency' | 'currentBalance' | 'currentBalanceEur'>): number {
   return account.currency === 'EUR' || !account.currentBalance ? 1 : account.currentBalanceEur / account.currentBalance
+}
+
+/** Dividends received, in euros as the API converted them; a credit with no known rate is left out and counted. */
+export function receivedInEur(received: Pick<ReceivedDividend, 'amountEur'>[]): { total: number; skipped: number } {
+  return received.reduce(
+    (acc, d) => (d.amountEur == null ? { ...acc, skipped: acc.skipped + 1 } : { ...acc, total: acc.total + d.amountEur }),
+    { total: 0, skipped: 0 },
+  )
 }
 
 /** One account's closed lots, with what turns its currency into euros. */

@@ -3295,6 +3295,69 @@
       },
       "missing": "Fecha de apertura sin indicar: no se puede calcular la antigüedad.",
       "setDate": "Indicarla en Cuentas"
+    },
+    "dividendsSkipped": "Sin contar {{count}} abono sin tipo de cambio",
+    "dividendsSkipped_other": "Sin contar {{count}} abonos sin tipo de cambio",
+    "perf": {
+      "title": "Rentabilidad",
+      "window": "Del {{from}} al {{to}}",
+      "period": "Periodo",
+      "periods": {
+        "3": "3M",
+        "6": "6M",
+        "12": "1A",
+        "36": "3A",
+        "60": "5A",
+        "0": "Todo"
+      },
+      "twr": "Rentabilidad (TWR)",
+      "twrNote": "Sin el efecto de sus aportaciones",
+      "annualized": "Rentabilidad anualizada",
+      "annualizedNote": "Ritmo medio por año",
+      "xirr": "Rendimiento (XIRR)",
+      "xirrNote": "Por año, según sus aportaciones",
+      "volatility": "Volatilidad",
+      "volatilityNote": "Amplitud de las variaciones, por año",
+      "drawdown": "Mayor caída",
+      "drawdownDates": "Del {{from}} al {{to}}",
+      "noDrawdown": "Ninguna caída en el periodo",
+      "missing": {
+        "history": "Aún no hay suficiente historial",
+        "year": "Menos de un año de historial",
+        "xirr": "Historial demasiado corto o incompleto",
+        "returns": "Menos de 20 días de datos"
+      },
+      "explain": "El TWR mide sus inversiones sin el efecto de sus aportaciones, lo que permite compararlo con un índice; el XIRR mide lo que ha rendido su dinero, según cuándo y cuánto aportó.",
+      "empty": "Aún no hay historial de rentabilidad",
+      "emptyHint": "Picsou registra cada día el valor de sus inversiones: la rentabilidad aparecerá en unos días."
+    },
+    "benchmark": {
+      "compareTo": "Comparar con un índice",
+      "none": "Sin índice",
+      "portfolio": "Su cartera",
+      "base": "Base 100 el {{date}}, sin aportaciones",
+      "gap": "Diferencia",
+      "points": "{{value}} pts",
+      "summary": "En el periodo: su cartera {{portfolio}}, {{name}} {{benchmark}}, una diferencia de {{gap}}.",
+      "empty": "Las cotizaciones de {{name}} aún no están disponibles: Picsou las obtiene con la actualización de precios. Mientras tanto, se muestra solo su cartera."
+    },
+    "fees": {
+      "title": "Comisiones",
+      "description": "Gastos corrientes de los fondos que tiene y comisiones de intermediación en 12 meses",
+      "ter": "Gastos corrientes medios (TER)",
+      "perYear": "{{value}} al año",
+      "annualCost": "Unos {{amount}} al año sobre lo que tiene",
+      "unknown": "No se conocen los gastos corrientes de estas inversiones: las acciones y las criptomonedas no tienen, y no se ha encontrado ningún TER para sus fondos.",
+      "coverage": "TER conocido para el {{share}} del valor",
+      "costliest": "Líneas más caras",
+      "lineTer": "TER {{value}}",
+      "costPerYear": "{{amount}} / año",
+      "rest": "{{count}} línea más: {{amount}} al año",
+      "rest_other": "{{count}} líneas más: {{amount}} al año",
+      "broker": "Comisiones de intermediación en 12 meses",
+      "brokerCount": "{{count}} operación con comisión",
+      "brokerCount_other": "{{count}} operaciones con comisión",
+      "empty": "Aún no hay comisiones que mostrar."
     }
   }
 }

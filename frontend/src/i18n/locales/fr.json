@@ -3295,6 +3295,69 @@
       },
       "missing": "Date d'ouverture non renseignée : l'ancienneté ne peut pas être calculée.",
       "setDate": "La renseigner dans Comptes"
+    },
+    "dividendsSkipped": "Hors {{count}} versement sans taux de change",
+    "dividendsSkipped_other": "Hors {{count}} versements sans taux de change",
+    "perf": {
+      "title": "Performance",
+      "window": "Du {{from}} au {{to}}",
+      "period": "Période",
+      "periods": {
+        "3": "3M",
+        "6": "6M",
+        "12": "1A",
+        "36": "3A",
+        "60": "5A",
+        "0": "Tout"
+      },
+      "twr": "Performance (TWR)",
+      "twrNote": "Hors effet de vos versements",
+      "annualized": "Performance annualisée",
+      "annualizedNote": "Rythme moyen par an",
+      "xirr": "Rendement (XIRR)",
+      "xirrNote": "Par an, selon vos versements",
+      "volatility": "Volatilité",
+      "volatilityNote": "Ampleur des variations, par an",
+      "drawdown": "Pire baisse",
+      "drawdownDates": "Du {{from}} au {{to}}",
+      "noDrawdown": "Aucune baisse sur la période",
+      "missing": {
+        "history": "Pas encore assez d'historique",
+        "year": "Moins d'un an d'historique",
+        "xirr": "Historique trop court ou incomplet",
+        "returns": "Moins de 20 jours de données"
+      },
+      "explain": "Le TWR mesure vos placements sans l'effet de vos versements, ce qui permet de le comparer à un indice ; le XIRR mesure ce que votre argent a rapporté, selon quand et combien vous avez versé.",
+      "empty": "Pas encore d'historique de performance",
+      "emptyHint": "Picsou enregistre chaque jour la valeur de vos placements : la performance apparaîtra d'ici quelques jours."
+    },
+    "benchmark": {
+      "compareTo": "Comparer à un indice",
+      "none": "Sans indice",
+      "portfolio": "Votre portefeuille",
+      "base": "Base 100 au {{date}}, hors versements",
+      "gap": "Écart",
+      "points": "{{value}} pts",
+      "summary": "Sur la période : votre portefeuille {{portfolio}}, {{name}} {{benchmark}}, soit un écart de {{gap}}.",
+      "empty": "Les cours de {{name}} ne sont pas encore disponibles : Picsou les récupère avec la mise à jour des prix. Votre portefeuille est affiché seul en attendant."
+    },
+    "fees": {
+      "title": "Frais",
+      "description": "Frais de gestion des fonds détenus, et courtage sur 12 mois",
+      "ter": "Frais de gestion moyens (TER)",
+      "perYear": "{{value}} par an",
+      "annualCost": "Soit environ {{amount}} par an sur ce que vous détenez",
+      "unknown": "Les frais de gestion de ces placements ne sont pas connus : les actions et la crypto n'en ont pas, et aucun TER n'a été trouvé pour vos fonds.",
+      "coverage": "TER connu pour {{share}} de la valeur",
+      "costliest": "Lignes les plus coûteuses",
+      "lineTer": "TER {{value}}",
+      "costPerYear": "{{amount}} / an",
+      "rest": "{{count}} autre ligne : {{amount}} par an",
+      "rest_other": "{{count}} autres lignes : {{amount}} par an",
+      "broker": "Courtage sur 12 mois",
+      "brokerCount": "{{count}} opération avec des frais",
+      "brokerCount_other": "{{count}} opérations avec des frais",
+      "empty": "Aucun frais à afficher pour l'instant."
     }
   }
 }

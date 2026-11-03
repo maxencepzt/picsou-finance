@@ -7,7 +7,7 @@ import { useMemberProfile } from '@/features/profile/hooks'
 import { QUERY_STALE_TIMES } from '@/lib/constants'
 import { ageAt, formatDate, localeFromLanguage } from '@/lib/utils'
 import { useAppStore } from '@/stores/app-store'
-import type { AllocationTargetsRequest, HoldingClassificationRequest } from '@/types/api'
+import type { AllocationTargetsRequest, BenchmarkKey, HoldingClassificationRequest } from '@/types/api'
 
 /**
  * How a projected date is written wherever the two projection charts show one.
@@ -64,6 +64,33 @@ export function useProjection(years: number) {
   return useQuery({
     queryKey: ['analysis', 'projection', years],
     queryFn: () => analysisApi.projection(years),
+    staleTime: QUERY_STALE_TIMES.analysis,
+  })
+}
+
+/** Time- and money-weighted return of the investment accounts; `months` 0 is all history. */
+export function usePerformance(months: number) {
+  return useQuery({
+    queryKey: ['analysis', 'performance', months],
+    queryFn: () => analysisApi.performance(months),
+    staleTime: QUERY_STALE_TIMES.analysis,
+  })
+}
+
+/** Daily closes of a reference index fund; nothing is fetched while no index is picked. */
+export function useBenchmark(key: BenchmarkKey | null, months: number) {
+  return useQuery({
+    queryKey: ['analysis', 'benchmark', key, months],
+    queryFn: () => analysisApi.benchmark(key!, months),
+    enabled: key != null,
+    staleTime: QUERY_STALE_TIMES.analysis,
+  })
+}
+
+export function useFees(months: number) {
+  return useQuery({
+    queryKey: ['analysis', 'fees', months],
+    queryFn: () => analysisApi.fees(months),
     staleTime: QUERY_STALE_TIMES.analysis,
   })
 }

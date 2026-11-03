@@ -3295,6 +3295,69 @@
       },
       "missing": "Opening date not set: the age cannot be worked out.",
       "setDate": "Set it in Accounts"
+    },
+    "dividendsSkipped": "Leaving out {{count}} credit with no exchange rate",
+    "dividendsSkipped_other": "Leaving out {{count}} credits with no exchange rate",
+    "perf": {
+      "title": "Performance",
+      "window": "From {{from}} to {{to}}",
+      "period": "Period",
+      "periods": {
+        "3": "3M",
+        "6": "6M",
+        "12": "1Y",
+        "36": "3Y",
+        "60": "5Y",
+        "0": "All"
+      },
+      "twr": "Performance (TWR)",
+      "twrNote": "Your deposits left out",
+      "annualized": "Annualised performance",
+      "annualizedNote": "Average pace per year",
+      "xirr": "Return (XIRR)",
+      "xirrNote": "Per year, given your deposits",
+      "volatility": "Volatility",
+      "volatilityNote": "Size of the swings, per year",
+      "drawdown": "Worst fall",
+      "drawdownDates": "From {{from}} to {{to}}",
+      "noDrawdown": "No fall over the period",
+      "missing": {
+        "history": "Not enough history yet",
+        "year": "Less than a year of history",
+        "xirr": "History too short or incomplete",
+        "returns": "Fewer than 20 days of data"
+      },
+      "explain": "TWR measures your investments without the effect of your deposits, so it can be compared with an index; XIRR measures what your money earned, given when and how much you put in.",
+      "empty": "No performance history yet",
+      "emptyHint": "Picsou records the value of your investments every day: performance will show up within a few days."
+    },
+    "benchmark": {
+      "compareTo": "Compare with an index",
+      "none": "No index",
+      "portfolio": "Your portfolio",
+      "base": "Base 100 on {{date}}, deposits left out",
+      "gap": "Gap",
+      "points": "{{value}} pts",
+      "summary": "Over the period: your portfolio {{portfolio}}, {{name}} {{benchmark}}, a gap of {{gap}}.",
+      "empty": "{{name}} prices are not available yet: Picsou fetches them with the price update. Your portfolio is shown alone in the meantime."
+    },
+    "fees": {
+      "title": "Fees",
+      "description": "Ongoing charges of the funds you hold, and broker fees over 12 months",
+      "ter": "Average ongoing charges (TER)",
+      "perYear": "{{value}} a year",
+      "annualCost": "About {{amount}} a year on what you hold",
+      "unknown": "The ongoing charges of these holdings are not known: shares and crypto have none, and no TER was found for your funds.",
+      "coverage": "TER known for {{share}} of the value",
+      "costliest": "Most expensive lines",
+      "lineTer": "TER {{value}}",
+      "costPerYear": "{{amount}} / year",
+      "rest": "{{count}} other line: {{amount}} a year",
+      "rest_other": "{{count}} other lines: {{amount}} a year",
+      "broker": "Broker fees over 12 months",
+      "brokerCount": "{{count}} transaction with a fee",
+      "brokerCount_other": "{{count}} transactions with a fee",
+      "empty": "No fees to show yet."
     }
   }
 }

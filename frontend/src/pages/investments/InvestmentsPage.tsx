@@ -23,7 +23,9 @@ import { ConcentrationCard } from './ConcentrationCard'
 import { PositionsCard } from './PositionsCard'
 import { RealizedGainsCard } from './RealizedGainsCard'
 import { TaxWrappersCard } from './TaxWrappersCard'
-import { TAX_WRAPPER_YEARS, eurRate, investmentLines, portfolioTotals, realizedInYear, realizedYears, type RealizedSource } from './investments'
+import { FeesCard } from './FeesCard'
+import { PerformanceCard } from './PerformanceCard'
+import { TAX_WRAPPER_YEARS, eurRate, investmentLines, portfolioTotals, realizedInYear, realizedYears, receivedInEur, type RealizedSource } from './investments'
 
 const RANGE_MONTHS: Record<TimeRange, number> = { '24H': 1, '7D': 1, '1M': 1, '3M': 3, YTD: 12, '1Y': 12, ALL: 1200 }
 
@@ -85,9 +87,7 @@ export function InvestmentsPage() {
   const year = now.getFullYear()
   const realizedNet = realizedInYear(sources, year).net
   const years = realizedYears(sources)
-  const rates = new Map(investmentAccounts.map((a) => [a.id, eurRate(a)]))
-  // shortcut: a non-EUR credit is assumed to be in its account's currency; upgrade when ReceivedDividend carries an amountEur.
-  const dividends = received?.reduce((sum, d) => sum + d.amount * (d.currency === 'EUR' ? 1 : rates.get(d.accountId) ?? 1), 0)
+  const dividends = received && receivedInEur(received)
   const wrapperCount = new Set(lines.map((l) => l.accountId)).size
   const taxAccounts = investmentAccounts.filter((a) => TAX_WRAPPER_YEARS[a.type] != null)
   const bothBottom = years.length > 0 && taxAccounts.length > 0
@@ -115,13 +115,17 @@ export function InvestmentsPage() {
                 ? '—'
                 : <CurrencyDisplay value={realizedNet} showSign className={realizedNet > 0 ? 'text-gain' : realizedNet < 0 ? 'text-loss' : undefined} />}
             />
-            <Stat label={t('investments.dividends12m')} value={dividends == null ? '—' : <CurrencyDisplay value={dividends} />} />
+            <Stat
+              label={t('investments.dividends12m')}
+              value={dividends ? <CurrencyDisplay value={dividends.total} /> : '—'}
+              footer={dividends?.skipped ? t('investments.dividendsSkipped', { count: dividends.skipped }) : undefined}
+            />
             <Stat label={t('investments.lines')} value={lines.length} footer={t('investments.wrapperCount', { count: wrapperCount })} />
           </dl>
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>{t('investments.chartTitle')}</CardTitle>
@@ -131,6 +135,11 @@ export function InvestmentsPage() {
           </CardContent>
         </Card>
         <ConcentrationCard lines={lines} />
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <PerformanceCard className="lg:col-span-2" />
+        <FeesCard />
       </div>
 
       <PositionsCard lines={lines} />

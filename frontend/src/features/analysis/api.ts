@@ -2,11 +2,15 @@ import { api } from '@/lib/api-client'
 import type {
   AllocationTargets,
   AllocationTargetsRequest,
+  Benchmark,
+  BenchmarkKey,
   Diversification,
   EssentialExpenseEstimate,
+  FeesSummary,
   HoldingClassificationRequest,
   HoldingClassificationResponse,
   HoldingClassificationView,
+  Performance,
   Projection,
   SecurityProfileRefresh,
   WealthPyramid,
@@ -20,6 +24,15 @@ export const analysisApi = {
 
   projection: (years: number) =>
     api.get<Projection>('/analysis/projection', { params: { years } }).then(r => r.data),
+
+  performance: (months: number) =>
+    api.get<Performance>('/analysis/performance', { params: { months } }).then(r => r.data),
+
+  benchmark: (key: BenchmarkKey, months: number) =>
+    api.get<Benchmark>('/analysis/benchmark', { params: { key, months } }).then(r => r.data),
+
+  fees: (months: number) =>
+    api.get<FeesSummary>('/analysis/fees', { params: { months } }).then(r => r.data),
 
   targets: () => api.get<AllocationTargets>('/analysis/allocation-targets').then(r => r.data),
 
