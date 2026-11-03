@@ -226,7 +226,42 @@
       "excess": "Above target:"
     },
     "goalOnTrack": "On track",
-    "goalBehind": "Behind"
+    "goalBehind": "Behind",
+    "movers": {
+      "title": "Biggest movers",
+      "versus": "{{date}} vs {{previous}}",
+      "side": "Direction of the move",
+      "gainers": "Gainers",
+      "losers": "Losers",
+      "error": "Could not load today's moves.",
+      "empty": "Moves will show once your securities have two days of prices.",
+      "none": {
+        "gainers": "No security is up.",
+        "losers": "No security is down."
+      }
+    },
+    "peers": {
+      "title": "You and households your age",
+      "bracket": {
+        "under30": "Households under 30",
+        "30to39": "Households aged 30 to 39",
+        "40to49": "Households aged 40 to 49",
+        "50to59": "Households aged 50 to 59",
+        "60to69": "Households aged 60 to 69",
+        "70plus": "Households aged 70 or over",
+        "all": "All households"
+      },
+      "ofMedian": "the median of these households",
+      "yours": "Gross worth of this view",
+      "median": "Median gross wealth",
+      "gap": "Gap",
+      "noAge": "Without a birth date, the comparison is with all households.",
+      "fillProfile": "Complete your profile",
+      "caveat": "A rough guide: the INSEE median is the gross wealth of a whole household, by age of its reference person, in early 2024; it is set against the gross worth of this view.",
+      "sourceLabel": "Source",
+      "source": "Insee Focus no. 371, Histoire de vie et Patrimoine survey 2023-2024",
+      "error": "Could not load your profile."
+    }
   },
   "transactions": {
     "detail": "Transaction detail",

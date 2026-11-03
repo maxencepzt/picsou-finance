@@ -226,7 +226,42 @@
       "excess": "Au-dessus de la cible :"
     },
     "goalOnTrack": "Dans les temps",
-    "goalBehind": "En retard"
+    "goalBehind": "En retard",
+    "movers": {
+      "title": "Plus fortes variations",
+      "versus": "{{date}} par rapport au {{previous}}",
+      "side": "Sens de la variation",
+      "gainers": "Hausses",
+      "losers": "Baisses",
+      "error": "Impossible de charger les variations du jour.",
+      "empty": "Les variations apparaîtront dès que vos titres auront deux jours de cours.",
+      "none": {
+        "gainers": "Aucun titre en hausse.",
+        "losers": "Aucun titre en baisse."
+      }
+    },
+    "peers": {
+      "title": "Vous et les ménages de votre âge",
+      "bracket": {
+        "under30": "Ménages de moins de 30 ans",
+        "30to39": "Ménages de 30 à 39 ans",
+        "40to49": "Ménages de 40 à 49 ans",
+        "50to59": "Ménages de 50 à 59 ans",
+        "60to69": "Ménages de 60 à 69 ans",
+        "70plus": "Ménages de 70 ans ou plus",
+        "all": "Ensemble des ménages"
+      },
+      "ofMedian": "la médiane de ces ménages",
+      "yours": "Patrimoine brut de cette vue",
+      "median": "Patrimoine brut médian",
+      "gap": "Écart",
+      "noAge": "Sans date de naissance, la comparaison porte sur l'ensemble des ménages.",
+      "fillProfile": "Compléter le profil",
+      "caveat": "Repère indicatif : la médiane Insee porte sur le patrimoine brut d'un ménage entier, selon l'âge de sa personne de référence, début 2024 ; elle est comparée au patrimoine brut de cette vue.",
+      "sourceLabel": "Source",
+      "source": "Insee Focus n° 371, enquête Histoire de vie et Patrimoine 2023-2024",
+      "error": "Impossible de charger votre profil."
+    }
   },
   "transactions": {
     "detail": "Détail de la transaction",

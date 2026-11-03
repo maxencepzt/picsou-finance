@@ -27,6 +27,8 @@ vi.mock('./AttentionCard', () => ({ AttentionCard: () => null }))
 vi.mock('./GoalsCard', () => ({ GoalsCard: () => null }))
 vi.mock('./HealthCard', () => ({ HealthCard: () => null }))
 vi.mock('./LiquidityCard', () => ({ LiquidityCard: () => null }))
+vi.mock('./MoversCard', () => ({ MoversCard: () => null }))
+vi.mock('./PeersCard', () => ({ PeersCard: () => null }))
 vi.mock('./UpcomingCard', () => ({ UpcomingCard: () => null }))
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({

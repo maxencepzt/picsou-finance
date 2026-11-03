@@ -21,6 +21,8 @@ import { AttentionCard } from './AttentionCard'
 import { GoalsCard } from './GoalsCard'
 import { HealthCard } from './HealthCard'
 import { LiquidityCard } from './LiquidityCard'
+import { MoversCard } from './MoversCard'
+import { PeersCard } from './PeersCard'
 import { UpcomingCard } from './UpcomingCard'
 
 type WealthMode = 'net' | 'gross' | 'financial'
@@ -190,7 +192,7 @@ export function DashboardPage() {
       </div>
 
       {/* Evolution + allocation */}
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader>
             {/* Titled by wealth mode: the curve plots (net/gross/financial) wealth, not gain/loss. */}
@@ -203,13 +205,18 @@ export function DashboardPage() {
         <AllocationCard distribution={data.distribution} />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <LiquidityCard distribution={data.distribution} />
         <UpcomingCard liabilities={data.liabilities} />
         <AttentionCard />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <MoversCard />
+        <PeersCard grossWorth={grossAssets} />
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <GoalsCard goals={data.goalSummaries} />
         <HealthCard />
       </div>

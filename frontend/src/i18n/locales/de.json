@@ -226,7 +226,42 @@
       "excess": "Über dem Ziel:"
     },
     "goalOnTrack": "Im Plan",
-    "goalBehind": "Im Rückstand"
+    "goalBehind": "Im Rückstand",
+    "movers": {
+      "title": "Größte Bewegungen",
+      "versus": "{{date}} gegenüber dem {{previous}}",
+      "side": "Richtung der Bewegung",
+      "gainers": "Gewinner",
+      "losers": "Verlierer",
+      "error": "Die Tagesbewegungen konnten nicht geladen werden.",
+      "empty": "Die Bewegungen erscheinen, sobald Ihre Wertpapiere Kurse von zwei Tagen haben.",
+      "none": {
+        "gainers": "Kein Wertpapier im Plus.",
+        "losers": "Kein Wertpapier im Minus."
+      }
+    },
+    "peers": {
+      "title": "Sie und Haushalte Ihres Alters",
+      "bracket": {
+        "under30": "Haushalte unter 30 Jahren",
+        "30to39": "Haushalte von 30 bis 39 Jahren",
+        "40to49": "Haushalte von 40 bis 49 Jahren",
+        "50to59": "Haushalte von 50 bis 59 Jahren",
+        "60to69": "Haushalte von 60 bis 69 Jahren",
+        "70plus": "Haushalte ab 70 Jahren",
+        "all": "Alle Haushalte"
+      },
+      "ofMedian": "Median dieser Haushalte",
+      "yours": "Bruttovermögen dieser Ansicht",
+      "median": "Medianes Bruttovermögen",
+      "gap": "Abstand",
+      "noAge": "Ohne Geburtsdatum wird mit allen Haushalten verglichen.",
+      "fillProfile": "Profil vervollständigen",
+      "caveat": "Grober Anhaltspunkt: Der INSEE-Median ist das Bruttovermögen eines ganzen Haushalts nach Alter seiner Bezugsperson, Anfang 2024; verglichen wird er mit dem Bruttovermögen dieser Ansicht.",
+      "sourceLabel": "Quelle",
+      "source": "Insee Focus Nr. 371, Erhebung Histoire de vie et Patrimoine 2023-2024",
+      "error": "Ihr Profil konnte nicht geladen werden."
+    }
   },
   "accounts": {
     "title": "Konten",

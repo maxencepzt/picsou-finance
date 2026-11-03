@@ -41,8 +41,19 @@ the dashboard can show the top gainers and losers without a provider call on ren
 tickers; both are null (and the lists empty) when no held ticker has two snapshots. Every key is
 always present: the DTO is `@JsonInclude(ALWAYS)` against the app-wide `non_null`.
 
+### On the dashboard
+
+`MoversCard` (`frontend/src/pages/dashboard/MoversCard.tsx`, hook `useMovers(5)` in
+`features/dashboard/hooks.ts`, key `['dashboard', 'movers', 5]`) sits next to the peers card. A
+`SegmentedControl` switches between gainers and losers and opens on the side that has rows. Each
+row: `HoldingLogo` (the name's monogram when `logoUrl` is null), name and ticker, the change as a
+`Delta` percentage and the move on the position (`valueChangeEur`, signed, in ink). The subtitle
+is "<date> vs <previousDate>". Null dates or two empty lists give a quiet line; a failed request
+an `ErrorState` with retry.
+
 ### Key files
 
+- `frontend/src/pages/dashboard/MoversCard.tsx`
 - `controller/DashboardController.java` — `GET /api/dashboard/movers`
 - `service/DashboardMoversService.java` — perimeter, merge, comparison
 - `dto/MoversResponse.java`
