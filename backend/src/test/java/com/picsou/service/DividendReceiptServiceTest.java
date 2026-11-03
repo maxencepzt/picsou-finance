@@ -37,6 +37,7 @@ import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -52,6 +53,7 @@ class DividendReceiptServiceTest {
     @Mock DividendSourceRepository sources;
     @Mock TransactionRepository transactions;
     @Mock CategorizationService categorization;
+    @Mock PriceService prices;
 
     private DividendReceiptService service;
     private Category revenusCapital;
@@ -60,7 +62,7 @@ class DividendReceiptServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new DividendReceiptService(accounts, access, holdings, sources, transactions, categorization);
+        service = new DividendReceiptService(accounts, access, holdings, sources, transactions, categorization, prices);
         revenusCapital = category(100L, "revenus-capital", CategoryKind.INCOME);
         autresRevenus = category(101L, "autres-revenus", CategoryKind.INCOME);
         virement = category(102L, "virement-interne", CategoryKind.TRANSFER);
@@ -389,6 +391,36 @@ class DividendReceiptServiceTest {
             assertThat(line.id()).isEqualTo("HOLDING:13:TTE.PA:tx5");
             assertThat(line.exDate()).isNull();
         });
+    }
+
+    @Test
+    void receivedConvertsEachCreditToEur_oneRatePerCurrency_nullWithoutARate() {
+        Account cto = account(13L, "CTO", AccountType.COMPTE_TITRES, null);
+        Transaction eur = dividend(1L, cto, "2026-10-10", "59.50");
+        Transaction usd = dividend(2L, cto, "2026-10-12", "10.00");
+        usd.setNativeCurrency("USD");
+        Transaction usdAgain = dividend(3L, cto, "2026-10-13", "5.00");
+        usdAgain.setNativeCurrency("USD");
+        Transaction chf = dividend(4L, cto, "2026-10-14", "20.00");
+        chf.setNativeCurrency("CHF");
+        when(access.readableAccounts(MEMBER)).thenReturn(List.of(cto));
+        when(transactions.findByAccountIdInAndDateBetweenOrderByDateAsc(anyCollection(), any(), any()))
+            .thenReturn(List.of(eur, usd, usdAgain, chf));
+        when(sources.findAllWithEventsByTickerIn(anyCollection())).thenReturn(List.of());
+        when(prices.getFxRateEur("USD")).thenReturn(new BigDecimal("0.92"));
+        when(prices.getFxRateEur("CHF")).thenReturn(null);
+
+        List<ReceivedDividendResponse> out = service.received(MEMBER, TODAY, 30);
+
+        // Newest first. 10 × 0.92 = 9.20 and 5 × 0.92 = 4.60; EUR passes through; no CHF rate → null.
+        assertThat(out).extracting(ReceivedDividendResponse::transactionId).containsExactly(4L, 3L, 2L, 1L);
+        assertThat(out.get(0).amountEur()).isNull();
+        assertThat(out.get(1).amountEur()).isEqualByComparingTo("4.60");
+        assertThat(out.get(2).amountEur()).isEqualByComparingTo("9.20");
+        assertThat(out.get(3).amountEur()).isEqualByComparingTo("59.50");
+        assertThat(out.get(3).amount()).isEqualByComparingTo("59.50");
+        verify(prices, times(1)).getFxRateEur("USD");
+        verify(prices, never()).getFxRateEur("EUR");
     }
 
     @Test

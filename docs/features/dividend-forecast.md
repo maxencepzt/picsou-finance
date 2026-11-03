@@ -129,6 +129,12 @@ id `HOLDING:accountId::tx<id>`. `accountId`,
 dividend credited to "TR Cash" for a PEA line reports the PEA, like the forecast does. With no
 readable holder of that ticker, or several of the same provider, the credited account is kept.
 
+Each line also carries `amountEur`: the credit (`amount`, in `currency`) converted to EUR. A EUR
+credit passes through unchanged; another currency is multiplied by `PriceService.getFxRateEur`,
+asked once per currency per request, and rounded to 2 dp. `PriceProviderPort` keeps no FX
+history, so the rate is the latest one, not the rate of `receivedDate`. With no rate the field is
+an explicit `null` (`@JsonInclude(ALWAYS)`), never the unconverted amount.
+
 ### API
 
 `GET /api/dividends/upcoming?horizonDays=60[&accountId=12]` (horizon clamped to 1..366). Each
@@ -179,7 +185,8 @@ notifier (iOS, 2.0) can use to tell "already sent" from "new".
   holding the same ticker can be reported for a credit on the member's own cash account.
 - A co-owned row is classified by the owner only, so it can be listed by `received` before the
   owner's next sync.
-- `amount` in `/received` is the credit as booked, not weighted by the member's share.
+- `amount` in `/received` is the credit as booked, not weighted by the member's share. So is
+  `amountEur`, which also uses today's FX rate for a past foreign credit.
 - `/received` lists every readable `DIVIDEND` row, including a broker-typed one that no stored
   event fits (then `exDate` and `amountPerShare` are null, and the row may stay uncategorised).
 - In `/received`, `exDate` and `amountPerShare` come from the newest event in the 60 days before

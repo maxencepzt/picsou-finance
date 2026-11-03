@@ -2115,9 +2115,13 @@ never Yahoo or Nasdaq, and are scoped to the accounts the member can read. See
   "currency": "EUR",
   "exDate": "2026-10-01",
   "amountPerShare": 0.85,
-  "countsInBudget": false
+  "countsInBudget": false,
+  "amountEur": 59.50
 }]
 ```
+
+`amountEur` is `amount` in EUR: unchanged for a EUR credit, else at the latest FX rate (the price
+provider keeps no FX history), and an explicit `null` when no rate is available.
 
 `id` matches the forecast line it fulfils; with no known ex-date it is
 `HOLDING:accountId:ticker:tx<transactionId>` and `exDate`/`amountPerShare` are null. A `DIVIDEND`

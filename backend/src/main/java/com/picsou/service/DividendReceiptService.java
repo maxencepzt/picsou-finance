@@ -86,6 +86,7 @@ public class DividendReceiptService {
     private final DividendSourceRepository sources;
     private final TransactionRepository transactions;
     private final CategorizationService categorizationService;
+    private final PriceService prices;
 
     public DividendReceiptService(
         AccountRepository accounts,
@@ -93,7 +94,8 @@ public class DividendReceiptService {
         AccountHoldingRepository holdings,
         DividendSourceRepository sources,
         TransactionRepository transactions,
-        CategorizationService categorizationService
+        CategorizationService categorizationService,
+        PriceService prices
     ) {
         this.accounts = accounts;
         this.access = access;
@@ -101,6 +103,7 @@ public class DividendReceiptService {
         this.sources = sources;
         this.transactions = transactions;
         this.categorizationService = categorizationService;
+        this.prices = prices;
     }
 
     /** Days are clamped to {@code [1, 366]} so a caller cannot ask for the whole ledger. */
@@ -192,6 +195,8 @@ public class DividendReceiptService {
             .map(h -> new Line(byId.get(h.getAccount().getId()), h))
             .filter(line -> line.account() != null)
             .toList();
+        // One rate lookup per currency for the whole list; a missing rate is remembered as null.
+        Map<String, BigDecimal> rates = new HashMap<>();
         List<ReceivedDividendResponse> out = new ArrayList<>();
         for (Transaction tx : rows) {
             Account credited = tx.getAccount() == null ? null : byId.get(tx.getAccount().getId());
@@ -221,10 +226,28 @@ public class DividendReceiptService {
                 tx.getNativeCurrency(),
                 exDate,
                 event == null ? null : perShare(tx, event, source),
-                DividendForecastService.countsInBudget(account.getType(), false)));
+                DividendForecastService.countsInBudget(account.getType(), false),
+                amountEur(tx, rates)));
         }
         out.sort(NEWEST_FIRST);
         return out;
+    }
+
+    /**
+     * The credit in EUR. {@code PriceProviderPort} has no FX history, so a foreign credit converts
+     * at the latest rate, not the rate of its date; null when even that is unavailable. The
+     * currency is passed as booked: {@code GBp} (pence) must not be upper-cased into pounds.
+     */
+    private BigDecimal amountEur(Transaction tx, Map<String, BigDecimal> rates) {
+        String currency = tx.getNativeCurrency();
+        if (currency == null || currency.isBlank() || "EUR".equalsIgnoreCase(currency)) {
+            return tx.getAmount();
+        }
+        if (!rates.containsKey(currency)) {
+            rates.put(currency, prices.getFxRateEur(currency));
+        }
+        BigDecimal rate = rates.get(currency);
+        return rate == null ? null : tx.getAmount().multiply(rate).setScale(2, RoundingMode.HALF_UP);
     }
 
     /**

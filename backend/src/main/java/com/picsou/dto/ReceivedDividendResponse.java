@@ -1,5 +1,6 @@
 package com.picsou.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.picsou.model.AccountType;
 
 import java.math.BigDecimal;
@@ -12,6 +13,8 @@ import java.time.LocalDate;
  * from "new". When no ex-date is known it falls back to {@code HOLDING:accountId:ticker:tx<id>}
  * (empty ticker segment, and a null {@code ticker}, for a row booked without one).
  * {@code exDate} and {@code amountPerShare} are null when the stored history has no matching event.
+ * {@code amountEur} is {@code amount} in EUR at the latest FX rate (the provider keeps no FX
+ * history), unchanged for a EUR credit, and an explicit null when no rate is available.
  */
 public record ReceivedDividendResponse(
     String id,
@@ -26,5 +29,6 @@ public record ReceivedDividendResponse(
     String currency,
     LocalDate exDate,
     BigDecimal amountPerShare,
-    boolean countsInBudget
+    boolean countsInBudget,
+    @JsonInclude(JsonInclude.Include.ALWAYS) BigDecimal amountEur
 ) {}

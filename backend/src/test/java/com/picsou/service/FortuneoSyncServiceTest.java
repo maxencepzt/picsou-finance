@@ -1506,7 +1506,8 @@ class FortuneoSyncServiceTest {
         lenient().when(categorization.categoriesBySlug(7L)).thenReturn(Map.of("revenus-capital", revenusCapital));
         lenient().when(transactions.findByAccountIdInAndDateBetweenOrderByDateAsc(anyCollection(), any(), any()))
             .thenAnswer(invocation -> ledger.get());
-        return new DividendReceiptService(accounts, access, holdings, sources, transactions, categorization);
+        return new DividendReceiptService(accounts, access, holdings, sources, transactions, categorization,
+            mock(PriceService.class));
     }
 
     private FortuneoSyncService serviceWith(Executor executor) {
