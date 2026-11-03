@@ -6,6 +6,8 @@ import fr from '@/i18n/locales/fr.json'
 
 const state = vi.hoisted(() => ({
   cashflowTo: '2099-12-31',
+  series: [] as { start: string; end: string; label: string; income: number; expense: number; net: number }[],
+  calendar: [] as { seriesId: number; label: string; expectedAmount: number; dueDate: string }[],
   coreError: false,
   coreLoading: false,
   dividends: {
@@ -33,17 +35,21 @@ vi.mock('@/components/shared/CurrencyDisplay', () => ({
     <span>{showSign && value > 0 ? `+${value}` : String(value)}</span>
   ),
 }))
+vi.mock('@/components/shared/CashflowSankey', () => ({ CashflowSankey: () => <div>sankey</div> }))
+vi.mock('./CashflowTab', () => ({ CashflowTab: () => null }))
+vi.mock('./SavingsRateCard', () => ({ SavingsRateCard: () => null }))
 vi.mock('@/features/budget/hooks', () => ({
-  useCashflow: () => ({
+  useCashflow: (period: string) => ({
     data: state.coreError || state.coreLoading ? undefined : {
-      period: 'CYCLE', from: '2026-10-01', to: state.cashflowTo, income: 100, expense: 40, net: 60, series: [],
+      period, from: '2026-10-01', to: state.cashflowTo, income: 100, expense: 40, net: 60,
+      series: period === 'YTD' ? state.series : [],
     },
     isLoading: state.coreLoading,
     isError: state.coreError,
     refetch: vi.fn(),
   }),
   useBudgets: () => ({ data: [], isLoading: state.coreLoading, isError: state.coreError, refetch: vi.fn() }),
-  useRecurringCalendar: () => ({ data: [], isLoading: state.coreLoading, isError: state.coreError, refetch: vi.fn() }),
+  useRecurringCalendar: () => ({ data: state.calendar, isLoading: state.coreLoading, isError: state.coreError, refetch: vi.fn() }),
   useAllocation: () => ({
     data: { totalStock: 0, totalContributions: 0 },
     isLoading: state.coreLoading,
@@ -51,6 +57,7 @@ vi.mock('@/features/budget/hooks', () => ({
     refetch: vi.fn(),
   }),
   useUncategorized: () => ({ data: [], isLoading: false, isError: false, refetch: vi.fn() }),
+  useCashflowFlow: () => ({ data: { nodes: [] }, isLoading: false, isError: false, refetch: vi.fn() }),
 }))
 vi.mock('@/features/dividends/hooks', () => ({ useUpcomingDividends }))
 
@@ -82,6 +89,8 @@ function line(overrides: Partial<UpcomingDividend> & Pick<UpcomingDividend, 'nam
 describe('OverviewTab capital income', () => {
   beforeEach(() => {
     state.cashflowTo = '2099-12-31'
+    state.series = []
+    state.calendar = []
     state.coreError = false
     state.coreLoading = false
     state.dividends = { data: [], isLoading: false, isError: false }
@@ -125,7 +134,7 @@ describe('OverviewTab capital income', () => {
     expect(within(card).getByText('budget.overview.staysInEnvelope')).toBeInTheDocument()
     expect(within(card).getByText('budget.overview.reinvested')).toBeInTheDocument()
     expect(within(card).getAllByText('budget.overview.staysInEnvelope')).toHaveLength(1)
-    expect(screen.getByText('budget.overview.netThisCycle')).toBeInTheDocument()
+    expect(screen.getByText('budget.overview.saved')).toBeInTheDocument()
   })
 
   it('hides the capitalized aside when every line counts in the budget', () => {
@@ -143,7 +152,7 @@ describe('OverviewTab capital income', () => {
     render(<OverviewTab />)
     expect(screen.getByText('budget.overview.capitalIncomeEmpty')).toBeInTheDocument()
     expect(screen.queryByText('budget.overview.error')).not.toBeInTheDocument()
-    expect(screen.getByText('budget.overview.netThisCycle')).toBeInTheDocument()
+    expect(screen.getByText('budget.overview.saved')).toBeInTheDocument()
   })
 
   it('shows the dividend error string instead of the empty sentence', () => {
@@ -152,7 +161,7 @@ describe('OverviewTab capital income', () => {
     expect(screen.getByText('accounts.dividends.error')).toBeInTheDocument()
     expect(screen.queryByText('budget.overview.capitalIncomeEmpty')).not.toBeInTheDocument()
     expect(screen.queryByText('budget.overview.error')).not.toBeInTheDocument()
-    expect(screen.getByText('budget.overview.netThisCycle')).toBeInTheDocument()
+    expect(screen.getByText('budget.overview.saved')).toBeInTheDocument()
   })
 
   it('does not block the page while the forecast is still loading', () => {
@@ -160,7 +169,7 @@ describe('OverviewTab capital income', () => {
     render(<OverviewTab />)
     expect(screen.queryByText('budget.overview.capitalIncomeEmpty')).not.toBeInTheDocument()
     expect(screen.queryByText('budget.overview.error')).not.toBeInTheDocument()
-    expect(screen.getByText('budget.overview.netThisCycle')).toBeInTheDocument()
+    expect(screen.getByText('budget.overview.saved')).toBeInTheDocument()
     expect(screen.getByText('budget.overview.capitalIncome')).toBeInTheDocument()
   })
 
@@ -172,5 +181,47 @@ describe('OverviewTab capital income', () => {
     render(<OverviewTab />)
     expect(screen.queryByText('budget.overview.capitalIncome')).not.toBeInTheDocument()
     expect(screen.getByText('budget.overview.pastPeriodNote')).toBeInTheDocument()
+  })
+})
+
+describe('OverviewTab KPI row', () => {
+  beforeEach(() => {
+    state.cashflowTo = '2026-10-31'
+    state.series = []
+    state.calendar = []
+    state.coreError = false
+    state.coreLoading = false
+    state.dividends = { data: [], isLoading: false, isError: false }
+    useUpcomingDividends.mockReset().mockImplementation(() => state.dividends)
+  })
+
+  it('sums only the debits still due before the cycle ends', () => {
+    state.cashflowTo = '2099-10-31'
+    state.calendar = [
+      { seriesId: 1, label: 'Netflix', expectedAmount: -13, dueDate: '2099-10-20' },
+      { seriesId: 2, label: 'Salaire', expectedAmount: 3200, dueDate: '2099-10-25' },
+      { seriesId: 3, label: 'Loyer', expectedAmount: -800, dueDate: '2099-10-28' },
+      { seriesId: 4, label: 'Après le cycle', expectedAmount: -50, dueDate: '2099-11-02' },
+    ]
+    render(<OverviewTab />)
+    const tile = screen.getByText('budget.overview.toPay').parentElement!
+    expect(within(tile).getByText('813')).toBeInTheDocument()
+    expect(within(tile).getByText('budget.overview.toPayCount')).toBeInTheDocument()
+  })
+
+  it('compares income and expenses with the previous cycle of the series', () => {
+    state.cashflowTo = '2099-10-31'
+    state.series = [
+      { start: '2026-09-01', end: '2026-09-30', label: '2026-09', income: 80, expense: 50, net: 30 },
+      { start: '2026-10-01', end: '2026-10-31', label: '2026-10', income: 100, expense: 40, net: 60 },
+    ]
+    render(<OverviewTab />)
+    const income = screen.getByText('budget.cashflow.income').parentElement!
+    expect(within(income).getByText('+20')).toBeInTheDocument()
+    const expense = screen.getByText('budget.cashflow.expense').parentElement!
+    expect(within(expense).getByText('-10')).toBeInTheDocument()
+    // (100 − 40) ÷ 100
+    const rate = screen.getByText('dashboard.kpi.savingsRate').parentElement!
+    expect(rate).toHaveTextContent(/60/)
   })
 })

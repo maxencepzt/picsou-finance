@@ -11,22 +11,6 @@ vi.mock('react-i18next', () => ({
     i18n: { resolvedLanguage: 'fr', language: 'fr' },
   }),
 }))
-vi.mock('./PeriodNavigator', () => ({ PeriodNavigator: () => null }))
-vi.mock('./BudgetPeriodContext', () => ({
-  useBudgetPeriod: () => ({ anchor: undefined, setAnchor: vi.fn() }),
-}))
-vi.mock('@/features/budget/hooks', () => ({
-  useCashflow: () => ({
-    data: {
-      period: 'CYCLE', from: '2026-10-01', to: '2026-10-31', income: 3500, expense: 1200, net: 2300,
-      series: [{ label: 'Oct', income: 3500, expense: 1200 }],
-    },
-    isLoading: false,
-    isError: false,
-    refetch: vi.fn(),
-  }),
-}))
-
 // Recharts does not lay out in jsdom, so the axis and the tooltip are probes: the axis renders
 // the formatter the chart handed it, the tooltip renders its content as if hovering the bar.
 vi.mock('recharts', async (importOriginal) => {
@@ -61,7 +45,9 @@ describe('CashflowTab chart in privacy mode', () => {
   })
 
   it('masks the axis scale and the hovered amount once the toggle is switched on', () => {
-    render(<CashflowTab />)
+    render(<CashflowTab series={[
+      { start: '2026-10-01', end: '2026-10-31', label: 'Oct', income: 3500, expense: 1200, net: 2300 },
+    ]} />)
 
     expect(screen.getByTestId('y-ticks').textContent).toMatch(/\d/)
     expect(screen.getByTestId('tooltip').textContent).toMatch(/\d/)

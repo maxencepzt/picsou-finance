@@ -1,6 +1,6 @@
 # Feature: Budget & Cashflow
 
-> Last updated: 2026-06-27
+> Last updated: 2026-11-03
 
 ## Context
 
@@ -38,7 +38,7 @@ A single `BudgetLayout` (segmented sub-nav on desktop, bottom bar on mobile — 
 
 | Route | Page | Content |
 |-------|------|---------|
-| `/budget` (index) | `BudgetOverviewPage` | Hero "left to spend", mini-flow, Review banner (only if items), upcoming subscriptions, top categories |
+| `/budget` (index) | `BudgetOverviewPage` → `OverviewTab` | KPI row, Review banner (only if items), flow Sankey, top envelopes, cash flow and savings rate by cycle, capital income ahead — see [Overview](#overview-coffre-nocturne-redesign) |
 | `/budget/spending` | `SpendingPage` | Cashflow **flow diagram**: Sankey in a card ≥ 640px, Flow Bars below |
 | `/budget/spending/:categoryId` | `CategoryDetailPage` | Per-category drill: transactions with `MerchantAvatar` |
 | `/budget/subscriptions` | `SubscriptionsPage` | Recurring series **v2**: auto-confirm + runtime/price badges (`SubscriptionCard`), "what changed" feed + undo (`ActivityFeed`), upcoming agenda |
@@ -184,9 +184,38 @@ It deliberately has no empty-rules early-out: the brand KB alone categorizes a r
   **deterministic colour derived from the name**, fully offline; switches to a proxied `<img>` only
   when `logo_fetch_enabled` (M5). Used across every transaction list.
 
+### Overview ("Coffre Nocturne" redesign)
+
+`pages/budget/OverviewTab.tsx`, for the cycle the `PeriodNavigator` shows:
+
+1. **KPI row** (`KpiTile`): income and expenses, each with its change against the previous cycle
+   (`previousBucket` over the year's series); saved this cycle (`allocation.totalContributions`,
+   with the investable stock); savings rate (`savingsRate(income, expense)`, with the cycle net);
+   debits still due before the cycle closes (current cycle only).
+2. **To-categorise nudge**, then the **flow Sankey** beside the **top six envelopes** (current
+   cycle only).
+3. **Cash flow** (`CashflowTab`, revived: it had no caller left) — income against expenses, one
+   pair of bars per cycle — beside **`SavingsRateCard`** (`pages/budget/`), the savings rate of
+   each cycle with the rate of the summed flows as a dashed average (`savingsRateTrend`). Both
+   read one series, `useCashflow('YTD', …)`: the cycles since 1 January, ending on the displayed
+   one.
+4. **Capital income ahead** (`CapitalIncomeAhead`, current window only; see
+   [dividend-forecast.md](./dividend-forecast.md)).
+
+The cycle's cash flow, envelopes, recurring calendar and allocation queries gate the page; the
+nudge, the flow and the series load on their own and fail without replacing the recap.
+
+- **The savings-rate chart has no Y axis.** The money guard requires `money.tick` on every Y axis,
+  and a percentage is not money; the tooltip, the caption and a 0 % reference line carry the
+  figures.
+- **A cycle straddling 1 January** gets only its January part in the YTD series, so its bar is
+  short and it has no previous cycle (`shortcut:` in `OverviewTab`).
+- `pages/goals/SavingsRateCard.tsx` is a different card: the share of income the recurring plans
+  pay in (see [goal-recurring-investment.md](./goal-recurring-investment.md)).
+
 ### Period navigation
 
-All five period-aware budget views — Overview (cycle only), Cashflow/Spending flow, Allocation,
+All five period-aware budget views — Overview (cycle only; its by-cycle charts follow the same anchor), Spending flow, Allocation,
 Spending breakdown, and the per-category drill — expose a **`PeriodNavigator`** component. It sits
 next to the Cycle / Year toggle and lets the user step through past periods without leaving the page.
 
@@ -382,6 +411,7 @@ overlap guard added in M4): `model/Budget.java` + `BudgetService` + `BudgetContr
 `pages/budget/BudgetPeriodContext.tsx` (`BudgetPeriodProvider` / `useBudgetPeriod()`,
 `sessionStorage`-backed anchor, key `picsou_budget_anchor`) + `budget-nav.ts` + the nested pages above;
 `pages/budget/{SubscriptionCard,ActivityFeed}.tsx` + `budget-meta.ts` (runtime/activity lookups);
+`pages/budget/{OverviewTab,CashflowTab,SavingsRateCard}.tsx` + `savings-rate.ts` (the overview);
 `features/budget/{api,hooks}.ts` (TanStack Query, cascade invalidations rooted at `['budget']`);
 `components/shared/{MerchantAvatar,CashflowSankey,FlowBars,flow-utils}.ts(x)`;
 `types/api.ts`; demo mocks in `demo/data/budget.ts` + `demo/index.ts`.
@@ -507,7 +537,9 @@ Enable Banking sync ─▶ SyncService.fetchTransactions ─▶ dedup ─▶ per
 - `MerchantLogoServiceTest` — per-brand TTL cache, hits/misses cached separately, opt-in gate lives
   in the controller (not the service), graceful empty on a failing provider
 - Frontend: `flow-utils.test.ts`, `MerchantAvatar.test.tsx`, `features/budget` hooks via
-  `bunx vitest run`
+  `bunx vitest run`; `pages/budget/savings-rate.test.ts` (rate, trend average of summed flows,
+  previous bucket), `OverviewTab.test.tsx` (capital income card, KPI debits due and the
+  previous-cycle comparison), `CashflowTab.test.tsx` (privacy mode masks the axis and tooltip)
 - **`BudgetSeedWriteOnReadPostgresTest`** — the one Testcontainers integration test (real Postgres
   16, self-skips without Docker): seeding/recategorizing from a read-only caller must escape via
   `REQUIRES_NEW`, a write-on-read trap H2 masks but Postgres rejects with SQLSTATE `25006`. See

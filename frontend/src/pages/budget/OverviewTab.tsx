@@ -1,53 +1,33 @@
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
-import { ArrowRight, CalendarClock, Coins, Inbox, PiggyBank, TrendingUp, Wallet } from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
-import { Card, CardContent } from '@/components/ui/card'
+import { ArrowRight, Coins, Inbox } from 'lucide-react'
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { CashflowSankey } from '@/components/shared/CashflowSankey'
 import { CurrencyDisplay } from '@/components/shared/CurrencyDisplay'
+import { Delta } from '@/components/shared/Delta'
 import { ErrorState } from '@/components/shared/ErrorState'
+import { KpiTile } from '@/components/shared/KpiTile'
 import {
   useAllocation,
   useBudgets,
   useCashflow,
+  useCashflowFlow,
   useRecurringCalendar,
   useUncategorized,
 } from '@/features/budget/hooks'
 import { useUpcomingDividends } from '@/features/dividends/hooks'
-import { formatDate, formatPercent } from '@/lib/utils'
+import { cn, formatDate, formatPercent } from '@/lib/utils'
+import type { Budget } from '@/types/api'
 import { ColorDot } from './budget-utils'
+import { CashflowTab } from './CashflowTab'
+import { SavingsRateCard } from './SavingsRateCard'
 import { PeriodNavigator } from './PeriodNavigator'
 import { useBudgetPeriod } from './BudgetPeriodContext'
-
-function RecapCard({ icon: Icon, label, children, onClick, index = 0 }: {
-  icon: LucideIcon
-  label: string
-  children: React.ReactNode
-  onClick: () => void
-  /** Position in the grid — drives the staggered entrance delay. */
-  index?: number
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="group text-left animate-in fade-in-0 zoom-in-95 duration-300 fill-mode-both"
-      style={{ animationDelay: `${index * 75}ms` }}
-    >
-      <Card className="h-full transition-colors hover:bg-muted/50">
-        <CardContent className="pt-6">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Icon className="size-4" />
-            <span>{label}</span>
-            <ArrowRight className="ml-auto size-4 opacity-0 transition-opacity group-hover:opacity-100" />
-          </div>
-          <div className="mt-2">{children}</div>
-        </CardContent>
-      </Card>
-    </button>
-  )
-}
+import { previousBucket, savingsRate } from './savings-rate'
 
 /**
  * Dividends and SCPI distributions expected over the next 60 days.
@@ -118,20 +98,48 @@ function CapitalIncomeAhead() {
   )
 }
 
-/** First-load skeleton mirroring the 4-card recap grid so the layout doesn't jump. */
+/** First-load skeleton mirroring the KPI row so the layout doesn't jump. */
 function OverviewSkeleton() {
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      {Array.from({ length: 4 }).map((_, i) => (
-        <Skeleton key={i} className="h-28 w-full rounded-xl" />
+    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <Skeleton key={i} className="h-[92px] w-full rounded-2xl" />
       ))}
     </div>
   )
 }
 
+/** One envelope: spent against its limit, the bar turning amber from 80 % and loss-coloured past 100 %. */
+function EnvelopeRow({ budget: b }: { budget: Budget }) {
+  return (
+    <li className="flex flex-col gap-1.5">
+      <div className="flex flex-wrap items-baseline gap-x-2 text-[13px]">
+        <span className="flex min-w-0 items-center gap-2">
+          <ColorDot color={b.categoryColor} />
+          <span className="truncate font-semibold">{b.categoryName}</span>
+        </span>
+        <span className={cn('ml-auto shrink-0 tabular-nums', b.overBudget ? 'font-semibold text-loss' : 'text-muted-foreground')}>
+          <CurrencyDisplay value={b.spent} className={b.overBudget ? undefined : 'text-foreground'} />
+          {' / '}
+          <CurrencyDisplay value={b.monthlyLimit} />
+          {' · '}
+          {formatPercent(b.percent, { fractionDigits: 0 })}
+        </span>
+      </div>
+      <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted"
+        role="progressbar" aria-label={b.categoryName}
+        aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.min(b.percent, 100)}
+        aria-valuetext={formatPercent(b.percent, { fractionDigits: 0 })}>
+        <div className={cn('h-full rounded-full', b.overBudget ? 'bg-loss' : b.percent >= 80 ? 'bg-warning' : 'bg-primary')}
+          style={{ width: `${Math.min(b.percent, 100)}%` }} />
+      </div>
+    </li>
+  )
+}
+
 export function OverviewTab() {
   const { t } = useTranslation()
-  // Recap cards deep-link into the nested budget routes (relative to `/budget`).
+  // Cards deep-link into the nested budget routes (relative to `/budget`).
   const navigate = useNavigate()
   const { anchor, setAnchor } = useBudgetPeriod()
   const cashflowQ = useCashflow('CYCLE', anchor)
@@ -139,21 +147,28 @@ export function OverviewTab() {
   const upcomingQ = useRecurringCalendar(30)
   const allocationQ = useAllocation('CYCLE', anchor)
   const uncategorizedQ = useUncategorized()
+  const flowQ = useCashflowFlow('CYCLE', anchor)
+  // The year's cycles up to the displayed one: the bars, the savings-rate trend and the previous
+  // cycle to compare with. A past cycle anchors the year on its own end so the series stops there.
+  // shortcut: a cycle straddling 1 January only gets its January part in this series (YTD starts
+  // on 1 January), so its bar is short and it has no previous cycle; upgrade with a rolling series.
+  const seriesQ = useCashflow('YTD', anchor ? cashflowQ.data?.to : undefined)
 
   const cashflow = cashflowQ.data
   const budgets = budgetsQ.data
   const upcoming = upcomingQ.data
   const allocation = allocationQ.data
   const uncategorized = uncategorizedQ.data
+  const series = seriesQ.data?.series ?? []
 
   // Envelope-usage and upcoming-charges data are always server-computed for the *current*
   // cycle, so they can't follow the period navigator's anchor. When the displayed cycle has
   // already ended (its `to` is before today), hide those cards to avoid mixing past + present.
-  const todayIso = new Date().toLocaleDateString('en-CA')
-  const viewingPast = !!cashflowQ.data?.to && cashflowQ.data.to < todayIso
+  const [todayIso] = useState(() => new Date().toLocaleDateString('en-CA'))
+  const viewingPast = !!cashflow?.to && cashflow.to < todayIso
 
-  // The four recap cards are the page's core; the to-categorize nudge is a non-blocking extra,
-  // so its query is deliberately excluded from the loading/error gate below.
+  // The KPI row is the page's core; the to-categorize nudge, the flow and the per-cycle charts are
+  // non-blocking extras, so their queries are deliberately excluded from the loading/error gate.
   const coreQueries = [cashflowQ, budgetsQ, upcomingQ, allocationQ]
   const isLoading = coreQueries.some((q) => q.isLoading)
   const isError = coreQueries.some((q) => q.isError)
@@ -162,8 +177,13 @@ export function OverviewTab() {
   const totalSpent = (budgets ?? []).reduce((s, b) => s + b.spent, 0)
   const totalLimit = (budgets ?? []).reduce((s, b) => s + b.monthlyLimit, 0)
   const overCount = (budgets ?? []).filter((b) => b.overBudget).length
-  const upcomingTotal = (upcoming ?? []).reduce((s, o) => s + o.expectedAmount, 0)
-  const topEnvelopes = [...(budgets ?? [])].sort((a, b) => b.percent - a.percent).slice(0, 4)
+  const topEnvelopes = [...(budgets ?? [])].sort((a, b) => b.percent - a.percent).slice(0, 6)
+  // Debits the recurring calendar still expects before the cycle closes.
+  const toPay = (upcoming ?? []).filter((o) => o.expectedAmount < 0 && (!cashflow || o.dueDate <= cashflow.to))
+  const toPayTotal = -toPay.reduce((s, o) => s + o.expectedAmount, 0)
+  const previous = previousBucket(series, cashflow?.from)
+  const rate = cashflow ? savingsRate(cashflow.income, cashflow.expense) : null
+  const showEnvelopes = !viewingPast && topEnvelopes.length > 0
 
   return (
     <div className="space-y-4">
@@ -184,70 +204,46 @@ export function OverviewTab() {
         <OverviewSkeleton />
       ) : (
       <>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <RecapCard icon={TrendingUp} label={t('budget.overview.netThisCycle')} index={0}
-          onClick={() => navigate('spending')}>
-          <p className={`text-2xl font-bold ${
-            (cashflow?.net ?? 0) >= 0
-              ? 'text-emerald-600 dark:text-emerald-400' : 'text-destructive'}`}>
-            <CurrencyDisplay value={cashflow?.net ?? 0} showSign />
-          </p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {t('budget.overview.incomeVsExpense', {
-              income: cashflow ? Math.round(cashflow.income) : 0,
-              expense: cashflow ? Math.round(cashflow.expense) : 0,
-            })}
-          </p>
-        </RecapCard>
-
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+        <KpiTile
+          label={t('budget.cashflow.income')}
+          value={<CurrencyDisplay value={cashflow?.income ?? 0} />}
+          footer={previous && cashflow && (
+            <Delta amount={cashflow.income - previous.income}>{t('budget.overview.vsPreviousCycle')}</Delta>
+          )}
+        />
+        <KpiTile
+          label={t('budget.cashflow.expense')}
+          value={<CurrencyDisplay value={cashflow?.expense ?? 0} />}
+          footer={previous && cashflow && (
+            <Delta amount={cashflow.expense - previous.expense} invert>{t('budget.overview.vsPreviousCycle')}</Delta>
+          )}
+        />
+        <KpiTile
+          label={t('budget.overview.saved')}
+          value={<CurrencyDisplay value={allocation?.totalContributions ?? 0} />}
+          footer={<>{t('common.labelColon', { label: t('budget.overview.investable') })} <CurrencyDisplay value={allocation?.totalStock ?? 0} /></>}
+        />
+        <KpiTile
+          label={t('dashboard.kpi.savingsRate')}
+          value={rate == null ? '—' : formatPercent(rate, { fractionDigits: 0 })}
+          footer={<>{t('common.labelColon', { label: t('budget.overview.netThisCycle') })} <CurrencyDisplay value={cashflow?.net ?? 0} showSign /></>}
+        />
         {!viewingPast && (
-        <RecapCard icon={Wallet} label={t('budget.overview.envelopes')} index={1}
-          onClick={() => navigate('envelopes')}>
-          <p className="text-2xl font-bold">
-            <CurrencyDisplay value={totalSpent} /> <span className="text-sm text-muted-foreground">/ <CurrencyDisplay value={totalLimit} /></span>
-          </p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {overCount > 0
-              ? t('budget.overview.overBudget', { count: overCount })
-              : t('budget.overview.onTrack')}
-          </p>
-        </RecapCard>
+          <KpiTile
+            label={t('budget.overview.toPay')}
+            value={<CurrencyDisplay value={toPayTotal} />}
+            footer={t('budget.overview.toPayCount', { count: toPay.length })}
+          />
         )}
-
-        {!viewingPast && (
-        <RecapCard icon={CalendarClock} label={t('budget.overview.upcoming30')} index={2}
-          onClick={() => navigate('subscriptions')}>
-          <p className="text-2xl font-bold">
-            <CurrencyDisplay value={upcomingTotal} showSign />
-          </p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {t('budget.overview.upcomingCount', { count: upcoming?.length ?? 0 })}
-          </p>
-        </RecapCard>
-        )}
-
-        <RecapCard icon={PiggyBank} label={t('budget.overview.investable')} index={3}
-          onClick={() => navigate('envelopes')}>
-          <p className="text-2xl font-bold">
-            <CurrencyDisplay value={allocation?.totalStock ?? 0} />
-          </p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {t('budget.overview.contributedThisCycle', {
-              amount: allocation ? Math.round(allocation.totalContributions) : 0,
-            })}
-          </p>
-        </RecapCard>
       </div>
-
-      {/* Capital-income forecast — current window only, and never part of the core gate. */}
-      {!viewingPast && <CapitalIncomeAhead />}
 
       {/* To-categorize nudge */}
       {(uncategorized?.length ?? 0) > 0 && (
         <button type="button" onClick={() => navigate('review')} className="block w-full text-left">
-          <Card className="border-amber-500/40 bg-amber-500/5 transition-colors hover:bg-amber-500/10">
+          <Card className="border-warning/40 bg-warning/5 transition-colors hover:bg-warning/10">
             <CardContent className="flex items-center gap-3 py-4">
-              <Inbox className="size-5 text-amber-600 dark:text-amber-400" />
+              <Inbox className="size-5 text-warning" />
               <span className="text-sm font-medium">
                 {t('budget.overview.toCategorize', { count: uncategorized!.length })}
               </span>
@@ -257,33 +253,65 @@ export function OverviewTab() {
         </button>
       )}
 
-      {/* Top envelopes preview — envelope-budget data, current cycle only (see viewingPast). */}
-      {!viewingPast && topEnvelopes.length > 0 && (
-        <Card>
-          <CardContent className="pt-6">
-            <p className="mb-3 text-sm font-medium">{t('budget.overview.topEnvelopes')}</p>
-            <div className="space-y-3">
-              {topEnvelopes.map((b) => (
-                <div key={b.id} className="space-y-1">
-                  <div className="flex items-center gap-2 text-sm">
-                    <ColorDot color={b.categoryColor} />
-                    <span className="truncate">{b.categoryName}</span>
-                    <span className="ml-auto tabular-nums text-muted-foreground">{formatPercent(b.percent, { fractionDigits: 0 })}</span>
-                  </div>
-                  <div className="h-1.5 w-full overflow-hidden rounded-md bg-muted"
-                    role="progressbar" aria-label={b.categoryName}
-                    aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.min(b.percent, 100)}
-                    aria-valuetext={formatPercent(b.percent, { fractionDigits: 0 })}>
-                    <div className={`h-full rounded-md ${
-                      b.overBudget ? 'bg-destructive' : b.percent >= 80 ? 'bg-amber-500' : 'bg-primary'}`}
-                      style={{ width: `${Math.min(b.percent, 100)}%` }} />
-                  </div>
-                </div>
-              ))}
-            </div>
+      <div className="grid gap-4 lg:grid-cols-12">
+        <Card className={showEnvelopes ? 'lg:col-span-7' : 'lg:col-span-12'}>
+          <CardHeader>
+            <CardTitle>{t('budget.flow.diagram')}</CardTitle>
+            <CardAction>
+              <Button variant="ghost" size="sm" onClick={() => navigate('spending')}>{t('dashboard.viewAll')}</Button>
+            </CardAction>
+          </CardHeader>
+          <CardContent>
+            {flowQ.isLoading ? (
+              <Skeleton className="h-[300px] w-full rounded-xl" />
+            ) : flowQ.isError ? (
+              <ErrorState messageOnly message={t('budget.flow.error')} onRetry={() => void flowQ.refetch()} />
+            ) : flowQ.data && flowQ.data.nodes.length > 0 ? (
+              <CashflowSankey flow={flowQ.data} />
+            ) : (
+              <p className="py-8 text-center text-sm text-muted-foreground">{t('budget.flow.empty')}</p>
+            )}
           </CardContent>
         </Card>
+
+        {/* Envelope-budget data, current cycle only (see viewingPast). */}
+        {showEnvelopes && (
+          <Card className="lg:col-span-5">
+            <CardHeader>
+              <CardTitle>{t('budget.overview.topEnvelopes')}</CardTitle>
+              <CardDescription>
+                <CurrencyDisplay value={totalSpent} /> / <CurrencyDisplay value={totalLimit} />
+                {' · '}
+                {overCount > 0
+                  ? t('budget.overview.overBudget', { count: overCount })
+                  : t('budget.overview.onTrack')}
+              </CardDescription>
+              <CardAction>
+                <Button variant="ghost" size="sm" onClick={() => navigate('envelopes')}>{t('dashboard.viewAll')}</Button>
+              </CardAction>
+            </CardHeader>
+            <CardContent>
+              <ul className="flex flex-col gap-3.5">
+                {topEnvelopes.map((b) => <EnvelopeRow key={b.id} budget={b} />)}
+              </ul>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+
+      {seriesQ.isError ? (
+        <ErrorState messageOnly message={t('budget.cashflow.error')} onRetry={() => void seriesQ.refetch()} />
+      ) : seriesQ.isLoading ? (
+        <Skeleton className="h-[340px] w-full rounded-xl" />
+      ) : (
+        <div className="grid gap-4 lg:grid-cols-12">
+          <div className="*:h-full lg:col-span-8"><CashflowTab series={series} /></div>
+          <div className="*:h-full lg:col-span-4"><SavingsRateCard series={series} /></div>
+        </div>
       )}
+
+      {/* Capital-income forecast — current window only, and never part of the core gate. */}
+      {!viewingPast && <CapitalIncomeAhead />}
       </>
       )}
     </div>
