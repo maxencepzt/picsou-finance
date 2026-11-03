@@ -1,6 +1,6 @@
 # Feature: Caisse d'Epargne sync
 
-> Last updated: 2026-10-31
+> Last updated: 2026-11-03
 > Status: sidecar, backend and frontend are in the codebase. `docker/docker-compose.yml` runs the `caisse-epargne-auth` sidecar; `application.yml` gives the backend its URL. The user connects from the Sync page (Caisse d'Epargne tab) or the add-account modal: a pop-up shows the bank's virtual keypad, the user clicks his own digits, then approves in Sécur'Pass. There is no keypad table: the sidecar never maps a key image to a digit. Sync is on demand only. Tested offline only: no test covers a full login against the real bank, and the card-transaction `accountIds` is still unverified live (see the sidecar README).
 
 ## Context
@@ -75,6 +75,8 @@ On the current account the loan is debited from, two kinds of rows are categoriz
 `app.caisse-epargne-auth.url` (env `CAISSE_EPARGNE_AUTH_URL`, default `http://caisse-epargne-auth:8001`). The shared sidecar key and URL validation come from `SidecarWebClientFactory`.
 
 ## Authentication
+
+In the panel, a live session is a status card (last sync, *Disconnect* behind a dialog that says the bank session itself stays open, *Sync*, then the contracts left out by family code). The login card carries the three warnings above the customer id; the keypad keys sit on white tiles whatever the theme, since the bank draws its digits for a light page.
 
 Login is three backend calls that drive the sidecar's browser login (`POST /initiate`, `POST /keypad`, `POST /complete`). The bank's password page is a virtual keypad whose ten key images are shuffled at every connection. The sidecar does not read them: it sends the images to the UI, the user clicks his own digits in a pop-up (`CaisseEpargnePanel`), and only the clicked positions come back. The human then approves the sign-in in the Sécur'Pass app: nothing automates that step. The completion request stays open while they do; when the approval happens in the bank's app on the same iPhone, iOS drops Safari's pending request (nginx logs a 499) while the backend carries on and stores the session. The panel then keeps the Sécur'Pass card and polls the session status every 3 s for up to 180 s: as soon as it is live it queues the first sync, as a direct answer would have. The bank's session lives a few minutes only, so a sync started by hand much later finds it expired.
 

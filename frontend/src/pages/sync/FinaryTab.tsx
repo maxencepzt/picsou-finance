@@ -4,26 +4,24 @@ import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { getErrorStatus, getErrorDetail } from '@/lib/errors'
 import { Button } from '@/components/ui/button'
-import { AlertBanner } from '@/components/shared/AlertBanner'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent } from '@/components/ui/card'
-import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
-import { formatDate } from '@/lib/utils'
+import {
+  PanelDisconnect,
+  PanelError,
+  PanelField,
+  PanelForm,
+  PanelLoading,
+  PanelStatus,
+} from '@/components/sync/ProviderPanel'
+import { PANEL_ACTION, PANEL_CODE_INPUT, PANEL_INPUT } from '@/components/sync/panel-styles'
+import { formatTimeAgo } from '@/lib/utils'
 import {
   FinaryMappingStep,
   FinaryResultStep,
   FinaryStepIndicator,
   FinaryUploadZone,
 } from '@/components/sync/FinaryImportSteps'
-import {
-  ArrowRight,
-  X,
-  Loader2,
-  LogOut,
-  RefreshCw,
-} from 'lucide-react'
+import { ArrowRight, Eye, EyeOff, Loader2, Lock, Mail, RefreshCw, ShieldCheck } from 'lucide-react'
 import {
   useFinaryConnectionStatus,
   useFinaryLogin,
@@ -58,9 +56,6 @@ export function FinaryTab() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-
-  // Delete confirmation
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   // ----- Login -----
 
@@ -110,9 +105,7 @@ export function FinaryTab() {
   }
 
   function handleDelete() {
-    deleteMutation.mutate(undefined, {
-      onSuccess: () => setShowDeleteConfirm(false),
-    })
+    deleteMutation.mutate()
   }
 
   function getFinaryError(err: unknown): string {
@@ -125,155 +118,132 @@ export function FinaryTab() {
 
   // ----- Render -----
 
-  if (statusLoading) {
-    return <p className="text-sm text-muted-foreground">{t('common.loading')}</p>
-  }
+  if (statusLoading) return <PanelLoading />
+
+  const lastSync = connectionStatus?.lastSyncedAt
 
   return (
-    <div className="space-y-6">
-      {/* Connection status card */}
-      {isConnected && connectionStatus && (
-        <Card size="sm">
-          <CardContent className="flex items-center justify-between py-4">
-            <div className="flex items-center gap-3">
-              {isTotpRequired ? (
-                <Badge className="bg-warning/10 text-warning">
-                  {t('sync.finary.totpRequired')}
-                </Badge>
-              ) : (
-                <Badge className="bg-gain/10 text-gain">
-                  {t('sync.finary.connected')}
-                </Badge>
-              )}
-              <span className="text-sm text-muted-foreground">{connectionStatus.maskedEmail}</span>
-              {connectionStatus.lastSyncedAt && (
-                <span className="text-xs text-muted-foreground">
-                  {t('common.labelColon', { label: t('sync.finary.lastSync') })} {formatDate(connectionStatus.lastSyncedAt)}
-                </span>
-              )}
-              {!connectionStatus.lastSyncedAt && (
-                <span className="text-xs text-muted-foreground">{t('sync.finary.neverSynced')}</span>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Error banner */}
-      {error && (
-        <AlertBanner
-          variant="roomy"
-          icon={<X className="size-4 shrink-0" />}
-          action={
-            <Button variant="ghost" size="icon-xs" onClick={() => wizard.setError(null)}>
-              <X className="size-3" />
-            </Button>
+    <div className="space-y-4">
+      {isConnected && connectionStatus && step === 1 && (
+        <PanelStatus
+          tone={loading ? 'busy' : isTotpRequired ? 'warning' : 'ok'}
+          // The 2FA form below names the missing code; the status keeps to the connection.
+          label={t('sync.finary.connected')}
+          meta={[
+            connectionStatus.maskedEmail,
+            lastSync ? t('sync.panel.lastSync', { time: formatTimeAgo(lastSync) }) : t('sync.finary.neverSynced'),
+          ]}
+          actions={
+            <>
+              <PanelDisconnect
+                label={t('sync.finary.deleteConnection')}
+                provider={t('sync.finary.title')}
+                description={t('sync.finary.deleteConnectionConfirm')}
+                confirmLabel={t('common.delete')}
+                pending={deleteMutation.isPending}
+                onConfirm={handleDelete}
+              />
+              <Button size="xs" className={PANEL_ACTION} onClick={handleAutoSync} disabled={loading}>
+                {loading ? <Loader2 className="animate-spin" /> : <RefreshCw />}
+                {loading ? t('sync.finary.syncing') : t('sync.finary.sync')}
+              </Button>
+            </>
           }
-        >
-          {error}
-        </AlertBanner>
+        />
       )}
 
-      {/* Step indicator (when in wizard) */}
+      {error && (
+        <PanelError onRetry={() => wizard.setError(null)} retryLabel={t('common.close')}>
+          {error}
+        </PanelError>
+      )}
+
       {(step === 2 || step === 3) && <FinaryStepIndicator step={step} variant="page" />}
 
-      {/* Step 1: Login form (not connected) OR Sync (connected) */}
+      {/* Step 1: login (not connected) or the 2FA code (connected), then the file import */}
       {step === 1 && (
-        <div className="mx-auto max-w-lg space-y-4">
-          {!isConnected ? (
-            /* Login form */
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="finary-email">{t('sync.finary.email')}</Label>
+        <>
+          {!isConnected && (
+            <PanelForm
+              onSubmit={handleLogin}
+              actions={
+                <Button type="submit" size="xs" disabled={loading || !email || !password} className={PANEL_ACTION}>
+                  {loading && <Loader2 className="animate-spin" />}
+                  {t('sync.finary.login')}
+                </Button>
+              }
+            >
+              <PanelField id="finary-email" label={t('sync.finary.email')} icon={Mail}>
                 <Input
                   id="finary-email"
+                  className={PANEL_INPUT}
                   type="email"
+                  autoComplete="username"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder={t('sync.finary.emailPlaceholder')}
                   required
-                  autoFocus
                 />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="finary-password">{t('sync.finary.password')}</Label>
+              </PanelField>
+              <PanelField id="finary-password" label={t('sync.finary.password')} icon={Lock}>
                 <div className="relative">
                   <Input
                     id="finary-password"
                     type={showPassword ? 'text' : 'password'}
+                    autoComplete="current-password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="pr-10"
+                    className={`${PANEL_INPUT} pr-10`}
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((p) => !p)}
-                    className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
-                    {showPassword ? <X className="size-4" /> : <span className="text-xs">•••</span>}
-                  </button>
-                </div>
-              </div>
-              <Button type="submit" disabled={loading || !email || !password} className="w-full">
-                {loading && <Loader2 className="size-4 animate-spin" />}
-                {t('sync.finary.login')}
-              </Button>
-            </form>
-          ) : (
-            /* Connected: Sync + TOTP */
-            <div className="space-y-4">
-              <div className="flex gap-3">
-                <Button onClick={handleAutoSync} disabled={loading} className="flex-1">
-                  {loading ? (
-                    <>
-                      <Loader2 className="size-4 animate-spin" />
-                      {t('sync.finary.syncing')}
-                    </>
-                  ) : (
-                    <>
-                      <RefreshCw className="size-4" />
-                      {t('sync.finary.sync')}
-                    </>
-                  )}
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={() => setShowDeleteConfirm(true)}
-                  disabled={deleteMutation.isPending}
-                >
-                  <LogOut className="size-4" />
-                  {t('sync.finary.deleteConnection')}
-                </Button>
-              </div>
-
-              {(totpRequired || isTotpRequired) && (
-                <div className="flex gap-2">
-                  <div className="flex-1">
-                    <Label htmlFor="finary-totp">{t('sync.finary.totp')}</Label>
-                    <Input
-                      id="finary-totp"
-                      value={totpCode}
-                      onChange={(e) => wizard.setTotpCode(e.target.value)}
-                      placeholder="000000"
-                      maxLength={6}
-                      className="mt-1"
-                    />
-                  </div>
                   <Button
-                    className="mt-6"
-                    onClick={wizard.syncWithTotp}
-                    disabled={totpCode.length !== 6 || loading}
+                    type="button"
+                    variant="ghost"
+                    size="icon-xs"
+                    onClick={() => setShowPassword((p) => !p)}
+                    aria-label={t(showPassword ? 'auth.hidePassword' : 'auth.showPassword')}
+                    aria-pressed={showPassword}
+                    className="absolute top-1/2 right-1 size-7 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   >
-                    <ArrowRight />
+                    {showPassword ? <EyeOff /> : <Eye />}
                   </Button>
                 </div>
-              )}
-            </div>
+              </PanelField>
+            </PanelForm>
+          )}
+
+          {isConnected && (totpRequired || isTotpRequired) && (
+            <PanelForm
+              onSubmit={(e) => {
+                e.preventDefault()
+                wizard.syncWithTotp()
+              }}
+              step={{ icon: ShieldCheck, title: t('sync.finary.totpRequired') }}
+              actions={
+                <Button type="submit" size="xs" className={PANEL_ACTION} disabled={totpCode.length !== 6 || loading}>
+                  {t('common.confirm')}
+                  <ArrowRight />
+                </Button>
+              }
+            >
+              <PanelField id="finary-totp" label={t('sync.finary.totp')}>
+                <Input
+                  id="finary-totp"
+                  className={PANEL_CODE_INPUT}
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  value={totpCode}
+                  onChange={(e) => wizard.setTotpCode(e.target.value)}
+                  placeholder="000000"
+                  maxLength={6}
+                  autoFocus
+                />
+              </PanelField>
+            </PanelForm>
           )}
 
           <FinaryUploadZone variant="page" onFile={wizard.uploadFile} disabled={loading} />
-        </div>
+        </>
       )}
 
       {/* Step 2: Account Mapping */}
@@ -297,15 +267,6 @@ export function FinaryTab() {
         <FinaryResultStep variant="page" result={importResult} onDone={wizard.reset} />
       )}
 
-      {/* Delete confirmation */}
-      <ConfirmDialog
-        open={showDeleteConfirm}
-        onOpenChange={setShowDeleteConfirm}
-        title={t('sync.finary.deleteConnection')}
-        description={t('sync.finary.deleteConnectionConfirm')}
-        onConfirm={handleDelete}
-        loading={deleteMutation.isPending}
-      />
     </div>
   )
 }

@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useBankCountries } from '@/features/sync/hooks'
+import { NativeSelect } from '@/components/shared/NativeSelect'
 import { formatCountryName } from '@/lib/utils'
 
 interface BankCountrySelectProps {
@@ -52,16 +53,16 @@ export function BankCountrySelect({ value, onChange }: BankCountrySelectProps) {
 
   return (
     <div className="flex shrink-0 flex-col gap-1">
-      <select
+      <NativeSelect
         value={value}
         onChange={(e) => onChange(e.target.value)}
         aria-label={t('sync.banks.country')}
-        className="h-10 rounded-md border border-input bg-background text-foreground px-4 text-sm outline-none [color-scheme:light] dark:[color-scheme:dark]"
+        className="w-auto text-foreground [color-scheme:light] dark:[color-scheme:dark]"
       >
         {options.map((o) => (
           <option key={o.code} value={o.code}>{o.label}</option>
         ))}
-      </select>
+      </NativeSelect>
       {showLoadError && (
         <span className="text-xs text-destructive">{t('sync.banks.countriesLoadError')}</span>
       )}

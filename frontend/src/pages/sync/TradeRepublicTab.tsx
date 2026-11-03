@@ -3,16 +3,12 @@ import { useTranslation } from 'react-i18next'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api-client'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent } from '@/components/ui/card'
-import {
-  RefreshCw,
-  Upload,
-  LogOut,
-} from 'lucide-react'
+import { Loader2, RefreshCw, Upload } from 'lucide-react'
 import type { TrSessionStatus } from '@/types/api'
 import { formatDateTime } from '@/lib/utils'
 import { TradeRepublicLogin } from '@/components/sync/TradeRepublicLogin'
+import { PanelDisconnect, PanelLoading, PanelStatus } from '@/components/sync/ProviderPanel'
+import { PANEL_ACTION } from '@/components/sync/panel-styles'
 
 export function TradeRepublicTab() {
   const { t } = useTranslation()
@@ -62,65 +58,48 @@ export function TradeRepublicTab() {
     if (file) importCsvMutation.mutate(file)
   }
 
-  if (statusLoading) {
-    return <p className="text-sm text-muted-foreground">{t('common.loading')}</p>
-  }
+  if (statusLoading) return <PanelLoading />
+
+  if (!isConnected) return <TradeRepublicLogin variant="page" />
 
   return (
-    <div className="space-y-6">
-      {/* Session status card */}
-      <Card size="sm">
-        <CardContent className="py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              {isConnected ? (
-                <Badge className="bg-gain/10 text-gain">
-                  {t('sync.tr.sessionActive')}
-                </Badge>
-              ) : (
-                <Badge variant="outline">
-                  {t('sync.tr.noSession')}
-                </Badge>
-              )}
-              {isConnected && sessionStatus?.expiresAt && (
-                <span className="text-sm text-muted-foreground">
-                  {t('sync.tr.expiresAt')} {formatDateTime(sessionStatus.expiresAt)}
-                </span>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Connected controls */}
-      {isConnected && (
-        <div className="flex flex-wrap gap-3">
-          <Button onClick={() => syncMutation.mutate()} disabled={syncMutation.isPending}>
-            <RefreshCw />
-            {t('sync.tr.sync')}
-          </Button>
-
-          <Button variant="outline" onClick={() => fileInputRef.current?.click()} disabled={importCsvMutation.isPending}>
-            <Upload />
-            {t('sync.tr.importCsv')}
-          </Button>
-
-          <Button variant="destructive" onClick={() => logoutMutation.mutate()} disabled={logoutMutation.isPending}>
-            <LogOut />
-            {t('sync.tr.clearSession')}
-          </Button>
-
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".csv"
-            className="hidden"
-            onChange={handleCsvChange}
-          />
-        </div>
-      )}
-
-      {!isConnected && <TradeRepublicLogin variant="page" />}
+    <div className="space-y-4">
+      <PanelStatus
+        tone="ok"
+        label={t('sync.tr.sessionActive')}
+        meta={[sessionStatus?.expiresAt && `${t('sync.tr.expiresAt')} ${formatDateTime(sessionStatus.expiresAt)}`]}
+        actions={
+          <>
+            <PanelDisconnect
+              label={t('sync.tr.clearSession')}
+              provider={t('sync.tr.title')}
+              pending={logoutMutation.isPending}
+              onConfirm={() => logoutMutation.mutate()}
+            />
+            <Button
+              variant="outline"
+              size="xs"
+              className={PANEL_ACTION}
+              onClick={() => fileInputRef.current?.click()}
+              disabled={importCsvMutation.isPending}
+            >
+              {importCsvMutation.isPending ? <Loader2 className="animate-spin" /> : <Upload />}
+              {t('sync.tr.importCsv')}
+            </Button>
+            <Button size="xs" className={PANEL_ACTION} onClick={() => syncMutation.mutate()} disabled={syncMutation.isPending}>
+              <RefreshCw className={syncMutation.isPending ? 'animate-spin' : undefined} />
+              {t('sync.tr.sync')}
+            </Button>
+          </>
+        }
+      />
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".csv"
+        className="hidden"
+        onChange={handleCsvChange}
+      />
     </div>
   )
 }

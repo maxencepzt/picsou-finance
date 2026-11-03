@@ -1293,7 +1293,7 @@
   },
   "addAccount": {
     "title": "Add account",
-    "manual": "Manual",
+    "manual": "Manual account",
     "or": "or",
     "bankConnected": "Complete the connection in the new tab",
     "exchangeConnected": "Exchange connected!",
@@ -1303,10 +1303,10 @@
     "syncing": "Syncing your accounts",
     "syncingDesc": "We're pulling in your latest transactions. This usually takes a few seconds.",
     "desc": {
-      "banks": "Connect your banks via OAuth",
+      "banks": "Find your bank: current accounts through PSD2",
       "exchanges": "Binance, Meria...",
       "wallets": "Bitcoin, Ethereum, BNB, Solana...",
-      "tr": "Trade Republic",
+      "tr": "Stocks, ETFs and cash account",
       "revolut": "Phone + passcode, on-demand sync",
       "bourso": "Current accounts, savings, PEA and securities accounts held at BoursoBank",
       "bourseDirect": "Sync your PEA and securities accounts",
@@ -1319,8 +1319,16 @@
       "amex": "American Express credit card: balance and transactions",
       "property": "House, apartment, land…",
       "fortuneo": "Sync your Fortuneo accounts",
-      "caisseEpargne": "Current account, Livret A, LDDS, PER, loans and cards at Caisse d'Epargne"
-    }
+      "caisseEpargne": "Current account, Livret A, LDDS, PER, loans and cards at Caisse d'Epargne",
+      "cmes": "PEE, PEG, PERCOL at Crédit Mutuel or CIC",
+      "cic": "CIC current and savings accounts (Livret A, LDDS, PEL…)",
+      "corum": "CORUM SCPI shares, at withdrawal price",
+      "sofidy": "Sofidy SCPI shares, at withdrawal price",
+      "actual": "Accounts, categories and transactions of an Actual budget",
+      "homebank": "HomeBank backup or QIF export"
+    },
+    "subtitle": "Enter an account yourself, or connect an institution to sync it.",
+    "connectHeading": "or connect an institution"
   },
   "sync": {
     "title": "Synchronization",
@@ -1335,7 +1343,7 @@
       "TOTP_REQUIRED": "2FA code required"
     },
     "banks": {
-      "title": "Banks",
+      "title": "European banks",
       "search": "Search a bank",
       "country": "Country",
       "countriesLoadError": "Couldn't load all countries — showing France only.",
@@ -1381,7 +1389,8 @@
         "pinRequired": "PIN is required.",
         "validationFailed": "Invalid data.",
         "unknownError": "An unexpected error occurred."
-      }
+      },
+      "tanPrompt": "Enter the {{length}}-digit code Trade Republic sent you, by text or in the app."
     },
     "revolut": {
       "title": "Revolut",
@@ -1393,7 +1402,6 @@
       "approveOnPhone": "Approve the connection in your Revolut app…",
       "connected": "Connected",
       "forget": "Forget credentials",
-      "lastSync": "Last sync",
       "approvalTimeout": "Approval not received. Try again.",
       "notConnected": "Not connected",
       "syncSuccess": "Your accounts are up to date.",
@@ -1431,7 +1439,6 @@
       "disconnectConfirm": "Remove the stored Interactive Brokers connection?",
       "connected": "Connected",
       "statusError": "Last sync failed",
-      "lastSync": "Last sync",
       "neverSynced": "Never synced",
       "syncedToast": "Interactive Brokers synced: {{count}} account(s)",
       "errors": {
@@ -1453,7 +1460,6 @@
       "disconnectConfirm": "Remove the stored SimpleFIN connection? Imported accounts stay, and they stop updating.",
       "connected": "Connected",
       "statusError": "Last sync failed",
-      "lastSync": "Last sync",
       "neverSynced": "Never synced",
       "syncedToast": "SimpleFIN synced: {{count}} account(s)",
       "errors": {
@@ -1477,8 +1483,7 @@
       "sync": "Synchronize",
       "remove": "Remove",
       "removeConfirm": "Remove this exchange?",
-      "noExchanges": "No exchanges connected",
-      "lastSync": "Last sync"
+      "noExchanges": "No exchanges connected"
     },
     "wallets": {
       "title": "Wallets",
@@ -1494,11 +1499,10 @@
       "remove": "Remove",
       "removeConfirm": "Remove this wallet?",
       "noWallets": "No wallets tracked",
-      "lastSync": "Last sync",
       "evmHint": "One address, all EVM chains — Ethereum, BNB Chain, Polygon, Arbitrum, Optimism, Base and Avalanche."
     },
     "visibility": {
-      "title": "Accounts",
+      "title": "Visible accounts",
       "description": "Choose which accounts appear in app. A hidden account keeps syncing normally — it's just removed from display.",
       "manualGroup": "Manual"
     },
@@ -1594,7 +1598,6 @@
       "loginSuccess": "Connected successfully",
       "connected": "Connected",
       "notConnected": "Not connected",
-      "lastSync": "Last sync",
       "neverSynced": "Never",
       "sync": "Sync now",
       "syncing": "Syncing...",
@@ -1663,17 +1666,26 @@
     },
     "all": {
       "title": "Sync accounts",
-      "syncAll": "Sync all",
       "syncing": "Syncing...",
       "noConnections": "No active sync connections",
-      "lastSync": "Last sync",
       "openFinary": "Open Finary page to sync",
-      "openRevolut": "Open the Revolut page to connect",
       "sessionExpired": "Session expired",
       "reconnect": "Reconnect on the provider's tab",
       "trManualInfo": "Trade Republic is the only bank that requires manual re-authentication. You will need to re-enter your phone number and PIN each time you sync.",
       "trSlowWarning": "Connection may take a few moments, this is normal.",
-      "revolutManualInfo": "Revolut requires approval on your phone. Click the icon to enter your credentials."
+      "revolutManualInfo": "Revolut requires approval on your phone. Click the icon to enter your credentials.",
+      "neverSynced": "Never synced",
+      "lastSyncAgo": "Synced {{time}}",
+      "synced": "Synced",
+      "connectionCount_one": "{{count}} connection",
+      "connectionCount_other": "{{count}} connections",
+      "emptyHint": "No connection yet. Add your bank, your broker or a crypto wallet.",
+      "groupReconnect": "To reconnect",
+      "groupConnected": "Connected",
+      "reconnectAction": "Reconnect",
+      "syncOne": "Sync {{name}}",
+      "syncingProgress": "Syncing… {{done}}/{{total}}",
+      "syncAllCount": "Sync all ({{count}})"
     },
     "bourso": {
       "title": "BoursoBank",
@@ -1768,7 +1780,6 @@
       "noSession": "No active session",
       "sessionActive": "Active session",
       "reauthRequired": "Reconnection needed",
-      "lastSyncedAt": "Last synced on",
       "totpPrompt": "Enter the 6-digit code from your authenticator app",
       "errors": {
         "tooManyAttempts": "Too many attempts. Please wait.",
@@ -2050,6 +2061,47 @@
         "invalidData": "Fortuneo returned inconsistent portfolio data. Your existing data was kept unchanged.",
         "serverError": "Could not reach Fortuneo. Please try again."
       }
+    },
+    "catalog": {
+      "title": "Add a connection",
+      "description": "Banks, brokers, crypto, employee savings, SCPI or a file import.",
+      "search": "Search for an institution",
+      "searchPlaceholder": "Search for an institution…",
+      "categoriesLabel": "Category",
+      "noMatch": "No institution matches this search.",
+      "categories": {
+        "all": "All",
+        "banks": "Banks",
+        "brokers": "Brokers",
+        "crypto": "Crypto",
+        "savings": "Employee savings",
+        "scpi": "SCPI",
+        "files": "Imports"
+      },
+      "kind": {
+        "banks": "Bank",
+        "brokers": "Broker",
+        "crypto": "Crypto",
+        "savings": "Employee savings",
+        "scpi": "SCPI",
+        "files": "Import"
+      }
+    },
+    "overview": {
+      "title": "Your connections",
+      "empty": "No connection yet: choose an institution below.",
+      "syncNow": "Sync"
+    },
+    "view": {
+      "notConnected": "Not connected",
+      "toReconnect_one": "{{count}} to reconnect",
+      "toReconnect_other": "{{count}} to reconnect"
+    },
+    "panel": {
+      "lastSync": "Last synced {{time}}",
+      "disconnectTitle": "Disconnect {{name}}?",
+      "disconnectDescription": "Picsou deletes the stored session. Accounts already imported stay; sign in again to sync them.",
+      "or": "or"
     }
   },
   "settings": {

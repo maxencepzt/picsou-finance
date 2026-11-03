@@ -1,6 +1,6 @@
 # Feature: Interactive Brokers (IBKR) sync
 
-> Last updated: 2026-09-03
+> Last updated: 2026-11-03
 
 ## Context
 
@@ -38,7 +38,7 @@ trusted for EUR valuation.
   shifted to `V59` when merged into `1.1.0`, which already had `V57`/`V58` published)
 - Reuses: `OpenFigiIsinConverter` (ISIN→ticker), `HoldingDedup` (VWAP), `CryptoEncryption`,
   `AccountService.liveBalanceEur` (net-worth valuation), `SchedulerService` (daily auto-sync)
-- `frontend/src/components/sync/IbkrPanel.tsx` — **source of truth** for the IBKR connection UI (token + query id form → connect, status card, sync/disconnect, ConfirmDialog); `sync.ibkr.*` i18n keys in all four locales. Accepts optional `onConnected?: () => void` called on successful connect.
+- `frontend/src/components/sync/IbkrPanel.tsx` — **source of truth** for the IBKR connection UI (setup hint + token / query id form → connect; status card with masked token and last sync, *Disconnect* behind a confirmation, *Sync*); `sync.ibkr.*` i18n keys in all four locales. Accepts optional `onConnected?: () => void` called on successful connect.
 - `frontend/src/pages/sync/IbkrTab.tsx` — one-line re-export: `export { IbkrPanel as IbkrTab }`. `SyncPage` imports unchanged; `onConnected` is left `undefined` on the Sync tab (no-op).
 - `frontend/src/components/shared/AddAccountModal.tsx` — imports `IbkrPanel`, exposes it as an entry in `SOURCES` between DEGIRO and Amundi; `IbkrPanel onConnected={handleDone}` closes the modal on successful connect.
 

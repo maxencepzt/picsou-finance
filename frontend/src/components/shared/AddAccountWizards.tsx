@@ -47,7 +47,8 @@ import {
 export function BackButton({ onClick }: { onClick: () => void }) {
   const { t } = useTranslation()
   return (
-    <Button variant="ghost" size="sm" className="mb-2" onClick={onClick}>
+    // justify-self-start: the dialog body is a grid, which would stretch it across the width.
+    <Button variant="ghost" size="xs" className="-ml-3 justify-self-start px-3 text-muted-foreground" onClick={onClick}>
       <ArrowLeft className="size-4" />
       {t('common.back')}
     </Button>

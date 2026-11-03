@@ -149,6 +149,7 @@
 | Kubernetes deployment (Helm chart) | 2026-11-01 | [helm-chart.md](./features/helm-chart.md) |
 | Navigation (sidebar, top bar, mobile bar) | 2026-11-03 | [sidebar-navigation.md](./features/sidebar-navigation.md) |
 | Search palette (⌘K / Ctrl K) | 2026-11-03 | [search-palette.md](./features/search-palette.md) |
+| Sync page (connections, provider catalog, provider views, sync-all modal) | 2026-11-03 | [sync-page.md](./features/sync-page.md) |
 | Overview dashboard (Synthèse) | 2026-11-03 | [overview-dashboard.md](./features/overview-dashboard.md) |
 | Investments page (Investissements) | 2026-11-03 | [investments-page.md](./features/investments-page.md) |
 | Passive income page (Revenus passifs) | 2026-11-03 | [passive-income-page.md](./features/passive-income-page.md) |

@@ -162,6 +162,30 @@ The hooks are `useProviderStatus(id)`, `useProviderInitiate(id)`, `useProviderCo
 `useProviderSession(id)`; each is typed from the table entry, so `useProviderStatus('cic').data` is
 `CicSessionStatus`.
 
+### Provider panel anatomy
+
+Every provider body (`components/sync/*Panel.tsx`, `pages/sync/*Tab.tsx`) is built from the blocks of
+`components/sync/ProviderPanel.tsx`, so the Sync page's provider view, the add-account modal and the
+setup wizard show one family. Top to bottom:
+
+- **Status** — `PanelStatus`: a dot (a spinner while syncing) and a word, the facts under it
+  (`sync.panel.lastSync`, relative time; masked token or e-mail), and the actions on the right,
+  secondary first and primary last (`Disconnect`, then `Sync now`); stacked full width on a phone.
+  Shown once connected, or for a state to act on (DEGIRO's reconnect); "not connected" is the
+  provider view header's job. Row states in lists use `ConnectionState` (dot + word, never a
+  filled badge) with `connectionTone()` from `panel-styles.ts`.
+- **Intro** — `PanelIntro`: one or two muted lines on what the provider syncs (the `scope` key).
+- **Error** — `PanelError`: destructive banner, `role="alert"`, with its way out (retry, close).
+- **Form / step** — `PanelForm` (a card; `bare` inside a dialog): `PanelField` (visible label,
+  optional small icon, helper text under the control), inputs `PANEL_INPUT` (36px, 40px on touch),
+  one-time codes `PANEL_CODE_INPUT`, then `PanelActions` (primary right, full width on a phone,
+  secondary ghost). A second-factor step passes `step={{ icon, title }}`; a step with nothing to type
+  (app push, Sécur'Pass) is `PanelWaiting`.
+- **Disconnect** — `PanelDisconnect`: destructive button behind a `ConfirmDialog`.
+- **File imports** — `FileDropZone` (Finary, Actual Budget, HomeBank), previews in `PanelSection`
+  cards (title, count, rows split by hairlines), mapping choices in a `SegmentedControl`
+  (`PANEL_SEGMENTED_WRAP` lets long labels wrap on a phone), outcomes in `PanelStat` tiles.
+
 ## API client
 
 Single Axios instance in `frontend/src/lib/api-client.ts`:
@@ -243,7 +267,7 @@ Text inputs, text buttons, tabs, dropdown menus, segmented controls, and pill fi
 
 Avoid local `h-6`, `h-7`, `h-8`, `h-9`, `text-xs`, or narrow `px-2` overrides for text controls, and never re-pill a control with a `rounded-full` className that overrides the shadcn `Button`/`Tabs` primitive. OTP slots should follow the same readable `h-10` control rhythm unless a dense, space-constrained surface has a documented reason to shrink them. Reserve smaller sizing for pure icon buttons, badges, dense table data, chart labels, and non-interactive metadata.
 
-On phones (below `sm`), nothing may be wider than the card that holds it; `e2e/mobile-layout.spec.ts` checks the main pages at 360px. A segmented control stretches to the full width with equal items (`flex-1 basis-0 px-4`), with its label above it, until its card is wide enough for the desktop row. Key that switch to the card's width with a container query (`@container` + `@xl:flex-none @xl:px-8`, as on the Settings page), not to the viewport: from 768px the sidebar takes a third of the screen. A card header with toggles or buttons uses `flex-wrap` so they drop under the title. A tab or filter strip that does not fit stays on one row inside `ScrollStrip` (`components/shared/ScrollStrip.tsx`), which fades the edge that hides more items and scrolls the active one (`aria-selected`, `aria-current` or `aria-pressed`) into view. Pass it the live selection as `activeKey` (control the `Tabs` value; a `defaultValue` never changes), and do not strip its built-in `-m-1 p-1`: that is the room the 4px focus ring needs inside the overflow. The strip re-reveals the active item when it changes width, but not after a swipe when only its content grows. Titles wrap (`line-clamp-2`) rather than `truncate` when the name is what the user came to read.
+On phones (below `sm`), nothing may be wider than the card that holds it; `e2e/mobile-layout.spec.ts` checks the main pages at 360px. A setting row drops its control under its label on a phone (`pages/settings/SettingRow.tsx`), and the compact `SegmentedControl` keeps its natural width. Key such a switch to the card's width with a container query (`@container` + `@xl:` variants), not to the viewport: from 768px the sidebar takes a third of the screen. A card header with toggles or buttons uses `flex-wrap` so they drop under the title. A tab or filter strip that does not fit stays on one row inside `ScrollStrip` (`components/shared/ScrollStrip.tsx`), which fades the edge that hides more items and scrolls the active one (`aria-selected`, `aria-current` or `aria-pressed`) into view. Pass it the live selection as `activeKey` (control the `Tabs` value; a `defaultValue` never changes), and do not strip its built-in `-m-1 p-1`: that is the room the 4px focus ring needs inside the overflow. The strip re-reveals the active item when it changes width, but not after a swipe when only its content grows. Titles wrap (`line-clamp-2`) rather than `truncate` when the name is what the user came to read.
 
 `Label` and `CardDescription` are app-wide readable primitives (`text-sm`). Do not shrink form labels or section descriptions locally unless the element is truly dense metadata rather than an input label.
 

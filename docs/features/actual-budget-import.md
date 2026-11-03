@@ -1,6 +1,6 @@
 # Feature: Actual Budget import
 
-> Last updated: 2026-10-31
+> Last updated: 2026-11-03
 
 ## Context
 
@@ -135,7 +135,10 @@ A budget is single-currency. When the file records no currency, the wizard asks 
 - `backend/src/main/java/com/picsou/controller/ActualBudgetImportController.java` — endpoints,
   member scope, `syncBuckets` throttle.
 - `frontend/src/features/actual/{api,hooks,types}.ts` and
-  `frontend/src/pages/sync/ActualBudgetTab.tsx` — the wizard on the sync page.
+  `frontend/src/pages/sync/ActualBudgetTab.tsx` — the wizard on the sync page: the shared drop zone
+  (`FileDropZone`), a summary bar with *Restart* / *Import*, then the accounts, categories and sample
+  transactions as `PanelSection` cards of rows (account action in a `SegmentedControl`), and the
+  outcome as `PanelStat` tiles. Same anatomy as the HomeBank and Finary imports.
 
 ### Flow
 

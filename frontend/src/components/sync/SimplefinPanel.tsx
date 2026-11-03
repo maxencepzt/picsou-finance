@@ -3,11 +3,9 @@ import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent } from '@/components/ui/card'
-import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
-import { RefreshCw, LogOut, KeyRound, AlertTriangle, Loader2 } from 'lucide-react'
+import { RefreshCw, KeyRound, Loader2 } from 'lucide-react'
+import { PanelDisconnect, PanelError, PanelField, PanelForm, PanelIntro, PanelLoading, PanelStatus } from '@/components/sync/ProviderPanel'
+import { PANEL_ACTION, PANEL_INPUT } from '@/components/sync/panel-styles'
 import {
   useSimplefinStatus,
   useConnectSimplefin,
@@ -15,7 +13,7 @@ import {
   useDisconnectSimplefin,
 } from '@/features/sync/hooks'
 import { extractErrorMessage } from '@/lib/errors'
-import { formatDateTime } from '@/lib/utils'
+import { formatTimeAgo } from '@/lib/utils'
 
 const CREATE_TOKEN_URL = 'https://bridge.simplefin.org/simplefin/create'
 
@@ -28,7 +26,6 @@ export function SimplefinPanel({ onConnected }: SimplefinPanelProps = {}) {
 
   const [token, setToken] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const [showDisconnectConfirm, setShowDisconnectConfirm] = useState(false)
 
   const { data: status, isLoading: statusLoading } = useSimplefinStatus()
 
@@ -60,142 +57,97 @@ export function SimplefinPanel({ onConnected }: SimplefinPanelProps = {}) {
     }
   }
 
-  if (statusLoading) {
-    return <p className="text-sm text-muted-foreground">{t('common.loading')}</p>
-  }
+  if (statusLoading) return <PanelLoading />
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {isConnected && status && (
-        <Card size="sm">
-          <CardContent className="flex items-center justify-between py-4">
-            <div className="flex flex-wrap items-center gap-3">
-              {isError ? (
-                <Badge className="bg-destructive/10 text-destructive">{t('sync.simplefin.statusError')}</Badge>
-              ) : (
-                <Badge className="bg-gain/10 text-gain">
-                  {t('sync.simplefin.connected')}
-                </Badge>
-              )}
-              {status.maskedToken && (
-                <span className="text-sm text-muted-foreground">{status.maskedToken}</span>
-              )}
-              {status.lastSyncedAt ? (
-                <span className="text-xs text-muted-foreground">
-                  {t('common.labelColon', { label: t('sync.simplefin.lastSync') })} {formatDateTime(status.lastSyncedAt)}
-                </span>
-              ) : (
-                <span className="text-xs text-muted-foreground">{t('sync.simplefin.neverSynced')}</span>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        <PanelStatus
+          tone={isError ? 'error' : syncMutation.isPending ? 'busy' : 'ok'}
+          label={isError ? t('sync.simplefin.statusError') : t('sync.simplefin.connected')}
+          meta={[
+            status.maskedToken,
+            status.lastSyncedAt
+              ? t('sync.panel.lastSync', { time: formatTimeAgo(status.lastSyncedAt) })
+              : t('sync.simplefin.neverSynced'),
+          ]}
+          actions={
+            <>
+              <PanelDisconnect
+                label={t('sync.simplefin.disconnect')}
+                provider={t('sync.simplefin.title')}
+                description={t('sync.simplefin.disconnectConfirm')}
+                confirmLabel={t('common.delete')}
+                pending={disconnectMutation.isPending}
+                onConfirm={() => disconnectMutation.mutate(undefined, {
+                  onSuccess: () => setError(null),
+                  onError: (err: unknown) => setError(extractErrorMessage(err, t('sync.simplefin.errors.disconnectFailed'))),
+                })}
+              />
+              <Button
+                size="xs"
+                className={PANEL_ACTION}
+                onClick={() => syncMutation.mutate(undefined, {
+                  onSuccess: (accounts) => {
+                    setError(null)
+                    toast.success(t('sync.simplefin.syncedToast', { count: accounts.length }))
+                  },
+                  onError: (err: unknown) => setError(extractErrorMessage(err, t('sync.simplefin.errors.syncFailed'))),
+                })}
+                disabled={syncMutation.isPending}
+              >
+                {syncMutation.isPending ? <Loader2 className="animate-spin" /> : <RefreshCw />}
+                {syncMutation.isPending ? t('sync.simplefin.syncing') : t('sync.simplefin.sync')}
+              </Button>
+            </>
+          }
+        />
       )}
 
-      {error && (
-        <Card size="sm" className="border-destructive/30">
-          <CardContent className="flex items-center gap-3 py-4">
-            <AlertTriangle className="size-5 shrink-0 text-destructive" />
-            <p className="flex-1 text-sm text-destructive">{error}</p>
-          </CardContent>
-        </Card>
-      )}
+      {error && <PanelError>{error}</PanelError>}
 
-      {isConnected ? (
-        <div className="flex flex-wrap gap-3">
-          <Button
-            onClick={() => syncMutation.mutate(undefined, {
-              onSuccess: (accounts) => {
-                setError(null)
-                toast.success(t('sync.simplefin.syncedToast', { count: accounts.length }))
-              },
-              onError: (err: unknown) => setError(extractErrorMessage(err, t('sync.simplefin.errors.syncFailed'))),
-            })}
-            disabled={syncMutation.isPending}
-          >
-            {syncMutation.isPending ? (
-              <>
-                <Loader2 className="size-4 animate-spin" />
-                {t('sync.simplefin.syncing')}
-              </>
-            ) : (
-              <>
-                <RefreshCw className="size-4" />
-                {t('sync.simplefin.sync')}
-              </>
-            )}
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={() => setShowDisconnectConfirm(true)}
-            disabled={disconnectMutation.isPending}
-          >
-            <LogOut className="size-4" />
-            {t('sync.simplefin.disconnect')}
-          </Button>
-        </div>
-      ) : (
-        <form onSubmit={handleConnect} className="mx-auto max-w-lg space-y-4">
-          <p className="text-sm text-muted-foreground">
+      {!isConnected && (
+        <>
+          <PanelIntro>
             {t('sync.simplefin.setupHint')}{' '}
             <a
               href={CREATE_TOKEN_URL}
               target="_blank"
               rel="noreferrer"
-              className="underline"
+              className="font-medium text-primary underline-offset-4 hover:underline"
             >
               {t('sync.simplefin.createToken')}
             </a>
-          </p>
-          <Card size="sm">
-            <CardContent className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="simplefin-token">
-                  <KeyRound className="mr-1 inline-block size-4" />
-                  {t('sync.simplefin.token')}
-                </Label>
-                <Input
-                  id="simplefin-token"
-                  type="password"
-                  value={token}
-                  onChange={(e) => setToken(e.target.value)}
-                  placeholder={t('sync.simplefin.tokenPlaceholder')}
-                  autoComplete="off"
-                  required
-                />
-              </div>
+          </PanelIntro>
+          <PanelForm
+            onSubmit={handleConnect}
+            actions={
               <Button
                 type="submit"
+                size="xs"
                 disabled={connectMutation.isPending || syncMutation.isPending || !token.trim()}
-                className="w-full"
+                className={PANEL_ACTION}
               >
-                {(connectMutation.isPending || syncMutation.isPending) && (
-                  <Loader2 className="size-4 animate-spin" />
-                )}
+                {(connectMutation.isPending || syncMutation.isPending) && <Loader2 className="animate-spin" />}
                 {t('sync.simplefin.connect')}
               </Button>
-            </CardContent>
-          </Card>
-        </form>
+            }
+          >
+            <PanelField id="simplefin-token" label={t('sync.simplefin.token')} icon={KeyRound}>
+              <Input
+                id="simplefin-token"
+                className={PANEL_INPUT}
+                type="password"
+                value={token}
+                onChange={(e) => setToken(e.target.value)}
+                placeholder={t('sync.simplefin.tokenPlaceholder')}
+                autoComplete="off"
+                required
+              />
+            </PanelField>
+          </PanelForm>
+        </>
       )}
-
-      <ConfirmDialog
-        open={showDisconnectConfirm}
-        onOpenChange={setShowDisconnectConfirm}
-        title={t('sync.simplefin.disconnect')}
-        description={t('sync.simplefin.disconnectConfirm')}
-        onConfirm={() => disconnectMutation.mutate(undefined, {
-          onSuccess: () => {
-            setShowDisconnectConfirm(false)
-            setError(null)
-          },
-          onError: (err: unknown) => {
-            setShowDisconnectConfirm(false)
-            setError(extractErrorMessage(err, t('sync.simplefin.errors.disconnectFailed')))
-          },
-        })}
-        loading={disconnectMutation.isPending}
-      />
     </div>
   )
 }

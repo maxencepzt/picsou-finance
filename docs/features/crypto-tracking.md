@@ -114,6 +114,7 @@ The on-chain adapters (EVM, Solana) validate the JSON-RPC envelope through `Json
 - `backend/src/main/java/com/picsou/adapter/MeriaAdapter.java` -- Meria REST API, single `API-KEY` header, wallets + stakings + lendings
 - `backend/src/main/java/com/picsou/model/CryptoExchangePosition.java` -- per-product breakdown behind an exchange account's holdings
 - `frontend/src/components/shared/PositionsByProduct.tsx` -- Spot / Staking / Lending sections on the account page
+- `frontend/src/pages/sync/CryptoExchangeTab.tsx`, `CryptoWalletTab.tsx` -- one card of rows (logo or monogram, state dot + word, last sync, labelled sync / remove icon buttons) with *Add* in its header; `CryptoExchangeForm` / `CryptoWalletForm` pick the exchange or chain in a `SegmentedControl`
 - `backend/src/main/java/com/picsou/adapter/BitcoinWalletAdapter.java` -- Blockstream Esplora, BIP32 key derivation
 - `backend/src/main/java/com/picsou/adapter/EvmWalletAdapter.java` -- EVM multichain fan-out (native + curated ERC-20 across all enabled networks), keyless PublicNode RPCs
 - `backend/src/main/java/com/picsou/adapter/SolanaWalletAdapter.java` -- Solana mainnet RPC

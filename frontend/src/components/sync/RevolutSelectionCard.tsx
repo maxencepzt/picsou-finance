@@ -5,6 +5,9 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Button } from '@/components/ui/button'
 import { CurrencyDisplay } from '@/components/shared/CurrencyDisplay'
+import { PanelActions } from '@/components/sync/ProviderPanel'
+import { PANEL_ACTION } from '@/components/sync/panel-styles'
+import { cn } from '@/lib/utils'
 import type { DiscoveredRevolutAccount } from '@/types/api'
 
 interface RevolutSelectionCardProps {
@@ -83,25 +86,25 @@ export function RevolutSelectionCard({ discovered, onConfirm, confirming = false
 
   return (
     <Card size="sm">
-      <CardContent className="space-y-4 py-4">
+      <CardContent className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-sm font-medium">{t('sync.revolut.selection.title')}</p>
+          <p className="text-sm font-bold text-foreground">{t('sync.revolut.selection.title')}</p>
           <label className="flex cursor-pointer items-center gap-2 text-sm text-muted-foreground">
             <Checkbox checked={allSelected} onCheckedChange={(v) => toggleAll(v === true)} />
             {t('sync.revolut.selection.selectAll')}
           </label>
         </div>
 
-        <div className="space-y-3">
+        <div className="divide-y divide-border/60">
           {tree.map((node) => (
-            <div key={node.account.externalId} className="space-y-2">
+            <div key={node.account.externalId} className="py-1">
               <AccountRow
                 account={node.account}
                 checked={checked[node.account.externalId] ?? false}
                 onCheckedChange={(v) => toggleParent(node, v)}
               />
               {node.children.length > 0 && (
-                <div className="ml-6 space-y-2 border-l pl-3">
+                <div className="ml-5 border-l border-border/60 pl-2">
                   {node.children.map((child) => (
                     <AccountRow
                       key={child.externalId}
@@ -116,10 +119,12 @@ export function RevolutSelectionCard({ discovered, onConfirm, confirming = false
           ))}
         </div>
 
-        <Button className="w-full sm:w-auto" onClick={handleConfirm} disabled={confirming}>
-          {confirming && <Loader2 className="size-4 animate-spin" />}
-          {confirming ? t('sync.revolut.selection.importing') : t('sync.revolut.selection.confirm')}
-        </Button>
+        <PanelActions>
+          <Button size="xs" className={PANEL_ACTION} onClick={handleConfirm} disabled={confirming}>
+            {confirming && <Loader2 className="animate-spin" />}
+            {confirming ? t('sync.revolut.selection.importing') : t('sync.revolut.selection.confirm')}
+          </Button>
+        </PanelActions>
       </CardContent>
     </Card>
   )
@@ -139,9 +144,10 @@ function AccountRow({
   const { t } = useTranslation()
   return (
     <label
-      className={`flex items-start justify-between gap-3 rounded-lg p-2 ${
-        disabled ? 'opacity-50' : 'cursor-pointer hover:bg-muted/50'
-      }`}
+      className={cn(
+        'flex items-start justify-between gap-3 rounded-lg px-2 py-2',
+        disabled ? 'opacity-50' : 'cursor-pointer hover:bg-muted/50',
+      )}
     >
       <div className="flex min-w-0 items-start gap-3">
         <Checkbox
@@ -158,7 +164,7 @@ function AccountRow({
           </p>
         </div>
       </div>
-      <span className="shrink-0 text-sm font-semibold tabular-nums">
+      <span className="shrink-0 text-sm font-semibold text-foreground tabular-nums">
         <CurrencyDisplay value={account.balance} currency={account.currency} />
       </span>
     </label>

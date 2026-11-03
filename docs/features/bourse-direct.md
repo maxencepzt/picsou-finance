@@ -134,7 +134,10 @@ older job.
 with Amundi: it supplies the `bourseDirect` provider id, the `sync.bourseDirect.*`
 i18n prefix and the icon; the session hooks come from the `bourseDirect` entry
 of `sidecarProviders`. Bourse Direct does not set `appPush`, so its second
-factor is always the six-digit code form.
+factor is always the six-digit code form. The panel follows the
+[provider panel anatomy](../conventions/frontend.md#provider-panel-anatomy): status card once
+connected (*Disconnect* behind a confirmation, *Sync now*), the `scope` line, then the login card
+or the second-factor step.
 
 The reconciliation tolerance the collector uses upstream is also the one the
 backend applies (`SyncValues.moneyClose`), shared with Amundi so the same

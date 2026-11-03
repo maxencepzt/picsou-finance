@@ -1293,7 +1293,7 @@
   },
   "addAccount": {
     "title": "Ajouter un compte",
-    "manual": "Manuel",
+    "manual": "Compte manuel",
     "or": "ou",
     "bankConnected": "Complétez la connexion dans le nouvel onglet",
     "exchangeConnected": "Plateforme connectée !",
@@ -1303,10 +1303,10 @@
     "syncing": "Synchronisation en cours...",
     "syncingDesc": "Récupération de vos dernières transactions. Cela prend généralement quelques secondes.",
     "desc": {
-      "banks": "Connecter vos banques via OAuth",
+      "banks": "Recherchez votre banque : comptes courants via la DSP2",
       "exchanges": "Binance, Meria...",
       "wallets": "Bitcoin, Ethereum, BNB, Solana...",
-      "tr": "Trade Republic",
+      "tr": "Actions, ETF et compte espèces",
       "revolut": "Téléphone + code, synchro à la demande",
       "bourso": "Comptes courants, livrets, PEA et comptes-titres chez BoursoBank",
       "bourseDirect": "Synchroniser vos PEA et CTO",
@@ -1319,8 +1319,16 @@
       "amex": "Carte de crédit American Express : solde et transactions",
       "property": "Maison, appartement, terrain…",
       "fortuneo": "Synchroniser vos comptes Fortuneo",
-      "caisseEpargne": "Compte courant, Livret A, LDDS, PER, prêts et cartes à la Caisse d'Epargne"
-    }
+      "caisseEpargne": "Compte courant, Livret A, LDDS, PER, prêts et cartes à la Caisse d'Epargne",
+      "cmes": "PEE, PEG, PERCOL au Crédit Mutuel ou au CIC",
+      "cic": "Comptes courants et livrets CIC (Livret A, LDDS, PEL…)",
+      "corum": "Parts de SCPI CORUM, au prix de retrait",
+      "sofidy": "Parts de SCPI Sofidy, au prix de retrait",
+      "actual": "Comptes, catégories et transactions d'un budget Actual",
+      "homebank": "Sauvegarde HomeBank ou export QIF"
+    },
+    "subtitle": "Saisissez un compte vous-même, ou connectez un établissement pour le synchroniser.",
+    "connectHeading": "ou connectez un établissement"
   },
   "sync": {
     "title": "Synchronisation",
@@ -1335,7 +1343,7 @@
       "TOTP_REQUIRED": "Code 2FA requis"
     },
     "banks": {
-      "title": "Banques",
+      "title": "Banques européennes",
       "search": "Rechercher une banque",
       "country": "Pays",
       "countriesLoadError": "Impossible de charger tous les pays — France uniquement.",
@@ -1381,7 +1389,8 @@
         "pinRequired": "Code PIN requis.",
         "validationFailed": "Données invalides.",
         "unknownError": "Une erreur inattendue s'est produite."
-      }
+      },
+      "tanPrompt": "Saisissez le code à {{length}} chiffres envoyé par Trade Republic, par SMS ou dans l’application."
     },
     "revolut": {
       "title": "Revolut",
@@ -1393,7 +1402,6 @@
       "approveOnPhone": "Approuvez la connexion sur votre app Revolut…",
       "connected": "Connecté",
       "forget": "Oublier les identifiants",
-      "lastSync": "Dernière synchro",
       "approvalTimeout": "Approbation non reçue. Réessayez.",
       "notConnected": "Non connecté",
       "syncSuccess": "Vos comptes sont à jour.",
@@ -1431,7 +1439,6 @@
       "disconnectConfirm": "Supprimer la connexion Interactive Brokers enregistrée ?",
       "connected": "Connecté",
       "statusError": "Échec de la dernière synchro",
-      "lastSync": "Dernière sync",
       "neverSynced": "Jamais synchronisé",
       "syncedToast": "Interactive Brokers synchronisé : {{count}} compte(s)",
       "errors": {
@@ -1453,7 +1460,6 @@
       "disconnectConfirm": "Supprimer la connexion SimpleFIN enregistrée ? Les comptes importés restent, et ne se mettent plus à jour.",
       "connected": "Connecté",
       "statusError": "Échec de la dernière synchro",
-      "lastSync": "Dernière sync",
       "neverSynced": "Jamais synchronisé",
       "syncedToast": "SimpleFIN synchronisé : {{count}} compte(s)",
       "errors": {
@@ -1477,8 +1483,7 @@
       "sync": "Synchroniser",
       "remove": "Supprimer",
       "removeConfirm": "Supprimer cette plateforme ?",
-      "noExchanges": "Aucune plateforme connectée",
-      "lastSync": "Dernière sync"
+      "noExchanges": "Aucune plateforme connectée"
     },
     "wallets": {
       "title": "Portefeuilles crypto",
@@ -1494,11 +1499,10 @@
       "remove": "Supprimer",
       "removeConfirm": "Supprimer ce portefeuille ?",
       "noWallets": "Aucun portefeuille suivi",
-      "lastSync": "Dernière sync",
       "evmHint": "Une seule adresse, toutes les chaînes EVM — Ethereum, BNB Chain, Polygon, Arbitrum, Optimism, Base et Avalanche."
     },
     "visibility": {
-      "title": "Comptes",
+      "title": "Comptes visibles",
       "description": "Choisissez quels comptes apparaissent dans l'application. Un compte masqué continue d'être synchronisé normalement — il est juste retiré de l'affichage.",
       "manualGroup": "Manuel"
     },
@@ -1594,7 +1598,6 @@
       "loginSuccess": "Connecté avec succès",
       "connected": "Connecté",
       "notConnected": "Non connecté",
-      "lastSync": "Dernière synchro",
       "neverSynced": "Jamais",
       "sync": "Synchroniser",
       "syncing": "Synchronisation...",
@@ -1663,17 +1666,26 @@
     },
     "all": {
       "title": "Synchroniser les comptes",
-      "syncAll": "Tout synchroniser",
       "syncing": "Synchronisation...",
       "noConnections": "Aucune connexion de synchronisation active",
-      "lastSync": "Dernière sync",
       "openFinary": "Ouvrir la page Finary pour synchroniser",
-      "openRevolut": "Ouvrir la page Revolut pour se connecter",
       "sessionExpired": "Session expirée",
       "reconnect": "Se reconnecter depuis l'onglet du fournisseur",
       "trManualInfo": "Trade Republic est la seule banque qui nécessite une reconnexion manuelle. Vous devrez ressaisir votre numéro et PIN à chaque synchronisation.",
       "trSlowWarning": "La connexion peut prendre quelques instants, c'est normal.",
-      "revolutManualInfo": "Revolut nécessite une approbation sur votre téléphone. Cliquez sur l'icône pour saisir vos identifiants."
+      "revolutManualInfo": "Revolut nécessite une approbation sur votre téléphone. Cliquez sur l'icône pour saisir vos identifiants.",
+      "neverSynced": "Jamais synchronisé",
+      "lastSyncAgo": "Synchro {{time}}",
+      "synced": "Synchronisé",
+      "connectionCount_one": "{{count}} connexion",
+      "connectionCount_other": "{{count}} connexions",
+      "emptyHint": "Aucune connexion pour l'instant. Ajoutez votre banque, votre courtier ou un portefeuille crypto.",
+      "groupReconnect": "À reconnecter",
+      "groupConnected": "Connectées",
+      "reconnectAction": "Reconnecter",
+      "syncOne": "Synchroniser {{name}}",
+      "syncingProgress": "Synchronisation… {{done}}/{{total}}",
+      "syncAllCount": "Tout synchroniser ({{count}})"
     },
     "bourso": {
       "title": "BoursoBank",
@@ -1768,7 +1780,6 @@
       "noSession": "Aucune session active",
       "sessionActive": "Session active",
       "reauthRequired": "Reconnexion nécessaire",
-      "lastSyncedAt": "Dernière synchro le",
       "totpPrompt": "Saisissez le code à 6 chiffres de votre application d'authentification",
       "errors": {
         "tooManyAttempts": "Trop de tentatives. Veuillez patienter.",
@@ -2050,6 +2061,47 @@
         "invalidData": "Fortuneo a renvoyé des données incohérentes. Vos données existantes ont été conservées.",
         "serverError": "Impossible de joindre Fortuneo. Veuillez réessayer."
       }
+    },
+    "catalog": {
+      "title": "Ajouter une connexion",
+      "description": "Banques, courtiers, crypto, épargne salariale, SCPI ou import d'un fichier.",
+      "search": "Rechercher un établissement",
+      "searchPlaceholder": "Rechercher un établissement…",
+      "categoriesLabel": "Catégorie",
+      "noMatch": "Aucun établissement ne correspond à cette recherche.",
+      "categories": {
+        "all": "Tout",
+        "banks": "Banques",
+        "brokers": "Bourse",
+        "crypto": "Crypto",
+        "savings": "Épargne salariale",
+        "scpi": "SCPI",
+        "files": "Imports"
+      },
+      "kind": {
+        "banks": "Banque",
+        "brokers": "Bourse",
+        "crypto": "Crypto",
+        "savings": "Épargne salariale",
+        "scpi": "SCPI",
+        "files": "Import"
+      }
+    },
+    "overview": {
+      "title": "Vos connexions",
+      "empty": "Aucune connexion pour l'instant : choisissez un établissement ci-dessous.",
+      "syncNow": "Synchroniser"
+    },
+    "view": {
+      "notConnected": "Non connecté",
+      "toReconnect_one": "{{count}} à reconnecter",
+      "toReconnect_other": "{{count}} à reconnecter"
+    },
+    "panel": {
+      "lastSync": "Dernière synchro {{time}}",
+      "disconnectTitle": "Déconnecter {{name}} ?",
+      "disconnectDescription": "Picsou supprime la session enregistrée. Les comptes déjà importés restent ; reconnectez-vous pour les synchroniser à nouveau.",
+      "or": "ou"
     }
   },
   "settings": {

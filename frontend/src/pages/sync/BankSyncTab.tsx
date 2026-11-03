@@ -2,20 +2,17 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent } from '@/components/ui/card'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
-import { EmptyState } from '@/components/shared/EmptyState'
 import { InstitutionSearch } from '@/components/sync/InstitutionSearch'
 import {
-  RefreshCw,
-  Trash2,
-  Landmark,
-  Loader2,
-  CheckCircle,
-  AlertTriangle,
-  ExternalLink,
-} from 'lucide-react'
+  ConnectionState,
+  PanelError,
+  PanelLoading,
+  PanelSection,
+  PanelWaiting } from '@/components/sync/ProviderPanel'
+import { ProviderMark } from '@/components/shared/ProviderMark'
+import { connectionTone } from '@/components/sync/panel-styles'
+import { CheckCircle2, ExternalLink, Landmark, Loader2, RefreshCw, Trash2 } from 'lucide-react'
 import { extractErrorMessage, formatApiError } from '@/lib/errors'
 import {
   useBankSyncStatus,
@@ -23,29 +20,9 @@ import {
   useDeleteBankConnection,
   useInitiateBankSync,
   useReconnectBankSync,
-  useRetryBankSync,
-} from '@/features/sync/hooks'
+  useRetryBankSync } from '@/features/sync/hooks'
 
 type CallbackStatus = 'completing' | 'done' | 'error'
-
-function statusVariant(status: string): 'default' | 'secondary' | 'destructive' | 'outline' {
-  switch (status) {
-    case 'LINKED': return 'default'
-    case 'CREATED': return 'secondary'
-    case 'EXPIRED': return 'outline'
-    case 'FAILED': return 'destructive'
-    default: return 'outline'
-  }
-}
-
-// FAILED keeps a custom tint: the destructive variant measures about 3:1 in dark mode.
-function statusClasses(status: string): string {
-  switch (status) {
-    case 'EXPIRED': return 'bg-muted text-muted-foreground'
-    case 'FAILED': return 'bg-loss/10 text-loss'
-    default: return ''
-  }
-}
 
 function cleanBankCallbackUrl() {
   if (window.location.pathname.endsWith('/sync/callback')) {
@@ -76,8 +53,7 @@ export function BankSyncTab() {
       onError: (err: unknown) => {
         setCallbackStatus('error')
         setCallbackError(extractErrorMessage(err))
-      },
-    })
+      } })
   }, [completeSync])
 
   useEffect(() => {
@@ -101,8 +77,7 @@ export function BankSyncTab() {
       },
       onError: (err: unknown) => {
         setInitiateError(extractErrorMessage(err, t('sync.banks.initiateError')))
-      },
-    })
+      } })
   }
 
   async function handleRetry(id: number) {
@@ -112,8 +87,7 @@ export function BankSyncTab() {
         onSuccess: () => setRetryError(null),
         onError: (err: unknown) => {
           setRetryError(formatApiError(err, t, 'sync.banks.callbackError'))
-        },
-      })
+        } })
     } catch {
       // The mutation's onError handler renders the translated failure banner.
     } finally {
@@ -137,8 +111,7 @@ export function BankSyncTab() {
       },
       onError: (err: unknown) => {
         setRetryError(formatApiError(err, t, 'sync.banks.initiateError'))
-      },
-    })
+      } })
   }
 
   const deleteMutation = useDeleteBankConnection()
@@ -152,57 +125,32 @@ export function BankSyncTab() {
   const connectionToBeDeleted = connections?.find(c => c.id === deleteId)
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* OAuth callback status */}
-      {callbackStatus && (
-        <Card className={
-          callbackStatus === 'done' ? 'border-gain/30 bg-gain/10' :
-          callbackStatus === 'error' ? 'border-destructive/30 bg-destructive/5' :
-          'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950'
-        }>
-          <CardContent className="flex items-center gap-3 py-3">
-            {callbackStatus === 'completing' && (
-              <Loader2 className="size-4 animate-spin text-blue-600 dark:text-blue-400" />
-            )}
-            {callbackStatus === 'done' && (
-              <CheckCircle className="size-4 text-gain" />
-            )}
-            {callbackStatus === 'error' && (
-              <AlertTriangle className="size-4 text-destructive" />
-            )}
-            <span className="text-sm font-medium">
-              {callbackStatus === 'completing' && t('sync.banks.callbackCompleting')}
-              {callbackStatus === 'done' && t('sync.banks.callbackDone')}
-              {callbackStatus === 'error' && `${t('sync.banks.callbackError')}${callbackError ? `: ${callbackError}` : ''}`}
-            </span>
-          </CardContent>
-        </Card>
+      {callbackStatus === 'completing' && (
+        <PanelWaiting icon={Landmark} title={t('sync.banks.callbackCompleting')} />
+      )}
+      {callbackStatus === 'done' && (
+        <p role="status" className="flex items-center gap-2 rounded-xl bg-gain/10 px-4 py-3 text-sm font-medium text-gain">
+          <CheckCircle2 className="size-4 shrink-0" aria-hidden />
+          {t('sync.banks.callbackDone')}
+        </p>
+      )}
+      {callbackStatus === 'error' && (
+        <PanelError>
+          {`${t('sync.banks.callbackError')}${callbackError ? `: ${callbackError}` : ''}`}
+        </PanelError>
       )}
 
-      {/* Initiate error */}
       {initiateError && (
-        <Card className="border-destructive/30 bg-destructive/5">
-          <CardContent className="flex items-center gap-3 py-3">
-            <AlertTriangle className="size-4 shrink-0 text-destructive" />
-            <span className="flex-1 text-sm font-medium text-destructive">{initiateError}</span>
-            <Button variant="ghost" size="sm" onClick={() => setInitiateError(null)}>
-              {t('common.close')}
-            </Button>
-          </CardContent>
-        </Card>
+        <PanelError onRetry={() => setInitiateError(null)} retryLabel={t('common.close')}>
+          {initiateError}
+        </PanelError>
       )}
-
-      {/* Retry error */}
       {retryError && (
-        <Card className="border-destructive/30 bg-destructive/5">
-          <CardContent className="flex items-center gap-3 py-3">
-            <AlertTriangle className="size-4 shrink-0 text-destructive" />
-            <span className="flex-1 text-sm font-medium text-destructive">{retryError}</span>
-            <Button variant="ghost" size="sm" onClick={() => setRetryError(null)}>
-              {t('common.close')}
-            </Button>
-          </CardContent>
-        </Card>
+        <PanelError onRetry={() => setRetryError(null)} retryLabel={t('common.close')}>
+          {retryError}
+        </PanelError>
       )}
 
       <InstitutionSearch
@@ -212,80 +160,72 @@ export function BankSyncTab() {
       />
 
       {/* Active connections */}
-      <div className="space-y-3">
-        <h3 className="text-sm font-medium">{t('sync.banks.connected')}</h3>
+      {connectionsLoading ? (
+        <PanelLoading />
+      ) : !connections || connections.length === 0 ? (
+        <p className="px-1 text-sm text-muted-foreground">{t('sync.banks.noConnections')}</p>
+      ) : (
+        <PanelSection title={t('sync.banks.connected')} aside={connections.length}>
+          <p className="pb-2 text-xs text-pretty text-muted-foreground">{t('sync.banks.psd2ScopeNote')}</p>
+          {connections.map(conn => {
+            const isRetrying = retryingIds.has(conn.id)
+            const isReconnecting =
+              reconnectMutation.isPending && reconnectMutation.variables === conn.id
 
-        {connectionsLoading && <p className="text-sm text-muted-foreground">{t('common.loading')}</p>}
-
-        {!connectionsLoading && (!connections || connections.length === 0) && (
-          <EmptyState
-            title={t('sync.banks.noConnections')}
-            icon={<Landmark className="size-12" />}
-          />
-        )}
-
-        {!connectionsLoading && connections && connections.length > 0 && (
-          <div className="space-y-3">
-            <p className="text-xs text-muted-foreground">
-              {t('sync.banks.psd2ScopeNote')}
-            </p>
-            {connections.map(conn => {
-              const isRetrying = retryingIds.has(conn.id)
-              const isReconnecting =
-                reconnectMutation.isPending && reconnectMutation.variables === conn.id
-
-              return <Card key={conn.id} size="sm">
-                <CardContent className="flex items-center justify-between py-2">
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm font-medium">{conn.institutionName}</span>
-                    <Badge
-                      variant={statusVariant(conn.status)}
-                      className={statusClasses(conn.status)}
-                    >
-                      {t(`sync.connectionStatus.${conn.status}`, { defaultValue: conn.status })}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {conn.status === 'FAILED' && (
-                      <>
-                        <Button
-                          size="icon-sm"
-                          variant="ghost"
-                          title={t('sync.banks.retry')}
-                          onClick={() => void handleRetry(conn.id)}
-                          disabled={isRetrying || isReconnecting}
-                        >
-                          {isRetrying
-                            ? <Loader2 className="size-4 animate-spin" />
-                            : <RefreshCw className="size-4" />}
-                        </Button>
-                        <Button
-                          size="icon-sm"
-                          variant="ghost"
-                          title={t('sync.banks.reconnect')}
-                          onClick={() => handleReconnect(conn.id)}
-                          disabled={isRetrying || isReconnecting}
-                        >
-                          {isReconnecting
-                            ? <Loader2 className="size-4 animate-spin" />
-                            : <ExternalLink className="size-4" />}
-                        </Button>
-                      </>
-                    )}
-                    <Button
-                      size="icon-sm"
-                      variant="ghost"
-                      onClick={() => setDeleteId(conn.id)}
-                    >
-                      <Trash2 className="size-4 text-destructive" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            })}
-          </div>
-        )}
-      </div>
+            return (
+              <div key={conn.id} data-testid="bank-connection" className="flex items-center gap-3 py-2.5">
+                <ProviderMark size="sm" name={conn.institutionName} />
+                <div className="min-w-0 flex-1 space-y-0.5">
+                  <p className="truncate text-sm font-semibold text-foreground">{conn.institutionName}</p>
+                  <ConnectionState tone={connectionTone(conn.status)}>
+                    {t(`sync.connectionStatus.${conn.status}`, { defaultValue: conn.status })}
+                  </ConnectionState>
+                </div>
+                <div className="flex shrink-0 items-center gap-1">
+                  {conn.status === 'FAILED' && (
+                    <>
+                      <Button
+                        size="icon-sm"
+                        variant="ghost"
+                        title={t('sync.banks.retry')}
+                        aria-label={t('sync.banks.retry')}
+                        onClick={() => void handleRetry(conn.id)}
+                        disabled={isRetrying || isReconnecting}
+                      >
+                        {isRetrying
+                          ? <Loader2 className="size-4 animate-spin" />
+                          : <RefreshCw className="size-4" />}
+                      </Button>
+                      <Button
+                        size="icon-sm"
+                        variant="ghost"
+                        title={t('sync.banks.reconnect')}
+                        aria-label={t('sync.banks.reconnect')}
+                        onClick={() => handleReconnect(conn.id)}
+                        disabled={isRetrying || isReconnecting}
+                      >
+                        {isReconnecting
+                          ? <Loader2 className="size-4 animate-spin" />
+                          : <ExternalLink className="size-4" />}
+                      </Button>
+                    </>
+                  )}
+                  <Button
+                    size="icon-sm"
+                    variant="ghost"
+                    className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                    title={t('sync.banks.delete')}
+                    aria-label={t('sync.banks.delete')}
+                    onClick={() => setDeleteId(conn.id)}
+                  >
+                    <Trash2 className="size-4" />
+                  </Button>
+                </div>
+              </div>
+            )
+          })}
+        </PanelSection>
+      )}
 
       {/* Delete confirmation */}
       <ConfirmDialog

@@ -3,14 +3,12 @@ import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent } from '@/components/ui/card'
-import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
-import { RefreshCw, LogOut, KeyRound, Hash, AlertTriangle, Loader2 } from 'lucide-react'
+import { RefreshCw, KeyRound, Hash, Loader2 } from 'lucide-react'
+import { PanelDisconnect, PanelError, PanelField, PanelForm, PanelIntro, PanelLoading, PanelStatus } from '@/components/sync/ProviderPanel'
+import { PANEL_ACTION, PANEL_INPUT } from '@/components/sync/panel-styles'
 import { useIbkrStatus, useConnectIbkr, useSyncIbkr, useDisconnectIbkr } from '@/features/sync/hooks'
 import { extractErrorMessage } from '@/lib/errors'
-import { formatDateTime } from '@/lib/utils'
+import { formatTimeAgo } from '@/lib/utils'
 
 interface IbkrPanelProps {
   onConnected?: () => void
@@ -22,7 +20,6 @@ export function IbkrPanel({ onConnected }: IbkrPanelProps = {}) {
   const [token, setToken] = useState('')
   const [queryId, setQueryId] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const [showDisconnectConfirm, setShowDisconnectConfirm] = useState(false)
 
   const { data: status, isLoading: statusLoading } = useIbkrStatus()
 
@@ -50,147 +47,97 @@ export function IbkrPanel({ onConnected }: IbkrPanelProps = {}) {
     )
   }
 
-  if (statusLoading) {
-    return <p className="text-sm text-muted-foreground">{t('common.loading')}</p>
-  }
+  if (statusLoading) return <PanelLoading />
 
   return (
-    <div className="space-y-6">
-      {/* Connection status card */}
+    <div className="space-y-4">
       {isConnected && status && (
-        <Card size="sm">
-          <CardContent className="flex items-center justify-between py-4">
-            <div className="flex flex-wrap items-center gap-3">
-              {isError ? (
-                <Badge className="bg-destructive/10 text-destructive">{t('sync.ibkr.statusError')}</Badge>
-              ) : (
-                <Badge className="bg-gain/10 text-gain">
-                  {t('sync.ibkr.connected')}
-                </Badge>
-              )}
-              {status.maskedToken && (
-                <span className="text-sm text-muted-foreground">{status.maskedToken}</span>
-              )}
-              {status.lastSyncedAt ? (
-                <span className="text-xs text-muted-foreground">
-                  {t('common.labelColon', { label: t('sync.ibkr.lastSync') })} {formatDateTime(status.lastSyncedAt)}
-                </span>
-              ) : (
-                <span className="text-xs text-muted-foreground">{t('sync.ibkr.neverSynced')}</span>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        <PanelStatus
+          tone={isError ? 'error' : syncMutation.isPending ? 'busy' : 'ok'}
+          label={isError ? t('sync.ibkr.statusError') : t('sync.ibkr.connected')}
+          meta={[
+            status.maskedToken,
+            status.lastSyncedAt
+              ? t('sync.panel.lastSync', { time: formatTimeAgo(status.lastSyncedAt) })
+              : t('sync.ibkr.neverSynced'),
+          ]}
+          actions={
+            <>
+              <PanelDisconnect
+                label={t('sync.ibkr.disconnect')}
+                provider={t('sync.ibkr.title')}
+                description={t('sync.ibkr.disconnectConfirm')}
+                confirmLabel={t('common.delete')}
+                pending={disconnectMutation.isPending}
+                onConfirm={() => disconnectMutation.mutate(undefined, {
+                  onSuccess: () => setError(null),
+                  onError: (err: unknown) => setError(extractErrorMessage(err, t('sync.ibkr.errors.disconnectFailed'))),
+                })}
+              />
+              <Button
+                size="xs"
+                className={PANEL_ACTION}
+                onClick={() => syncMutation.mutate(undefined, {
+                  onSuccess: (accounts) => {
+                    setError(null)
+                    toast.success(t('sync.ibkr.syncedToast', { count: accounts.length }))
+                  },
+                  onError: (err: unknown) => setError(extractErrorMessage(err, t('sync.ibkr.errors.syncFailed'))),
+                })}
+                disabled={syncMutation.isPending}
+              >
+                {syncMutation.isPending ? <Loader2 className="animate-spin" /> : <RefreshCw />}
+                {syncMutation.isPending ? t('sync.ibkr.syncing') : t('sync.ibkr.sync')}
+              </Button>
+            </>
+          }
+        />
       )}
 
-      {/* Error banner */}
-      {error && (
-        <Card size="sm" className="border-destructive/30">
-          <CardContent className="flex items-center gap-3 py-4">
-            <AlertTriangle className="size-5 shrink-0 text-destructive" />
-            <p className="flex-1 text-sm text-destructive">{error}</p>
-          </CardContent>
-        </Card>
-      )}
+      {error && <PanelError>{error}</PanelError>}
 
-      {isConnected ? (
-        /* Connected: sync + disconnect */
-        <div className="flex flex-wrap gap-3">
-          <Button
-            onClick={() => syncMutation.mutate(undefined, {
-              onSuccess: (accounts) => {
-                setError(null)
-                toast.success(t('sync.ibkr.syncedToast', { count: accounts.length }))
-              },
-              onError: (err: unknown) => setError(extractErrorMessage(err, t('sync.ibkr.errors.syncFailed'))),
-            })}
-            disabled={syncMutation.isPending}
-          >
-            {syncMutation.isPending ? (
-              <>
-                <Loader2 className="size-4 animate-spin" />
-                {t('sync.ibkr.syncing')}
-              </>
-            ) : (
-              <>
-                <RefreshCw className="size-4" />
-                {t('sync.ibkr.sync')}
-              </>
-            )}
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={() => setShowDisconnectConfirm(true)}
-            disabled={disconnectMutation.isPending}
-          >
-            <LogOut className="size-4" />
-            {t('sync.ibkr.disconnect')}
-          </Button>
-        </div>
-      ) : (
-        /* Not connected: token + query id form */
-        <form onSubmit={handleConnect} className="mx-auto max-w-lg space-y-4">
-          <p className="text-sm text-muted-foreground">{t('sync.ibkr.setupHint')}</p>
-          <Card size="sm">
-            <CardContent className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="ibkr-token">
-                  <KeyRound className="mr-1 inline-block size-4" />
-                  {t('sync.ibkr.token')}
-                </Label>
-                <Input
-                  id="ibkr-token"
-                  value={token}
-                  onChange={(e) => setToken(e.target.value)}
-                  placeholder={t('sync.ibkr.tokenPlaceholder')}
-                  autoComplete="off"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="ibkr-query">
-                  <Hash className="mr-1 inline-block size-4" />
-                  {t('sync.ibkr.queryId')}
-                </Label>
-                <Input
-                  id="ibkr-query"
-                  value={queryId}
-                  onChange={(e) => setQueryId(e.target.value)}
-                  placeholder={t('sync.ibkr.queryIdPlaceholder')}
-                  autoComplete="off"
-                  required
-                />
-              </div>
+      {!isConnected && (
+        <>
+          <PanelIntro>{t('sync.ibkr.setupHint')}</PanelIntro>
+          <PanelForm
+            onSubmit={handleConnect}
+            actions={
               <Button
                 type="submit"
+                size="xs"
                 disabled={connectMutation.isPending || !token.trim() || !queryId.trim()}
-                className="w-full"
+                className={PANEL_ACTION}
               >
-                {connectMutation.isPending && <Loader2 className="size-4 animate-spin" />}
+                {connectMutation.isPending && <Loader2 className="animate-spin" />}
                 {t('sync.ibkr.connect')}
               </Button>
-            </CardContent>
-          </Card>
-        </form>
+            }
+          >
+            <PanelField id="ibkr-token" label={t('sync.ibkr.token')} icon={KeyRound}>
+              <Input
+                id="ibkr-token"
+                className={PANEL_INPUT}
+                value={token}
+                onChange={(e) => setToken(e.target.value)}
+                placeholder={t('sync.ibkr.tokenPlaceholder')}
+                autoComplete="off"
+                required
+              />
+            </PanelField>
+            <PanelField id="ibkr-query" label={t('sync.ibkr.queryId')} icon={Hash}>
+              <Input
+                id="ibkr-query"
+                className={PANEL_INPUT}
+                value={queryId}
+                onChange={(e) => setQueryId(e.target.value)}
+                placeholder={t('sync.ibkr.queryIdPlaceholder')}
+                autoComplete="off"
+                required
+              />
+            </PanelField>
+          </PanelForm>
+        </>
       )}
-
-      <ConfirmDialog
-        open={showDisconnectConfirm}
-        onOpenChange={setShowDisconnectConfirm}
-        title={t('sync.ibkr.disconnect')}
-        description={t('sync.ibkr.disconnectConfirm')}
-        onConfirm={() => disconnectMutation.mutate(undefined, {
-          onSuccess: () => {
-            setShowDisconnectConfirm(false)
-            setError(null)
-          },
-          onError: (err: unknown) => {
-            setShowDisconnectConfirm(false)
-            setError(extractErrorMessage(err, t('sync.ibkr.errors.disconnectFailed')))
-          },
-        })}
-        loading={disconnectMutation.isPending}
-      />
     </div>
   )
 }

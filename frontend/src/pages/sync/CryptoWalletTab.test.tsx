@@ -119,7 +119,7 @@ describe('CryptoWalletTab error handling', () => {
     renderTab()
 
     await screen.findByText('Ledger')
-    fireEvent.click(screen.getAllByRole('button', { name: '' })[0])
+    fireEvent.click(screen.getAllByRole('button', { name: 'sync.wallets.sync' })[0])
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Could not sync your EVM wallet')
   })
@@ -130,16 +130,16 @@ describe('CryptoWalletTab error handling', () => {
     renderTab()
 
     await screen.findByText('Ledger')
-    const syncButtons = screen.getAllByRole('button', { name: '' })
+    const syncButtons = screen.getAllByRole('button', { name: 'sync.wallets.sync' })
     fireEvent.click(syncButtons[0]) // wallet 1 only
 
     await screen.findByRole('alert')
     expect(screen.getAllByRole('alert')).toHaveLength(1)
 
-    // The failing row is wallet 1's card, not wallet 2's.
+    // The failing row is wallet 1's, not wallet 2's.
     const alert = screen.getByRole('alert')
-    expect(alert.closest('[data-slot="card"]')).toHaveTextContent('Ledger')
-    expect(alert.closest('[data-slot="card"]')).not.toHaveTextContent('Cold')
+    expect(alert.closest('[data-testid="wallet-row"]')).toHaveTextContent('Ledger')
+    expect(alert.closest('[data-testid="wallet-row"]')).not.toHaveTextContent('Cold')
   })
 
   it('blocks every sync button while one is in flight', async () => {
@@ -151,7 +151,7 @@ describe('CryptoWalletTab error handling', () => {
     renderTab()
 
     await screen.findByText('Ledger')
-    const syncButtons = () => screen.getAllByRole('button', { name: '' }).filter((_, i) => i % 2 === 0)
+    const syncButtons = () => screen.getAllByRole('button', { name: 'sync.wallets.sync' })
 
     fireEvent.click(syncButtons()[0])
 
@@ -168,8 +168,7 @@ describe('CryptoWalletTab error handling', () => {
     renderTab()
 
     await screen.findByText('Ledger')
-    const buttons = screen.getAllByRole('button', { name: '' })
-    fireEvent.click(buttons[1]) // trash on wallet 1
+    fireEvent.click(screen.getAllByRole('button', { name: 'sync.wallets.remove' })[0]) // trash on wallet 1
 
     fireEvent.click(await screen.findByText('common.delete'))
 
@@ -185,7 +184,7 @@ describe('CryptoWalletTab error handling', () => {
     renderTab()
 
     await screen.findByText('Ledger')
-    fireEvent.click(screen.getAllByRole('button', { name: '' })[1])
+    fireEvent.click(screen.getAllByRole('button', { name: 'sync.wallets.remove' })[0])
     fireEvent.click(await screen.findByText('common.delete'))
     await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument())
 
@@ -194,7 +193,7 @@ describe('CryptoWalletTab error handling', () => {
       expect(screen.queryByText('sync.wallets.removeConfirm')).not.toBeInTheDocument(),
     )
 
-    fireEvent.click(screen.getAllByRole('button', { name: '' })[1])
+    fireEvent.click(screen.getAllByRole('button', { name: 'sync.wallets.remove' })[0])
     await screen.findByText('sync.wallets.removeConfirm')
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })

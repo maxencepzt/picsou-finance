@@ -54,6 +54,9 @@ vi.mock('@/features/sync/hooks', () => ({
   useCheckFinaryTotp: () => ({ mutate: vi.fn(), isPending: false }),
 }))
 
+const { navigate } = vi.hoisted(() => ({ navigate: vi.fn() }))
+vi.mock('react-router', () => ({ useNavigate: () => navigate }))
+
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string) => key,
@@ -106,6 +109,18 @@ vi.mock('@/components/sync/CorumPanel', () => ({
 vi.mock('@/components/sync/SofidyPanel', () => ({
   SofidyPanel: ({ onConnected }: { onConnected?: () => void }) => (
     <button onClick={onConnected}>sofidy-wizard</button>
+  ),
+}))
+
+vi.mock('@/components/sync/CmesPanel', () => ({
+  CmesPanel: ({ onConnected }: { onConnected?: () => void }) => (
+    <button onClick={onConnected}>cmes-wizard</button>
+  ),
+}))
+
+vi.mock('@/components/sync/CicPanel', () => ({
+  CicPanel: ({ onConnected }: { onConnected?: () => void }) => (
+    <button onClick={onConnected}>cic-wizard</button>
   ),
 }))
 
@@ -465,7 +480,7 @@ describe('AddAccountModal SimpleFIN wizard', () => {
   })
 })
 
-describe.each(['amex', 'corum', 'sofidy'])('AddAccountModal %s wizard', (key) => {
+describe.each(['amex', 'corum', 'sofidy', 'cmes', 'cic'])('AddAccountModal %s wizard', (key) => {
   it('lists the source, opens the connector and closes after authentication', () => {
     const onOpenChange = vi.fn()
     render(<AddAccountModal open onOpenChange={onOpenChange} />)
@@ -473,6 +488,49 @@ describe.each(['amex', 'corum', 'sofidy'])('AddAccountModal %s wizard', (key) =>
     fireEvent.click(screen.getByText(`sync.${key}.title`))
     fireEvent.click(screen.getByRole('button', { name: `${key}-wizard` }))
 
+    expect(onOpenChange).toHaveBeenCalledWith(false)
+  })
+})
+
+describe('AddAccountModal catalog', () => {
+  beforeEach(() => navigate.mockReset())
+
+  it('keeps manual creation first and opens the account form from it', () => {
+    const onOpenChange = vi.fn()
+    render(<AddAccountModal open onOpenChange={onOpenChange} />)
+
+    const buttons = screen.getAllByRole('button')
+    expect(buttons.findIndex((b) => b.textContent?.includes('addAccount.manual')))
+      .toBeLessThan(buttons.findIndex((b) => b.textContent?.includes('sync.banks.title')))
+    fireEvent.click(screen.getByText('addAccount.manual'))
+    expect(onOpenChange).toHaveBeenCalledWith(false)
+  })
+
+  it('narrows the providers to the search', () => {
+    render(<AddAccountModal open onOpenChange={vi.fn()} />)
+
+    fireEvent.change(screen.getByLabelText('sync.catalog.search'), { target: { value: 'fortuneo' } })
+
+    expect(screen.getByText('sync.fortuneo.title')).toBeInTheDocument()
+    expect(screen.queryByText('sync.bourso.title')).not.toBeInTheDocument()
+  })
+
+  it('narrows the providers to a category', () => {
+    render(<AddAccountModal open onOpenChange={vi.fn()} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'sync.catalog.categories.scpi' }))
+
+    expect(screen.getByText('sync.corum.title')).toBeInTheDocument()
+    expect(screen.queryByText('sync.amundi.title')).not.toBeInTheDocument()
+  })
+
+  it.each(['actual', 'homebank'])('opens the %s import on its Sync page view', (key) => {
+    const onOpenChange = vi.fn()
+    render(<AddAccountModal open onOpenChange={onOpenChange} />)
+
+    fireEvent.click(screen.getByText(`sync.${key}.title`))
+
+    expect(navigate).toHaveBeenCalledWith(`/sync?tab=${key}`)
     expect(onOpenChange).toHaveBeenCalledWith(false)
   })
 })

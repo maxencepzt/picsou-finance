@@ -1,18 +1,19 @@
 import { useEffect, useRef, useState } from "react"
-import {
-  AlertTriangle,
-  Landmark,
-  Lock,
-  LogOut,
-  RefreshCw,
-  Smartphone,
-} from "lucide-react"
+import { CheckCircle2, Landmark, Lock, RefreshCw, Smartphone } from "lucide-react"
 import { useTranslation } from "react-i18next"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import {
+  PanelDisconnect,
+  PanelError,
+  PanelField,
+  PanelForm,
+  PanelIntro,
+  PanelLoading,
+  PanelStatus,
+  PanelWaiting,
+} from "@/components/sync/ProviderPanel"
+import { PANEL_ACTION, PANEL_INPUT } from "@/components/sync/panel-styles"
 import {
   useProviderClear,
   useProviderComplete,
@@ -21,6 +22,7 @@ import {
   useProviderSync,
 } from "@/features/sync/hooks"
 import { extractErrorMessage, getErrorCode, getErrorStatus } from "@/lib/errors"
+import { formatTimeAgo } from "@/lib/utils"
 import type { BoursoErrorCode } from "@/types/api"
 
 /**
@@ -134,108 +136,86 @@ export function BoursoPanel({ onConnected }: BoursoPanelProps = {}) {
     onConnected?.()
   }, [onConnected, syncStatus])
 
-  if (status.isLoading)
-    return (
-      <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
-    )
+  if (status.isLoading) return <PanelLoading />
+
+  const lastSync = status.data?.lastSyncCompletedAt
 
   return (
-    <div className="space-y-6">
-      <Card size="sm">
-        <CardContent className="py-4">
-          <Badge
-            className={
-              connected
-                ? "bg-gain/10 text-gain"
-                : undefined
-            }
-            variant={connected ? "default" : "outline"}
-          >
-            {connected
-              ? t("sync.bourso.sessionActive")
-              : t("sync.bourso.noSession")}
-          </Badge>
-          <p className="mt-2 text-xs text-muted-foreground">
-            {t("sync.bourso.scope")}
-          </p>
+    <div className="space-y-4">
+      {connected ? (
+        <PanelStatus
+          tone={isSyncing ? "busy" : backgroundError ? "error" : "ok"}
+          label={t("sync.bourso.sessionActive")}
+          meta={[lastSync && t("sync.panel.lastSync", { time: formatTimeAgo(lastSync) })]}
+          actions={
+            <>
+              <PanelDisconnect
+                label={t("sync.bourso.clearSession")}
+                provider={t("sync.bourso.title")}
+                pending={logout.isPending}
+                onConfirm={() => {
+                  setError(null)
+                  logout.mutate(undefined, {
+                    onSuccess: () => {
+                      notifyConnectedOnSuccess.current = false
+                      resetAuth()
+                    },
+                    onError: (value) => setError(formatError(value)),
+                  })
+                }}
+              />
+              <Button
+                size="xs"
+                className={PANEL_ACTION}
+                onClick={() => {
+                  setError(null)
+                  sync.mutate(undefined, {
+                    onError: (value) => setError(formatError(value)),
+                  })
+                }}
+                disabled={requestingSync}
+              >
+                <RefreshCw className={requestingSync ? "animate-spin" : undefined} />
+                {requestingSync ? t("sync.bourso.syncing") : t("sync.bourso.sync")}
+              </Button>
+            </>
+          }
+        >
           {isSyncing && (
-            <p className="mt-2 text-sm text-muted-foreground">
-              {syncStatus === "QUEUED"
-                ? t("sync.bourso.queued")
-                : t("sync.bourso.syncing")}
+            <p className="text-muted-foreground">
+              {syncStatus === "QUEUED" ? t("sync.bourso.queued") : t("sync.bourso.syncing")}
             </p>
           )}
-          {syncStatus === "SUCCESS" && status.data?.lastSyncCompletedAt && (
-            <p className="mt-2 text-sm text-gain">
+          {syncStatus === "SUCCESS" && lastSync && (
+            <p className="flex items-center gap-1.5 text-gain">
+              <CheckCircle2 className="size-4 shrink-0" aria-hidden />
               {t("sync.bourso.syncSuccess")}
             </p>
           )}
-        </CardContent>
-      </Card>
+        </PanelStatus>
+      ) : (
+        // The provider view's header already says "not connected".
+        <PanelIntro>{t("sync.bourso.scope")}</PanelIntro>
+      )}
 
       {visibleError && (
-        <Card size="sm" className="border-destructive/30">
-          <CardContent className="flex items-center gap-3 py-4">
-            <AlertTriangle className="size-5 shrink-0 text-destructive" />
-            <p className="flex-1 text-sm text-destructive">{visibleError}</p>
-            {(error || statusError) && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
+        <PanelError
+          onRetry={
+            error || statusError
+              ? () => {
                   setError(null)
                   resetAuth()
                   if (statusError) void status.refetch()
-                }}
-              >
-                {t("common.retry")}
-              </Button>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {connected && (
-        <div className="flex flex-wrap gap-3">
-          <Button
-            onClick={() => {
-              setError(null)
-              sync.mutate(undefined, {
-                onError: (value) => setError(formatError(value)),
-              })
-            }}
-            disabled={requestingSync}
-          >
-            <RefreshCw
-              className={requestingSync ? "animate-spin" : undefined}
-            />
-            {requestingSync
-              ? t("sync.bourso.syncing")
-              : t("sync.bourso.sync")}
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={() => {
-              setError(null)
-              logout.mutate(undefined, {
-                onSuccess: () => {
-                  notifyConnectedOnSuccess.current = false
-                  resetAuth()
-                },
-                onError: (value) => setError(formatError(value)),
-              })
-            }}
-            disabled={logout.isPending}
-          >
-            <LogOut />
-            {t("sync.bourso.clearSession")}
-          </Button>
-        </div>
+                }
+              : undefined
+          }
+        >
+          {visibleError}
+        </PanelError>
       )}
 
       {!connected && authState === "IDLE" && (
-        <form
-          className="space-y-4"
+        <PanelForm
           onSubmit={(event) => {
             event.preventDefault()
             setError(null)
@@ -269,69 +249,48 @@ export function BoursoPanel({ onConnected }: BoursoPanelProps = {}) {
               }
             )
           }}
+          actions={
+            <Button type="submit" size="xs" className={PANEL_ACTION} disabled={initiate.isPending}>
+              {initiate.isPending && <RefreshCw className="animate-spin" />}
+              {initiate.isPending ? t("sync.bourso.connecting") : t("sync.bourso.connect")}
+            </Button>
+          }
         >
-          <Card size="sm">
-            <CardContent className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="bourso-customer-id">
-                  <Landmark className="mr-1 inline-block size-4" />
-                  {t("sync.bourso.customerId")}
-                </Label>
-                <Input
-                  id="bourso-customer-id"
-                  inputMode="numeric"
-                  autoComplete="username"
-                  value={customerId}
-                  onChange={(event) =>
-                    setCustomerId(event.target.value.replace(/\D/g, ""))
-                  }
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="bourso-password">
-                  <Lock className="mr-1 inline-block size-4" />
-                  {t("sync.bourso.password")}
-                </Label>
-                {/* BoursoBank passwords are digits only -- its virtual keyboard
-                    cannot encode anything else, and a stray character would spend
-                    a login attempt on a password the user never typed. */}
-                <Input
-                  id="bourso-password"
-                  type="password"
-                  inputMode="numeric"
-                  autoComplete="current-password"
-                  value={password}
-                  onChange={(event) =>
-                    setPassword(event.target.value.replace(/\D/g, ""))
-                  }
-                  required
-                />
-              </div>
-              <Button type="submit" disabled={initiate.isPending}>
-                {initiate.isPending && <RefreshCw className="animate-spin" />}
-                {initiate.isPending
-                  ? t("sync.bourso.connecting")
-                  : t("sync.bourso.connect")}
-              </Button>
-            </CardContent>
-          </Card>
-        </form>
+          <PanelField id="bourso-customer-id" label={t("sync.bourso.customerId")} icon={Landmark}>
+            <Input
+              id="bourso-customer-id"
+              className={PANEL_INPUT}
+              inputMode="numeric"
+              autoComplete="username"
+              value={customerId}
+              onChange={(event) => setCustomerId(event.target.value.replace(/\D/g, ""))}
+              required
+            />
+          </PanelField>
+          <PanelField id="bourso-password" label={t("sync.bourso.password")} icon={Lock}>
+            {/* BoursoBank passwords are digits only -- its virtual keyboard
+                cannot encode anything else, and a stray character would spend
+                a login attempt on a password the user never typed. */}
+            <Input
+              id="bourso-password"
+              className={PANEL_INPUT}
+              type="password"
+              inputMode="numeric"
+              autoComplete="current-password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value.replace(/\D/g, ""))}
+              required
+            />
+          </PanelField>
+        </PanelForm>
       )}
 
       {!connected && authState === "AWAITING_APP" && (
-        <Card size="sm">
-          <CardContent className="flex items-center gap-3 py-4">
-            <Smartphone className="size-5 shrink-0 text-muted-foreground" />
-            <div className="flex-1 space-y-1">
-              <p className="text-sm">{t("sync.bourso.appValidationPrompt")}</p>
-              <p className="text-xs text-muted-foreground">
-                {t("sync.bourso.appValidationHint")}
-              </p>
-            </div>
-            <RefreshCw className="size-4 shrink-0 animate-spin text-muted-foreground" />
-          </CardContent>
-        </Card>
+        <PanelWaiting
+          icon={Smartphone}
+          title={t("sync.bourso.appValidationPrompt")}
+          hint={t("sync.bourso.appValidationHint")}
+        />
       )}
     </div>
   )

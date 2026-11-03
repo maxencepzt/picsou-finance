@@ -1,7 +1,7 @@
 import { useState, type ComponentType } from 'react'
+import { useNavigate } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
 import {
   BackButton,
   BankWizard,
@@ -24,26 +24,18 @@ import { CorumPanel } from '@/components/sync/CorumPanel'
 import { SofidyPanel } from '@/components/sync/SofidyPanel'
 import { IbkrPanel } from '@/components/sync/IbkrPanel'
 import { SimplefinPanel } from '@/components/sync/SimplefinPanel'
+import { CmesPanel } from '@/components/sync/CmesPanel'
+import { CicPanel } from '@/components/sync/CicPanel'
+import { catalogEntry } from '@/pages/sync/catalog'
+import { ProviderCatalog } from '@/pages/sync/ProviderCatalog'
+import { ProviderMark } from '@/components/shared/ProviderMark'
 import { useCreateAccount, useUpdateDebtMetadata } from '@/features/accounts/hooks'
-import {
-  Landmark,
-  HousePlus,
-  ArrowLeftRight,
-  Wallet,
-  Smartphone,
-  CreditCard,
-  Building2,
-  FileSpreadsheet,
-  PenLine,
-  ArrowRight,
-  BriefcaseBusiness,
-  TrendingUp,
-  PiggyBank,
-} from 'lucide-react'
+import { HousePlus, PenLine, type LucideIcon } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import type { AccountRequest, AccountType } from '@/types/api'
 
 // ---------------------------------------------------------------------------
-// Props & types
+// Props & steps
 // ---------------------------------------------------------------------------
 
 interface AddAccountModalProps {
@@ -51,50 +43,64 @@ interface AddAccountModalProps {
   onOpenChange: (open: boolean) => void
 }
 
-type WizardStep =
-  | 'selector' | 'banks' | 'exchanges' | 'wallets' | 'tr' | 'revolut' | 'bourso' | 'caisseEpargne'
-  | 'bourseDirect' | 'degiro' | 'ibkr' | 'simplefin' | 'amundi' | 'fortuneo' | 'amex' | 'corum' | 'sofidy'
-  | 'finary' | 'property' | 'manual'
+/** `selector`, or the catalog key (the /sync `?tab=` key) of the provider being connected. */
+type WizardStep = string
 
-// ---------------------------------------------------------------------------
-// Source config
-// ---------------------------------------------------------------------------
+type Wizard = ComponentType<{ onDone: () => void; onBack: () => void }>
 
-const SOURCES: { key: WizardStep; icon: typeof Landmark; labelKey: string; descKey: string }[] = [
-  { key: 'banks', icon: Landmark, labelKey: 'sync.banks.title', descKey: 'addAccount.desc.banks' },
-  { key: 'exchanges', icon: ArrowLeftRight, labelKey: 'sync.exchanges.title', descKey: 'addAccount.desc.exchanges' },
-  { key: 'wallets', icon: Wallet, labelKey: 'sync.wallets.title', descKey: 'addAccount.desc.wallets' },
-  { key: 'tr', icon: Smartphone, labelKey: 'sync.tr.title', descKey: 'addAccount.desc.tr' },
-  { key: 'revolut', icon: CreditCard, labelKey: 'sync.revolut.title', descKey: 'addAccount.desc.revolut' },
-  { key: 'bourso', icon: Landmark, labelKey: 'sync.bourso.title', descKey: 'addAccount.desc.bourso' },
-  { key: 'caisseEpargne', icon: Landmark, labelKey: 'sync.caisseEpargne.title', descKey: 'addAccount.desc.caisseEpargne' },
-  { key: 'bourseDirect', icon: BriefcaseBusiness, labelKey: 'sync.bourseDirect.title', descKey: 'addAccount.desc.bourseDirect' },
-  { key: 'degiro', icon: TrendingUp, labelKey: 'sync.degiro.title', descKey: 'addAccount.desc.degiro' },
-  { key: 'ibkr', icon: BriefcaseBusiness, labelKey: 'sync.ibkr.title', descKey: 'addAccount.desc.ibkr' },
-  { key: 'simplefin', icon: Landmark, labelKey: 'sync.simplefin.title', descKey: 'addAccount.desc.simplefin' },
-  { key: 'amundi', icon: PiggyBank, labelKey: 'sync.amundi.title', descKey: 'addAccount.desc.amundi' },
-  { key: 'fortuneo', icon: PiggyBank, labelKey: 'sync.fortuneo.title', descKey: 'addAccount.desc.fortuneo' },
-  { key: 'amex', icon: CreditCard, labelKey: 'sync.amex.title', descKey: 'addAccount.desc.amex' },
-  { key: 'corum', icon: Building2, labelKey: 'sync.corum.title', descKey: 'addAccount.desc.corum' },
-  { key: 'sofidy', icon: Building2, labelKey: 'sync.sofidy.title', descKey: 'addAccount.desc.sofidy' },
-  { key: 'finary', icon: FileSpreadsheet, labelKey: 'sync.finary.title', descKey: 'addAccount.desc.finary' },
-  { key: 'property', icon: HousePlus, labelKey: 'property.add.source', descKey: 'addAccount.desc.property' },
-  { key: 'manual', icon: PenLine, labelKey: 'addAccount.manual', descKey: 'addAccount.desc.manual' },
-]
+// Providers with a guided flow of their own (OAuth redirect, forms, a mapping step).
+const WIZARD_STEPS: Record<string, Wizard> = {
+  banks: BankWizard,
+  exchanges: ExchangeWizard,
+  wallets: WalletWizard,
+  tr: TradeRepublicWizard,
+  revolut: RevolutWizard,
+  finary: FinaryWizard,
+}
 
 // Steps that are nothing but a sync Panel behind a Back button.
-const PANEL_STEPS: Partial<Record<WizardStep, ComponentType<{ onConnected?: () => void }>>> = {
+const PANEL_STEPS: Record<string, ComponentType<{ onConnected?: () => void }>> = {
   bourso: BoursoPanel,
-  caisseEpargne: CaisseEpargnePanel,
-  bourseDirect: BourseDirectPanel,
+  'caisse-epargne': CaisseEpargnePanel,
+  'bourse-direct': BourseDirectPanel,
   degiro: DegiroPanel,
   ibkr: IbkrPanel,
   simplefin: SimplefinPanel,
   amundi: AmundiPanel,
+  cmes: CmesPanel,
+  cic: CicPanel,
   fortuneo: FortuneoPanel,
   amex: AmexPanel,
   corum: CorumPanel,
   sofidy: SofidyPanel,
+}
+
+/** One of the two hand-entered choices that open the dialog, ahead of the catalog. */
+function ManualChoice({ icon: Icon, label, description, primary, onClick }: {
+  icon: LucideIcon
+  label: string
+  description: string
+  primary?: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        'flex w-full items-center gap-3 rounded-xl p-3 text-left ring-1 transition-colors',
+        primary ? 'ring-primary/40 hover:bg-primary/8' : 'ring-foreground/10 hover:bg-muted/60',
+      )}
+    >
+      <span className={cn('grid size-9 shrink-0 place-items-center rounded-lg', primary ? 'bg-primary/12 text-primary' : 'bg-muted text-foreground')}>
+        <Icon className="size-4" aria-hidden />
+      </span>
+      <span className="flex min-w-0 flex-col gap-0.5">
+        <span className="text-sm font-semibold text-foreground">{label}</span>
+        <span className="text-xs text-muted-foreground">{description}</span>
+      </span>
+    </button>
+  )
 }
 
 // ---------------------------------------------------------------------------
@@ -108,6 +114,9 @@ export function AddAccountModal({ open, onOpenChange }: AddAccountModalProps) {
   const [step, setStep] = useState<WizardStep>('selector')
   const [showManualForm, setShowManualForm] = useState(false)
   const [showPropertyForm, setShowPropertyForm] = useState(false)
+  const navigate = useNavigate()
+  const entry = catalogEntry(step)
+  const Wizard = WIZARD_STEPS[step]
   const Panel = PANEL_STEPS[step]
 
   function handleSourceClick(key: string) {
@@ -123,7 +132,14 @@ export function AddAccountModal({ open, onOpenChange }: AddAccountModalProps) {
       setShowPropertyForm(true)
       return
     }
-    setStep(key as WizardStep)
+    if (!WIZARD_STEPS[key] && !PANEL_STEPS[key]) {
+      // A whole-budget file import (Actual, HomeBank) maps accounts and categories over a
+      // page-sized preview: it runs on its Sync-page view, not in this dialog.
+      onOpenChange(false)
+      navigate(`/sync?tab=${key}`)
+      return
+    }
+    setStep(key)
   }
 
   function handleDialogChange(open: boolean) {
@@ -197,48 +213,50 @@ export function AddAccountModal({ open, onOpenChange }: AddAccountModalProps) {
         {/* sm:max-w-xl, not just max-w-xl: DialogContent's own `sm:max-w-sm` is a different
             Tailwind variant, so tailwind-merge keeps it and an unprefixed max-w-xl silently has
             no effect above 640px — which is what squeezed this wizard into 24rem. */}
-        <DialogContent className="max-h-[calc(100dvh-2rem)] max-w-xl overflow-y-auto sm:max-w-xl">
+        <DialogContent className="max-h-[calc(100dvh-2rem)] max-w-2xl overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>
-              {step === 'selector' ? t('addAccount.title') : t(`sync.${step === 'tr' ? 'tr' : step}.title`)}
+            <DialogTitle className="flex items-center gap-2.5">
+              {entry && <ProviderMark size="sm" name={t(entry.labelKey)} logo={entry.logo} icon={entry.icon} />}
+              {entry ? t(entry.labelKey) : t('addAccount.title')}
             </DialogTitle>
-            <DialogDescription />
+            <DialogDescription className={entry ? 'sr-only' : undefined}>
+              {entry ? t(entry.descKey) : t('addAccount.subtitle')}
+            </DialogDescription>
           </DialogHeader>
 
-          <>
-              {step === 'selector' && (
-                <div className="grid grid-cols-1 gap-2">
-                  {SOURCES.map(({ key, icon: Icon, labelKey, descKey }) => (
-                    <Button
-                      key={key}
-                      variant="outline"
-                      className="h-auto justify-start gap-3 px-4 py-3"
-                      onClick={() => handleSourceClick(key)}
-                    >
-                      <Icon className="size-5 text-muted-foreground shrink-0" />
-                      <div className="text-left">
-                        <p className="text-sm font-medium">{t(labelKey)}</p>
-                        <p className="text-xs text-muted-foreground">{t(descKey)}</p>
-                      </div>
-                      <ArrowRight className="size-4 text-muted-foreground ml-auto shrink-0" />
-                    </Button>
-                  ))}
-                </div>
-              )}
+          {step === 'selector' && (
+            <div className="space-y-4">
+              <div className="grid gap-2 sm:grid-cols-2">
+                <ManualChoice
+                  primary
+                  icon={PenLine}
+                  label={t('addAccount.manual')}
+                  description={t('addAccount.desc.manual')}
+                  onClick={() => handleSourceClick('manual')}
+                />
+                <ManualChoice
+                  icon={HousePlus}
+                  label={t('property.add.source')}
+                  description={t('addAccount.desc.property')}
+                  onClick={() => handleSourceClick('property')}
+                />
+              </div>
+              <div className="flex items-center gap-3 text-xs font-semibold text-muted-foreground">
+                <span className="h-px flex-1 bg-border" aria-hidden />
+                {t('addAccount.connectHeading')}
+                <span className="h-px flex-1 bg-border" aria-hidden />
+              </div>
+              <ProviderCatalog onSelect={(p) => handleSourceClick(p.key)} />
+            </div>
+          )}
 
-              {step === 'banks' && <BankWizard onDone={handleDone} onBack={() => setStep('selector')} />}
-              {step === 'exchanges' && <ExchangeWizard onDone={handleDone} onBack={() => setStep('selector')} />}
-              {step === 'wallets' && <WalletWizard onDone={handleDone} onBack={() => setStep('selector')} />}
-              {step === 'tr' && <TradeRepublicWizard onDone={handleDone} onBack={() => setStep('selector')} />}
-              {step === 'revolut' && <RevolutWizard onDone={handleDone} onBack={() => setStep('selector')} />}
-              {Panel && (
-                <>
-                  <BackButton onClick={() => setStep('selector')} />
-                  <Panel onConnected={handleDone} />
-                </>
-              )}
-              {step === 'finary' && <FinaryWizard onDone={handleDone} onBack={() => setStep('selector')} />}
+          {Wizard && <Wizard onDone={handleDone} onBack={() => setStep('selector')} />}
+          {Panel && (
+            <>
+              <BackButton onClick={() => setStep('selector')} />
+              <Panel onConnected={handleDone} />
             </>
+          )}
         </DialogContent>
       </Dialog>
 

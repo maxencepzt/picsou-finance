@@ -984,7 +984,7 @@
   },
   "addAccount": {
     "title": "Konto hinzufügen",
-    "manual": "Manuell",
+    "manual": "Manuelles Konto",
     "or": "oder",
     "bankConnected": "Schließe die Verbindung im neuen Tab ab",
     "exchangeConnected": "Exchange verbunden!",
@@ -993,10 +993,10 @@
     "syncing": "Deine Konten werden synchronisiert",
     "syncingDesc": "Wir laden gerade deine neuesten Transaktionen. Das dauert normalerweise nur ein paar Sekunden.",
     "desc": {
-      "banks": "Verbinde deine Banken per OAuth",
+      "banks": "Ihre Bank suchen: Girokonten über PSD2",
       "exchanges": "Binance, Meria...",
       "wallets": "Bitcoin, Ethereum, BNB, Solana...",
-      "tr": "Trade Republic",
+      "tr": "Aktien, ETFs und Verrechnungskonto",
       "bourso": "Girokonten, Sparkonten, PEA und Wertpapierdepots bei BoursoBank",
       "bourseDirect": "PEA- und Wertpapierkonten synchronisieren",
       "degiro": "DEGIRO-Wertpapierkonto synchronisieren",
@@ -1009,9 +1009,17 @@
       "property": "Haus, Wohnung, Grundstück…",
       "revolut": "Phone + passcode, on-demand sync",
       "fortuneo": "Fortuneo-Konten synchronisieren",
-      "caisseEpargne": "Girokonto, Livret A, LDDS, PER, Kredite und Karten bei der Caisse d'Epargne"
+      "caisseEpargne": "Girokonto, Livret A, LDDS, PER, Kredite und Karten bei der Caisse d'Epargne",
+      "cmes": "PEE, PEG, PERCOL bei Crédit Mutuel oder CIC",
+      "cic": "CIC-Giro- und Sparkonten (Livret A, LDDS, PEL…)",
+      "corum": "CORUM-SCPI-Anteile zum Rücknahmepreis",
+      "sofidy": "Sofidy-SCPI-Anteile zum Rücknahmepreis",
+      "actual": "Konten, Kategorien und Buchungen eines Actual-Budgets",
+      "homebank": "HomeBank-Sicherung oder QIF-Export"
     },
-    "revolutConnected": "Revolut connected!"
+    "revolutConnected": "Revolut connected!",
+    "subtitle": "Erfassen Sie ein Konto selbst oder verbinden Sie ein Institut, um es zu synchronisieren.",
+    "connectHeading": "oder ein Institut verbinden"
   },
   "sync": {
     "title": "Synchronisierung",
@@ -1026,7 +1034,7 @@
       "TOTP_REQUIRED": "2FA-Code erforderlich"
     },
     "banks": {
-      "title": "Banken",
+      "title": "Europäische Banken",
       "search": "Bank suchen",
       "country": "Land",
       "countriesLoadError": "Nicht alle Länder konnten geladen werden — nur Frankreich verfügbar.",
@@ -1072,7 +1080,8 @@
         "pinRequired": "PIN ist erforderlich.",
         "validationFailed": "Ungültige Daten.",
         "unknownError": "Ein unerwarteter Fehler ist aufgetreten."
-      }
+      },
+      "tanPrompt": "Geben Sie den {{length}}-stelligen Code ein, den Trade Republic Ihnen per SMS oder in der App geschickt hat."
     },
     "ibkr": {
       "title": "Interactive Brokers",
@@ -1088,7 +1097,6 @@
       "disconnectConfirm": "Gespeicherte Interactive-Brokers-Verbindung entfernen?",
       "connected": "Verbunden",
       "statusError": "Letzte Synchronisierung fehlgeschlagen",
-      "lastSync": "Letzte Sync",
       "neverSynced": "Nie synchronisiert",
       "syncedToast": "Interactive Brokers synchronisiert: {{count}} Konto/Konten",
       "errors": {
@@ -1110,7 +1118,6 @@
       "disconnectConfirm": "Gespeicherte SimpleFIN-Verbindung entfernen? Importierte Konten bleiben und werden nicht mehr aktualisiert.",
       "connected": "Verbunden",
       "statusError": "Letzte Synchronisierung fehlgeschlagen",
-      "lastSync": "Letzte Sync",
       "neverSynced": "Nie synchronisiert",
       "syncedToast": "SimpleFIN synchronisiert: {{count}} Konto/Konten",
       "errors": {
@@ -1134,8 +1141,7 @@
       "sync": "Synchronisieren",
       "remove": "Entfernen",
       "removeConfirm": "Diesen Exchange entfernen?",
-      "noExchanges": "Keine Exchanges verbunden",
-      "lastSync": "Letzte Synchronisierung"
+      "noExchanges": "Keine Exchanges verbunden"
     },
     "wallets": {
       "title": "Wallets",
@@ -1151,11 +1157,10 @@
       "remove": "Entfernen",
       "removeConfirm": "Dieses Wallet entfernen?",
       "noWallets": "Keine Wallets im Blick",
-      "lastSync": "Letzte Synchronisierung",
       "evmHint": "Eine Adresse, alle EVM-Chains — Ethereum, BNB Chain, Polygon, Arbitrum, Optimism, Base und Avalanche."
     },
     "visibility": {
-      "title": "Konten",
+      "title": "Sichtbare Konten",
       "description": "Wähle, welche Konten in der App angezeigt werden. Ein ausgeblendetes Konto wird weiterhin normal synchronisiert — es wird nur aus der Anzeige entfernt.",
       "manualGroup": "Manuell"
     },
@@ -1251,7 +1256,6 @@
       "loginSuccess": "Erfolgreich verbunden",
       "connected": "Verbunden",
       "notConnected": "Nicht verbunden",
-      "lastSync": "Letzte Synchronisierung",
       "neverSynced": "Nie",
       "sync": "Jetzt synchronisieren",
       "syncing": "Wird synchronisiert...",
@@ -1320,17 +1324,26 @@
     },
     "all": {
       "title": "Konten synchronisieren",
-      "syncAll": "Alle synchronisieren",
       "syncing": "Wird synchronisiert...",
       "noConnections": "Keine aktiven Sync-Verbindungen",
-      "lastSync": "Letzte Synchronisierung",
       "openFinary": "Finary-Seite zum Synchronisieren öffnen",
       "sessionExpired": "Sitzung abgelaufen",
       "reconnect": "Im Tab des Anbieters neu verbinden",
       "trManualInfo": "Trade Republic ist die einzige Bank, die eine manuelle erneute Authentifizierung erfordert. Du musst bei jeder Synchronisierung deine Telefonnummer und PIN neu eingeben.",
       "trSlowWarning": "Die Verbindung kann einen Moment dauern, das ist normal.",
-      "openRevolut": "Open the Revolut page to connect",
-      "revolutManualInfo": "Revolut requires approval on your phone. Click the icon to enter your credentials."
+      "revolutManualInfo": "Revolut requires approval on your phone. Click the icon to enter your credentials.",
+      "neverSynced": "Nie synchronisiert",
+      "lastSyncAgo": "Synchronisiert {{time}}",
+      "synced": "Synchronisiert",
+      "connectionCount_one": "{{count}} Verbindung",
+      "connectionCount_other": "{{count}} Verbindungen",
+      "emptyHint": "Noch keine Verbindung. Fügen Sie Ihre Bank, Ihren Broker oder eine Krypto-Wallet hinzu.",
+      "groupReconnect": "Neu zu verbinden",
+      "groupConnected": "Verbunden",
+      "reconnectAction": "Neu verbinden",
+      "syncOne": "{{name}} synchronisieren",
+      "syncingProgress": "Synchronisierung… {{done}}/{{total}}",
+      "syncAllCount": "Alle synchronisieren ({{count}})"
     },
     "bourso": {
       "title": "BoursoBank",
@@ -1425,7 +1438,6 @@
       "noSession": "Keine aktive Sitzung",
       "sessionActive": "Aktive Sitzung",
       "reauthRequired": "Erneute Anmeldung erforderlich",
-      "lastSyncedAt": "Zuletzt synchronisiert am",
       "totpPrompt": "Gib den 6-stelligen Code aus deiner Authenticator-App ein",
       "errors": {
         "tooManyAttempts": "Zu viele Versuche. Bitte warte einen Moment.",
@@ -1618,7 +1630,6 @@
       "approveOnPhone": "Approve the connection in your Revolut app…",
       "connected": "Connected",
       "forget": "Forget credentials",
-      "lastSync": "Last sync",
       "approvalTimeout": "Approval not received. Try again.",
       "notConnected": "Not connected",
       "syncSuccess": "Your accounts are up to date.",
@@ -1741,6 +1752,47 @@
         "invalidData": "Fortuneo hat widersprüchliche Portfoliodaten geliefert. Deine vorhandenen Daten wurden nicht verändert.",
         "serverError": "Fortuneo konnte nicht erreicht werden. Bitte erneut versuchen."
       }
+    },
+    "catalog": {
+      "title": "Verbindung hinzufügen",
+      "description": "Banken, Broker, Krypto, Mitarbeitersparen, SCPI oder ein Dateiimport.",
+      "search": "Institut suchen",
+      "searchPlaceholder": "Institut suchen…",
+      "categoriesLabel": "Kategorie",
+      "noMatch": "Kein Institut entspricht dieser Suche.",
+      "categories": {
+        "all": "Alle",
+        "banks": "Banken",
+        "brokers": "Börse",
+        "crypto": "Krypto",
+        "savings": "Mitarbeitersparen",
+        "scpi": "SCPI",
+        "files": "Importe"
+      },
+      "kind": {
+        "banks": "Bank",
+        "brokers": "Broker",
+        "crypto": "Krypto",
+        "savings": "Mitarbeitersparen",
+        "scpi": "SCPI",
+        "files": "Import"
+      }
+    },
+    "overview": {
+      "title": "Ihre Verbindungen",
+      "empty": "Noch keine Verbindung: Wählen Sie unten ein Institut.",
+      "syncNow": "Synchronisieren"
+    },
+    "view": {
+      "notConnected": "Nicht verbunden",
+      "toReconnect_one": "{{count}} neu zu verbinden",
+      "toReconnect_other": "{{count}} neu zu verbinden"
+    },
+    "panel": {
+      "lastSync": "Zuletzt synchronisiert {{time}}",
+      "disconnectTitle": "{{name}} trennen?",
+      "disconnectDescription": "Picsou löscht die gespeicherte Sitzung. Bereits importierte Konten bleiben erhalten; melden Sie sich erneut an, um sie zu synchronisieren.",
+      "or": "oder"
     }
   },
   "settings": {

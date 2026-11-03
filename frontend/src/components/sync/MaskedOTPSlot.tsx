@@ -5,6 +5,7 @@ import { OTPInputContext } from 'input-otp'
  * Masked variant of InputOTPSlot — replaces the typed character with a bullet
  * so the slot reads like a password field. We can't edit components/ui/input-otp
  * (shadcn primitives), so we re-derive slot state from OTPInputContext here.
+ * The classes are InputOTPSlot's, so masked and plain codes look the same.
  */
 export function MaskedOTPSlot({ index }: { index: number }) {
   const ctx = useContext(OTPInputContext)
@@ -15,7 +16,7 @@ export function MaskedOTPSlot({ index }: { index: number }) {
   return (
     <div
       data-active={isActive}
-      className="relative flex size-10 items-center justify-center border-y border-r border-input bg-input/20 text-sm transition-[border-color,box-shadow,background-color] outline-none first:rounded-l-xl first:border-l last:rounded-r-xl aria-invalid:border-destructive data-[active=true]:z-10 data-[active=true]:border-ring data-[active=true]:ring-2 data-[active=true]:ring-ring/30 dark:bg-input/30"
+      className="relative flex size-10 items-center justify-center border-y border-r border-input bg-input/20 text-sm transition-[border-color,box-shadow,background-color] outline-none first:rounded-l-md first:border-l last:rounded-r-md aria-invalid:border-destructive data-[active=true]:z-10 data-[active=true]:border-ring data-[active=true]:ring-2 data-[active=true]:ring-ring/30 dark:bg-input/30"
     >
       {hasChar ? '•' : null}
       {hasFakeCaret && (

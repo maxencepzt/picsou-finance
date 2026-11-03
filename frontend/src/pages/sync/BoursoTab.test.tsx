@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ReactNode } from 'react'
 
@@ -182,6 +182,8 @@ describe('BoursoTab', () => {
     renderTab()
 
     fireEvent.click(await screen.findByText('sync.bourso.clearSession'))
+    // Disconnecting goes through a confirmation; the dialog repeats the action's label.
+    fireEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'sync.bourso.clearSession' }))
 
     await vi.waitFor(() => expect(apiDelete).toHaveBeenCalledWith('/bourso/session'))
   })

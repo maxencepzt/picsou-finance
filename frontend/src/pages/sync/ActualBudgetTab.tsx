@@ -1,17 +1,26 @@
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { CheckCircle2, Loader2, Upload, X } from 'lucide-react'
+import { CheckCircle2, Loader2 } from 'lucide-react'
 import { useMoney } from '@/hooks/use-money'
 import { ACCOUNT_COLORS, ACCOUNT_TYPES, NON_LEDGER_ACCOUNT_TYPES, SUPPORTED_CURRENCIES } from '@/lib/constants'
 import { extractErrorMessage } from '@/lib/errors'
 import { formatDate } from '@/lib/utils'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { AlertBanner } from '@/components/shared/AlertBanner'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
+import { NativeSelect } from '@/components/shared/NativeSelect'
+import { SegmentedControl } from '@/components/shared/SegmentedControl'
+import {
+  FileDropZone,
+  PanelActions,
+  PanelError,
+  PanelField,
+  PanelForm,
+  PanelSection,
+  PanelStat,
+} from '@/components/sync/ProviderPanel'
+import { PANEL_ACTION, PANEL_INPUT, PANEL_SEGMENTED_WRAP, PANEL_SELECT } from '@/components/sync/panel-styles'
 import { useImportActualBudget, usePlanActualImport, usePreviewActualBudget } from '@/features/actual/hooks'
 import type {
   ActualAccountMapping,
@@ -32,7 +41,10 @@ import type { AccountType } from '@/types/api'
 const NON_LEDGER_TYPES: AccountType[] = [...NON_LEDGER_ACCOUNT_TYPES, 'LOAN']
 const LEDGER_ACCOUNT_TYPES = ACCOUNT_TYPES.filter(({ value }) => !NON_LEDGER_TYPES.includes(value))
 const RESULT_KEYS = ['accountsCreated', 'accountsMapped', 'accountsSkipped', 'categoriesCreated', 'transactionsImported', 'transactionsSkipped', 'transactionsDeleted', 'transactionsMoved'] as const
-const SELECT_CLASS = 'h-10 w-full rounded-md border border-input bg-background px-4 text-sm text-foreground outline-none [color-scheme:light] dark:[color-scheme:dark]'
+const ACCOUNT_ACTIONS = ['SKIP', 'MAP_EXISTING', 'CREATE_NEW'] as const
+const ACCOUNT_ACTION_KEYS = { SKIP: 'skip', MAP_EXISTING: 'mapExisting', CREATE_NEW: 'createNew' } as const
+/** A small neutral tag next to a payee (transfer, starting balance). */
+const CHIP = 'rounded-md bg-muted px-1.5 text-xs font-medium text-muted-foreground'
 
 function isPreview(data: unknown): data is ActualPreviewResponse {
   const value = data as Partial<ActualPreviewResponse> | null
@@ -97,9 +109,7 @@ export function ActualBudgetTab() {
   const previewMutation = usePreviewActualBudget()
   const planMutation = usePlanActualImport()
   const importMutation = useImportActualBudget()
-  const fileInputRef = useRef<HTMLInputElement>(null)
   const [file, setFile] = useState<File | null>(null)
-  const [dragOver, setDragOver] = useState(false)
   const [preview, setPreview] = useState<ActualPreviewResponse | null>(null)
   const [currency, setCurrency] = useState('EUR')
   const [accountMappings, setAccountMappings] = useState<ActualAccountMapping[]>([])
@@ -212,7 +222,6 @@ export function ActualBudgetTab() {
     setCategoryMappings([])
     setResult(null)
     setError(null)
-    if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
   const hasWork = accountMappings.some((mapping) => mapping.action !== 'SKIP')
@@ -225,265 +234,239 @@ export function ActualBudgetTab() {
   const accountNames = new Map(preview?.accounts.map((account) => [account.sourceId, account.name]))
 
   return (
-    <div className="space-y-6">
-      {error && (
-        <AlertBanner variant="roomy" role="alert" icon={<X className="size-4 shrink-0" />}>{error}</AlertBanner>
-      )}
+    <div className="space-y-4">
+      {error && <PanelError>{error}</PanelError>}
 
       {!preview && !result && (
-        <div className="mx-auto max-w-xl space-y-4">
-          <div
-            className={`flex flex-col items-center justify-center gap-4 rounded-2xl border-2 border-dashed p-10 text-center ${dragOver ? 'border-primary bg-primary/5' : 'border-muted-foreground/25'}`}
-            onDragOver={(event) => { event.preventDefault(); setDragOver(true) }}
-            onDragLeave={() => setDragOver(false)}
-            onDrop={(event) => { event.preventDefault(); setDragOver(false); selectFile(event.dataTransfer.files[0]) }}
-          >
-            <Upload className="size-6 text-muted-foreground" />
-            <div>
-              <p className="font-medium">{t('sync.actual.upload')}</p>
-              <p className="mt-1 text-sm text-muted-foreground">{t('sync.actual.uploadHint')}</p>
-            </div>
-            <Button variant="outline" onClick={() => fileInputRef.current?.click()} disabled={busy}>
-              <Upload />
-              {t('sync.actual.chooseFile')}
+        <PanelForm
+          onSubmit={(event) => {
+            event.preventDefault()
+            void handlePreview()
+          }}
+          actions={
+            <Button type="submit" size="xs" className={PANEL_ACTION} disabled={!file || busy}>
+              {previewMutation.isPending && <Loader2 className="animate-spin" />}
+              {t('sync.actual.preview')}
             </Button>
-            <input
-              ref={fileInputRef}
-              aria-label={t('sync.actual.file')}
-              type="file"
-              accept=".zip,.sqlite,application/zip"
-              className="hidden"
-              disabled={busy}
-              onChange={(event) => selectFile(event.target.files?.[0])}
-            />
-          </div>
-          {file && <p className="text-sm text-muted-foreground">{file.name}</p>}
-          <Button className="w-full" onClick={handlePreview} disabled={!file || busy}>
-            {previewMutation.isPending && <Loader2 className="size-4 animate-spin" />}
-            {t('sync.actual.preview')}
-          </Button>
-        </div>
+          }
+        >
+          <FileDropZone
+            title={t('sync.actual.upload')}
+            hint={t('sync.actual.uploadHint')}
+            buttonLabel={t('sync.actual.chooseFile')}
+            accept=".zip,.sqlite,application/zip"
+            inputLabel={t('sync.actual.file')}
+            fileName={file?.name}
+            disabled={busy}
+            onFile={selectFile}
+          />
+        </PanelForm>
       )}
 
       {preview && !result && (
-        <div className="space-y-5">
-          <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-muted-foreground">
-              {t('sync.actual.previewSummary', {
-                accounts: preview.accounts.length,
-                categories: preview.categories.length,
-                transactions: preview.totalTransactions,
-              })}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <Button variant="outline" onClick={reset} disabled={busy}>{t('sync.actual.restart')}</Button>
-              <Button onClick={reviewImport} disabled={busy || !hasWork || !mappingsValid}>
-                {planMutation.isPending && <Loader2 className="size-4 animate-spin" />}
-                {t('sync.actual.import')}
-              </Button>
-            </div>
-          </div>
+        <>
+          <Card size="sm">
+            <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-muted-foreground">
+                {t('sync.actual.previewSummary', {
+                  accounts: preview.accounts.length,
+                  categories: preview.categories.length,
+                  transactions: preview.totalTransactions,
+                })}
+              </p>
+              <PanelActions className="shrink-0">
+                <Button variant="ghost" size="xs" className={PANEL_ACTION} onClick={reset} disabled={busy}>
+                  {t('sync.actual.restart')}
+                </Button>
+                <Button size="xs" className={PANEL_ACTION} onClick={reviewImport} disabled={busy || !hasWork || !mappingsValid}>
+                  {planMutation.isPending && <Loader2 className="animate-spin" />}
+                  {t('sync.actual.import')}
+                </Button>
+              </PanelActions>
+            </CardContent>
+          </Card>
 
           {preview.transferTransactions > 0 && (
-            <p role="status" className="rounded-lg bg-muted px-4 py-3 text-sm">
+            <p role="status" className="rounded-xl bg-muted px-4 py-3 text-sm text-pretty text-foreground">
               {t('sync.actual.transfersNeutral', { count: preview.transferTransactions })}
             </p>
           )}
 
           {preview.currency ? (
-            <p className="text-sm">
+            <p className="px-1 text-sm">
               <span className="text-muted-foreground">{t('sync.actual.currency')} · </span>
-              <span className="font-medium">{preview.currency}</span>
+              <span className="font-medium text-foreground">{preview.currency}</span>
             </p>
           ) : (
-            <div className="max-w-xs space-y-1">
-              <Label htmlFor="actual-currency">{t('sync.actual.currency')}</Label>
-              <select id="actual-currency" className={SELECT_CLASS} value={currency} onChange={(event) => changeCurrency(event.target.value)}>
+            <PanelField id="actual-currency" label={t('sync.actual.currency')} hint={t('sync.actual.currencyHint')} className="max-w-xs">
+              <NativeSelect id="actual-currency" className={PANEL_SELECT} value={currency} onChange={(event) => changeCurrency(event.target.value)}>
                 {SUPPORTED_CURRENCIES.map((code) => <option key={code} value={code}>{code}</option>)}
-              </select>
-              <p className="text-xs text-muted-foreground">{t('sync.actual.currencyHint')}</p>
-            </div>
+              </NativeSelect>
+            </PanelField>
           )}
 
-          <section className="space-y-3">
-            <h3 className="font-semibold">{t('sync.actual.accounts')}</h3>
+          <PanelSection title={t('sync.actual.accounts')} aside={preview.accounts.length}>
             {preview.accounts.map((account, index) => {
               const mapping = accountMappings[index]
               const compatible = compatibleAccounts(preview, account, currency)
               return (
-                <Card key={account.sourceId} size="sm">
-                  <CardContent className="space-y-3 pt-0">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="truncate font-medium">{account.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {account.transactionCount} {t('sync.actual.transactions')}
-                          {account.offBudget && ` · ${t('sync.actual.offBudget')}`}
-                          {account.closed && ` · ${t('sync.actual.closed')}`}
-                        </p>
-                      </div>
-                      <p className="shrink-0 text-sm font-medium text-foreground">{money.amount(account.balance, currency)}</p>
+                <div key={account.sourceId} className="space-y-3 py-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-foreground">{account.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {account.transactionCount} {t('sync.actual.transactions')}
+                        {account.offBudget && ` · ${t('sync.actual.offBudget')}`}
+                        {account.closed && ` · ${t('sync.actual.closed')}`}
+                      </p>
                     </div>
-                    <div className="flex flex-wrap gap-2">
-                      {(['SKIP', 'MAP_EXISTING', 'CREATE_NEW'] as const).map((action) => (
-                        <Button
-                          key={action}
-                          size="sm"
-                          variant={mapping.action === action ? 'default' : 'outline'}
-                          onClick={() => updateAccount(index, { action })}
+                    <p className="shrink-0 text-sm font-semibold text-foreground tabular-nums">{money.amount(account.balance, currency)}</p>
+                  </div>
+                  <SegmentedControl
+                    ariaLabel={account.name}
+                    options={ACCOUNT_ACTIONS.map((action) => ({ value: action, label: t(`sync.actual.${ACCOUNT_ACTION_KEYS[action]}`) }))}
+                    value={mapping.action}
+                    onChange={(action) => updateAccount(index, { action })}
+                    className={PANEL_SEGMENTED_WRAP}
+                  />
+                  {mapping.action === 'MAP_EXISTING' && (
+                    <NativeSelect
+                      aria-label={t('sync.actual.targetAccount', { name: account.name })}
+                      className={PANEL_SELECT}
+                      value={mapping.targetAccountId ?? ''}
+                      onChange={(event) => updateAccount(index, { targetAccountId: event.target.value ? Number(event.target.value) : undefined })}
+                    >
+                      <option value="">{t('sync.actual.chooseAccount')}</option>
+                      {compatible.map((item) => <option key={item.id} value={item.id}>{item.name} ({item.currency})</option>)}
+                    </NativeSelect>
+                  )}
+                  {mapping.action === 'MAP_EXISTING' && account.importedAccountId != null
+                    && mapping.targetAccountId === account.importedAccountId && (
+                    <p className="text-xs text-muted-foreground">{t('sync.actual.previouslyImported')}</p>
+                  )}
+                  {mapping.action === 'CREATE_NEW' && mapping.newAccount && (
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <PanelField id={`actual-account-name-${index}`} label={t('sync.actual.accountName')}>
+                        <Input
+                          id={`actual-account-name-${index}`}
+                          className={PANEL_INPUT}
+                          maxLength={100}
+                          value={mapping.newAccount.name}
+                          onChange={(event) => updateAccount(index, { newAccount: { ...mapping.newAccount!, name: event.target.value } })}
+                        />
+                      </PanelField>
+                      <PanelField id={`actual-account-type-${index}`} label={t('sync.actual.accountType')}>
+                        <NativeSelect
+                          id={`actual-account-type-${index}`}
+                          className={PANEL_SELECT}
+                          value={mapping.newAccount.type}
+                          onChange={(event) => updateAccount(index, { newAccount: { ...mapping.newAccount!, type: event.target.value as AccountType } })}
                         >
-                          {t(`sync.actual.${action === 'SKIP' ? 'skip' : action === 'MAP_EXISTING' ? 'mapExisting' : 'createNew'}`)}
-                        </Button>
-                      ))}
+                          {LEDGER_ACCOUNT_TYPES.map((type) => <option key={type.value} value={type.value}>{t(type.labelKey)}</option>)}
+                        </NativeSelect>
+                      </PanelField>
                     </div>
-                    {mapping.action === 'MAP_EXISTING' && (
-                      <select
-                        aria-label={t('sync.actual.targetAccount', { name: account.name })}
-                        className={SELECT_CLASS}
-                        value={mapping.targetAccountId ?? ''}
-                        onChange={(event) => updateAccount(index, { targetAccountId: event.target.value ? Number(event.target.value) : undefined })}
-                      >
-                        <option value="">{t('sync.actual.chooseAccount')}</option>
-                        {compatible.map((item) => <option key={item.id} value={item.id}>{item.name} ({item.currency})</option>)}
-                      </select>
-                    )}
-                    {mapping.action === 'MAP_EXISTING' && account.importedAccountId != null
-                      && mapping.targetAccountId === account.importedAccountId && (
-                      <p className="text-xs text-muted-foreground">{t('sync.actual.previouslyImported')}</p>
-                    )}
-                    {mapping.action === 'CREATE_NEW' && mapping.newAccount && (
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        <div className="space-y-1">
-                          <Label htmlFor={`actual-account-name-${index}`}>{t('sync.actual.accountName')}</Label>
-                          <Input
-                            id={`actual-account-name-${index}`}
-                            maxLength={100}
-                            value={mapping.newAccount.name}
-                            onChange={(event) => updateAccount(index, { newAccount: { ...mapping.newAccount!, name: event.target.value } })}
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <Label htmlFor={`actual-account-type-${index}`}>{t('sync.actual.accountType')}</Label>
-                          <select
-                            id={`actual-account-type-${index}`}
-                            className={SELECT_CLASS}
-                            value={mapping.newAccount.type}
-                            onChange={(event) => updateAccount(index, { newAccount: { ...mapping.newAccount!, type: event.target.value as AccountType } })}
-                          >
-                            {LEDGER_ACCOUNT_TYPES.map((type) => <option key={type.value} value={type.value}>{t(type.labelKey)}</option>)}
-                          </select>
-                        </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+                  )}
+                </div>
               )
             })}
-          </section>
+          </PanelSection>
 
-          <section className="space-y-3">
-            <h3 className="font-semibold">{t('sync.actual.categories')}</h3>
+          <PanelSection title={t('sync.actual.categories')} aside={preview.categories.length}>
             {preview.categories.map((category, index) => {
               const mapping = categoryMappings[index]
               const kind = category.income ? 'INCOME' : 'EXPENSE'
               return (
-                <Card key={category.sourceId} size="sm">
-                  <CardContent className="space-y-3 pt-0">
-                    <div>
-                      <p className="font-medium">{category.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {category.groupName && `${category.groupName} · `}
-                        {t(category.income ? 'sync.actual.income' : 'sync.actual.expense')} · {category.transactionCount} {t('sync.actual.transactions')}
-                      </p>
-                    </div>
-                    <div className="grid gap-2 sm:grid-cols-2">
-                      <select
-                        aria-label={t('sync.actual.categoryAction', { name: category.name })}
-                        className={SELECT_CLASS}
-                        value={mapping.action}
-                        onChange={(event) => {
-                          const action = event.target.value as ActualCategoryMapping['action']
-                          updateCategory(index, { action, targetCategoryId: undefined, name: mapping.name ?? category.name.slice(0, 100) })
-                        }}
-                      >
-                        <option value="CREATE_NEW">{t('sync.actual.createCategory')}</option>
-                        <option value="MAP_EXISTING">{t('sync.actual.mapExistingCategory')}</option>
-                        <option value="UNCATEGORIZED">{t('sync.actual.uncategorized')}</option>
-                      </select>
-                      {mapping.action === 'CREATE_NEW' && (
-                        <Input
-                          aria-label={t('sync.actual.categoryName', { name: category.name })}
-                          maxLength={100}
-                          value={mapping.name ?? ''}
-                          onChange={(event) => updateCategory(index, { name: event.target.value })}
-                        />
-                      )}
-                      {mapping.action === 'MAP_EXISTING' && (
-                        <select
-                          aria-label={t('sync.actual.targetCategory', { name: category.name })}
-                          className={SELECT_CLASS}
-                          value={mapping.targetCategoryId ?? ''}
-                          onChange={(event) => updateCategory(index, { targetCategoryId: event.target.value ? Number(event.target.value) : undefined })}
-                        >
-                          <option value="">{t('sync.actual.chooseCategory')}</option>
-                          {preview.existingCategories
-                            .filter((item) => item.kind === kind && !item.archived)
-                            .map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-                        </select>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              )
-            })}
-          </section>
-
-          <section className="space-y-3">
-            <h3 className="font-semibold">{t('sync.actual.sampleTransactions')}</h3>
-            {preview.sampleTransactions.map((transaction) => (
-              <Card key={transaction.sourceId} size="sm">
-                <CardContent className="grid gap-1 pt-0 sm:grid-cols-[1fr_auto]">
+                <div key={category.sourceId} className="space-y-2 py-3">
                   <div>
-                    <p className="font-medium">
-                      {transaction.payee || t('sync.actual.noPayee')}
-                      {transaction.kind === 'TRANSFER' && <Badge variant="secondary" className="ml-2">{t('sync.actual.transfer')}</Badge>}
-                      {transaction.kind === 'STARTING_BALANCE' && <Badge variant="secondary" className="ml-2">{t('sync.actual.startingBalance')}</Badge>}
-                    </p>
-                    {transaction.notes && <p className="text-sm text-muted-foreground">{transaction.notes}</p>}
+                    <p className="text-sm font-semibold text-foreground">{category.name}</p>
                     <p className="text-xs text-muted-foreground">
-                      {formatDate(transaction.date)} · {accountNames.get(transaction.accountSourceId)}
+                      {category.groupName && `${category.groupName} · `}
+                      {t(category.income ? 'sync.actual.income' : 'sync.actual.expense')} · {category.transactionCount} {t('sync.actual.transactions')}
                     </p>
                   </div>
-                  <p className="text-sm font-medium text-foreground sm:text-right">{money.amount(transaction.amount, currency)}</p>
-                </CardContent>
-              </Card>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <NativeSelect
+                      aria-label={t('sync.actual.categoryAction', { name: category.name })}
+                      className={PANEL_SELECT}
+                      value={mapping.action}
+                      onChange={(event) => {
+                        const action = event.target.value as ActualCategoryMapping['action']
+                        updateCategory(index, { action, targetCategoryId: undefined, name: mapping.name ?? category.name.slice(0, 100) })
+                      }}
+                    >
+                      <option value="CREATE_NEW">{t('sync.actual.createCategory')}</option>
+                      <option value="MAP_EXISTING">{t('sync.actual.mapExistingCategory')}</option>
+                      <option value="UNCATEGORIZED">{t('sync.actual.uncategorized')}</option>
+                    </NativeSelect>
+                    {mapping.action === 'CREATE_NEW' && (
+                      <Input
+                        aria-label={t('sync.actual.categoryName', { name: category.name })}
+                        className={PANEL_INPUT}
+                        maxLength={100}
+                        value={mapping.name ?? ''}
+                        onChange={(event) => updateCategory(index, { name: event.target.value })}
+                      />
+                    )}
+                    {mapping.action === 'MAP_EXISTING' && (
+                      <NativeSelect
+                        aria-label={t('sync.actual.targetCategory', { name: category.name })}
+                        className={PANEL_SELECT}
+                        value={mapping.targetCategoryId ?? ''}
+                        onChange={(event) => updateCategory(index, { targetCategoryId: event.target.value ? Number(event.target.value) : undefined })}
+                      >
+                        <option value="">{t('sync.actual.chooseCategory')}</option>
+                        {preview.existingCategories
+                          .filter((item) => item.kind === kind && !item.archived)
+                          .map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+                      </NativeSelect>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </PanelSection>
+
+          <PanelSection title={t('sync.actual.sampleTransactions')} aside={preview.sampleTransactions.length}>
+            {preview.sampleTransactions.map((transaction) => (
+              <div key={transaction.sourceId} className="flex items-start justify-between gap-3 py-2.5">
+                <div className="min-w-0 space-y-0.5">
+                  <p className="flex flex-wrap items-center gap-1.5 text-sm font-medium text-foreground">
+                    <span className="min-w-0 truncate">{transaction.payee || t('sync.actual.noPayee')}</span>
+                    {transaction.kind === 'TRANSFER' && <span className={CHIP}>{t('sync.actual.transfer')}</span>}
+                    {transaction.kind === 'STARTING_BALANCE' && <span className={CHIP}>{t('sync.actual.startingBalance')}</span>}
+                  </p>
+                  {transaction.notes && <p className="text-xs text-muted-foreground">{transaction.notes}</p>}
+                  <p className="text-xs text-muted-foreground">
+                    {formatDate(transaction.date)} · {accountNames.get(transaction.accountSourceId)}
+                  </p>
+                </div>
+                <p className="shrink-0 text-sm font-semibold text-foreground tabular-nums">{money.amount(transaction.amount, currency)}</p>
+              </div>
             ))}
-          </section>
-        </div>
+          </PanelSection>
+        </>
       )}
 
       {result && (
-        <div className="mx-auto max-w-lg space-y-5">
-          <div className="grid grid-cols-2 gap-3">
+        <>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {RESULT_KEYS.map((key) => (
-              <div key={key} className="rounded-xl bg-muted/50 p-4 text-center">
-                <p className="text-2xl font-semibold">{result[key]}</p>
-                <p className="mt-1 text-sm text-muted-foreground">{t(`sync.actual.${key}`)}</p>
-              </div>
+              <PanelStat key={key} label={t(`sync.actual.${key}`)} value={result[key]} />
             ))}
           </div>
           {result.warnings.map((warning) => (
-            <p key={warning.reason} role="status" className="rounded-lg bg-muted px-4 py-3 text-sm">
+            <p key={warning.reason} role="status" className="rounded-xl bg-muted px-4 py-3 text-sm text-pretty text-foreground">
               {warningText(warning)}
             </p>
           ))}
-          <div className="flex justify-center">
-            <Button onClick={reset}>
+          <PanelActions>
+            <Button size="xs" className={PANEL_ACTION} onClick={reset}>
               <CheckCircle2 />
               {t('sync.actual.done')}
             </Button>
-          </div>
-        </div>
+          </PanelActions>
+        </>
       )}
 
       <ConfirmDialog
