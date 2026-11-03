@@ -18,11 +18,11 @@ export function LoanCostSummaryTable({ summary }: LoanCostSummaryTableProps) {
 
   return (
     <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base">{t('debt.summary')}</CardTitle>
+      <CardHeader>
+        <CardTitle>{t('debt.summary')}</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
           {/* Total cost */}
           <Column title={t('debt.totalCost')} total={summary.totalCost}>
             <Row label={t('debt.capital')} value={summary.totalCapitalCost} />
@@ -54,12 +54,12 @@ export function LoanCostSummaryTable({ summary }: LoanCostSummaryTableProps) {
 
 function Column({ title, total, children }: { title: string; total: number; children: React.ReactNode }) {
   return (
-    <div className="flex flex-col gap-2 p-3 rounded-lg border bg-card/50">
-      <div className="flex items-center justify-between border-b pb-2 mb-1">
-        <span className="text-xs text-muted-foreground">{title}</span>
-        <CurrencyDisplay value={total} className="text-base font-semibold" />
+    <div className="flex flex-col gap-3 rounded-xl bg-muted/50 p-3">
+      <div className="flex flex-col gap-0.5">
+        <span className="text-[13px] font-medium text-muted-foreground">{title}</span>
+        <CurrencyDisplay value={total} className="text-lg font-semibold tabular-nums text-foreground" />
       </div>
-      <div className="flex flex-col gap-1.5">
+      <div className="flex flex-col gap-1.5 border-t pt-3">
         {children}
       </div>
     </div>
@@ -74,8 +74,8 @@ function Row({ label, value, format = 'currency', hidden = false }: {
 }) {
   if (hidden) return null
   return (
-    <div className="flex items-center justify-between text-xs">
-      <span className="text-muted-foreground">{label}</span>
+    <div className="flex items-center justify-between gap-3 text-[13px]">
+      <span className="min-w-0 text-muted-foreground">{label}</span>
       {format === 'percent'
         ? <span className="tabular-nums font-medium">{formatPercent(value, { fractionDigits: 0 })}</span>
         : <CurrencyDisplay value={value} className="tabular-nums font-medium" />}

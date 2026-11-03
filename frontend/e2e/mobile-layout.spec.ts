@@ -47,7 +47,7 @@ const PAGES = [
   ['/settings', 'Système'],
   ['/settings/family', 'Sélectionner'],
   ['/analysis', '30 ans'],
-  ['/accounts/2', '+ Ajouter'],
+  ['/accounts/2', 'Ajouter'],
   ['/goals', 'Apport immobilier'],
   ['/goals/1/calendar', 'Voyage au Japon'],
   // The redesigned pages: KPI figures and breakdown legends must shrink or wrap, never run off.

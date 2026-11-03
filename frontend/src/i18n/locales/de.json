@@ -410,6 +410,12 @@
     "panel": {
       "latestTransactions": "Letzte Umsätze",
       "viewDetail": "Details anzeigen"
+    },
+    "detail": {
+      "rate": "Jahreszins",
+      "ceiling": "Obergrenze",
+      "ceilingUsed": "{{pct}} der Obergrenze",
+      "share": "Ihr Anteil"
     }
   },
   "analysis": {

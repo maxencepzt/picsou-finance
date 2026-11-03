@@ -1,6 +1,6 @@
 # Feature: SCPI shares
 
-> Last updated: 2026-10-31
+> Last updated: 2026-11-03
 
 ## Context
 
@@ -66,6 +66,7 @@ indicator, so financing a SCPI does not change a house's LTV.
 - `AccountController.java` — `PUT /api/accounts/{id}/scpi`
 - `RealEstateSummaryService.java` — paper line, not DVF gross
 - `frontend/src/components/scpi/AddScpiModal.tsx` — no address, no floor area
+- `frontend/src/components/scpi/ScpiDetailSection.tsx` — the position on the account detail page: dividend policy, distribution schedule, jouissance date, management company, ISIN and the provider fund links (with "Ignore this fund"), plus the edit form. The share count, both prices and the distribution per share are in the page's hero
 
 ### CORUM sync
 

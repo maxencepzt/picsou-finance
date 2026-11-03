@@ -1,7 +1,7 @@
 import { ASSET_CLASS_ORDER, assetClassOf, type AssetClassKey } from '@/lib/asset-classes'
-import { SYNC_FRESHNESS_BOUNDS_MS } from '@/lib/constants'
-import { freshnessLevel } from '@/lib/utils'
-import type { Account } from '@/types/api'
+import { SYNC_FRESHNESS_BOUNDS_MS, VALUATION_FRESHNESS_BOUNDS_MS } from '@/lib/constants'
+import { freshnessLevel, type FreshnessLevel } from '@/lib/utils'
+import type { Account, BalanceSnapshot } from '@/types/api'
 
 /** A loan is stored as the positive amount owed, a card debt already negative: both read negative here. */
 export function signedBalance(account: Account): number {
@@ -83,4 +83,44 @@ export function accountKpis(accounts: Account[], now: number) {
     synced: synced.length,
     upToDate: synced.filter((a) => freshnessLevel(a.lastSyncedAt, SYNC_FRESHNESS_BOUNDS_MS, now) === 'fresh').length,
   }
+}
+
+/** Freshness dot colour per level, matching FRESHNESS_TEXT_CLASS. */
+export const FRESHNESS_DOT_CLASS: Record<FreshnessLevel, string> = {
+  fresh: 'bg-gain', recent: 'bg-warning', stale: 'bg-warning', old: 'bg-loss', unknown: 'bg-muted-foreground',
+}
+
+/**
+ * How old the account's figure is: a property's last valuation on the monthly scale, else the last
+ * sync on the daily one; null when neither date exists. `warn` asks the user to reconnect, which
+ * only makes sense for a synced account.
+ */
+export function accountFreshness(account: Account, now: number) {
+  const valuedAt = account.type === 'REAL_ESTATE' ? account.realEstate?.lastValuedAt : null
+  const date = valuedAt ?? account.lastSyncedAt
+  if (!date) return null
+  const level = freshnessLevel(date, valuedAt ? VALUATION_FRESHNESS_BOUNDS_MS : SYNC_FRESHNESS_BOUNDS_MS, now)
+  return { date, level, valuation: valuedAt != null, warn: !account.isManual && (level === 'stale' || level === 'old') }
+}
+
+/** `YYYY-MM-DD` one calendar month before (day clamped by the string compare, not a date library). */
+function monthBefore(date: string): string {
+  const [y, m] = date.split('-').map(Number)
+  const prev = m === 1 ? `${y - 1}-12` : `${y}-${String(m - 1).padStart(2, '0')}`
+  return `${prev}${date.slice(7, 10)}`
+}
+
+/**
+ * Change of the balance over the last month of snapshots: the latest one against the last one
+ * dated a month or more before it. Null when the history does not reach that far back.
+ */
+export function monthChange(history: Pick<BalanceSnapshot, 'date' | 'balance'>[]): { amount: number; percent: number | null } | null {
+  if (history.length < 2) return null
+  const sorted = [...history].sort((a, b) => a.date.localeCompare(b.date))
+  const latest = sorted[sorted.length - 1]
+  const cutoff = monthBefore(latest.date)
+  const base = sorted.filter((s) => s.date <= cutoff).at(-1)
+  if (!base) return null
+  const amount = latest.balance - base.balance
+  return { amount, percent: base.balance !== 0 ? (amount / Math.abs(base.balance)) * 100 : null }
 }

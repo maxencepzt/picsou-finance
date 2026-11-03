@@ -87,12 +87,11 @@ export function TransactionsList({
                 {formatTransactionDate(date, locale, showYear)}
               </p>
               <div className="space-y-0.5">
-                {grouped[date].map((tr, rowIdx) => (
+                {grouped[date].map((tr) => (
                   <TransactionRow
                     key={tr.id}
                     transaction={tr}
                     logoUrlFor={logoUrlFor}
-                    index={rowIdx}
                     onClick={setSelectedTx}
                   />
                 ))}

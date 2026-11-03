@@ -1,16 +1,17 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import type { ReactNode } from 'react'
+import { Pencil, TriangleAlert } from 'lucide-react'
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { NumericInput } from '@/components/shared/NumericInput'
 import { DateInput } from '@/components/shared/DateInput'
-import { CurrencyDisplay } from '@/components/shared/CurrencyDisplay'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { useIgnoreScpiFund, useUpdateScpiPosition } from '@/features/accounts/hooks'
 import { formatApiError } from '@/lib/errors'
-import { parseAmount } from '@/lib/utils'
+import { formatLocalDate, parseAmount } from '@/lib/utils'
 import type { Account, DistributionFrequency, DividendPolicy, ScpiPositionRequest, ScpiProvider } from '@/types/api'
 
 const selectControlClassName =
@@ -24,9 +25,20 @@ function distributionFrequencyKey(frequency: DistributionFrequency | null | unde
   return 'scpi.frequencyNone'
 }
 
+function Fact({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="flex min-w-0 flex-col gap-0.5">
+      <dt className="text-[13px] font-medium text-muted-foreground">{label}</dt>
+      <dd className="min-w-0 text-sm font-semibold text-foreground">{children}</dd>
+    </div>
+  )
+}
+
 /**
  * The share, the two prices, and nothing that belongs to a house.
  * The balance shown above this card is the withdrawal value, never the subscription price.
+ * The share count, the prices and the distribution sit in the page's hero, so the read view here
+ * keeps what qualifies them: dividend policy, schedule, identifiers and the provider links.
  */
 export function ScpiDetailSection({ account }: { account: Account }) {
   const { t } = useTranslation()
@@ -92,94 +104,61 @@ export function ScpiDetailSection({ account }: { account: Account }) {
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-base">{t('scpi.position')}</CardTitle>
+      <CardHeader>
+        <CardTitle>{t('scpi.position')}</CardTitle>
         {canEdit && position && !editing && (
-          <Button size="sm" variant="outline" onClick={startEditing}>
-            {t('scpi.edit')}
-          </Button>
+          <CardAction>
+            <Button size="sm" variant="outline" className="h-8 px-3" onClick={startEditing}>
+              <Pencil className="size-3.5" />
+              {t('scpi.edit')}
+            </Button>
+          </CardAction>
         )}
       </CardHeader>
       <CardContent className="space-y-4">
         {position?.valuationStatus === 'PRICE_INCOMPLETE' && (
-          <p className="text-sm text-warning">{t('scpi.incomplete')}</p>
+          <p className="flex items-center gap-1.5 text-sm font-medium text-warning">
+            <TriangleAlert className="size-4 shrink-0" aria-hidden />
+            {t('scpi.incomplete')}
+          </p>
         )}
 
         {position && (!editing || !canEdit) && (
-          <dl className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <dt className="text-muted-foreground">{t('scpi.shareCount')}</dt>
-              <dd className="tabular-nums font-medium">{position.shareCount}</dd>
-            </div>
-            <div>
-              <dt className="text-muted-foreground">{t('scpi.withdrawalValue')}</dt>
-              <dd>
-                {position.withdrawalValueEur != null
-                  ? <CurrencyDisplay value={position.withdrawalValueEur} />
-                  : '—'}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-muted-foreground">{t('scpi.withdrawalPrice')}</dt>
-              <dd>
-                {position.withdrawalPriceEur != null
-                  ? <CurrencyDisplay value={position.withdrawalPriceEur} />
-                  : '—'}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-muted-foreground">{t('scpi.subscriptionPrice')}</dt>
-              <dd>
-                {position.subscriptionPriceEur != null
-                  ? <CurrencyDisplay value={position.subscriptionPriceEur} />
-                  : '—'}
-              </dd>
-            </div>
-            <div className="col-span-2 text-xs text-muted-foreground">{t('scpi.subscriptionHint')}</div>
-            <div>
-              <dt className="text-muted-foreground">{t('scpi.dividendPolicy')}</dt>
-              <dd>{t(position.dividendPolicy === 'REINVEST' ? 'scpi.reinvest' : 'scpi.cash')}</dd>
-            </div>
-            <div>
-              <dt className="text-muted-foreground">{t('scpi.annualDistribution')}</dt>
-              <dd>
-                {position.annualDistributionPerShareEur != null
-                  ? <CurrencyDisplay value={position.annualDistributionPerShareEur} />
-                  : '—'}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-muted-foreground">{t('scpi.distributionFrequency')}</dt>
-              <dd>{t(distributionFrequencyKey(position.distributionFrequency))}</dd>
-            </div>
+          <dl className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3">
+            <Fact label={t('scpi.dividendPolicy')}>
+              {t(position.dividendPolicy === 'REINVEST' ? 'scpi.reinvest' : 'scpi.cash')}
+            </Fact>
+            <Fact label={t('scpi.distributionFrequency')}>
+              {t(distributionFrequencyKey(position.distributionFrequency))}
+            </Fact>
             {position.jouissanceDate && (
-              <div>
-                <dt className="text-muted-foreground">{t('scpi.jouissanceDate')}</dt>
-                <dd>{position.jouissanceDate}</dd>
-              </div>
+              <Fact label={t('scpi.jouissanceDate')}>{formatLocalDate(position.jouissanceDate)}</Fact>
             )}
+            {position.managementCompany && (
+              <Fact label={t('scpi.managementCompany')}><span className="block truncate">{position.managementCompany}</span></Fact>
+            )}
+            {position.isin && <Fact label={t('scpi.isin')}><span className="tabular-nums">{position.isin}</span></Fact>}
             {([
               ['CORUM', 'scpi.corumFundCode', position.corumFundCode],
               ['SOFIDY', 'scpi.sofidyFundCode', position.sofidyFundCode],
             ] as const).map(([provider, label, code]) => (
-              <div key={provider}>
-                <dt className="text-muted-foreground">{t(label)}</dt>
-                <dd className="flex items-center gap-2">
-                  <span>{code || '—'}</span>
+              <Fact key={provider} label={t(label)}>
+                <span className="flex min-w-0 items-center gap-2">
+                  <span className="truncate">{code || '—'}</span>
                   {code && canEdit && (
                     <Button
                       type="button"
                       size="sm"
                       variant="ghost"
-                      className="h-auto px-2 py-0 text-xs"
+                      className="h-7 px-2 text-xs font-medium text-muted-foreground"
                       disabled={ignoreFund.isPending}
                       onClick={() => setFundToIgnore({ provider, fundCode: code })}
                     >
                       {t('scpi.ignoreFund')}
                     </Button>
                   )}
-                </dd>
-              </div>
+                </span>
+              </Fact>
             ))}
           </dl>
         )}
@@ -206,7 +185,7 @@ export function ScpiDetailSection({ account }: { account: Account }) {
                 <NumericInput id="scpi-edit-withdrawal" value={withdrawalPrice} onChange={(e) => setWithdrawalPrice(e.target.value)} />
               </div>
             </div>
-            <details className="space-y-4 rounded-md border p-3">
+            <details className="space-y-4 rounded-xl border p-3">
             <summary className="cursor-pointer text-sm text-muted-foreground">{t('scpi.advancedLinks')}</summary>
             <div className="space-y-2">
               <Label htmlFor="scpi-edit-corum-fund">{t('scpi.corumFundCode')}</Label>
@@ -269,15 +248,15 @@ export function ScpiDetailSection({ account }: { account: Account }) {
             {updatePosition.error && (
               <p className="text-sm text-destructive">{formatApiError(updatePosition.error, t, 'common.error')}</p>
             )}
-            <div className="flex gap-2">
-              <Button type="button" onClick={save} disabled={!canSave || updatePosition.isPending}>
-                {t('scpi.save')}
-              </Button>
+            <div className="flex justify-end gap-2">
               {position && (
-                <Button type="button" variant="outline" onClick={() => setEditing(false)}>
+                <Button type="button" variant="outline" className="h-9 px-4" onClick={() => setEditing(false)}>
                   {t('common.cancel')}
                 </Button>
               )}
+              <Button type="button" className="h-9 px-4" onClick={save} disabled={!canSave || updatePosition.isPending}>
+                {t('scpi.save')}
+              </Button>
             </div>
           </div>
         )}

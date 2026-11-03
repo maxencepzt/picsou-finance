@@ -421,6 +421,12 @@
     "panel": {
       "latestTransactions": "Dernières opérations",
       "viewDetail": "Voir le détail"
+    },
+    "detail": {
+      "rate": "Taux annuel",
+      "ceiling": "Plafond",
+      "ceilingUsed": "{{pct}} du plafond",
+      "share": "Votre part"
     }
   },
   "analysis": {

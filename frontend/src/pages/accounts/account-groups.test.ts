@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Account, AccountType } from '@/types/api'
-import { accountKpis, groupByAssetClass, groupByInstitution } from './account-groups'
+import { accountFreshness, accountKpis, groupByAssetClass, groupByInstitution, monthChange } from './account-groups'
 
 const NOW = Date.parse('2026-11-03T12:00:00Z')
 
@@ -61,5 +61,38 @@ describe('accountKpis', () => {
       account(4, 'CREDIT_CARD', -100, { isManual: false, lastSyncedAt: null }),
     ], NOW)
     expect(kpis).toEqual({ assets: 5000, debts: 2600, count: 4, manual: 1, synced: 3, upToDate: 1 })
+  })
+})
+
+describe('monthChange', () => {
+  it('compares the latest snapshot with the last one a month or more before it', () => {
+    const change = monthChange([
+      { date: '2026-11-03', balance: 1100 },
+      { date: '2026-09-30', balance: 900 },
+      { date: '2026-10-03', balance: 1000 },
+      { date: '2026-10-20', balance: 1050 },
+    ])
+    expect(change).toEqual({ amount: 100, percent: 10 })
+  })
+
+  it('handles January and month-end days', () => {
+    expect(monthChange([{ date: '2026-01-31', balance: 50 }, { date: '2025-12-31', balance: 100 }]))
+      .toEqual({ amount: -50, percent: -50 })
+    expect(monthChange([{ date: '2026-03-31', balance: 3 }, { date: '2026-02-28', balance: 2 }])?.amount).toBe(1)
+  })
+
+  it('stays silent when the history is shorter than a month, and gives no percent from zero', () => {
+    expect(monthChange([{ date: '2026-11-03', balance: 1 }, { date: '2026-10-20', balance: 2 }])).toBeNull()
+    expect(monthChange([{ date: '2026-11-03', balance: 5 }, { date: '2026-10-01', balance: 0 }])).toEqual({ amount: 5, percent: null })
+  })
+})
+
+describe('accountFreshness', () => {
+  it('grades a property on its valuation date and never warns about a manual figure', () => {
+    const property = account(1, 'REAL_ESTATE', 1, { realEstate: { lastValuedAt: '2026-10-20T00:00:00Z' } as Account['realEstate'] })
+    expect(accountFreshness(property, NOW)).toMatchObject({ level: 'fresh', valuation: true, warn: false })
+    expect(accountFreshness(account(2, 'CHECKING', 1, { isManual: false, lastSyncedAt: '2026-10-20T00:00:00Z' }), NOW))
+      .toMatchObject({ level: 'old', valuation: false, warn: true })
+    expect(accountFreshness(account(3, 'CHECKING', 1), NOW)).toBeNull()
   })
 })

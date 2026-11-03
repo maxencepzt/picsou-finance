@@ -1,4 +1,4 @@
-# Feature: Accounts Overview (KPI row + grouped account rows + side panel + breakdown + PnL chart + filters)
+# Feature: Accounts Overview (KPI row + grouped account rows + side panel + breakdown + PnL chart + filters) and the account detail page
 
 > Last updated: 2026-11-03
 
@@ -11,10 +11,16 @@ The Accounts page (`/accounts`) lists every account as a compact row, grouped by
 ### Page layout
 
 Since the "Coffre Nocturne" redesign, `AccountsPage.tsx` shows, top to bottom: the savings
-suggestions banner, a KPI row (`KpiTile` ×4 from `accountKpis`: gross assets with net worth,
+suggestions banner (a neutral card with an icon and a "Configure" button — not a green fill, since
+gain green is for movement only), a KPI row (`KpiTile` ×4 from `accountKpis`: gross assets with net worth,
 debts, accounts tracked with the manual count, synced accounts refreshed within a day), the
 filter strip, then a 12-column grid — the grouped rows on the left (7 columns), the total card,
-the asset-class breakdown and the PnL chart on the right (5 columns).
+the asset-class breakdown and the PnL chart on the right (5 columns). The filter strip is wrapped in
+a plain `div`: `ScrollStrip`'s own `-m-1` (room for the focus ring) otherwise overrides the
+`space-y-6` margin and glues the strip to the cards below it.
+
+The list card has a header — the number of accounts in the current filter as its title, the
+grouping switch on the right.
 
 `groupByAssetClass` (`pages/accounts/account-groups.ts`) groups the top-level accounts by
 `assetClassOf(type)` in the palette's order, liabilities last under "Debts"; each group header
@@ -46,12 +52,16 @@ Clicking a row (or a pocket) opens `AccountPanel` (`pages/accounts/AccountPanel.
 `Sheet` (full width on a phone): name, type and provider, the signed balance, the
 `BalanceHistoryChart` of `useAccountHistory`, the positions for a `HOLDING_ACCOUNT_TYPES` account
 (`PositionsByProduct` or a read-only `HoldingsTable`, as on the detail page), the five latest
-transactions (`TransactionRow`, dated) and a "View details" link to `/accounts/:id`. It reads the
-detail page's own hooks, so the detail page opens from the cache.
+transactions (`TransactionRow`, dated), then a "View details" link to `/accounts/:id` beside
+"Edit" and "Delete" (no delete for a pocket). Edit and delete close the panel first, then open the
+edit form or the delete confirmation. The header shows the account's mark (`AccountMark`). It
+reads the detail page's own hooks, so the detail page opens from the cache.
 
 ### Edit deep link
 
-`/accounts?edit=<id>` opens that account's edit form: the open form *is* the URL parameter —
+The edit form and its save logic (account, then a loan's debt details) live in
+`AccountEditDialog` (`pages/accounts/AccountEditDialog.tsx`), shared by this page and the account
+detail page. `/accounts?edit=<id>` opens that account's edit form: the open form *is* the URL parameter —
 `editingAccount` is derived from `?edit` and the account list, the edit button sets it and closing
 the form removes it (both `replace`). An unknown id opens nothing. Query structural sharing keeps
 the account object stable across refetches, so `AccountForm`'s reset-on-`defaultValues` does not
@@ -67,10 +77,15 @@ wipe what the user is typing unless the account itself changed on the server.
 | Name | `name` + co-ownership share (only below 100 %) | same |
 | Subtitle | freshness dot · `provider` · time since `lastSyncedAt` (plus the borrowed amount for a `LOAN`) | freshness dot · property kind and city · time since `realEstate.lastValuedAt` |
 | Balance | `signedBalance(account)` | same |
-| Actions | edit and delete, shown on hover, on keyboard focus and always on touch screens; a pocket has no delete | same |
+| Actions | edit and delete in a fixed `w-16` column, shown on hover, on keyboard focus and always on touch screens; a pocket has no delete; below `sm` the column is not rendered and both actions live in the side panel | same |
 
 There is no type badge and no "N sub-accounts" label any more: the group header says the class,
 and the nested rows say the pockets.
+
+The actions column has a fixed width (whether or not the row has a delete button) and the group
+header reserves the same `w-16` (`hidden sm:block`), so every balance — wallet, pocket and group
+total — ends on the same vertical line. On a phone the column goes away entirely, which gives the
+name back ~70px and avoids two 28px touch targets per row.
 
 A property is a manual account: it has no `provider` and nothing ever writes its
 `lastSyncedAt`, so its kind, city and valuation date fill those slots. The unrealised gain lives
@@ -120,6 +135,47 @@ The glyphs come from `frontend/src/lib/property-icons.ts` (`PROPERTY_KIND_ICONS`
 `AddPropertyModal`'s kind picker shares so a property looks the same wherever it is shown.
 They are keyed on `RealEstateMetadata.propertyKind` — the backend's `PropertyKind.parse` of
 the free-text `property_type` column — never on the raw string.
+
+### Account detail page (`/accounts/:id`)
+
+`AccountDetailPage.tsx`, top to bottom:
+
+1. **Header** — a "Comptes" back link, the account mark (`AccountMark size="lg"`: logo, monogram
+   or property glyph), the name, then type · institution (a property: kind · city), "Manual" for a
+   hand-kept account, and the freshness from `accountFreshness` (`account-groups.ts`, shared with
+   the row): a dot and "Synced 3 hours ago", "Last valuation: …" for a property, or the stale
+   warning with its tooltip. On a phone the freshness takes its own line. Actions on the right:
+   "Monthly statements" (`MonthEndBalanceModal`), "Edit" (`AccountEditDialog`, owners only) and an
+   export icon button (`ExportAccountsModal` with this one account; hidden in demo mode, which has
+   no export handler). There is no per-account sync: the top bar's Sync covers it.
+2. **Hero row** — a card with the balance in display size and one `Delta`, plus the figures that
+   matter for the type; beside it (from `xl`) the value chart. The hero is a container: beside the
+   chart its figures sit under the balance (hairline between, two columns); full width they sit to
+   its right, one column per figure.
+
+   | Type | Label | Delta | Figures |
+   |---|---|---|---|
+   | Holdings (`HOLDING_ACCOUNT_TYPES`) | Portfolio value | unrealised P&L (amount, %) when the basis is known | capital invested, cash / euro fund, positions, opening date |
+   | `CREDIT_CARD` | Card debt | month change | amount due, due date, card type, miles |
+   | `LOAN` | Remaining capital | month change, inverted (a falling debt is good news) | borrowed, monthly payment, rate, end date |
+   | `REAL_ESTATE` | Current value | gain since purchase (when there is a cost basis) | cost basis, living area |
+   | `SCPI` | Current balance | month change | shares, withdrawal price, subscription price, distribution per share |
+   | configured livret | Current balance | month change | annual rate, ceiling (with the share used), projected interest of the year (`useSavingsInterest`, its own component so the query mounts only there) |
+
+   A co-owned account adds "Your share". The **month change** is `monthChange(history)`: the latest
+   snapshot against the last one dated a calendar month or more before it; it is left out when the
+   history is shorter or the account is not in euros (snapshots are in the account's currency).
+   The chart is `NetWorthChart` (value and capital invested) for holdings, the property's
+   `PropertyValuationChart` (falls back to the balance history below two estimates), else
+   `BalanceHistoryChart`; a loan has none here.
+3. **Type sections** — `LoanDetailSection` (amortisation curve beside a progress card that also
+   splits one monthly payment into capital / interest / insurance on the chart ramp, then the cost
+   summary as three tiles), `PropertyDetailSection` (characteristics, valuation, financing and
+   ownership as a two-column grid), `ScpiDetailSection` (dividend policy, schedule, identifiers and
+   provider links — the share count and prices are in the hero).
+4. Upcoming dividends (`COMPTE_TITRES`, `PEA`), positions and realised P&L for holdings.
+5. **Activity** — transactions (8 columns) beside the ten latest snapshots (4 columns) from `xl`;
+   for a savings account they sit in the "Overview" tab next to the livret configuration.
 
 ### Sorting the position tables
 
@@ -258,7 +314,9 @@ every non-pocket account in split mode: each `NetWorthPoint` carries an `account
 - `frontend/src/pages/accounts/AccountsPage.tsx` — page: KPI row, filters, grouped rows, total card, PnL chart
 - `frontend/src/pages/accounts/AccountRow.tsx` — one row; `AccountMark`
 - `frontend/src/pages/accounts/AccountPanel.tsx` — the side panel
-- `frontend/src/pages/accounts/account-groups.ts` — `signedBalance`, `groupByAssetClass`, `groupByInstitution`, `accountKpis`
+- `frontend/src/pages/accounts/AccountEditDialog.tsx` — the edit form and its save, shared with the detail page
+- `frontend/src/pages/accounts/AccountDetailPage.tsx` — the detail page
+- `frontend/src/pages/accounts/account-groups.ts` — `signedBalance`, `groupByAssetClass`, `groupByInstitution`, `accountKpis`, `accountFreshness`, `monthChange`
 - `frontend/src/lib/property-icons.ts` — `PROPERTY_KIND_ICONS`, shared with `AddPropertyModal`
 - `frontend/src/components/shared/AccountsStackedChart.tsx` — PnL line chart component
 - `frontend/src/features/history/hooks.ts` — `useHistory` (split mode)
@@ -326,7 +384,12 @@ AccountsPage
 - `frontend/src/pages/accounts/account-groups.test.ts` — group order with debts last and summed
   negative; institutions netted and ordered, a hand-typed loan kept with its bank, the manual and
   property buckets last; the KPI split of assets and debts and the count of synced accounts
-  refreshed within a day.
+  refreshed within a day; `monthChange` (month-end and January dates, too-short history, no
+  percent from zero) and `accountFreshness` (valuation scale for a property, no warning on a manual
+  account).
+- `frontend/src/pages/accounts/AccountDetailPage.test.tsx` and
+  `AccountDetailPage.duplicateSections.test.tsx` — the PER euro-fund figure without an implied
+  zero P&L, one holdings card and one realised P&L section, dividends only on a CTO or PEA.
 - `frontend/src/pages/accounts/AccountsPage.test.tsx` — the property gain against its cost basis,
   the PnL chart on the Immobilier filter, partial bases, the row actions visible on touch screens,
   the grouping switch, a row opening the panel, `?edit=<id>` opening and clearing, an unknown id.

@@ -132,7 +132,7 @@ describe('AccountDetailPage PER balance', () => {
       </QueryClientProvider>,
     )
 
-    expect(screen.getByText('Fonds euro:')).toBeInTheDocument()
+    expect(screen.getByText('Fonds euro')).toBeInTheDocument()
     expect(screen.getByText('1234')).toBeInTheDocument()
     expect(screen.queryByText('dashboard.portfolioPerformance')).not.toBeInTheDocument()
     expect(screen.queryByText('0')).not.toBeInTheDocument()

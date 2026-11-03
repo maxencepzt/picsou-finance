@@ -421,6 +421,12 @@
     "panel": {
       "latestTransactions": "Latest transactions",
       "viewDetail": "View details"
+    },
+    "detail": {
+      "rate": "Annual rate",
+      "ceiling": "Ceiling",
+      "ceilingUsed": "{{pct}} of the ceiling",
+      "share": "Your share"
     }
   },
   "analysis": {

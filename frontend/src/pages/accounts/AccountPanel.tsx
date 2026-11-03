@@ -1,7 +1,7 @@
 import { Fragment } from 'react'
 import { Link } from 'react-router'
 import { useTranslation } from 'react-i18next'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, Pencil, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet'
@@ -16,6 +16,7 @@ import { accountTypeLabelKey, HOLDING_ACCOUNT_TYPES } from '@/lib/constants'
 import { formatLocalDate } from '@/lib/utils'
 import type { Account } from '@/types/api'
 import { signedBalance } from './account-groups'
+import { AccountMark } from './AccountRow'
 
 /** Positions of an investment account, as the detail page shows them (read-only here). */
 function PanelHoldings({ accountId }: { accountId: number }) {
@@ -26,7 +27,13 @@ function PanelHoldings({ accountId }: { accountId: number }) {
   return holdings.length > 0 ? <HoldingsTable holdings={holdings} /> : null
 }
 
-function PanelBody({ account }: { account: Account }) {
+interface PanelActions {
+  onEdit: (account: Account) => void
+  /** Called for a top-level account only: a pocket goes away with its wallet. */
+  onDelete: (account: Account) => void
+}
+
+function PanelBody({ account, onEdit, onDelete }: { account: Account } & PanelActions) {
   const { t } = useTranslation()
   const { data: history, isLoading: historyLoading } = useAccountHistory(account.id)
   const { data: transactions, isLoading: txLoading } = useAccountTransactions(account.id)
@@ -62,7 +69,7 @@ function PanelBody({ account }: { account: Account }) {
                   {latest[i - 1]?.date !== tx.date && (
                     <p className="px-1 pt-2 text-xs font-medium text-muted-foreground first:pt-0">{formatLocalDate(tx.date)}</p>
                   )}
-                  <TransactionRow transaction={tx} index={i} />
+                  <TransactionRow transaction={tx} />
                 </Fragment>
               ))}
             </div>
@@ -70,12 +77,31 @@ function PanelBody({ account }: { account: Account }) {
         </CardContent>
       </Card>
 
-      <Button asChild variant="outline">
-        <Link to={`/accounts/${account.id}`}>
-          {t('accounts.panel.viewDetail')}
-          <ArrowRight className="size-4" />
-        </Link>
-      </Button>
+      {/* Edit and delete live here too: below `sm` the rows leave them out for the name. */}
+      <div className="flex flex-wrap gap-2">
+        <Button asChild className="flex-1 px-4">
+          <Link to={`/accounts/${account.id}`}>
+            {t('accounts.panel.viewDetail')}
+            <ArrowRight className="size-4" />
+          </Link>
+        </Button>
+        <Button variant="outline" className="px-4" onClick={() => onEdit(account)}>
+          <Pencil className="size-4" />
+          {t('common.edit')}
+        </Button>
+        {account.parentAccountId == null && (
+          <Button
+            variant="outline"
+            size="icon"
+            className="text-destructive hover:text-destructive"
+            aria-label={t('common.delete')}
+            title={t('common.delete')}
+            onClick={() => onDelete(account)}
+          >
+            <Trash2 className="size-4" />
+          </Button>
+        )}
+      </div>
     </div>
   )
 }
@@ -85,7 +111,7 @@ function PanelBody({ account }: { account: Account }) {
  * a link to the full detail page. Full width on a phone. Reads the detail page's own queries, so
  * opening the detail afterwards is served from the cache.
  */
-export function AccountPanel({ account, onClose }: { account: Account | null; onClose: () => void }) {
+export function AccountPanel({ account, onClose, ...actions }: { account: Account | null; onClose: () => void } & PanelActions) {
   const { t } = useTranslation()
   return (
     <Sheet open={account != null} onOpenChange={(open) => { if (!open) onClose() }}>
@@ -95,13 +121,16 @@ export function AccountPanel({ account, onClose }: { account: Account | null; on
       >
         {account && (
           <>
-            <SheetHeader className="pr-12">
-              <SheetTitle className="text-base font-bold">{account.name}</SheetTitle>
-              <SheetDescription>
-                {t(accountTypeLabelKey(account.type))}{account.provider ? ` · ${account.provider}` : ''}
-              </SheetDescription>
+            <SheetHeader className="flex-row items-center gap-3 p-4 pr-12">
+              <AccountMark account={account} />
+              <div className="flex min-w-0 flex-col gap-0.5">
+                <SheetTitle className="truncate text-base font-bold">{account.name}</SheetTitle>
+                <SheetDescription className="truncate">
+                  {t(accountTypeLabelKey(account.type))}{account.provider ? ` · ${account.provider}` : ''}
+                </SheetDescription>
+              </div>
             </SheetHeader>
-            <PanelBody key={account.id} account={account} />
+            <PanelBody key={account.id} account={account} {...actions} />
           </>
         )}
       </SheetContent>

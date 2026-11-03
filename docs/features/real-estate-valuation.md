@@ -64,11 +64,13 @@ Daily snapshot job (unchanged) picks up the new balance -> gain curve for free
 - `lib/property-icons.ts` — `PROPERTY_KIND_ICONS`, one lucide glyph per `PropertyKind`,
   shared by the add-property picker and the account row (`AccountMark`)
 - `components/property/PropertyDetailSection.tsx` — mounted from `AccountDetailPage` on
-  `type === 'REAL_ESTATE'`
+  `type === 'REAL_ESTATE'`: characteristics, valuation, financing and ownership in a two-column
+  grid. The current value, the gain since purchase and the cost basis are in the page's hero
 - `components/property/PropertyMetadataForm.tsx` — RHF + zod, five sections
 - `components/property/AddressAutocomplete.tsx` — debounced, proxied through the backend
 - `components/property/PropertyValuationCard.tsx` — estimate, band, method disclosure
-- `components/property/PropertyValuationChart.tsx` — value over time vs cost basis
+- `components/property/PropertyValuationChart.tsx` — value over time vs cost basis; beside the
+  hero on the detail page, where it falls back to the balance history below two estimates
 - `components/property/PropertyFinancingCard.tsx` — linked loans and equity
   since the redesign; the Property & loans page ([real-estate-page.md](./real-estate-page.md))
   shows the same figures

@@ -410,6 +410,12 @@
     "panel": {
       "latestTransactions": "Últimos movimientos",
       "viewDetail": "Ver el detalle"
+    },
+    "detail": {
+      "rate": "Tipo anual",
+      "ceiling": "Límite",
+      "ceilingUsed": "{{pct}} del límite",
+      "share": "Tu parte"
     }
   },
   "analysis": {

@@ -1,10 +1,9 @@
 import { Fragment, useState, useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
-import { useAccounts, useAccountTree, useAccountDeletionImpact, useUpdateAccount, useDeleteAccount, useUpdateDebtMetadata } from '@/features/accounts/hooks'
+import { useAccounts, useAccountTree, useAccountDeletionImpact, useDeleteAccount } from '@/features/accounts/hooks'
 import { useHistory } from '@/features/history/hooks'
 import { useSavingsSuggestions } from '@/features/savings/hooks'
-import { AccountForm } from '@/components/shared/AccountForm'
 import { AddAccountModal } from '@/components/shared/AddAccountModal'
 import { AddPropertyModal } from '@/components/property/AddPropertyModal'
 import { ExportAccountsModal } from '@/components/shared/ExportAccountsModal'
@@ -22,14 +21,15 @@ import { SegmentedControl } from '@/components/shared/SegmentedControl'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Plus, Wallet, Download } from 'lucide-react'
+import { Download, PiggyBank, Plus, Wallet } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ASSET_CLASS_ORDER, assetClassColor, assetClassOf, sumBy } from '@/lib/asset-classes'
 import { HOLDING_ACCOUNT_TYPES, LIABILITY_ACCOUNT_TYPES } from '@/lib/constants'
 import { accountInvestedAt, accountPnlAt, hasMeasurableGain } from '@/features/accounts/pnl'
 import { useAppStore } from '@/stores/app-store'
-import type { Account, AccountRequest, AccountType } from '@/types/api'
+import type { Account, AccountType } from '@/types/api'
 import { accountKpis, groupByAssetClass, groupByInstitution } from './account-groups'
+import { AccountEditDialog } from './AccountEditDialog'
 import { AccountPanel } from './AccountPanel'
 import { AccountRow } from './AccountRow'
 
@@ -81,28 +81,6 @@ const TYPE_TO_GROUP: Record<AccountType, string> = {
 }
 
 
-type AccountFormData = {
-  name: string
-  type: AccountType
-  provider?: string
-  currency: string
-  currentBalance?: number
-  isManual: boolean
-  color: string
-  ticker?: string
-  logoKey?: string
-  institutionId?: string
-  borrowedAmount?: number
-  interestRatePct?: number
-  monthlyPayment?: number
-  insuranceMonthly?: number
-  fileFees?: number
-  startDate?: string
-  endDate?: string
-  linkedAccountId?: number
-  openedAt?: string
-}
-
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export function AccountsPage() {
@@ -113,8 +91,6 @@ export function AccountsPage() {
   // The demo adapter has no handler for the export route, and an unhandled route resolves to
   // {} -- which here would download a corrupt workbook instead of failing visibly.
   const demoMode = useAppStore(state => state.demoMode)
-  const updateAccount = useUpdateAccount()
-  const updateDebt = useUpdateDebtMetadata()
   const deleteAccount = useDeleteAccount()
   const { data: savingsSuggestions } = useSavingsSuggestions()
   const hasSavingsSuggestions = Array.isArray(savingsSuggestions) && savingsSuggestions.length > 0
@@ -360,91 +336,11 @@ export function AccountsPage() {
     setSearchParams((params) => { params.delete('edit'); return params }, { replace: true })
   }
 
-  function handleEditFormOpenChange(open: boolean) {
-    if (!open) closeEdit()
-  }
-
-  async function handleEditSubmit(data: AccountFormData) {
-    if (!editingAccount) return
-    const request: AccountRequest = {
-      name: data.name,
-      type: data.type,
-      provider: data.provider || undefined,
-      currency: data.currency,
-      currentBalance: data.currentBalance,
-      isManual: data.isManual,
-      color: data.color,
-      ticker: data.ticker || undefined,
-      // Empty rather than absent for every account without a logo choice; the backend keeps
-      // whatever it already stores when this is undefined.
-      logoKey: data.logoKey || undefined,
-      // Set only when a bank was picked from the catalog; the backend resolves its logo from it.
-      institutionId: data.institutionId,
-      // Undefined leaves the stored date alone, which is what an account type that never offers
-      // the field should do -- see AccountRequest.
-      openedAt: data.openedAt || undefined,
-    }
-    await updateAccount.mutateAsync({ id: editingAccount.id, data: request })
-    if (data.type === 'LOAN' && data.borrowedAmount && data.borrowedAmount > 0) {
-      await updateDebt.mutateAsync({
-        id: editingAccount.id,
-        data: {
-          borrowedAmount: data.borrowedAmount,
-          interestRate: data.interestRatePct != null ? data.interestRatePct / 100 : undefined,
-          monthlyPayment: data.monthlyPayment,
-          insuranceMonthly: data.insuranceMonthly,
-          fileFees: data.fileFees,
-          lenderName: data.provider || undefined,
-          startDate: data.startDate || undefined,
-          endDate: data.endDate || undefined,
-          // null, not undefined: an omitted key would leave a previously linked property
-          // attached when the user picks "no linked asset".
-          linkedAccountId: data.linkedAccountId ?? null,
-        },
-      })
-    }
-    closeEdit()
-  }
-
   async function handleConfirmDelete() {
     if (deleteId === null) return
     await deleteAccount.mutateAsync(deleteId)
     setDeleteId(null)
   }
-
-  const defaultValues: Partial<AccountFormData> | undefined = useMemo(() => {
-    if (!editingAccount) return undefined
-    const debt = editingAccount.debt
-    return {
-      name: editingAccount.name,
-      type: editingAccount.type,
-      provider: (editingAccount.type === 'LOAN' ? debt?.lenderName : editingAccount.provider) ?? '',
-      currency: editingAccount.currency,
-      // The form asks for a card's amount owed; the backend stores it negative.
-      currentBalance: editingAccount.type === 'CREDIT_CARD'
-        ? Math.abs(editingAccount.currentBalance)
-        : editingAccount.currentBalance,
-      isManual: editingAccount.isManual,
-      color: editingAccount.color,
-      ticker: editingAccount.ticker ?? '',
-      logoKey: editingAccount.logoKey ?? '',
-      openedAt: editingAccount.openedAt ?? '',
-      ...(debt
-        ? {
-            borrowedAmount: debt.borrowedAmount,
-            interestRatePct: debt.interestRate != null ? debt.interestRate * 100 : undefined,
-            monthlyPayment: debt.monthlyPayment ?? undefined,
-            insuranceMonthly: debt.insuranceMonthly ?? undefined,
-            fileFees: debt.fileFees ?? undefined,
-            startDate: debt.startDate ?? '',
-            endDate: debt.endDate ?? '',
-            linkedAccountId: debt.linkedAccountId ?? undefined,
-          }
-        : {}),
-    }
-  }, [editingAccount])
-
-  const isMutating = updateAccount.isPending || updateDebt.isPending
 
   const hasAnyAccounts = (accounts?.length ?? 0) > 0
 
@@ -481,14 +377,15 @@ export function AccountsPage() {
 
       {/* Savings suggestions banner */}
       {hasSavingsSuggestions && (
-        <div className="flex items-center justify-between rounded-lg border border-gain/30 bg-gain/10 px-4 py-3">
-          <p className="text-sm text-gain">
+        <div className="flex items-center gap-3 rounded-2xl bg-card py-2 pr-2 pl-4 ring-1 ring-foreground/10">
+          <PiggyBank className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+          <p className="min-w-0 flex-1 text-sm font-medium">
             {t('savings.suggestionsBanner', { count: savingsSuggestions!.length })}
           </p>
           <Button
             size="sm"
             variant="outline"
-            className="ml-4 shrink-0"
+            className="h-9 shrink-0 px-4"
             onClick={() => navigate(`/accounts/${savingsSuggestions![0].accountId}`)}
           >
             {t('savings.configureSavings')}
@@ -521,7 +418,9 @@ export function AccountsPage() {
         </div>
       )}
 
+      {/* Wrapped: the strip's own -m-1 (focus-ring room) would cancel the space-y gap below it. */}
       {hasAnyAccounts && (
+        <div>
         <ScrollStrip activeKey={filter}>
           <div className="flex w-max items-center gap-1 md:w-auto md:flex-wrap">
             {FILTER_KEYS.map((f) => (
@@ -541,6 +440,7 @@ export function AccountsPage() {
             ))}
           </div>
         </ScrollStrip>
+        </div>
       )}
 
       {isLoading ? (
@@ -569,8 +469,9 @@ export function AccountsPage() {
               }}
             />
           ) : (
-            <Card className="py-2 lg:col-span-7">
-              <div className="flex justify-end px-4 pt-2">
+            <Card className="lg:col-span-7">
+              <CardHeader className="flex flex-wrap items-center justify-between gap-2">
+                <CardTitle>{t('dashboard.kpi.accountCount', { count: filteredNonPockets.length })}</CardTitle>
                 <SegmentedControl
                   ariaLabel={t('accounts.groupBy.label')}
                   value={groupBy}
@@ -580,17 +481,21 @@ export function AccountsPage() {
                     { value: 'institution', label: t('accounts.groupBy.institution') },
                   ]}
                 />
-              </div>
+              </CardHeader>
               <CardContent className="divide-y divide-border px-2">
                 {groups.map((group) => (
                   <section key={group.key} aria-labelledby={`group-${group.key}`} className="py-2">
-                    <div className="flex items-center justify-between gap-3 px-3 pt-1 pb-1">
-                      <span id={`group-${group.key}`} className="inline-flex min-w-0 items-center gap-2 text-[13px] font-semibold">
-                        {/* Colour follows the asset class; an institution has none. */}
-                        {group.color && <span className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: group.color }} />}
-                        <span className="truncate">{group.label}</span>
-                      </span>
-                      <CurrencyDisplay value={group.total} className="shrink-0 text-[13px] font-semibold tabular-nums" />
+                    <div className="flex items-center py-1">
+                      <div className="flex min-w-0 flex-1 items-center justify-between gap-3 px-3">
+                        <span id={`group-${group.key}`} className="inline-flex min-w-0 items-center gap-2 text-[13px] font-semibold">
+                          {/* Colour follows the asset class; an institution has none. */}
+                          {group.color && <span className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: group.color }} />}
+                          <span className="truncate">{group.label}</span>
+                        </span>
+                        <CurrencyDisplay value={group.total} className="shrink-0 text-[13px] font-semibold tabular-nums" />
+                      </div>
+                      {/* The rows' edit / delete column, so the total sits in line with the balances. */}
+                      <span className="hidden w-16 shrink-0 sm:block" aria-hidden />
                     </div>
                     <ul>
                       {group.items.map(({ account, pockets }) => (
@@ -690,17 +595,14 @@ export function AccountsPage() {
         onOpenChange={setShowCreateModal}
       />
 
-      <AccountPanel account={panelAccount} onClose={() => setPanelId(null)} />
-
-      <AccountForm
-        open={editingAccount != null}
-        onOpenChange={handleEditFormOpenChange}
-        onSubmit={handleEditSubmit}
-        defaultValues={defaultValues}
-        accounts={accounts}
-        title={t('accounts.editAccount')}
-        loading={isMutating}
+      <AccountPanel
+        account={panelAccount}
+        onClose={() => setPanelId(null)}
+        onEdit={(account) => { setPanelId(null); handleOpenEdit(account) }}
+        onDelete={(account) => { setPanelId(null); setDeleteId(account.id) }}
       />
+
+      <AccountEditDialog account={editingAccount} onClose={closeEdit} />
 
       <ConfirmDialog
         open={deleteId !== null}
