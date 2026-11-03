@@ -3076,5 +3076,57 @@
     "bar": "Stacked bar",
     "donut": "Donut",
     "treemap": "Treemap"
+  },
+  "income": {
+    "error": "Could not load passive income.",
+    "empty": {
+      "title": "No passive income yet",
+      "description": "Dividends, SCPI distributions, rent and savings interest will show up here as soon as one of your accounts produces some."
+    },
+    "hero": {
+      "projected": "Passive income expected over 12 months",
+      "perMonth": "≈ {{amount}} per month",
+      "received": "{{amount}} in dividends received over 12 months",
+      "sources": "Where it comes from",
+      "coverage": "Essential expenses covered",
+      "coverageDetail": "{{income}} per month against {{expenses}} of essential expenses.",
+      "coverageUnknown": "Set your monthly essential expenses to see how much of them it covers:"
+    },
+    "source": {
+      "dividends": "Dividends",
+      "scpi": "SCPI",
+      "rent": "Rent",
+      "interest": "Savings interest"
+    },
+    "type": {
+      "dividends": "Stock / ETF",
+      "scpi": "SCPI",
+      "rent": "Real estate",
+      "interest": "Savings account"
+    },
+    "payment": {
+      "dividends": "Dividend",
+      "scpi": "SCPI distribution",
+      "interest": "Yearly interest"
+    },
+    "months": {
+      "title": "Month by month",
+      "description": "Forecast for the next 12 months"
+    },
+    "upcoming": {
+      "title": "Next payments",
+      "empty": "No payment expected.",
+      "exDate": "ex-dividend date"
+    },
+    "table": {
+      "title": "Income by source",
+      "description": "Income expected over 12 months",
+      "source": "Source",
+      "type": "Type",
+      "amount": "Yearly income",
+      "rate": "Rate",
+      "cadence": "Frequency",
+      "next": "Next"
+    }
   }
 }

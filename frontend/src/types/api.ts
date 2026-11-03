@@ -199,6 +199,23 @@ export interface UpcomingDividend {
   countsInBudget: boolean
 }
 
+/** A dividend that landed on an account (`GET /dividends/received`). `amount` is the credit as booked. */
+export interface ReceivedDividend {
+  id: string
+  transactionId: number | null
+  accountId: number
+  accountName: string
+  accountType: AccountType
+  ticker: string | null
+  name: string | null
+  receivedDate: string
+  amount: number
+  currency: string
+  exDate: string | null
+  amountPerShare: number | null
+  countsInBudget: boolean
+}
+
 export interface ScpiPosition {
   isin: string | null
   managementCompany: string | null

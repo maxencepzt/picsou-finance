@@ -1,4 +1,5 @@
-import type { UpcomingDividend } from '@/types/api'
+import type { ReceivedDividend, UpcomingDividend } from '@/types/api'
+import { daysBeforeToday, daysFromToday } from './dates'
 
 function iso(d: Date): string {
   const y = d.getFullYear()
@@ -321,4 +322,17 @@ export function mockUpcomingDividends(horizonDays: number, accountId?: number): 
     .sort((a, b) => a.expectedDate.localeCompare(b.expectedDate)
       || a.accountName.localeCompare(b.accountName)
       || (a.ticker ?? '').localeCompare(b.ticker ?? ''))
+}
+
+/** Dividends already credited, newest first, within the last `days` days. */
+export function mockReceivedDividends(days: number): ReceivedDividend[] {
+  const rows: ReceivedDividend[] = [
+    { id: 'HOLDING:2:MSFT:r1', transactionId: 9101, accountId: 2, accountName: 'PEA BoursoBank', accountType: 'PEA', ticker: 'MSFT', name: 'Microsoft Corp.', receivedDate: daysFromToday(-24), amount: 6, currency: 'EUR', exDate: daysFromToday(-45), amountPerShare: 0.75, countsInBudget: false },
+    { id: 'HOLDING:2:AAPL:r2', transactionId: 9102, accountId: 2, accountName: 'PEA BoursoBank', accountType: 'PEA', ticker: 'AAPL', name: 'Apple Inc.', receivedDate: daysFromToday(-71), amount: 3.6, currency: 'EUR', exDate: daysFromToday(-80), amountPerShare: 0.24, countsInBudget: false },
+    { id: 'HOLDING:2:MSFT:r3', transactionId: 9103, accountId: 2, accountName: 'PEA BoursoBank', accountType: 'PEA', ticker: 'MSFT', name: 'Microsoft Corp.', receivedDate: daysFromToday(-115), amount: 6, currency: 'EUR', exDate: daysFromToday(-136), amountPerShare: 0.75, countsInBudget: false },
+    { id: 'HOLDING:2:AAPL:r4', transactionId: 9104, accountId: 2, accountName: 'PEA BoursoBank', accountType: 'PEA', ticker: 'AAPL', name: 'Apple Inc.', receivedDate: daysFromToday(-162), amount: 3.6, currency: 'EUR', exDate: daysFromToday(-171), amountPerShare: 0.24, countsInBudget: false },
+    { id: 'HOLDING:2:MSFT:r5', transactionId: 9105, accountId: 2, accountName: 'PEA BoursoBank', accountType: 'PEA', ticker: 'MSFT', name: 'Microsoft Corp.', receivedDate: daysFromToday(-206), amount: 6, currency: 'EUR', exDate: daysFromToday(-227), amountPerShare: 0.75, countsInBudget: false },
+    { id: 'HOLDING:2:NVDA:r6', transactionId: 9106, accountId: 2, accountName: 'PEA BoursoBank', accountType: 'PEA', ticker: 'NVDA', name: 'NVIDIA Corp.', receivedDate: daysFromToday(-250), amount: 0.4, currency: 'EUR', exDate: daysFromToday(-260), amountPerShare: 0.04, countsInBudget: false },
+  ]
+  return rows.filter((row) => daysBeforeToday(row.receivedDate) <= days)
 }

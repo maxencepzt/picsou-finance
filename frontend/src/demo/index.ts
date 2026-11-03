@@ -34,7 +34,7 @@ import {
   mockTransactionSearch,
   mockUncategorized,
 } from './data/budget'
-import { mockUpcomingDividends } from './data/dividends'
+import { mockReceivedDividends, mockUpcomingDividends } from './data/dividends'
 import type { CashflowPeriod, CategorizeRequest } from '@/types/api'
 import { demoLoanSchedule } from './data/loans'
 
@@ -1447,6 +1447,7 @@ handlers.set(key('GET', '/dividends/upcoming'), (config) => {
     accountId != null && Number.isFinite(accountId) ? accountId : undefined,
   )
 })
+handlers.set(key('GET', '/dividends/received'), (config) => mockReceivedDividends(Number(config.params?.days ?? 30)))
 handlers.set(key('POST', '/recurring'), (config) => {
   const body = JSON.parse(config.data || '{}')
   const cat = mockCategories.find((c) => c.id === body.categoryId)

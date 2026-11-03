@@ -3076,5 +3076,57 @@
     "bar": "Gestapelter Balken",
     "donut": "Ringdiagramm",
     "treemap": "Treemap"
+  },
+  "income": {
+    "error": "Passive Einkünfte konnten nicht geladen werden.",
+    "empty": {
+      "title": "Noch keine passiven Einkünfte",
+      "description": "Dividenden, SCPI-Ausschüttungen, Mieten und Sparzinsen erscheinen hier, sobald eines Ihrer Konten welche abwirft."
+    },
+    "hero": {
+      "projected": "Erwartete passive Einkünfte über 12 Monate",
+      "perMonth": "≈ {{amount}} pro Monat",
+      "received": "{{amount}} Dividenden in den letzten 12 Monaten erhalten",
+      "sources": "Woher sie kommen",
+      "coverage": "Deckung der Grundausgaben",
+      "coverageDetail": "{{income}} pro Monat gegenüber {{expenses}} Grundausgaben.",
+      "coverageUnknown": "Geben Sie Ihre monatlichen Grundausgaben an, um zu sehen, welchen Anteil sie decken:"
+    },
+    "source": {
+      "dividends": "Dividenden",
+      "scpi": "SCPI",
+      "rent": "Mieten",
+      "interest": "Sparzinsen"
+    },
+    "type": {
+      "dividends": "Aktie / ETF",
+      "scpi": "SCPI",
+      "rent": "Immobilie",
+      "interest": "Sparkonto"
+    },
+    "payment": {
+      "dividends": "Dividende",
+      "scpi": "SCPI-Ausschüttung",
+      "interest": "Jahreszinsen"
+    },
+    "months": {
+      "title": "Monat für Monat",
+      "description": "Prognose für die nächsten 12 Monate"
+    },
+    "upcoming": {
+      "title": "Nächste Zahlungen",
+      "empty": "Keine Zahlung erwartet.",
+      "exDate": "Ex-Tag"
+    },
+    "table": {
+      "title": "Einkünfte nach Quelle",
+      "description": "Erwartete Einkünfte über 12 Monate",
+      "source": "Quelle",
+      "type": "Art",
+      "amount": "Jahreseinkünfte",
+      "rate": "Zinssatz",
+      "cadence": "Häufigkeit",
+      "next": "Nächste"
+    }
   }
 }

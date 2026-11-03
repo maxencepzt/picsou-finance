@@ -3076,5 +3076,57 @@
     "bar": "Barra apilada",
     "donut": "Anillo",
     "treemap": "Treemap"
+  },
+  "income": {
+    "error": "No se pudieron cargar los ingresos pasivos.",
+    "empty": {
+      "title": "Aún no hay ingresos pasivos",
+      "description": "Los dividendos, las distribuciones de SCPI, los alquileres y los intereses de las cuentas de ahorro aparecerán aquí en cuanto una de sus cuentas los genere."
+    },
+    "hero": {
+      "projected": "Ingresos pasivos previstos en 12 meses",
+      "perMonth": "≈ {{amount}} al mes",
+      "received": "{{amount}} en dividendos recibidos en 12 meses",
+      "sources": "De dónde vienen",
+      "coverage": "Cobertura de los gastos esenciales",
+      "coverageDetail": "{{income}} al mes frente a {{expenses}} de gastos esenciales.",
+      "coverageUnknown": "Indique sus gastos esenciales mensuales para ver qué parte cubren:"
+    },
+    "source": {
+      "dividends": "Dividendos",
+      "scpi": "SCPI",
+      "rent": "Alquileres",
+      "interest": "Intereses de ahorro"
+    },
+    "type": {
+      "dividends": "Acción / ETF",
+      "scpi": "SCPI",
+      "rent": "Inmobiliario",
+      "interest": "Cuenta de ahorro"
+    },
+    "payment": {
+      "dividends": "Dividendo",
+      "scpi": "Distribución SCPI",
+      "interest": "Intereses anuales"
+    },
+    "months": {
+      "title": "Mes a mes",
+      "description": "Previsión para los próximos 12 meses"
+    },
+    "upcoming": {
+      "title": "Próximos pagos",
+      "empty": "Ningún pago previsto.",
+      "exDate": "fecha ex-dividendo"
+    },
+    "table": {
+      "title": "Ingresos por fuente",
+      "description": "Ingresos previstos en 12 meses",
+      "source": "Fuente",
+      "type": "Tipo",
+      "amount": "Ingreso anual",
+      "rate": "Tipo de interés",
+      "cadence": "Frecuencia",
+      "next": "Próximo"
+    }
   }
 }

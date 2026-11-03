@@ -3076,5 +3076,57 @@
     "bar": "Barre empilée",
     "donut": "Camembert",
     "treemap": "Treemap"
+  },
+  "income": {
+    "error": "Impossible de charger les revenus passifs.",
+    "empty": {
+      "title": "Aucun revenu passif pour l'instant",
+      "description": "Dividendes, distributions de SCPI, loyers et intérêts des livrets apparaîtront ici dès qu'un de vos comptes en produit."
+    },
+    "hero": {
+      "projected": "Revenus passifs prévus sur 12 mois",
+      "perMonth": "≈ {{amount}} par mois",
+      "received": "{{amount}} de dividendes reçus sur 12 mois",
+      "sources": "D'où ils viennent",
+      "coverage": "Couverture des dépenses essentielles",
+      "coverageDetail": "{{income}} par mois face à {{expenses}} de dépenses essentielles.",
+      "coverageUnknown": "Renseignez vos dépenses essentielles mensuelles pour voir la part qu'ils couvrent :"
+    },
+    "source": {
+      "dividends": "Dividendes",
+      "scpi": "SCPI",
+      "rent": "Loyers",
+      "interest": "Intérêts des livrets"
+    },
+    "type": {
+      "dividends": "Action / ETF",
+      "scpi": "SCPI",
+      "rent": "Immobilier",
+      "interest": "Livret"
+    },
+    "payment": {
+      "dividends": "Dividende",
+      "scpi": "Distribution SCPI",
+      "interest": "Intérêts annuels"
+    },
+    "months": {
+      "title": "Mois par mois",
+      "description": "Prévisions sur les 12 prochains mois"
+    },
+    "upcoming": {
+      "title": "Prochains versements",
+      "empty": "Aucun versement prévu.",
+      "exDate": "date de détachement"
+    },
+    "table": {
+      "title": "Revenus par source",
+      "description": "Revenus prévus sur 12 mois",
+      "source": "Source",
+      "type": "Type",
+      "amount": "Revenu annuel",
+      "rate": "Taux",
+      "cadence": "Fréquence",
+      "next": "Prochain"
+    }
   }
 }

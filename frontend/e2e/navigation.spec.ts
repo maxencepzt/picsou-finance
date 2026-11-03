@@ -37,6 +37,16 @@ test.describe('Sidebar navigation', () => {
     await expect(page.getByRole('heading', { level: 1, name: 'Synthèse' })).toBeVisible()
   })
 
+  for (const [label, path] of [
+    ['Revenus passifs', '/income'],
+  ] as const) {
+    test(`should navigate to ${label}`, async ({ page }) => {
+      await page.getByRole('navigation', { name: 'Navigation principale' }).getByRole('link', { name: label }).click()
+      await page.waitForURL(`**${path}`)
+      await expect(page.getByRole('heading', { level: 1, name: label })).toBeVisible()
+    })
+  }
+
   test('opens the search palette with the platform shortcut and jumps to a page', async ({ page }) => {
     // The layout mounts the shortcut listener; wait for it before pressing.
     await expect(page.getByRole('button', { name: 'Rechercher un compte, un titre, une page…' })).toBeVisible()
