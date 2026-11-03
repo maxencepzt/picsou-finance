@@ -35,6 +35,7 @@ import {
   mockUncategorized,
 } from './data/budget'
 import { mockReceivedDividends, mockUpcomingDividends } from './data/dividends'
+import { mockBenchmark, mockFees, mockMerchantSpending, mockMovers, mockPerformance, mockRecurringStats } from './data/insights'
 import type { CashflowPeriod, CategorizeRequest } from '@/types/api'
 import { demoLoanSchedule } from './data/loans'
 
@@ -154,10 +155,15 @@ handlers.set(key('GET', '/family/members'), () => [
 
 // Dashboard
 handlers.set(key('GET', '/dashboard'), () => mockDashboard(_demoAccounts))
+handlers.set(key('GET', '/dashboard/movers'), (config) => mockMovers(Number(config.params?.limit ?? 5)))
 
 // Analysis
 handlers.set(key('GET', '/analysis/pyramid'), () => mockWealthPyramid)
 handlers.set(key('GET', '/analysis/diversification'), () => mockDiversification)
+handlers.set(key('GET', '/analysis/performance'), (config) => mockPerformance(Number(config.params?.months ?? 12)))
+handlers.set(key('GET', '/analysis/benchmark'), (config) =>
+  mockBenchmark(String(config.params?.key ?? 'MSCI_WORLD'), Number(config.params?.months ?? 12)))
+handlers.set(key('GET', '/analysis/fees'), (config) => mockFees(Number(config.params?.months ?? 12)))
 // Held in a mutable copy, because saving targets invalidates the whole ['analysis'] namespace:
 // a PUT that only echoed the merge back would be undone by the refetch that follows it, and the
 // demo would show the form silently reverting.
@@ -719,6 +725,7 @@ handlers.set(key('GET', '/goals'), () => mockGoals)
 const demoGoal = (id: string) => mockGoals.find(g => g.id === Number(id))
 handlers.set(key('GET', '/goals/:id'), (_config, { id }) => demoGoal(id))
 handlers.set(key('GET', '/goals/:id/months'), (_config, { id }) => mockGoalMonths[Number(id)] ?? [])
+handlers.set(key('GET', '/goals/:id/recurring-stats'), (_config, { id }) => mockRecurringStats(Number(id)))
 handlers.set(key('GET', '/goals/:id/history'), (_config, { id }) =>
   netWorthHistory(demoGoal(id)?.accounts.map(a => a.id) ?? [], 12, false, _demoAccounts))
 handlers.set(key('POST', '/goals/:id/history/extend'), (_config, { id }) => demoGoal(id))
@@ -1428,6 +1435,7 @@ handlers.set(key('GET', '/allocation'), (config) =>
   mockAllocation(((config.params?.period as CashflowPeriod) ?? 'CYCLE'), _demoAccounts))
 
 // Spending breakdown & per-category drill (one handler per known category id)
+handlers.set(key('GET', '/spending/by-merchant'), (config) => mockMerchantSpending(Number(config.params?.limit ?? 10)))
 handlers.set(key('GET', '/spending/by-category'), (config) =>
   mockSpendingByCategory(((config.params?.period as CashflowPeriod) ?? 'CYCLE')))
 for (const c of mockCategories) {
