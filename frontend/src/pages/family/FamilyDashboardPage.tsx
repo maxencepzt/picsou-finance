@@ -1,154 +1,139 @@
 import { useTranslation } from 'react-i18next'
-import { useMoney } from '@/hooks/use-money'
-import { PageHeader } from '@/components/shared/PageHeader'
-import { EmptyState } from '@/components/shared/EmptyState'
+import { CurrencyDisplay } from '@/components/shared/CurrencyDisplay'
+import { ErrorState } from '@/components/shared/ErrorState'
 import { LoadingSkeleton } from '@/components/shared/LoadingSkeleton'
-import { useFamilyDashboard } from '@/features/family/hooks'
+import { PageHeader } from '@/components/shared/PageHeader'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Wallet, Target, Users } from 'lucide-react'
+import { Progress } from '@/components/ui/progress'
+import { useAccounts } from '@/features/accounts/hooks'
+import { useFamilyDashboard } from '@/features/family/hooks'
+import { accountTypeLabelKey } from '@/lib/constants'
+import { logoKeyUrl, providerLogoUrl } from '@/lib/provider-logos'
+import { cn, deriveMonogram, formatPercent } from '@/lib/utils'
+import type { AccountType } from '@/types/api'
 
+/** The household view: what members share, as one figure, a list of accounts and the goals they fund together. */
 export function FamilyDashboardPage() {
-  const money = useMoney()
   const { t } = useTranslation()
-  const { data, isLoading } = useFamilyDashboard()
-
-  if (isLoading) {
-    return <LoadingSkeleton />
+  const { data, isLoading, isError, refetch } = useFamilyDashboard()
+  // The shared view carries no provider; the member's own accounts (same ids) lend theirs.
+  const { data: ownAccounts = [] } = useAccounts()
+  const logoOf = (id: number) => {
+    const own = ownAccounts.find((a) => a.id === id)
+    return own ? logoKeyUrl(own.logoKey) ?? own.logoUrl ?? providerLogoUrl(own.provider) : null
   }
 
-  const dashboard = data!
+  if (isLoading) return <LoadingSkeleton />
+
+  const header = <PageHeader title={t('family.dashboard.title')} />
+  if (isError || !data) {
+    return (
+      <div className="space-y-4">
+        {header}
+        <ErrorState onRetry={() => void refetch()} />
+      </div>
+    )
+  }
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title={t('family.dashboard.title')}
-      />
+    // space-y, not gap: the header keeps its own 24px margin instead of adding the gap to it.
+    <div className="space-y-4">
+      {header}
 
-      {/* Total shared net worth */}
       <Card>
-        <CardHeader className="flex flex-row items-center gap-4">
-          <div className="flex size-12 items-center justify-center rounded-lg bg-muted">
-            <Users className="size-6 text-muted-foreground" />
-          </div>
-          <div>
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              {t('family.dashboard.sharedNetWorth')}
-            </CardTitle>
-            <p className="text-2xl font-bold">
-              {money.amount(dashboard.totalSharedNetWorth)}
-            </p>
-          </div>
-        </CardHeader>
+        <CardContent className="flex flex-col gap-1.5 py-2">
+          <span className="text-sm font-medium text-muted-foreground">{t('family.dashboard.sharedNetWorth')}</span>
+          <CurrencyDisplay
+            value={data.totalSharedNetWorth}
+            className="text-4xl leading-tight font-bold tracking-tight tabular-nums text-foreground sm:text-[44px]"
+          />
+          <span className="text-[13px] text-muted-foreground">
+            {t('dashboard.kpi.accountCount', { count: data.sharedAccounts.length })}
+          </span>
+        </CardContent>
       </Card>
 
-      {/* Shared accounts */}
-      <div>
-        <h2 className="mb-3 text-lg font-semibold flex items-center gap-2">
-          <Wallet className="size-5" />
-          {t('family.dashboard.sharedAccounts')}
-        </h2>
-        {dashboard.sharedAccounts.length === 0 ? (
-          <Card>
-            <CardContent>
-              <EmptyState
-                className="py-8"
-                icon={<Wallet className="size-10" />}
-                title={t('family.dashboard.noSharedAccounts')}
-              />
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {dashboard.sharedAccounts.map((account) => (
-              <Card key={`${account.ownerName}-${account.id}`}>
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-sm">{account.name}</CardTitle>
-                    <span className="text-xs text-muted-foreground">{account.ownerName}</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">{account.type}</p>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-lg font-bold">
-                    {money.amount(account.balanceEur)}
-                  </p>
-                  {account.currency !== 'EUR' && (
-                    <p className="text-xs text-muted-foreground">
-                      {money.amount(account.balance, account.currency)}
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </div>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <Card className="h-full">
+          <CardHeader>
+            <CardTitle>{t('family.dashboard.sharedAccounts')}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {data.sharedAccounts.length === 0 ? (
+              <p className="text-sm text-muted-foreground">{t('family.dashboard.noSharedAccounts')}</p>
+            ) : (
+              <ul className="flex flex-col divide-y divide-border">
+                {data.sharedAccounts.map((account) => {
+                  const logo = logoOf(account.id)
+                  return (
+                    <li key={`${account.ownerName}-${account.id}`} className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 py-2.5 first:pt-0 last:pb-0">
+                      <Avatar className={cn('size-9 rounded-md after:rounded-md', logo && 'bg-white')} aria-hidden="true">
+                        {logo && <AvatarImage src={logo} alt="" className="rounded-md object-contain p-1" />}
+                        <AvatarFallback className="rounded-md text-[11px] font-bold text-foreground">{deriveMonogram(account.name)}</AvatarFallback>
+                      </Avatar>
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm font-semibold">{account.name}</span>
+                        <span className="block truncate text-xs text-muted-foreground">
+                          {t(accountTypeLabelKey(account.type as AccountType))} · {account.ownerName}
+                        </span>
+                      </span>
+                      <span className="flex flex-col items-end">
+                        <CurrencyDisplay value={account.balanceEur} className="text-sm font-semibold tabular-nums text-foreground" />
+                        {account.currency !== 'EUR' && (
+                          <CurrencyDisplay value={account.balance} currency={account.currency} className="text-xs tabular-nums text-muted-foreground" />
+                        )}
+                      </span>
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
 
-      {/* Shared goals */}
-      <div>
-        <h2 className="mb-3 text-lg font-semibold flex items-center gap-2">
-          <Target className="size-5" />
-          {t('family.dashboard.sharedGoals')}
-        </h2>
-        {dashboard.sharedGoals.length === 0 ? (
-          <Card>
-            <CardContent>
-              <EmptyState
-                className="py-8"
-                icon={<Target className="size-10" />}
-                title={t('family.dashboard.noSharedGoals')}
-              />
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
-            {dashboard.sharedGoals.map((goal) => {
-              const progress = goal.targetAmount > 0
-                ? Math.min((goal.currentTotal / goal.targetAmount) * 100, 100)
-                : 0
-              return (
-                <Card key={`${goal.ownerName}-${goal.id}`}>
-                  <CardHeader className="pb-2">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-sm">{goal.name}</CardTitle>
-                      <span className="text-xs text-muted-foreground">{goal.ownerName}</span>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    {/* Progress bar */}
-                    <div>
-                      <div className="flex justify-between text-xs mb-1">
-                        <span>{money.amount(goal.currentTotal)}</span>
-                        <span className="text-muted-foreground">{money.amount(goal.targetAmount)}</span>
-                      </div>
-                      <div className="h-2 rounded-full bg-muted overflow-hidden">
-                        <div
-                          className="h-full rounded-full bg-primary transition-[width]"
-                          style={{ width: `${progress}%` }}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Per-member contributions */}
-                    {goal.contributions.length > 0 && (
-                      <div className="space-y-1">
-                        <p className="text-xs font-medium text-muted-foreground">
-                          {t('family.dashboard.contributions')}
-                        </p>
-                        {goal.contributions.map((c) => (
-                          <div key={c.memberName} className="flex justify-between text-xs">
-                            <span>{c.memberName}</span>
-                            <span className="font-medium">{money.amount(c.amount)}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              )
-            })}
-          </div>
-        )}
+        <Card className="h-full">
+          <CardHeader>
+            <CardTitle>{t('family.dashboard.sharedGoals')}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {data.sharedGoals.length === 0 ? (
+              <p className="text-sm text-muted-foreground">{t('family.dashboard.noSharedGoals')}</p>
+            ) : (
+              <ul className="flex flex-col gap-5">
+                {data.sharedGoals.map((goal) => {
+                  const progress = goal.targetAmount > 0 ? Math.min((goal.currentTotal / goal.targetAmount) * 100, 100) : 0
+                  return (
+                    <li key={`${goal.ownerName}-${goal.id}`} className="flex flex-col gap-1.5">
+                      <span className="flex items-baseline justify-between gap-2">
+                        <span className="truncate text-sm font-semibold">{goal.name}</span>
+                        <span className="shrink-0 text-xs text-muted-foreground">{goal.ownerName}</span>
+                      </span>
+                      <Progress value={progress} aria-label={goal.name} />
+                      <span className="flex justify-between gap-2 text-xs text-muted-foreground">
+                        <span className="tabular-nums">
+                          <CurrencyDisplay value={goal.currentTotal} /> / <CurrencyDisplay value={goal.targetAmount} />
+                        </span>
+                        <span className="tabular-nums">{formatPercent(progress, { fractionDigits: 0 })}</span>
+                      </span>
+                      {goal.contributions.length > 0 && (
+                        <div className="mt-1 flex flex-col gap-1 rounded-xl bg-muted px-3 py-2.5 text-xs">
+                          <span className="font-medium text-muted-foreground">{t('family.dashboard.contributions')}</span>
+                          {goal.contributions.map((c) => (
+                            <span key={c.memberName} className="flex justify-between gap-2">
+                              <span className="truncate">{c.memberName}</span>
+                              <CurrencyDisplay value={c.amount} className="font-semibold tabular-nums text-foreground" />
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   )
