@@ -861,6 +861,58 @@ as a last resort. Divided by the months actually observed, not by six.
 `estimate` is `null` when there is no usable history — never `0`, which would be
 indistinguishable from "this member spends nothing" and would set a target of zero.
 
+#### `GET /api/analysis/performance?months={n}`
+
+Time-weighted (TWR) and money-weighted (XIRR) return of the member's non-hidden investment
+accounts (`PEA`, `COMPTE_TITRES`, `CRYPTO`, `ASSURANCE_VIE`, `PER`, `EMPLOYEE_SAVINGS`), at their
+ownership share. `months` ∈ `3, 6, 12, 36, 60, 0` (0 = all history, default 12); anything else is
+`400`. Formulas and null rules: `docs/features/investment-performance.md`. Unlike the global
+`non_null` default, null fields are **sent as `null`**.
+
+**Response `200`:**
+```json
+{
+  "from": "2025-11-03", "to": "2026-11-03",
+  "valueEur": 123456.78, "investedEur": 100000.00,
+  "twrPercent": 8.42, "annualizedPercent": 8.1, "xirrPercent": 7.9, "volatilityPercent": 12.3,
+  "maxDrawdownPercent": -9.8, "maxDrawdownFrom": "2026-03-02", "maxDrawdownTo": "2026-04-07",
+  "points": [{ "date": "2025-11-03", "valueEur": 110000.00, "investedEur": 95000.00, "index": 100.0 }]
+}
+```
+
+#### `GET /api/analysis/benchmark?key={key}&months={n}`
+
+Daily EUR closes of a benchmark ETF: `MSCI_WORLD` (`IWDA.AS`), `SP500` (`SXR8.DE`), `CAC40`
+(`C40.PA`); any other key is `400`, default `MSCI_WORLD`. **Read-only**: it returns whatever
+`price_snapshot` holds for the ticker over the window (`months=0`: every cached day), and `points`
+is `[]` until the price jobs have filled it — `PriceBackfillRunner` backfills 5 years at startup
+and `SchedulerService.refreshPrices` adds a row each day, both only once the instance holds
+something.
+
+**Response `200`:**
+```json
+{ "key": "MSCI_WORLD", "ticker": "IWDA.AS", "label": "MSCI World",
+  "points": [{ "date": "2025-11-03", "priceEur": 98.12 }] }
+```
+
+#### `GET /api/analysis/fees?months={n}`
+
+What the held positions cost: each line's TER (from the security profile, justETF), the
+value-weighted TER and its yearly cost, and the broker fees paid over the window (`Transaction.fees`
+plus the absolute amount of `FEE` transactions, at the member's share). `weightedTerPercent` and
+`annualCostEur` are `null` when no line has a TER. Null fields are sent as `null`.
+
+**Response `200`:**
+```json
+{
+  "from": "2025-11-03", "to": "2026-11-03",
+  "weightedTerPercent": 0.220, "annualCostEur": 210.50,
+  "coveredValueEur": 95000.00, "totalValueEur": 123456.78,
+  "lines": [{ "ticker": "IWDA.AS", "name": "iShares Core MSCI World", "valueEur": 40000.00, "terPercent": 0.200 }],
+  "brokerFeesEur": 45.60, "brokerFeesCount": 12
+}
+```
+
 ---
 
 ### 6. Geocoding — `/api/geocode`

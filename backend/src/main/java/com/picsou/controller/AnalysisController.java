@@ -2,8 +2,12 @@ package com.picsou.controller;
 
 import com.picsou.dto.AllocationTargetsRequest;
 import com.picsou.dto.AllocationTargetsResponse;
+import com.picsou.dto.BenchmarkKey;
+import com.picsou.dto.BenchmarkResponse;
 import com.picsou.dto.DiversificationResponse;
 import com.picsou.dto.EssentialExpenseEstimateResponse;
+import com.picsou.dto.FeesResponse;
+import com.picsou.dto.PerformanceResponse;
 import com.picsou.dto.ProjectionResponse;
 import com.picsou.dto.SecurityProfileRefreshResponse;
 import com.picsou.dto.WealthPyramidResponse;
@@ -11,6 +15,7 @@ import com.picsou.config.RateLimitConfig;
 import com.picsou.config.ClientIp;
 import com.picsou.service.AllocationTargetService;
 import com.picsou.service.EssentialExpenseEstimator;
+import com.picsou.service.InvestmentPerformanceService;
 import com.picsou.service.PortfolioDiversificationService;
 import com.picsou.service.ProjectionService;
 import com.picsou.service.SecurityProfileRefreshRunner;
@@ -43,6 +48,7 @@ public class AnalysisController {
     private final AllocationTargetService allocationTargetService;
     private final EssentialExpenseEstimator expenseEstimator;
     private final SecurityProfileRefreshRunner profileRefreshRunner;
+    private final InvestmentPerformanceService performanceService;
     private final UserContext userContext;
     private final Map<String, Bucket> syncBuckets;
 
@@ -52,6 +58,7 @@ public class AnalysisController {
                               AllocationTargetService allocationTargetService,
                               EssentialExpenseEstimator expenseEstimator,
                               SecurityProfileRefreshRunner profileRefreshRunner,
+                              InvestmentPerformanceService performanceService,
                               UserContext userContext,
                               @Qualifier("syncBuckets") Map<String, Bucket> syncBuckets) {
         this.pyramidService = pyramidService;
@@ -60,6 +67,7 @@ public class AnalysisController {
         this.allocationTargetService = allocationTargetService;
         this.expenseEstimator = expenseEstimator;
         this.profileRefreshRunner = profileRefreshRunner;
+        this.performanceService = performanceService;
         this.userContext = userContext;
         this.syncBuckets = syncBuckets;
     }
@@ -91,6 +99,32 @@ public class AnalysisController {
     @GetMapping("/projection")
     public ProjectionResponse projection(@RequestParam(defaultValue = "20") int years) {
         return projectionService.project(userContext.currentMemberId(), years);
+    }
+
+    /**
+     * Time- and money-weighted return of the investment accounts over {@code months}
+     * (3, 6, 12, 36, 60, or 0 for all history; anything else is a 400).
+     */
+    @GetMapping("/performance")
+    public PerformanceResponse performance(@RequestParam(defaultValue = "12") int months) {
+        return performanceService.performance(userContext.currentMemberId(), months);
+    }
+
+    /**
+     * Daily EUR closes of a benchmark ETF, read from {@code price_snapshot} only — the price jobs
+     * fill it. {@code key} is an enum, so an unknown value is a 400. Prices are global, not member
+     * data.
+     */
+    @GetMapping("/benchmark")
+    public BenchmarkResponse benchmark(@RequestParam(defaultValue = "MSCI_WORLD") BenchmarkKey key,
+                                       @RequestParam(defaultValue = "12") int months) {
+        return performanceService.benchmark(key, months);
+    }
+
+    /** Ongoing charges of the held funds and the broker fees paid over {@code months}. */
+    @GetMapping("/fees")
+    public FeesResponse fees(@RequestParam(defaultValue = "12") int months) {
+        return performanceService.fees(userContext.currentMemberId(), months);
     }
 
     /** The member's targets, or the shipped defaults when they have never set any. */
