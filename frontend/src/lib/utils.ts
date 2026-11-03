@@ -321,3 +321,9 @@ export function isOAuthAuthorizeRedirect(redirect: string): boolean {
 export function normalizeSearch(value: string): string {
   return value.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim()
 }
+
+/** Day and short month ("12 nov."), for compact date columns. */
+export function formatShortDate(dateStr: string | null | undefined, locale = getLocale()): string {
+  if (!dateStr) return '—'
+  return new Intl.DateTimeFormat(normalizeIntlLocale(locale), { day: 'numeric', month: 'short' }).format(toDate(dateStr))
+}

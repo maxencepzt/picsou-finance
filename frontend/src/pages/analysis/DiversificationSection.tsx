@@ -12,7 +12,7 @@ import { cn, formatDecimal, formatPercent } from '@/lib/utils'
 import { useRefreshSecurityProfiles } from '@/features/analysis/hooks'
 import { HoldingClassificationModal } from './HoldingClassificationModal'
 import { SliceContributors } from './SliceContributors'
-import { BreakdownDonut, BreakdownTreemap, type BreakdownView } from './BreakdownChart'
+import { BreakdownDonut, BreakdownTreemap, type BreakdownView } from '@/components/shared/BreakdownChart'
 import type {
   Diversification,
   DiversificationBreakdown,
@@ -46,9 +46,9 @@ function storedView(): BreakdownView {
 const MIN_VISIBLE_PERCENT = 0.5
 
 function scoreTone(score: number): string {
-  if (score >= 75) return 'text-green-600 dark:text-green-500'
-  if (score >= 50) return 'text-amber-600 dark:text-amber-500'
-  return 'text-red-600 dark:text-red-500'
+  if (score >= 75) return 'text-gain'
+  if (score >= 50) return 'text-warning'
+  return 'text-loss'
 }
 
 /**

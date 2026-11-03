@@ -105,13 +105,13 @@ export function BreakdownTreemap({
             backgroundColor: item.color,
             opacity: selected === null || selected === item.key ? 1 : 0.35,
             // Hairline gaps rather than borders, so the rectangles keep their exact proportions.
-            outline: '1px solid var(--color-background)',
+            outline: '1px solid var(--color-card)',
           }}
         >
           {/* Below this a label is unreadable and only adds noise — the same threshold the
               account distribution treemap settled on. */}
           {w > 12 && h > 14 && (
-            <span className="pointer-events-none absolute left-1.5 top-1 text-[10px] font-medium text-white/90 drop-shadow">
+            <span className="pointer-events-none absolute left-1.5 top-1 text-[11px] font-semibold text-on-class">
               {item.label}
             </span>
           )}

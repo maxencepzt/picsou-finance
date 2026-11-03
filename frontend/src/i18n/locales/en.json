@@ -102,8 +102,8 @@
     }
   },
   "dashboard": {
-    "title": "Dashboard",
-    "netWorth": "Total net worth",
+    "title": "Overview",
+    "netWorth": "Net worth",
     "grossWorth": "Gross worth",
     "financialWorth": "Financial assets",
     "syncAccounts": "Sync accounts",
@@ -156,7 +156,77 @@
       "financial": "Financial assets evolution"
     },
     "liabilitiesTitle": "Liabilities",
-    "liabilitiesDescription": "Outstanding debt by account"
+    "liabilitiesDescription": "Outstanding debt by account",
+    "rangeLabel": "Period",
+    "overRange": {
+      "24H": "over 24 h",
+      "7D": "over 7 days",
+      "1M": "over 1 month",
+      "3M": "over 3 months",
+      "YTD": "since 1 January",
+      "1Y": "over 1 year",
+      "ALL": "since the start"
+    },
+    "assetsMinusDebts": "Assets minus debts:",
+    "kpi": {
+      "grossAssets": "Gross assets",
+      "accountCount": "{{count}} account",
+      "accountCount_other": "{{count}} accounts",
+      "debts": "Debts",
+      "noLoan": "No ongoing loan",
+      "monthChange": "Change over 1 month",
+      "noHistory": "Not enough history",
+      "passiveIncome": "Passive income / year",
+      "savingsRate": "Savings rate",
+      "savingsRateHint": "Current budget cycle",
+      "available": "Available cash",
+      "availableHint": "Current and savings accounts"
+    },
+    "allocationGroupBy": "Group by",
+    "byClass": "Class",
+    "byAccount": "Account",
+    "noAssets": "No assets yet.",
+    "grossAssets": "Gross assets",
+    "liquidity": {
+      "title": "Liquidity",
+      "description": "How fast your assets turn back into available money.",
+      "available": "Available",
+      "availableHint": "current and savings accounts",
+      "market": "Market",
+      "marketHint": "brokerage, crypto",
+      "locked": "Locked",
+      "lockedHint": "PEA, life insurance, pension",
+      "illiquid": "Illiquid",
+      "illiquidHint": "property, SCPI"
+    },
+    "upcoming": {
+      "title": "Next 30 days",
+      "calendar": "Calendar",
+      "empty": "Nothing planned in the next 30 days.",
+      "dividend": "Dividend",
+      "scpi": "SCPI distribution",
+      "recurring": "Recurring payment",
+      "cardStatement": "Card statement"
+    },
+    "attention": {
+      "title": "To do",
+      "none": "Nothing to do for now.",
+      "overBudget": "{{name}}: envelope overspent.",
+      "overBudget_other": "{{count}} envelopes overspent, including {{name}}.",
+      "uncategorized": "{{count}} transaction to categorise.",
+      "uncategorized_other": "{{count}} transactions to categorise.",
+      "stalePrices": "The price of {{name}} is out of date.",
+      "stalePrices_other": "{{count}} prices are out of date, including {{name}}."
+    },
+    "health": {
+      "title": "Wealth health",
+      "outOf": "/ 100",
+      "misplaced": "To move to reach your targets",
+      "loanToValue": "Loan-to-value",
+      "excess": "Above target:"
+    },
+    "goalOnTrack": "On track",
+    "goalBehind": "Behind"
   },
   "transactions": {
     "detail": "Transaction detail",
@@ -2990,5 +3060,21 @@
       "holdings": "Securities",
       "actions": "Quick actions"
     }
+  },
+  "assetClasses": {
+    "cash": "Cash",
+    "savings": "Regulated savings",
+    "equity": "Stocks & ETFs",
+    "crypto": "Crypto",
+    "funds": "Funds (life insurance, pension)",
+    "scpi": "SCPI",
+    "realestate": "Property",
+    "other": "Other"
+  },
+  "breakdown": {
+    "view": "Chart type",
+    "bar": "Stacked bar",
+    "donut": "Donut",
+    "treemap": "Treemap"
   }
 }

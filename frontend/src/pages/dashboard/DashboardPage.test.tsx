@@ -20,6 +20,14 @@ vi.mock('@/features/dashboard/hooks', () => ({
 }))
 vi.mock('@/features/history/hooks', () => ({ useHistory: hooks.useHistory }))
 vi.mock('@/features/sync/hooks', () => ({ useBankSyncStatus: hooks.useBankSyncStatus }))
+vi.mock('@/features/budget/hooks', () => ({ useCashflow: () => ({ data: undefined }) }))
+vi.mock('@/features/income/hooks', () => ({ usePassiveIncome: () => ({ totals: { total: 0 } }) }))
+vi.mock('./AllocationCard', () => ({ AllocationCard: () => null }))
+vi.mock('./AttentionCard', () => ({ AttentionCard: () => null }))
+vi.mock('./GoalsCard', () => ({ GoalsCard: () => null }))
+vi.mock('./HealthCard', () => ({ HealthCard: () => null }))
+vi.mock('./LiquidityCard', () => ({ LiquidityCard: () => null }))
+vi.mock('./UpcomingCard', () => ({ UpcomingCard: () => null }))
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string) => key === 'goals.noData' ? '—' : key,
@@ -36,7 +44,6 @@ vi.mock('@/components/shared/DistributionPie', () => ({ DistributionPie: () => n
 vi.mock('@/components/shared/LoadingSkeleton', () => ({ LoadingSkeleton: () => null }))
 vi.mock('@/components/shared/HoldingsCard', () => ({ HoldingsCard: () => null }))
 vi.mock('@/components/shared/LiabilitiesCard', () => ({ LiabilitiesCard: () => null }))
-vi.mock('@/components/property/RealEstateSummaryCard', () => ({ RealEstateSummaryCard: () => null }))
 vi.mock('@/components/sync/SyncAllModal', () => ({ SyncAllModal: () => null }))
 vi.mock('@/pages/goals/GoalDetailModal', () => ({ GoalDetailModal: () => null }))
 vi.mock('@/components/ui/card', () => {
@@ -110,10 +117,10 @@ describe('DashboardPage portfolio performance', () => {
   it('shows unavailable performance instead of zero when the selected range has unknown PnL', () => {
     renderDashboard()
 
-    const row = screen.getByText('dashboard.portfolioPerformance').parentElement
+    const row = screen.getByText('dashboard.portfolioPerformance', { exact: false })
     expect(row).toHaveTextContent('—')
-    expect(row?.querySelector('[data-testid="currency"]')).toBeNull()
-    expect(row?.querySelector('svg')).toBeNull()
+    expect(row.querySelector('[data-testid="currency"]')).toBeNull()
+    expect(row.querySelector('svg')).toBeNull()
   })
 
   it('does not substitute known live PnL when the selected range PnL is unknown', () => {
@@ -131,9 +138,9 @@ describe('DashboardPage portfolio performance', () => {
 
     renderDashboard()
 
-    const row = screen.getByText('dashboard.portfolioPerformance').parentElement
+    const row = screen.getByText('dashboard.portfolioPerformance', { exact: false })
     expect(row).toHaveTextContent('—')
-    expect(row?.querySelector('[data-testid="currency"]')).toBeNull()
+    expect(row.querySelector('[data-testid="currency"]')).toBeNull()
   })
 
   it('keeps a known zero range PnL as zero', () => {
@@ -151,9 +158,10 @@ describe('DashboardPage portfolio performance', () => {
 
     renderDashboard()
 
-    const row = screen.getByText('dashboard.portfolioPerformance').parentElement
-    expect(row?.querySelector('[data-testid="currency"]')).toHaveTextContent('0')
+    const row = screen.getByText('dashboard.portfolioPerformance', { exact: false })
+    expect(row.querySelector('[data-testid="currency"]')).toHaveTextContent('0')
     expect(row).toHaveTextContent('(0.0%)')
-    expect(row?.querySelector('svg')).not.toBeNull()
+    // A zero change is neutral: no up or down arrow.
+    expect(row.querySelector('svg')).toBeNull()
   })
 })

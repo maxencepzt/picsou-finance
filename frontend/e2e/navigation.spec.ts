@@ -34,7 +34,7 @@ test.describe('Sidebar navigation', () => {
     // Go back to the overview
     await page.getByRole('link', { name: 'Synthèse' }).click()
     await page.waitForURL('/')
-    await expect(page.getByRole('heading', { level: 1, name: 'Tableau de bord' })).toBeVisible()
+    await expect(page.getByRole('heading', { level: 1, name: 'Synthèse' })).toBeVisible()
   })
 
   test('opens the search palette with the platform shortcut and jumps to a page', async ({ page }) => {

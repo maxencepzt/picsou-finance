@@ -102,8 +102,8 @@
     }
   },
   "dashboard": {
-    "title": "Tableau de bord",
-    "netWorth": "Patrimoine total",
+    "title": "Synthèse",
+    "netWorth": "Patrimoine net",
     "grossWorth": "Patrimoine brut",
     "financialWorth": "Patrimoine financier",
     "syncAccounts": "Synchroniser",
@@ -156,7 +156,77 @@
       "financial": "Évolution du patrimoine financier"
     },
     "liabilitiesTitle": "Passifs",
-    "liabilitiesDescription": "Dette restante par compte"
+    "liabilitiesDescription": "Dette restante par compte",
+    "rangeLabel": "Période",
+    "overRange": {
+      "24H": "sur 24 h",
+      "7D": "sur 7 jours",
+      "1M": "sur 1 mois",
+      "3M": "sur 3 mois",
+      "YTD": "depuis le 1er janvier",
+      "1Y": "sur 1 an",
+      "ALL": "depuis le début"
+    },
+    "assetsMinusDebts": "Actifs moins dettes :",
+    "kpi": {
+      "grossAssets": "Actifs bruts",
+      "accountCount": "{{count}} compte",
+      "accountCount_other": "{{count}} comptes",
+      "debts": "Dettes",
+      "noLoan": "Aucun prêt en cours",
+      "monthChange": "Variation sur 1 mois",
+      "noHistory": "Historique insuffisant",
+      "passiveIncome": "Revenus passifs / an",
+      "savingsRate": "Taux d'épargne",
+      "savingsRateHint": "Cycle budgétaire en cours",
+      "available": "Liquidités disponibles",
+      "availableHint": "Comptes courants et livrets"
+    },
+    "allocationGroupBy": "Regrouper par",
+    "byClass": "Classe",
+    "byAccount": "Compte",
+    "noAssets": "Aucun actif pour l'instant.",
+    "grossAssets": "Actifs bruts",
+    "liquidity": {
+      "title": "Liquidité du patrimoine",
+      "description": "En combien de temps vos actifs redeviennent de l'argent disponible.",
+      "available": "Disponible",
+      "availableHint": "comptes, livrets",
+      "market": "Marché",
+      "marketHint": "compte-titres, crypto",
+      "locked": "Bloqué",
+      "lockedHint": "PEA, assurance vie, PER",
+      "illiquid": "Illiquide",
+      "illiquidHint": "immobilier, SCPI"
+    },
+    "upcoming": {
+      "title": "À venir sur 30 jours",
+      "calendar": "Calendrier",
+      "empty": "Rien de prévu sur les 30 prochains jours.",
+      "dividend": "Dividende",
+      "scpi": "Distribution SCPI",
+      "recurring": "Prélèvement récurrent",
+      "cardStatement": "Relevé de carte"
+    },
+    "attention": {
+      "title": "À traiter",
+      "none": "Rien à traiter pour l'instant.",
+      "overBudget": "{{name}} : enveloppe dépassée.",
+      "overBudget_other": "{{count}} enveloppes dépassées, dont {{name}}.",
+      "uncategorized": "{{count}} transaction à catégoriser.",
+      "uncategorized_other": "{{count}} transactions à catégoriser.",
+      "stalePrices": "Le prix de {{name}} n'est pas à jour.",
+      "stalePrices_other": "{{count}} prix ne sont pas à jour, dont {{name}}."
+    },
+    "health": {
+      "title": "Santé du patrimoine",
+      "outOf": "/ 100",
+      "misplaced": "À déplacer pour atteindre vos cibles",
+      "loanToValue": "Ratio prêt / valeur",
+      "excess": "Au-dessus de la cible :"
+    },
+    "goalOnTrack": "Dans les temps",
+    "goalBehind": "En retard"
   },
   "transactions": {
     "detail": "Détail de la transaction",
@@ -2990,5 +3060,21 @@
       "holdings": "Titres",
       "actions": "Actions rapides"
     }
+  },
+  "assetClasses": {
+    "cash": "Liquidités",
+    "savings": "Épargne réglementée",
+    "equity": "Actions & ETF",
+    "crypto": "Crypto",
+    "funds": "Fonds (AV, PER)",
+    "scpi": "SCPI",
+    "realestate": "Immobilier",
+    "other": "Autres"
+  },
+  "breakdown": {
+    "view": "Type de graphique",
+    "bar": "Barre empilée",
+    "donut": "Camembert",
+    "treemap": "Treemap"
   }
 }

@@ -102,8 +102,8 @@
     }
   },
   "dashboard": {
-    "title": "Dashboard",
-    "netWorth": "Gesamtvermögen",
+    "title": "Übersicht",
+    "netWorth": "Nettovermögen",
     "grossWorth": "Bruttovermögen",
     "financialWorth": "Finanzvermögen",
     "syncAccounts": "Konten synchronisieren",
@@ -156,7 +156,77 @@
     "perMonthSuffix": "/Monat",
     "loanParamsUnconfigured": "Parameter nicht konfiguriert",
     "amountDue": "Fälliger Betrag",
-    "dueOn": "Fällig am {{date}}"
+    "dueOn": "Fällig am {{date}}",
+    "rangeLabel": "Zeitraum",
+    "overRange": {
+      "24H": "in 24 Std.",
+      "7D": "in 7 Tagen",
+      "1M": "in 1 Monat",
+      "3M": "in 3 Monaten",
+      "YTD": "seit 1. Januar",
+      "1Y": "in 1 Jahr",
+      "ALL": "seit Beginn"
+    },
+    "assetsMinusDebts": "Vermögen abzüglich Schulden:",
+    "kpi": {
+      "grossAssets": "Bruttovermögen",
+      "accountCount": "{{count}} Konto",
+      "accountCount_other": "{{count}} Konten",
+      "debts": "Schulden",
+      "noLoan": "Kein laufender Kredit",
+      "monthChange": "Veränderung in 1 Monat",
+      "noHistory": "Zu wenig Verlauf",
+      "passiveIncome": "Passives Einkommen / Jahr",
+      "savingsRate": "Sparquote",
+      "savingsRateHint": "Laufender Budgetzyklus",
+      "available": "Verfügbare Mittel",
+      "availableHint": "Giro- und Sparkonten"
+    },
+    "allocationGroupBy": "Gruppieren nach",
+    "byClass": "Klasse",
+    "byAccount": "Konto",
+    "noAssets": "Noch keine Vermögenswerte.",
+    "grossAssets": "Bruttovermögen",
+    "liquidity": {
+      "title": "Liquidität",
+      "description": "Wie schnell Ihr Vermögen wieder verfügbares Geld wird.",
+      "available": "Verfügbar",
+      "availableHint": "Giro- und Sparkonten",
+      "market": "Markt",
+      "marketHint": "Depot, Krypto",
+      "locked": "Gebunden",
+      "lockedHint": "PEA, Lebensversicherung, Altersvorsorge",
+      "illiquid": "Illiquide",
+      "illiquidHint": "Immobilien, SCPI"
+    },
+    "upcoming": {
+      "title": "Nächste 30 Tage",
+      "calendar": "Kalender",
+      "empty": "In den nächsten 30 Tagen ist nichts geplant.",
+      "dividend": "Dividende",
+      "scpi": "SCPI-Ausschüttung",
+      "recurring": "Wiederkehrende Zahlung",
+      "cardStatement": "Kartenabrechnung"
+    },
+    "attention": {
+      "title": "Zu erledigen",
+      "none": "Derzeit nichts zu erledigen.",
+      "overBudget": "{{name}}: Budget überschritten.",
+      "overBudget_other": "{{count}} Budgets überschritten, darunter {{name}}.",
+      "uncategorized": "{{count}} Buchung zu kategorisieren.",
+      "uncategorized_other": "{{count}} Buchungen zu kategorisieren.",
+      "stalePrices": "Der Kurs von {{name}} ist nicht aktuell.",
+      "stalePrices_other": "{{count}} Kurse sind nicht aktuell, darunter {{name}}."
+    },
+    "health": {
+      "title": "Vermögensgesundheit",
+      "outOf": "/ 100",
+      "misplaced": "Umzuschichten bis zu Ihren Zielen",
+      "loanToValue": "Beleihungsquote",
+      "excess": "Über dem Ziel:"
+    },
+    "goalOnTrack": "Im Plan",
+    "goalBehind": "Im Rückstand"
   },
   "accounts": {
     "title": "Konten",
@@ -2990,5 +3060,21 @@
       "holdings": "Wertpapiere",
       "actions": "Schnellaktionen"
     }
+  },
+  "assetClasses": {
+    "cash": "Liquidität",
+    "savings": "Regulierte Sparkonten",
+    "equity": "Aktien & ETFs",
+    "crypto": "Krypto",
+    "funds": "Fonds (Versicherung, Vorsorge)",
+    "scpi": "SCPI",
+    "realestate": "Immobilien",
+    "other": "Sonstiges"
+  },
+  "breakdown": {
+    "view": "Diagrammtyp",
+    "bar": "Gestapelter Balken",
+    "donut": "Ringdiagramm",
+    "treemap": "Treemap"
   }
 }
