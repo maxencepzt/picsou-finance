@@ -1,5 +1,6 @@
 package com.picsou.config;
 
+import com.picsou.dto.BenchmarkKey;
 import com.picsou.model.AccountType;
 import com.picsou.repository.AccountHoldingRepository;
 import com.picsou.service.PriceService;
@@ -9,6 +10,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDate;
 import java.util.Set;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -39,6 +41,10 @@ class PriceBackfillRunnerTest {
 
         verify(priceService).backfillHistoricalPrices(eq(Set.of("BTC", "STX")), any(), eq(true));
         verify(priceService).backfillHistoricalPrices(eq(Set.of("AAPL")), any(), eq(false));
+        // GET /api/analysis/benchmark never fetches, so this is where its five years come from:
+        // the whitelist's tickers, on the generic (Yahoo) route.
+        verify(priceService).backfillHistoricalPrices(
+            Set.of("IWDA.AS", "SXR8.DE", "C40.PA"), LocalDate.now().minusMonths(60), false);
     }
 
     @Test
