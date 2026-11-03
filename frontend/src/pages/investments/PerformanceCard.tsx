@@ -18,7 +18,9 @@ import { PERF_PERIODS, type PerfPeriod } from './performance'
  */
 function Metric({ label, value, note, missing }: { label: string; value: string | null; note: string; missing: string }) {
   return (
-    <div className="flex min-w-0 flex-col gap-1 rounded-xl bg-muted p-3">
+    // Three rows of the parent grid (subgrid): a label wrapping to two lines in one tile no longer
+    // drops that tile's figure below its neighbours'.
+    <div className="row-span-3 grid min-w-0 grid-rows-subgrid gap-1 rounded-xl bg-muted p-3">
       <span className="text-[13px] font-medium text-muted-foreground">{label}</span>
       <span className="text-[22px] leading-tight font-semibold tracking-tight tabular-nums text-foreground">
         {value ?? <span aria-label={missing} title={missing}>—</span>}
@@ -73,7 +75,7 @@ export function PerformanceCard({ className }: { className?: string }) {
             note={drawdownNote}
             missing={t('investments.perf.missing.history')}
           />
-          <p className="col-span-2 self-center text-xs text-muted-foreground @lg:col-span-1">{t('investments.perf.explain')}</p>
+          <p className="col-span-2 row-span-3 self-center text-xs text-muted-foreground @lg:col-span-1">{t('investments.perf.explain')}</p>
         </div>
         <PerformanceChart points={data.points} months={months} />
       </>
@@ -82,14 +84,15 @@ export function PerformanceCard({ className }: { className?: string }) {
 
   return (
     <Card className={cn('min-w-0', className)}>
-      <CardHeader>
-        <CardTitle>{t('investments.perf.title')}</CardTitle>
-        {data?.points?.length
-          ? <CardDescription>{t('investments.perf.window', { from: formatDate(data.from), to: formatDate(data.to) })}</CardDescription>
-          : null}
-      </CardHeader>
-      <CardContent className="@container flex flex-col gap-4">
-        <ScrollStrip activeKey={String(months)}>
+      {/* The period switch beside the title, as on the value chart above; under it on a phone. */}
+      <CardHeader className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
+        <div className="flex min-w-0 flex-col gap-1">
+          <CardTitle>{t('investments.perf.title')}</CardTitle>
+          {data?.points?.length
+            ? <CardDescription>{t('investments.perf.window', { from: formatDate(data.from), to: formatDate(data.to) })}</CardDescription>
+            : null}
+        </div>
+        <ScrollStrip activeKey={String(months)} className="max-w-full min-w-0">
           <SegmentedControl
             ariaLabel={t('investments.perf.period')}
             value={String(months)}
@@ -97,6 +100,8 @@ export function PerformanceCard({ className }: { className?: string }) {
             options={PERF_PERIODS.map((m) => ({ value: String(m), label: t(`investments.perf.periods.${m}`) }))}
           />
         </ScrollStrip>
+      </CardHeader>
+      <CardContent className="@container flex flex-col gap-4">
         {body}
       </CardContent>
     </Card>

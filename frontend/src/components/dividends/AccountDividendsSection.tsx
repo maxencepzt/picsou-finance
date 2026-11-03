@@ -1,10 +1,9 @@
-import { useRef, type KeyboardEvent } from 'react'
+import { Fragment, useRef, type KeyboardEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useUpcomingDividends } from '@/features/dividends/hooks'
 import { HoldingLogo } from '@/components/shared/HoldingLogo'
 import { CurrencyDisplay } from '@/components/shared/CurrencyDisplay'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -71,7 +70,7 @@ export function AccountDividendsSection({ accountId, holdings }: AccountDividend
     <Card>
       <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
         <div>
-          <CardTitle id="account-dividends-heading" className="text-base">
+          <CardTitle id="account-dividends-heading">
             {t('accounts.dividends.title')}
           </CardTitle>
           {showCarousel && (
@@ -153,9 +152,17 @@ function DividendCard({
 }) {
   const { t } = useTranslation()
   const paymentKnown = row.paymentDate != null
+  // Basis, budget treatment and cadence read as one caption line, not a row of pills.
+  const tags = [
+    row.basis === 'ANNOUNCED' && t('accounts.dividends.announced'),
+    row.source === 'HOLDING' && row.basis !== 'ANNOUNCED' && t('accounts.dividends.estimatedBasis'),
+    !row.countsInBudget && t('budget.overview.staysInEnvelope'),
+    row.cadence != null && t(CADENCE_LABEL_KEY[row.cadence]),
+  ].filter((tag): tag is string => Boolean(tag))
 
   return (
-    <article className="flex w-64 shrink-0 snap-start flex-col rounded-xl border bg-background p-4">
+    // A raised tile inside the card, like the KPI tiles: not a hole cut to the canvas.
+    <article className="flex w-64 shrink-0 snap-start flex-col rounded-xl bg-muted p-4">
       <div className="flex items-start gap-2">
         {row.ticker && (
           <HoldingLogo
@@ -171,21 +178,17 @@ function DividendCard({
           {row.ticker && <p className="truncate text-xs text-muted-foreground">{row.ticker}</p>}
         </div>
       </div>
-      <div className="mt-2 flex flex-wrap gap-1">
-        {row.basis === 'ANNOUNCED' && (
-          <Badge variant="secondary">{t('accounts.dividends.announced')}</Badge>
-        )}
-        {row.source === 'HOLDING' && row.basis !== 'ANNOUNCED' && (
-          <Badge variant="outline">{t('accounts.dividends.estimatedBasis')}</Badge>
-        )}
-        {!row.countsInBudget && (
-          <Badge variant="outline">{t('budget.overview.staysInEnvelope')}</Badge>
-        )}
-        {row.cadence != null && (
-          <Badge variant="outline">{t(CADENCE_LABEL_KEY[row.cadence])}</Badge>
-        )}
-      </div>
-      <p className="mt-3 text-2xl font-bold tabular-nums">
+      {tags.length > 0 && (
+        <p className="mt-2 text-xs text-muted-foreground">
+          {tags.map((tag, i) => (
+            <Fragment key={tag}>
+              {i > 0 && ' · '}
+              <span>{tag}</span>
+            </Fragment>
+          ))}
+        </p>
+      )}
+      <p className="mt-3 text-[22px] leading-tight font-semibold tracking-tight tabular-nums text-foreground">
         <CurrencyDisplay value={row.amountEur} />
       </p>
       <p className="mt-3 text-sm">

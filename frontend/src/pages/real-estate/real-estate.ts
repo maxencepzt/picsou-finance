@@ -8,7 +8,12 @@ export const DEBT_TO_INCOME_THRESHOLD = 35
  * chart reads as part of the card instead of a box within a box.
  */
 export const EMBEDDED_CARD =
-  '[&>[data-slot=card]]:bg-transparent [&>[data-slot=card]]:p-0 [&>[data-slot=card]]:ring-0 [&_[data-slot=card-header]]:px-0 [&_[data-slot=card-content]]:px-0'
+  '[&>[data-slot=card]]:bg-transparent [&>[data-slot=card]]:p-0 [&>[data-slot=card]]:ring-0 [&_[data-slot=card-header]]:px-0 [&_[data-slot=card-content]]:px-0 ' +
+  // Without padding, the card's clipping cut the title's accent (É) and the chart's edge labels
+  // ("nov. 26", "Aujourd'hui"); the host card's own padding leaves them room.
+  '[&>[data-slot=card]]:overflow-visible [&_.recharts-surface]:overflow-visible ' +
+  // The embedded chart's title is a section label of the host card, never larger than the card's own title.
+  '[&_[data-slot=card-title]]:text-[13px] [&_[data-slot=card-title]]:font-medium [&_[data-slot=card-title]]:text-muted-foreground'
 
 /** Interest over the whole schedule, and the part of it in the instalments not yet paid. */
 export function loanInterest(schedule: LoanInstallment[], paidInstallments: number): { total: number; remaining: number } {

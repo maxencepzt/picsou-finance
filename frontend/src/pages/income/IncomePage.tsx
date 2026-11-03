@@ -63,6 +63,7 @@ export function IncomePage() {
   const rows = incomeBySource(income.months, income.upcoming, income.savings)
   const monthsDescription = t(period === 'next' ? 'income.months.description' : `income.months.descriptions.${period}`)
   const cadence = (c: DividendCadence | null) => (c ? t(`accounts.dividends.cadence.${c}`) : '—')
+  const optional = 'hidden md:table-cell'
 
   const paymentHint = (p: IncomePayment) => [
     t(`income.payment.${p.source}`),
@@ -71,7 +72,8 @@ export function IncomePage() {
   ].filter(Boolean).join(' · ')
 
   return (
-    <div className="flex flex-col gap-4">
+    // space-y, not gap: the header keeps its own 24px margin instead of adding the gap to it.
+    <div className="space-y-4">
       {header}
 
       <Card>
@@ -99,13 +101,12 @@ export function IncomePage() {
                   <span key={s} style={{ width: `${share(s)}%`, backgroundColor: SOURCE_COLORS[s] }} />
                 ))}
               </div>
-              <ul className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-x-4 gap-y-2 text-[13px]">
+              {/* Name and amount side by side, entries wrapping as wholes: a fixed grid cut "Intérêts des livrets". */}
+              <ul className="flex flex-wrap gap-x-5 gap-y-2 text-[13px]">
                 {sources.map((s) => (
-                  <li key={s} className="flex items-center justify-between gap-2">
-                    <span className="inline-flex min-w-0 items-center gap-1.5">
-                      <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: SOURCE_COLORS[s] }} aria-hidden="true" />
-                      <span className="truncate">{t(`income.source.${s}`)}</span>
-                    </span>
+                  <li key={s} className="inline-flex items-center gap-1.5">
+                    <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: SOURCE_COLORS[s] }} aria-hidden="true" />
+                    <span>{t(`income.source.${s}`)}</span>
                     <CurrencyDisplay value={totals[s]} className="font-semibold tabular-nums text-foreground" />
                   </li>
                 ))}
@@ -125,7 +126,8 @@ export function IncomePage() {
                 <span className="text-[22px] leading-tight font-semibold tabular-nums text-foreground">
                   {formatPercent(coverage, { fractionDigits: 1 })}
                 </span>
-                <Progress value={Math.min(coverage, 100)} aria-label={t('income.hero.coverage')} />
+                {/* The default track is the tile's own muted fill: lift it so a 1 % coverage still shows its scale. */}
+                <Progress value={Math.min(coverage, 100)} aria-label={t('income.hero.coverage')} className="bg-foreground/10" />
                 <span className="text-xs text-muted-foreground">
                   {t('income.hero.coverageDetail', { income: money.amount(perMonth), expenses: money.amount(expenses) })}
                 </span>
@@ -150,7 +152,7 @@ export function IncomePage() {
               />
             </CardAction>
           </CardHeader>
-          <CardContent className="flex flex-col gap-2">
+          <CardContent className="flex flex-1 flex-col gap-2">
             {received.isError && period !== 'next' ? (
               <ErrorState messageOnly message={t('income.months.receivedError')} onRetry={() => void received.refetch()} />
             ) : (
@@ -195,14 +197,15 @@ export function IncomePage() {
           <CardDescription>{t('income.table.description')}</CardDescription>
         </CardHeader>
         <CardContent>
-          <Table className="min-w-[640px] text-sm">
+          {/* A phone keeps source, amount and date: the other columns used to push the table into a sideways scroll. */}
+          <Table className="text-sm">
             <TableHeader>
               <TableRow>
                 <TableHead>{t('income.table.source')}</TableHead>
-                <TableHead>{t('income.table.type')}</TableHead>
+                <TableHead className={optional}>{t('income.table.type')}</TableHead>
                 <TableHead className="text-right">{t('income.table.amount')}</TableHead>
-                <TableHead className="text-right">{t('income.table.rate')}</TableHead>
-                <TableHead>{t('income.table.cadence')}</TableHead>
+                <TableHead className={`text-right ${optional}`}>{t('income.table.rate')}</TableHead>
+                <TableHead className={optional}>{t('income.table.cadence')}</TableHead>
                 <TableHead>{t('income.table.next')}</TableHead>
               </TableRow>
             </TableHeader>
@@ -210,14 +213,14 @@ export function IncomePage() {
               {rows.map((row) => (
                 <TableRow key={row.key}>
                   <TableCell className="font-semibold">{row.name ?? t('income.source.rent')}</TableCell>
-                  <TableCell><Badge variant="secondary">{t(`income.type.${row.source}`)}</Badge></TableCell>
+                  <TableCell className={optional}><Badge variant="secondary">{t(`income.type.${row.source}`)}</Badge></TableCell>
                   <TableCell className="text-right">
                     <CurrencyDisplay value={row.amount} className="font-semibold tabular-nums text-foreground" />
                   </TableCell>
-                  <TableCell className="text-right tabular-nums">
+                  <TableCell className={`text-right tabular-nums ${optional}`}>
                     {row.ratePct != null ? formatPercent(row.ratePct, { fractionDigits: 2 }) : '—'}
                   </TableCell>
-                  <TableCell>{cadence(row.cadence)}</TableCell>
+                  <TableCell className={optional}>{cadence(row.cadence)}</TableCell>
                   <TableCell>{row.nextDate ? formatShortDate(row.nextDate, locale) : '—'}</TableCell>
                 </TableRow>
               ))}

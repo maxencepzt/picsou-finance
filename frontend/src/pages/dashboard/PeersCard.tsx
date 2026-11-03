@@ -60,7 +60,7 @@ export function PeersCard({ grossWorth }: { grossWorth: number }) {
             {bracket === 'all' && (
               <p className="text-xs text-muted-foreground">
                 {t('dashboard.peers.noAge')}{' '}
-                <Link to="/settings" className="font-medium text-primary hover:text-foreground">{t('dashboard.peers.fillProfile')}</Link>
+                <Link to="/settings?section=profile" className="font-medium text-primary hover:text-foreground">{t('dashboard.peers.fillProfile')}</Link>
               </p>
             )}
             <p className="text-xs text-muted-foreground">

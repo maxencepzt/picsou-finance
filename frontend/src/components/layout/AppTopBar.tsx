@@ -9,7 +9,7 @@ import { useBankSyncStatus } from '@/features/sync/hooks'
 import { useAppStore } from '@/stores/app-store'
 import { cn, formatTimeAgo, localeFromLanguage } from '@/lib/utils'
 import { modifierKeyLabel } from '@/lib/platform'
-import picsouMark from '@/assets/picsou_logo_white.svg'
+import picsouLogo from '@/assets/horizontal-white-picsou.svg'
 import { isNavActive } from './sidebar-nav-items'
 
 /** The eye that blanks every amount in the app (privacy mode). */
@@ -77,7 +77,8 @@ export function AppTopBar({ onOpenSearch, onSyncAll }: AppTopBarProps) {
   const { t } = useTranslation()
   return (
     <header className="flex min-h-14 shrink-0 items-center gap-2 border-b border-border px-4 py-2 md:gap-3 md:px-6">
-      <img src={picsouMark} alt="Picsou" className="size-7 shrink-0 brightness-0 md:hidden dark:invert" />
+      {/* The wordmark, as in the sidebar: the square mark pads it down to an unreadable 28px. */}
+      <img src={picsouLogo} alt="Picsou" className="h-6 w-auto shrink-0 opacity-90 brightness-0 md:hidden dark:invert" />
 
       <button
         type="button"

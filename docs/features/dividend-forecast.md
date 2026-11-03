@@ -145,9 +145,9 @@ notifier (iOS, 2.0) can use to tell "already sent" from "new".
 
 - **Budget overview**: "Revenus du capital à venir" card, total of the next 60 days for
   `countsInBudget` lines, next payments, and a muted line for the amount kept in envelopes.
-- **Account detail** (compte-titres, PEA): carousel of cards for the next 12 months, each with
-  ex-date and amount, payment date (or "unknown") and amount, amount per share, and an
-  "Annoncé" / "Estimé" badge.
+- **Account detail** (compte-titres, PEA): carousel of raised tiles (`bg-muted`) for the next 12 months, each with
+  ex-date and amount, payment date (or "unknown") and amount, amount per share, and one slate caption line
+  ("Annoncé" / "Estimé" · "Reste dans l'enveloppe" · cadence) instead of a row of badges.
 - **Dashboard and Passive income page**: the "Next 30 days" card (`pages/dashboard/UpcomingCard.tsx`)
   and `/income` read the forecast through `useUpcomingDividends`; `/income` and `/investments` read
   `/received` through `useReceivedDividends` (see [passive-income-page.md](./passive-income-page.md)).

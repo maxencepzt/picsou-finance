@@ -1,13 +1,15 @@
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts'
 import { useTranslation } from 'react-i18next'
 import { type ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
-import { localeFromLanguage } from '@/lib/utils'
+import { cn, localeFromLanguage } from '@/lib/utils'
 import { useMoney } from '@/hooks/use-money'
 import { MONEY_AXIS_WIDTH } from '@/lib/money'
 import { AXIS_PROPS } from '@/lib/chart-axis'
 
 interface BalanceHistoryChartProps {
   data: { date: string; balance: number }[]
+  /** Sizing from the caller (e.g. fill a tall card); 200 px high by default. */
+  className?: string
 }
 
 const chartConfig = {
@@ -17,14 +19,14 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
-export function BalanceHistoryChart({ data }: BalanceHistoryChartProps) {
+export function BalanceHistoryChart({ data, className }: BalanceHistoryChartProps) {
   const money = useMoney()
   const { i18n } = useTranslation()
   const locale = localeFromLanguage(i18n.resolvedLanguage ?? i18n.language)
 
   if (data.length === 0) return null
   return (
-    <ChartContainer config={chartConfig} className="h-[200px] w-full">
+    <ChartContainer config={chartConfig} className={cn('h-[200px] w-full', className)}>
       <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
         <defs>
           <linearGradient id="fillBalance" x1="0" y1="0" x2="0" y2="1">
@@ -36,6 +38,8 @@ export function BalanceHistoryChart({ data }: BalanceHistoryChartProps) {
         <XAxis
           dataKey="date"
           {...AXIS_PROPS}
+          interval="preserveStartEnd"
+          minTickGap={24}
           tickFormatter={(value) => new Date(value).toLocaleDateString(locale, { month: 'short', day: 'numeric' })}
         />
         <YAxis

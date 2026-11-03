@@ -16,7 +16,7 @@ Properties, SCPI shares and loans each had their own account page, and the dashb
 4. **Loans** (`LoanCard`, one per visible `LOAN` account): remaining balance, monthly payment, capital repaid and instalments, total and remaining interest (`loanInterest` over the schedule), `LoanAmortizationChart`. A loan without terms shows its balance and asks for them: the schedule endpoint answers 404, so it is not called.
 5. **Debt-to-income** (`DebtToIncomeCard`) and **card statements** (deferred-debit cards with a known amount or due date).
 
-`Figure` is the page's label-over-figure unit (figures in ink).
+`Figure` is the page's label-over-figure unit (figures in ink, one `leading-7` line box for both sizes so an emphasised figure keeps its row's baseline). The debt-to-income status reads as a dot and a word (warning above 35 %), not a filled pill.
 
 ### Key files
 
@@ -31,7 +31,7 @@ Properties, SCPI shares and loans each had their own account page, and the dashb
 | Debt-to-income = `dashboard.totalMonthlyPayment` ÷ profile `monthlyNetBeforeTax`, against the 35 % HCSF cap | The lenders' definition is payments over net pay before income tax; the dashboard already sums every loan's monthly payment | Net after withholding; a ratio over a guessed income (null without one, with a link to Settings) |
 | Loan-to-value includes SCPI | The page reads bricks and shares as one real-estate sleeve, so debt and gross both include them | Physical property only |
 | Unrealised gain covers physical property only | `RealEstateSummaryResponse.unrealizedGain` is `grossValue − costBasis`, and `grossValue` holds properties only (SCPI sit in `paperGross`) | Mixing in SCPI subscription values |
-| Embedded charts flattened with `EMBEDDED_CARD` | `PropertyValuationChart` and `LoanAmortizationChart` render their own `Card`; the class strips its background, padding and ring so they read as part of the page's card | A box within a box; forking the charts |
+| Embedded charts flattened with `EMBEDDED_CARD` | `PropertyValuationChart` and `LoanAmortizationChart` render their own `Card`; the class strips its background, padding and ring so they read as part of the page's card, turns their title into a 13px slate section label (never larger than the host card's title), and lets the card and the chart SVG overflow so the title's accent and the edge labels ("nov. 26", "Aujourd'hui") are not clipped | A box within a box; forking the charts |
 
 ## Gotchas / Pitfalls
 

@@ -47,8 +47,9 @@ export function BreakdownDonut({
           nameKey="label"
           cx="50%"
           cy="50%"
-          innerRadius={55}
-          outerRadius={85}
+          // A 132px hole: the centre total ("1 234 567,89 €") must clear the ring.
+          innerRadius={66}
+          outerRadius={92}
           paddingAngle={2}
           strokeWidth={0}
           isAnimationActive={false}

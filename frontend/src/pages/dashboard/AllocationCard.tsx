@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Card, CardContent, CardHeader, CardTitle, CardAction } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Breakdown, type BreakdownItem } from '@/components/shared/Breakdown'
 import { SegmentedControl } from '@/components/shared/SegmentedControl'
 import { ASSET_CLASS_ORDER, assetClassColor, assetClassOf, sumBy } from '@/lib/asset-classes'
@@ -26,22 +26,29 @@ export function AllocationCard({ distribution }: { distribution: DashboardData['
     <Card className="h-full">
       <CardHeader>
         <CardTitle>{t('dashboard.distribution')}</CardTitle>
-        <CardAction>
-          <SegmentedControl
-            ariaLabel={t('dashboard.allocationGroupBy')}
-            value={groupBy}
-            onChange={setGroupBy}
-            options={[
-              { value: 'class', label: t('dashboard.byClass') },
-              { value: 'account', label: t('dashboard.byAccount') },
-            ]}
-          />
-        </CardAction>
       </CardHeader>
       <CardContent>
         {items.length === 0
           ? <p className="text-sm text-muted-foreground">{t('dashboard.noAssets')}</p>
-          : <Breakdown items={items} centerLabel={t('dashboard.grossAssets')} ariaLabel={t('dashboard.distribution')} />}
+          : (
+            <Breakdown
+              items={items}
+              centerLabel={t('dashboard.grossAssets')}
+              ariaLabel={t('dashboard.distribution')}
+              // Grouping and drawing on one row of controls, rather than two stacked at the right.
+              toolbar={(
+                <SegmentedControl
+                  ariaLabel={t('dashboard.allocationGroupBy')}
+                  value={groupBy}
+                  onChange={setGroupBy}
+                  options={[
+                    { value: 'class', label: t('dashboard.byClass') },
+                    { value: 'account', label: t('dashboard.byAccount') },
+                  ]}
+                />
+              )}
+            />
+          )}
       </CardContent>
     </Card>
   )

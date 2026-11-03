@@ -42,6 +42,8 @@ vi.mock('@/components/shared/PageHeader', () => ({
   PageHeader: ({ title, actions }: { title: string; actions?: ReactNode }) => <header><h1>{title}</h1>{actions}</header>,
 }))
 vi.mock('@/components/shared/NetWorthChart', () => ({ NetWorthChart: () => null }))
+// The period switch now sits in the card header; its scroll strip needs a ResizeObserver jsdom lacks.
+vi.mock('@/components/shared/TimeRangeSelector', () => ({ TimeRangeSelector: () => null }))
 vi.mock('@/components/shared/DistributionPie', () => ({ DistributionPie: () => null }))
 vi.mock('@/components/shared/LoadingSkeleton', () => ({ LoadingSkeleton: () => null }))
 vi.mock('@/components/shared/HoldingsCard', () => ({ HoldingsCard: () => null }))
@@ -160,7 +162,8 @@ describe('DashboardPage portfolio performance', () => {
 
     renderDashboard()
 
-    const row = screen.getByText('dashboard.portfolioPerformance', { exact: false })
+    // A known P&L is a Delta whose trailing words are the label: the row is the Delta around them.
+    const row = screen.getByText('dashboard.portfolioPerformance', { exact: false }).parentElement!
     expect(row.querySelector('[data-testid="currency"]')).toHaveTextContent('0')
     expect(row).toHaveTextContent('(0.0%)')
     // A zero change is neutral: no up or down arrow.

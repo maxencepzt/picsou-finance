@@ -60,7 +60,8 @@ export function RealEstatePage() {
   )
 
   return (
-    <div className="flex flex-col gap-4">
+    // space-y, not gap: the header keeps its own 24px margin instead of adding the gap to it.
+    <div className="space-y-4">
       <PageHeader title={t('nav.realEstate')} actions={addButton} />
 
       {hasAssets && (

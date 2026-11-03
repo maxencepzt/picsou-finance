@@ -21,7 +21,10 @@ interface NetWorthChartProps {
   data: { date: string; total: number; invested?: number | null; pnl?: number | null }[]
   intraday?: IntradayPoint[]
   range: TimeRange
-  onRangeChange: (range: TimeRange) => void
+  /** Draws the period switch above the chart. Omit it when the card header carries the switch. */
+  onRangeChange?: (range: TimeRange) => void
+  /** Name of the value line in the legend and tooltip; the net worth by default. */
+  totalLabel?: string
   // Hide the "Capital invested" dashed line + legend entry. When omitted, the
   // line is shown only if at least one data point carries `invested`.
   showInvested?: boolean
@@ -93,7 +96,7 @@ function NetWorthTooltip({ active, payload, labels, is24H, showGainLoss }: {
             style={{ backgroundColor: 'var(--color-total)' }}
           />
           <span className="text-muted-foreground">{labels.total}</span>
-          <span className="ml-auto font-mono font-medium tabular-nums">
+          <span className="ml-auto font-medium tabular-nums">
             {money.amount(total, labels.currency)}
           </span>
         </div>
@@ -105,7 +108,7 @@ function NetWorthTooltip({ active, payload, labels, is24H, showGainLoss }: {
             style={{ borderColor: 'var(--color-invested)' }}
           />
           <span className="text-muted-foreground">{labels.invested}</span>
-          <span className="ml-auto font-mono font-medium tabular-nums">
+          <span className="ml-auto font-medium tabular-nums">
             {money.amount(invested, labels.currency)}
           </span>
         </div>
@@ -117,7 +120,7 @@ function NetWorthTooltip({ active, payload, labels, is24H, showGainLoss }: {
             style={{ borderColor: 'var(--color-target)' }}
           />
           <span className="text-muted-foreground">{labels.target}</span>
-          <span className="ml-auto font-mono font-medium tabular-nums">
+          <span className="ml-auto font-medium tabular-nums">
             {money.amount(target, labels.currency)}
           </span>
         </div>
@@ -129,7 +132,7 @@ function NetWorthTooltip({ active, payload, labels, is24H, showGainLoss }: {
             style={{ borderColor: 'var(--color-projection)' }}
           />
           <span className="text-muted-foreground">{labels.projection}</span>
-          <span className="ml-auto font-mono font-medium tabular-nums">
+          <span className="ml-auto font-medium tabular-nums">
             {money.amount(projection, labels.currency)}
           </span>
         </div>
@@ -138,7 +141,7 @@ function NetWorthTooltip({ active, payload, labels, is24H, showGainLoss }: {
         <>
           <div className="my-1.5 border-t border-border" />
           <div className="flex items-center justify-between gap-3 py-0.5">
-            <span className={`font-mono font-medium tabular-nums ${gainLoss >= 0 ? 'text-gain' : 'text-loss'}`}>
+            <span className={`font-medium tabular-nums ${gainLoss >= 0 ? 'text-gain' : 'text-loss'}`}>
               {gainLoss >= 0 ? '+' : ''}{money.amount(gainLoss, labels.currency)}
             </span>
             <span className="text-muted-foreground">{labels.gainLoss}</span>
@@ -188,7 +191,7 @@ function getXAxisFormatter(range: TimeRange, locale: string, spanMs: number) {
     new Date(value).toLocaleDateString(locale, { month: 'short', year: '2-digit' })
 }
 
-export function NetWorthChart({ data, intraday = [], range, onRangeChange, showInvested = true, target, projection, todayMs, todayLabel }: NetWorthChartProps) {
+export function NetWorthChart({ data, intraday = [], range, onRangeChange, totalLabel, showInvested = true, target, projection, todayMs, todayLabel }: NetWorthChartProps) {
   const money = useMoney()
   const { t, i18n } = useTranslation()
   const locale = localeFromLanguage(i18n.resolvedLanguage ?? i18n.language)
@@ -307,7 +310,7 @@ export function NetWorthChart({ data, intraday = [], range, onRangeChange, showI
 
   const chartConfig = useMemo(() => ({
     total: {
-      label: t('dashboard.netWorth'),
+      label: totalLabel ?? t('dashboard.netWorth'),
       color: 'var(--chart-1)',
     },
     invested: {
@@ -325,17 +328,17 @@ export function NetWorthChart({ data, intraday = [], range, onRangeChange, showI
       label: projection?.label ?? '',
       color: 'var(--muted-foreground)',
     },
-  }) satisfies ChartConfig, [t, target?.label, projection?.label])
+  }) satisfies ChartConfig, [t, totalLabel, target?.label, projection?.label])
 
   const labels = useMemo(() => ({
-    total: t('dashboard.netWorth'),
+    total: totalLabel ?? t('dashboard.netWorth'),
     invested: t('dashboard.invested'),
     target: target?.label ?? '',
     projection: projection?.label ?? '',
     gainLoss: t('dashboard.gainLoss'),
     locale,
     currency: 'EUR',
-  }), [t, locale, target?.label, projection?.label])
+  }), [t, locale, totalLabel, target?.label, projection?.label])
 
   const xAxisFormatter = useMemo(() => {
     const spanMs = xDomain ? xDomain[1] - xDomain[0] : 0
@@ -356,14 +359,17 @@ export function NetWorthChart({ data, intraday = [], range, onRangeChange, showI
     xDomain != null && todayMs >= xDomain[0] && todayMs <= xDomain[1]
 
   return (
-    <div>
-      <div className="flex justify-end mb-3">
-        <TimeRangeSelector value={range} onChange={onRangeChange} />
-      </div>
+    // Fills a card stretched by its row neighbour instead of leaving a blank band under the legend.
+    <div className="flex h-full flex-1 flex-col">
+      {onRangeChange && (
+        <div className="mb-3 flex justify-end">
+          <TimeRangeSelector value={range} onChange={onRangeChange} />
+        </div>
+      )}
       {isEmpty24H ? (
         <EmptyChartState />
       ) : (
-      <ChartContainer config={chartConfig} className="h-[250px] w-full [&>div>div]:!w-full [&>div>div>svg]:!w-full">
+      <ChartContainer config={chartConfig} className="aspect-auto min-h-[250px] w-full flex-1 [&>div>div]:!w-full [&>div>div>svg]:!w-full">
         <AreaChart data={filteredData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
         <defs>
           <linearGradient id="fillTotal" x1="0" y1="0" x2="0" y2="1">

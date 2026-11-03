@@ -35,10 +35,19 @@ export function IncomeMonthsChart({ rows, ariaLabel }: { rows: IncomeChartRow[];
   )
 
   return (
-    <ChartContainer config={config} className="h-[260px] w-full" role="img" aria-label={ariaLabel}>
+    // Grows with a card stretched by its neighbour instead of leaving a blank band under the legend.
+    <ChartContainer config={config} className="aspect-auto min-h-[260px] w-full flex-1" role="img" aria-label={ariaLabel}>
       <BarChart data={rows} accessibilityLayer>
         <CartesianGrid vertical={false} />
-        <XAxis dataKey="month" {...AXIS_PROPS} fontSize={12} tickFormatter={(m: string) => monthLabel(m, locale)} />
+        {/* Evenly spaced months (the default skips whichever label collides, leaving uneven gaps);
+            the first one carries its year, since an even step may skip January. */}
+        <XAxis
+          dataKey="month"
+          {...AXIS_PROPS}
+          fontSize={12}
+          interval="equidistantPreserveStart"
+          tickFormatter={(m: string) => monthLabel(m, locale, false, m === rows[0]?.month)}
+        />
         <YAxis {...AXIS_PROPS} width={width} fontSize={12} tickFormatter={money.tick} />
         <ChartTooltip content={<MoneyChartTooltip config={config} labelFormatter={(m) => monthLabel(String(m), locale, true)} />} />
         <ChartLegend

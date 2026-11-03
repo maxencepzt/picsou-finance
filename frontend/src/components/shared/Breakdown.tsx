@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { LayoutGrid, PieChart, RectangleHorizontal } from 'lucide-react'
 import { BreakdownDonut, BreakdownTreemap, type BreakdownView, type ChartItem } from '@/components/shared/BreakdownChart'
@@ -21,13 +21,15 @@ interface BreakdownProps {
   centerLabel: string
   defaultView?: BreakdownView
   ariaLabel: string
+  /** A control drawn on the view switch's row (e.g. a grouping switch), so the card keeps one row of controls. */
+  toolbar?: ReactNode
 }
 
 /**
  * A part-to-whole drawn three ways — stacked bar, donut or treemap — with the legend always
  * under it (names, amounts, shares), so the colour never carries the identity alone.
  */
-export function Breakdown({ items, centerLabel, defaultView = 'donut', ariaLabel }: BreakdownProps) {
+export function Breakdown({ items, centerLabel, defaultView = 'donut', ariaLabel, toolbar }: BreakdownProps) {
   const { t } = useTranslation()
   const [view, setView] = useState<BreakdownView>(defaultView)
   const [selected, setSelected] = useState<string | null>(null)
@@ -42,17 +44,20 @@ export function Breakdown({ items, centerLabel, defaultView = 'donut', ariaLabel
 
   return (
     <div className="flex flex-col gap-4">
-      <SegmentedControl
-        className="self-end"
-        ariaLabel={t('breakdown.view')}
-        value={view}
-        onChange={setView}
-        options={[
-          { value: 'bar', label: t('breakdown.bar'), icon: RectangleHorizontal },
-          { value: 'donut', label: t('breakdown.donut'), icon: PieChart },
-          { value: 'treemap', label: t('breakdown.treemap'), icon: LayoutGrid },
-        ]}
-      />
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        {toolbar}
+        <SegmentedControl
+          className="ml-auto"
+          ariaLabel={t('breakdown.view')}
+          value={view}
+          onChange={setView}
+          options={[
+            { value: 'bar', label: t('breakdown.bar'), icon: RectangleHorizontal },
+            { value: 'donut', label: t('breakdown.donut'), icon: PieChart },
+            { value: 'treemap', label: t('breakdown.treemap'), icon: LayoutGrid },
+          ]}
+        />
+      </div>
 
       <div role="img" aria-label={`${ariaLabel} : ${summary}`}>
         {view === 'bar' && (
@@ -67,7 +72,7 @@ export function Breakdown({ items, centerLabel, defaultView = 'donut', ariaLabel
             <BreakdownDonut items={chartItems} selected={selected} onSelect={setSelected} />
             <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
               <span className="text-xs font-medium text-muted-foreground">{centerLabel}</span>
-              <CurrencyDisplay value={total} className="text-base font-bold tabular-nums text-foreground" />
+              <CurrencyDisplay value={total} className="text-sm font-bold tabular-nums text-foreground" />
             </div>
           </div>
         )}

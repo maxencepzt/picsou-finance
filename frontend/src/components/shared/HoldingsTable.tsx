@@ -59,7 +59,7 @@ export function HoldingsTable({ holdings, onEdit, onDelete }: HoldingsTableProps
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">{t('accounts.holdings')}</CardTitle>
+        <CardTitle>{t('accounts.holdings')}</CardTitle>
       </CardHeader>
       <CardContent>
         <Table>
@@ -82,7 +82,7 @@ export function HoldingsTable({ holdings, onEdit, onDelete }: HoldingsTableProps
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <HoldingLogo logoUrl={h.logoUrl} logoUrlDark={h.logoUrlDark} ticker={h.ticker} name={h.name} />
-                    <span className="font-mono font-medium">{h.ticker}</span>
+                    <span className="font-medium">{h.ticker}</span>
                   </div>
                 </TableCell>
                 <TableCell>{h.name ?? h.ticker}</TableCell>

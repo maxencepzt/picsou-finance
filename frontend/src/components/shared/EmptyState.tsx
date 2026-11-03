@@ -13,15 +13,19 @@ interface EmptyStateProps {
   }
 }
 
+/**
+ * A calm "nothing here yet": a small icon on a muted disc, a card-sized title, one line of help.
+ * Callers pass icons at any size; the disc draws them at 20px so no empty state shouts.
+ */
 export function EmptyState({ icon, title, description, className, action }: EmptyStateProps) {
   return (
-    <div className={cn("flex flex-col items-center justify-center py-12 text-center", className)}>
-      <div className="text-muted-foreground/50 mb-4">
-        {icon || <Package className="size-12" />}
+    <div className={cn('flex flex-col items-center justify-center py-12 text-center', className)}>
+      <div className="mb-3 flex size-10 items-center justify-center rounded-full bg-muted text-muted-foreground [&_svg]:size-5" aria-hidden="true">
+        {icon || <Package />}
       </div>
-      <h3 className="text-lg font-medium">{title}</h3>
+      <h3 className="text-sm font-semibold text-foreground">{title}</h3>
       {description && (
-        <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+        <p className="mt-1 max-w-md text-sm text-balance text-muted-foreground">{description}</p>
       )}
       {action && (
         <Button onClick={action.onClick} className="mt-4">

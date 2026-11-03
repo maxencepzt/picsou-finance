@@ -30,13 +30,13 @@ export function RealizedGainsCard({ sources, years, currentYear, className }: Re
 
   return (
     <Card className={className}>
-      <CardHeader>
-        <CardTitle>{t('realized.title')}</CardTitle>
-        <CardDescription>{t('investments.realized.description')}</CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-5">
+      <CardHeader className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
+        <div className="flex min-w-0 flex-col gap-1">
+          <CardTitle>{t('realized.title')}</CardTitle>
+          <CardDescription>{t('investments.realized.description')}</CardDescription>
+        </div>
         {years.length > 1 && (
-          <ScrollStrip activeKey={String(year)}>
+          <ScrollStrip activeKey={String(year)} className="max-w-full min-w-0">
             <SegmentedControl
               ariaLabel={t('investments.realized.year')}
               value={String(year)}
@@ -45,6 +45,8 @@ export function RealizedGainsCard({ sources, years, currentYear, className }: Re
             />
           </ScrollStrip>
         )}
+      </CardHeader>
+      <CardContent className="flex flex-col gap-5">
         <div className="flex flex-col gap-0.5">
           <span className="text-[13px] font-medium text-muted-foreground">{t('investments.realized.net', { year })}</span>
           <CurrencyDisplay

@@ -140,7 +140,7 @@ export function PortfolioView() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">{t('portfolio.title')}</CardTitle>
+          <CardTitle>{t('portfolio.title')}</CardTitle>
         </CardHeader>
         <CardContent>
           <ErrorState
@@ -157,7 +157,7 @@ export function PortfolioView() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">{t('portfolio.title')}</CardTitle>
+          <CardTitle>{t('portfolio.title')}</CardTitle>
         </CardHeader>
         <CardContent>
           <EmptyState title={t('portfolio.noHoldings')} />
@@ -170,7 +170,7 @@ export function PortfolioView() {
     <Card>
       <CardHeader>
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <CardTitle className="text-base">{t('portfolio.title')}</CardTitle>
+          <CardTitle>{t('portfolio.title')}</CardTitle>
           <div className="flex items-center gap-2 text-sm">
             <span className="text-muted-foreground">{t('portfolio.totalValue')}</span>
             <CurrencyDisplay value={totalValue} className="font-semibold" />

@@ -12,6 +12,8 @@ With eight destinations, dozens of accounts and positions, jumping straight to o
 - `lib/platform.ts` detects Apple platforms from `navigator.userAgentData.platform`, then `navigator.platform`, then the user agent. `modifierKeyLabel()` prints `⌘` or `Ctrl`; the top-bar field and the palette footer show the shortcut of the user's own platform.
 - `CommandPalette` is a `Dialog` whose body mounts only while open (fresh query and selection each time). Data comes from the cached `useAccounts()` and `usePortfolio()` queries.
 - Empty query: quick actions (sync all, hide/show amounts, settings) then pages. With a query: securities (≤ 5), accounts (≤ 5), actions, pages, matched on name and hint after `normalizeSearch` (lower case, accents stripped: "epargne" finds "Épargne").
+- Marks: a security shows its `HoldingLogo` (name monogram as fallback), an account its bundled or provider logo (`logoKeyUrl` → `logoUrl` → `providerLogoUrl`) over its monogram, a page or action its icon.
+- The input draws no focus halo (the palette itself is the focus; the global `:focus-visible` box-shadow drew a box cut by the header). The "Esc" keycap is a 40px button that closes the palette, the only way out on a phone besides the backdrop; the keyboard-hint footer is hidden below `sm`.
 - Keyboard: ↑/↓ move the highlight (wrapping), Enter runs it, Esc closes (Radix). The input is a `combobox` with `aria-activedescendant`; results are `option`s grouped under labelled `group`s, in the same order as the keyboard walks them.
 - Amounts go through `CurrencyDisplay`, so privacy mode masks them here too.
 

@@ -2,12 +2,15 @@ import { useMemo, useState, type KeyboardEvent } from 'react'
 import { useNavigate } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { Eye, EyeOff, RefreshCw, Search, Settings, type LucideIcon } from 'lucide-react'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
 import { CurrencyDisplay } from '@/components/shared/CurrencyDisplay'
+import { HoldingLogo } from '@/components/shared/HoldingLogo'
 import { Kbd } from '@/components/shared/Kbd'
 import { useAccounts, usePortfolio } from '@/features/accounts/hooks'
 import { useAppStore } from '@/stores/app-store'
 import { accountTypeLabelKey } from '@/lib/constants'
+import { logoKeyUrl, providerLogoUrl } from '@/lib/provider-logos'
 import { cn, deriveMonogram, normalizeSearch } from '@/lib/utils'
 import { modifierKeyLabel } from '@/lib/platform'
 import { FAMILY_NAV_ITEM, NAV_ITEMS, SYNC_NAV_ITEM } from './sidebar-nav-items'
@@ -19,6 +22,10 @@ type PaletteItem = {
   hint?: string
   icon?: LucideIcon
   monogram?: string
+  /** An account's bundled or provider logo, the monogram standing in when it fails. */
+  logo?: string | null
+  /** A security's mark, drawn by `HoldingLogo`. */
+  holding?: { logoUrl: string | null | undefined; logoUrlDark?: string | null; ticker: string }
   amount?: number
   run: () => void
 }
@@ -66,6 +73,7 @@ function PaletteBody({ onClose, onSyncAll }: { onClose: () => void; onSyncAll: (
       label: account.name,
       hint: t(accountTypeLabelKey(account.type)),
       monogram: deriveMonogram(account.name),
+      logo: logoKeyUrl(account.logoKey) ?? account.logoUrl ?? providerLogoUrl(account.provider),
       amount: account.currentBalanceEur,
       run: go(`/accounts/${account.id}`),
     }))
@@ -76,7 +84,7 @@ function PaletteBody({ onClose, onSyncAll }: { onClose: () => void; onSyncAll: (
         group: 'holdings',
         label: line.name,
         hint: [line.ticker, line.accountName].filter(Boolean).join(' · '),
-        monogram: deriveMonogram(line.ticker ?? line.name),
+        holding: { logoUrl: line.logoUrl, logoUrlDark: line.logoUrlDark, ticker: line.ticker ?? '' },
         amount: line.valueEur,
         run: go(`/accounts/${line.accountId}`),
       }))
@@ -136,9 +144,13 @@ function PaletteBody({ onClose, onSyncAll }: { onClose: () => void; onSyncAll: (
           onChange={(event) => { setQuery(event.target.value); setActive(0) }}
           onKeyDown={onKeyDown}
           placeholder={t('palette.placeholder')}
-          className="h-14 min-w-0 flex-1 bg-transparent text-base text-foreground outline-none placeholder:text-muted-foreground"
+          // The palette is the focus: the global focus halo would draw a box cut by the header's edges.
+          className="h-14 min-w-0 flex-1 bg-transparent text-base text-foreground shadow-none outline-none placeholder:text-muted-foreground"
         />
-        <Kbd>{t('palette.esc')}</Kbd>
+        {/* A keycap on a keyboard, and the way out on a phone, which has no Esc key. */}
+        <button type="button" onClick={onClose} aria-label={t('common.close')} className="-mr-2 flex min-h-10 min-w-10 items-center justify-center rounded-md">
+          <Kbd>{t('palette.esc')}</Kbd>
+        </button>
       </div>
 
       <div id="palette-results" role="listbox" aria-label={t('palette.title')} className="max-h-[min(60vh,28rem)] overflow-y-auto p-2">
@@ -167,9 +179,18 @@ function PaletteBody({ onClose, onSyncAll }: { onClose: () => void; onSyncAll: (
                       selected && 'bg-primary/12',
                     )}
                   >
-                    <span className="flex size-8 items-center justify-center rounded-md bg-muted text-[11px] font-bold text-foreground">
-                      {item.icon ? <item.icon className="size-4" aria-hidden="true" /> : item.monogram}
-                    </span>
+                    {item.holding ? (
+                      <HoldingLogo {...item.holding} name={item.label} className="size-8" />
+                    ) : item.icon ? (
+                      <span className="flex size-8 items-center justify-center rounded-md bg-muted text-foreground">
+                        <item.icon className="size-4" aria-hidden="true" />
+                      </span>
+                    ) : (
+                      <Avatar className={cn('size-8 rounded-md after:rounded-md', item.logo && 'bg-white')}>
+                        {item.logo && <AvatarImage src={item.logo} alt="" className="rounded-md object-contain p-1" />}
+                        <AvatarFallback className="rounded-md text-[11px] font-bold text-foreground">{item.monogram}</AvatarFallback>
+                      </Avatar>
+                    )}
                     <span className="min-w-0">
                       <span className="block truncate font-medium text-foreground">{item.label}</span>
                       {item.hint && <span className="block truncate text-xs text-muted-foreground">{item.hint}</span>}
@@ -185,7 +206,7 @@ function PaletteBody({ onClose, onSyncAll }: { onClose: () => void; onSyncAll: (
         })}
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-4 py-2.5 text-xs text-muted-foreground">
+      <div className="hidden flex-wrap items-center justify-between gap-3 border-t border-border px-4 py-2.5 text-xs text-muted-foreground sm:flex">
         <span className="flex flex-wrap items-center gap-3">
           <span className="inline-flex items-center gap-1.5"><Kbd>↑</Kbd><Kbd>↓</Kbd>{t('palette.navigate')}</span>
           <span className="inline-flex items-center gap-1.5"><Kbd>↵</Kbd>{t('palette.open')}</span>

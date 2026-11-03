@@ -3361,7 +3361,6 @@
     "value": "Portfolio value",
     "unrealisedGain": "unrealized gain",
     "unrealisedLoss": "unrealized loss",
-    "realisedYear": "Realized gains {{year}}",
     "dividends12m": "Dividends over 12 months",
     "lines": "Lines",
     "wrapperCount": "{{count}} account",

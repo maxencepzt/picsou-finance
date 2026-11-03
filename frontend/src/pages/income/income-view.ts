@@ -156,10 +156,10 @@ export function incomeBySource(
  * A `YYYY-MM` key for the chart: a short month on the axis, January with its year so a 23-month axis
  * reads unambiguously; month and year in full for the tooltip.
  */
-export function monthLabel(month: string, locale: string, full = false): string {
+export function monthLabel(month: string, locale: string, full = false, withYear = false): string {
   const [year, m] = month.split('-').map(Number)
   const format: Intl.DateTimeFormatOptions = full
     ? { month: 'long', year: 'numeric' }
-    : m === 1 ? { month: 'short', year: '2-digit' } : { month: 'short' }
+    : m === 1 || withYear ? { month: 'short', year: '2-digit' } : { month: 'short' }
   return new Intl.DateTimeFormat(locale, format).format(new Date(year, m - 1, 1))
 }

@@ -13,7 +13,7 @@ import { ErrorState } from '@/components/shared/ErrorState'
 import { LoadingSkeleton } from '@/components/shared/LoadingSkeleton'
 import { NetWorthChart } from '@/components/shared/NetWorthChart'
 import { PageHeader } from '@/components/shared/PageHeader'
-import { type TimeRange } from '@/components/shared/TimeRangeSelector'
+import { TimeRangeSelector, type TimeRange } from '@/components/shared/TimeRangeSelector'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { HOLDING_ACCOUNT_TYPES } from '@/lib/constants'
 import { formatApiError } from '@/lib/errors'
@@ -32,7 +32,7 @@ const RANGE_MONTHS: Record<TimeRange, number> = { '24H': 1, '7D': 1, '1M': 1, '3
 function Stat({ label, value, footer }: { label: string; value: ReactNode; footer?: string }) {
   return (
     <div className="flex min-w-0 flex-col gap-0.5">
-      <dt className="truncate text-[13px] font-medium text-muted-foreground">{label}</dt>
+      <dt className="truncate text-[13px] font-medium text-muted-foreground" title={label}>{label}</dt>
       <dd className="truncate text-lg font-semibold tabular-nums text-foreground">{value}</dd>
       {footer && <dd className="truncate text-xs text-muted-foreground">{footer}</dd>}
     </div>
@@ -68,7 +68,7 @@ export function InvestmentsPage() {
   const header = <PageHeader title={t('nav.investments')} />
   if (portfolio.isError) {
     return (
-      <div className="flex flex-col gap-4">
+      <div className="space-y-4">
         {header}
         <ErrorState title={t('error.crashTitle')} message={formatApiError(portfolio.error, t)} onRetry={() => void portfolio.refetch()} />
       </div>
@@ -76,7 +76,7 @@ export function InvestmentsPage() {
   }
   if (lines.length === 0) {
     return (
-      <div className="flex flex-col gap-4">
+      <div className="space-y-4">
         {header}
         <EmptyState title={t('investments.empty')} description={t('investments.emptyHint')} />
       </div>
@@ -93,7 +93,8 @@ export function InvestmentsPage() {
   const bothBottom = years.length > 0 && taxAccounts.length > 0
 
   return (
-    <div className="flex flex-col gap-4">
+    // space-y, not gap: the header keeps its own 24px margin instead of adding the gap to it.
+    <div className="space-y-4">
       {header}
 
       <Card>
@@ -109,8 +110,10 @@ export function InvestmentsPage() {
           </div>
           <dl className="grid min-w-0 flex-[2_1_480px] grid-cols-2 gap-4 sm:grid-cols-4">
             <Stat label={t('holdings.capitalInvested')} value={<CurrencyDisplay value={totals.invested} />} />
+            {/* The year goes under the figure: in the label it pushed "Plus-values réalisées 2026" past its column. */}
             <Stat
-              label={t('investments.realisedYear', { year })}
+              label={t('realized.title')}
+              footer={t('investments.realized.net', { year })}
               value={realized.isLoading
                 ? '—'
                 : <CurrencyDisplay value={realizedNet} showSign className={realizedNet > 0 ? 'text-gain' : realizedNet < 0 ? 'text-loss' : undefined} />}
@@ -127,11 +130,14 @@ export function InvestmentsPage() {
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
-          <CardHeader>
+          <CardHeader className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
             <CardTitle>{t('investments.chartTitle')}</CardTitle>
+            <div className="max-w-full min-w-0">
+              <TimeRangeSelector value={range} onChange={setRange} />
+            </div>
           </CardHeader>
-          <CardContent className="min-h-0 flex-1">
-            <NetWorthChart data={history ?? []} intraday={intraday ?? []} range={range} onRangeChange={setRange} />
+          <CardContent className="flex min-h-0 flex-1 flex-col">
+            <NetWorthChart data={history ?? []} intraday={intraday ?? []} range={range} totalLabel={t('investments.value')} />
           </CardContent>
         </Card>
         <ConcentrationCard lines={lines} />

@@ -1,6 +1,5 @@
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
-import { Badge } from '@/components/ui/badge'
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { useMoney } from '@/hooks/use-money'
@@ -20,9 +19,11 @@ export function DebtToIncomeCard({ monthlyPayments, monthlyIncome }: { monthlyPa
         <CardTitle>{t('realEstatePage.dti.title')}</CardTitle>
         {dti && (
           <CardAction>
-            <Badge variant="secondary" className={cn(dti.over && 'bg-warning/10 text-warning')}>
+            {/* Status as a dot and a word, like every status: no filled pill. */}
+            <span className={cn('inline-flex items-center gap-1.5 text-xs font-medium', dti.over ? 'text-warning' : 'text-muted-foreground')}>
+              <span className={cn('size-2 rounded-full', dti.over ? 'bg-warning' : 'bg-gain')} aria-hidden="true" />
               {t(dti.over ? 'realEstatePage.dti.over' : 'realEstatePage.dti.under', { pct: threshold })}
-            </Badge>
+            </span>
           </CardAction>
         )}
       </CardHeader>
@@ -30,7 +31,7 @@ export function DebtToIncomeCard({ monthlyPayments, monthlyIncome }: { monthlyPa
         {!dti || monthlyIncome == null ? (
           <>
             <p className="text-sm text-muted-foreground">{t('realEstatePage.dti.needsIncome')}</p>
-            <Link to="/settings" className="self-start text-sm font-medium text-primary underline-offset-4 hover:underline">
+            <Link to="/settings?section=profile" className="self-start text-sm font-medium text-primary underline-offset-4 hover:underline">
               {t('goals.savingsRate.goToSettings')}
             </Link>
           </>

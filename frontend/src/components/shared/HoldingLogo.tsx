@@ -54,7 +54,8 @@ export function HoldingLogo({
   const monogram = label && label.toLowerCase() !== ticker.toLowerCase() ? deriveMonogram(label) : ''
 
   return (
-    <Avatar className={cn('size-6 shrink-0', className)}>
+    // A size container, so the monogram scales with the mark (9.6px at 24px, 12.8px at 32px).
+    <Avatar className={cn('@container size-6 shrink-0', className)}>
       {src && (
         <AvatarImage
           key={src}
@@ -64,7 +65,7 @@ export function HoldingLogo({
           onError={() => setFailedUrl(src)}
         />
       )}
-      <AvatarFallback aria-hidden className="bg-muted text-[0.6rem] font-semibold">
+      <AvatarFallback aria-hidden className="bg-muted text-[length:40cqw] font-semibold">
         {monogram}
       </AvatarFallback>
     </Avatar>

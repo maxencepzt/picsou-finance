@@ -26,7 +26,9 @@ export function Delta({ amount, percent, invert = false, children, className }: 
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1 text-[13px] font-semibold tabular-nums',
+        // Wraps as a whole: in a narrow tile the trailing words drop under the figure instead of
+        // folding into a column beside the arrow.
+        'inline-flex flex-wrap items-center gap-x-1 text-[13px] font-semibold tabular-nums',
         sign === 0 ? 'text-muted-foreground' : good ? 'text-gain' : 'text-loss',
         className,
       )}
@@ -36,7 +38,8 @@ export function Delta({ amount, percent, invert = false, children, className }: 
       {percent != null && (amount != null
         ? <span>({formatPercent(percent, { signed: true })})</span>
         : <span>{formatPercent(percent, { signed: true })}</span>)}
-      {children && <span className="font-medium">{children}</span>}
+      {/* Context, not movement: in slate, so the colour stays on the signed figure. */}
+      {children && <span className="font-medium text-muted-foreground">{children}</span>}
     </span>
   )
 }

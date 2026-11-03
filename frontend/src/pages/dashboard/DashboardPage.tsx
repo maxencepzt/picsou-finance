@@ -11,7 +11,7 @@ import { KpiTile } from '@/components/shared/KpiTile'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { NetWorthChart } from '@/components/shared/NetWorthChart'
 import { LoadingSkeleton } from '@/components/shared/LoadingSkeleton'
-import { type TimeRange } from '@/components/shared/TimeRangeSelector'
+import { TimeRangeSelector, type TimeRange } from '@/components/shared/TimeRangeSelector'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { formatPercent } from '@/lib/utils'
@@ -111,9 +111,11 @@ export function DashboardPage() {
     { value: 'gross', key: 'grossWorth' },
     { value: 'financial', key: 'financialWorth' },
   ]
+  const modeLabel = t(`dashboard.${wealthModes.find(m => m.value === wealthMode)!.key}`)
 
   return (
-    <div className="flex flex-col gap-4">
+    // space-y, not gap: the header keeps its own 24px margin instead of adding the gap to it.
+    <div className="space-y-4">
       <PageHeader title={t('dashboard.title')} />
 
       {/* Wealth hero */}
@@ -122,7 +124,7 @@ export function DashboardPage() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button type="button" className="inline-flex items-center gap-1 self-start text-sm font-medium text-muted-foreground transition-[color] hover:text-foreground">
-                {t(`dashboard.${wealthModes.find(m => m.value === wealthMode)!.key}`)}
+                {modeLabel}
                 <ChevronDown className="size-3.5" aria-hidden="true" />
               </button>
             </DropdownMenuTrigger>
@@ -135,23 +137,23 @@ export function DashboardPage() {
             </DropdownMenuContent>
           </DropdownMenu>
           <CurrencyDisplay value={wealthValue} className="text-4xl leading-tight font-bold tracking-tight tabular-nums sm:text-[44px]" />
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+          {/* One line of context on a wide screen: the change over the range, the portfolio's, then the arithmetic. */}
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
             {rangeChange && (
               <Delta amount={rangeChange.amount} percent={rangeChange.percent}>
                 {t(`dashboard.overRange.${range}`)}
               </Delta>
             )}
+            {/* Unknown is not zero: a range without a known P&L reads as a dash. */}
+            {portfolioPnl == null
+              ? <span className="text-[13px] text-muted-foreground">— {t('dashboard.portfolioPerformance')}</span>
+              : <Delta amount={portfolioPnl} percent={portfolioPnlPct}>{t('dashboard.portfolioPerformance')}</Delta>}
             {wealthMode === 'net' && (data.totalLiabilities ?? 0) > 0 && (
               <span className="text-[13px] text-muted-foreground">
                 {t('dashboard.assetsMinusDebts')} <CurrencyDisplay value={grossAssets} /> − <CurrencyDisplay value={data.totalLiabilities ?? 0} />
               </span>
             )}
           </div>
-          {/* Unknown is not zero: a range without a known P&L reads as a dash. */}
-          <span className="text-[13px] text-muted-foreground">
-            {t('dashboard.portfolioPerformance')}{' '}
-            {portfolioPnl == null ? <span>—</span> : <Delta amount={portfolioPnl} percent={portfolioPnlPct} />}
-          </span>
         </CardContent>
       </Card>
 
@@ -194,12 +196,16 @@ export function DashboardPage() {
       {/* Evolution + allocation */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
-          <CardHeader>
+          {/* The period switch sits beside the title, like every card control, and drops under it on a phone. */}
+          <CardHeader className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
             {/* Titled by wealth mode: the curve plots (net/gross/financial) wealth, not gain/loss. */}
             <CardTitle>{t(`dashboard.evolution.${wealthMode}`)}</CardTitle>
+            <div className="max-w-full min-w-0">
+              <TimeRangeSelector value={range} onChange={setRange} />
+            </div>
           </CardHeader>
-          <CardContent className="min-h-0 flex-1">
-            <NetWorthChart data={history ?? []} intraday={intraday ?? []} range={range} onRangeChange={setRange} />
+          <CardContent className="flex min-h-0 flex-1 flex-col">
+            <NetWorthChart data={history ?? []} intraday={intraday ?? []} range={range} totalLabel={modeLabel} />
           </CardContent>
         </Card>
         <AllocationCard distribution={data.distribution} />

@@ -24,6 +24,7 @@ The profile dropdown keeps the admin profile switcher (`useFamilyMembers({ enabl
 
 ### Top bar: `AppTopBar`
 
+- **Logo** (mobile only): the horizontal wordmark at 24px, as in the sidebar (the square mark shrank it to an unreadable 28px box).
 - **Search field** (desktop) / search icon (mobile): opens the search palette (see `search-palette.md`). The field shows the platform shortcut, ⌘ K on Apple platforms and Ctrl K elsewhere (`lib/platform.ts`).
 - **Me / Household**: two links, `/` and `/family`; Household is current on the family view.
 - **Sync status** (≥ 1024px): time since the latest automatic sync, or "sync needs attention" when a bank connection failed.

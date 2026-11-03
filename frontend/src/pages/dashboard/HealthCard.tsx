@@ -45,7 +45,8 @@ export function HealthCard() {
           {score.loanToValue != null && (
             <div className="flex justify-between gap-2">
               <dt className="text-muted-foreground">{t('dashboard.health.loanToValue')}</dt>
-              <dd className="font-semibold tabular-nums">{formatPercent(score.loanToValue * 100)}</dd>
+              {/* Already a percentage (the API's 51.4 is 51.4 %), unlike safetyNet.coverage. */}
+              <dd className="font-semibold tabular-nums">{formatPercent(score.loanToValue)}</dd>
             </div>
           )}
         </dl>
@@ -58,7 +59,8 @@ export function HealthCard() {
             <span className="text-xs text-muted-foreground">{t('analysis.safetyNet.unknown')}</span>
           ) : (
             <>
-              <Progress value={coverage} aria-label={t('analysis.score.safetyNet')} />
+              {/* The default track is the tile's own muted fill: lift it so the empty part shows. */}
+              <Progress value={coverage} aria-label={t('analysis.score.safetyNet')} className="bg-foreground/10" />
               <span className="text-xs text-muted-foreground">
                 {safetyNet.excessEur > 0
                   ? <>{t('dashboard.health.excess')} <CurrencyDisplay value={safetyNet.excessEur} className="font-semibold text-foreground" /></>

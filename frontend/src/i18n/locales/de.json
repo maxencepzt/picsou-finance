@@ -3361,7 +3361,6 @@
     "value": "Depotwert",
     "unrealisedGain": "nicht realisierter Gewinn",
     "unrealisedLoss": "nicht realisierter Verlust",
-    "realisedYear": "Realisierte Gewinne {{year}}",
     "dividends12m": "Dividenden der letzten 12 Monate",
     "lines": "Positionen",
     "wrapperCount": "{{count}} Konto",

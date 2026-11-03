@@ -3361,7 +3361,6 @@
     "value": "Valeur du portefeuille",
     "unrealisedGain": "de plus-value latente",
     "unrealisedLoss": "de moins-value latente",
-    "realisedYear": "Plus-values réalisées {{year}}",
     "dividends12m": "Dividendes sur 12 mois",
     "lines": "Lignes",
     "wrapperCount": "{{count}} enveloppe",

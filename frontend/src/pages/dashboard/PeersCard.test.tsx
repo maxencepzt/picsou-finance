@@ -32,7 +32,7 @@ describe('PeersCard', () => {
     renderCard(102_550)
     expect(screen.getByText('dashboard.peers.bracket.all')).toBeInTheDocument()
     expect(screen.getByText('0.5 ×')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'dashboard.peers.fillProfile' })).toHaveAttribute('href', '/settings')
+    expect(screen.getByRole('link', { name: 'dashboard.peers.fillProfile' })).toHaveAttribute('href', '/settings?section=profile')
     expect(screen.getByRole('link', { name: 'dashboard.peers.source' })).toHaveAttribute('href', 'https://www.insee.fr/fr/statistiques/8672665')
   })
 })

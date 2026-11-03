@@ -107,7 +107,7 @@ export function HoldingDetailModal({ line, onClose }: HoldingDetailModalProps) {
                 )}
                 <DialogTitle className="text-lg">{line.name}</DialogTitle>
                 {line.ticker && line.accountId !== null && (
-                  <Badge variant="outline" className="font-mono text-xs">
+                  <Badge variant="outline" className="text-xs">
                     {line.ticker}
                   </Badge>
                 )}
