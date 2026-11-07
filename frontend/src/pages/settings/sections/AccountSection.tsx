@@ -34,8 +34,8 @@ function UsernameRow() {
   async function save() {
     const trimmed = value.trim()
     if (!trimmed || trimmed === user?.username) { setEditing(false); return }
-    if (trimmed.length < 3) { setError(t('settings.usernameTooShort')); return }
-    if (!/^[a-zA-Z0-9._-]+$/.test(trimmed)) { setError(t('settings.usernameInvalidChars')); return }
+    if (trimmed.length < 3) { setError(t('auth.validation.usernameTooShort')); return }
+    if (!/^[a-zA-Z0-9._-]+$/.test(trimmed)) { setError(t('auth.validation.usernameFormat')); return }
     setSaving(true)
     setError(null)
     try {

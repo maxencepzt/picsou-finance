@@ -31,7 +31,8 @@
     "labelColon": "{{label}}:",
     "errorTitle": "Error",
     "skipToContent": "Skip to main content",
-    "category": "Category"
+    "category": "Category",
+    "notFound": "Nicht gefunden."
   },
   "nav": {
     "dashboard": "Übersicht",
@@ -276,7 +277,8 @@
       "sourceLabel": "Quelle",
       "source": "Insee Focus Nr. 371, Erhebung Histoire de vie et Patrimoine 2023-2024",
       "error": "Ihr Profil konnte nicht geladen werden."
-    }
+    },
+    "viewAll": "Alle anzeigen"
   },
   "accounts": {
     "corumLifeOperation": {
@@ -924,11 +926,13 @@
     "loanProgress": "Kreditfortschritt",
     "monthlyBreakdown": "Monatliche Aufschlüsselung",
     "noLinkedAsset": "Kein verknüpftes Objekt",
-    "linkedAssetHint": "Erst die Verknüpfung mit einem Objekt macht das Netto-Immobilienvermögen berechenbar."
+    "linkedAssetHint": "Erst die Verknüpfung mit einem Objekt macht das Netto-Immobilienvermögen berechenbar.",
+    "repaid": "Getilgtes Kapital"
   },
   "portfolio": {
     "cash": "Cash",
-    "value": "Wert"
+    "value": "Wert",
+    "all": "Alle"
   },
   "holdings": {
     "totalValue": "Gesamtwert",
@@ -1343,7 +1347,8 @@
       "connectErrorKeyOnly": "Exchange konnte nicht verbunden werden. Prüfe deinen API-Key.",
       "remove": "Entfernen",
       "removeConfirm": "Diesen Exchange entfernen?",
-      "noExchanges": "Keine Exchanges verbunden"
+      "noExchanges": "Keine Exchanges verbunden",
+      "sync": "Synchronisieren"
     },
     "wallets": {
       "title": "Wallets",
@@ -1358,7 +1363,8 @@
       "remove": "Entfernen",
       "removeConfirm": "Dieses Wallet entfernen?",
       "noWallets": "Keine Wallets im Blick",
-      "evmHint": "Eine Adresse, alle EVM-Chains — Ethereum, BNB Chain, Polygon, Arbitrum, Optimism, Base und Avalanche."
+      "evmHint": "Eine Adresse, alle EVM-Chains — Ethereum, BNB Chain, Polygon, Arbitrum, Optimism, Base und Avalanche.",
+      "sync": "Synchronisieren"
     },
     "visibility": {
       "title": "Sichtbare Konten",
@@ -2209,7 +2215,8 @@
       "linkTitle": "{{provider}}-Konto verknüpfen",
       "linkDesc": "Bestätige deine Identität und melde dich dann mit dem {{provider}}-Konto an, das du verknüpfen möchtest.",
       "linkMfaNote": "Wenn du dich mit {{provider}} anmeldest, fragt Picsou nicht nach deinem Authenticator-Code: Für den zweiten Faktor ist dann der Anmeldeanbieter zuständig. Die Passwort-Anmeldung fragt weiterhin nach dem Code, außer auf einem vertrauenswürdigen Gerät."
-    }
+    },
+    "usernameTaken": "Dieser Benutzername ist bereits vergeben."
   },
   "accessKeys": {
     "sectionTitle": "Zugriffsschlüssel & MCP",
@@ -3342,9 +3349,12 @@
       }
     },
     "cashflow": {
-      "income": "Income",
-      "expense": "Expense",
-      "net": "Net"
+      "income": "Einnahmen",
+      "expense": "Ausgaben",
+      "net": "Nettosaldo",
+      "subtitle": "Einnahmen, Ausgaben und Nettosaldo (ohne Überweisungen).",
+      "empty": "Keine Transaktionen in diesem Zeitraum.",
+      "error": "Der Cashflow konnte nicht geladen werden."
     },
     "flow": {
       "subtitle": "How your money moves.",
@@ -3910,5 +3920,8 @@
     "SSO_DISABLED": "Single Sign-on ist auf dieser Instanz nicht aktiviert.",
     "SELF_UNLINK_FORBIDDEN": "Um deine eigenen SSO-Identitäten zu trennen, nutze Anmeldemethoden in den Einstellungen.",
     "generic": "Die Single-Sign-on-Anmeldung ist fehlgeschlagen. Bitte versuche es erneut."
+  },
+  "realEstate": {
+    "purchasePrice": "Kaufpreis"
   }
 }

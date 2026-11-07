@@ -31,7 +31,8 @@
     "currency": "EUR",
     "category": "Category",
     "done": "Done",
-    "labelColon": "{{label}}:"
+    "labelColon": "{{label}}:",
+    "notFound": "Not found."
   },
   "nav": {
     "dashboard": "Overview",
@@ -276,7 +277,8 @@
       "sourceLabel": "Source",
       "source": "Insee Focus no. 371, Histoire de vie et Patrimoine survey 2023-2024",
       "error": "Could not load your profile."
-    }
+    },
+    "viewAll": "View all"
   },
   "transactions": {
     "detail": "Transaction detail",
@@ -935,11 +937,13 @@
     "loanProgress": "Loan progress",
     "monthlyBreakdown": "Monthly breakdown",
     "noLinkedAsset": "No linked asset",
-    "linkedAssetHint": "Linking this loan to a property is what makes net property wealth computable."
+    "linkedAssetHint": "Linking this loan to a property is what makes net property wealth computable.",
+    "repaid": "Capital repaid"
   },
   "portfolio": {
     "cash": "Cash",
-    "value": "Value"
+    "value": "Value",
+    "all": "All"
   },
   "holdings": {
     "totalValue": "Total value",
@@ -1255,7 +1259,10 @@
     "cashflow": {
       "income": "Income",
       "expense": "Expense",
-      "net": "Net"
+      "net": "Net",
+      "subtitle": "Money in, money out and net balance (transfers excluded).",
+      "empty": "No transactions in this period.",
+      "error": "Could not load cashflow."
     },
     "flow": {
       "subtitle": "How your money moves.",
@@ -1674,7 +1681,8 @@
       "connectErrorKeyOnly": "Failed to connect exchange. Check your API key.",
       "remove": "Remove",
       "removeConfirm": "Remove this exchange?",
-      "noExchanges": "No exchanges connected"
+      "noExchanges": "No exchanges connected",
+      "sync": "Synchronize"
     },
     "wallets": {
       "title": "Wallets",
@@ -1689,7 +1697,8 @@
       "remove": "Remove",
       "removeConfirm": "Remove this wallet?",
       "noWallets": "No wallets tracked",
-      "evmHint": "One address, all EVM chains — Ethereum, BNB Chain, Polygon, Arbitrum, Optimism, Base and Avalanche."
+      "evmHint": "One address, all EVM chains — Ethereum, BNB Chain, Polygon, Arbitrum, Optimism, Base and Avalanche.",
+      "sync": "Synchronize"
     },
     "visibility": {
       "title": "Visible accounts",
@@ -2509,7 +2518,8 @@
       "linkTitle": "Link a {{provider}} account",
       "linkDesc": "Confirm your identity, then sign in with the {{provider}} account to link.",
       "linkMfaNote": "When you sign in with {{provider}}, Picsou doesn't ask for your authenticator code: a second factor is then the sign-in provider's job. Password sign-ins still ask for the code, except on a trusted device."
-    }
+    },
+    "usernameTaken": "This username is already taken."
   },
   "accessKeys": {
     "sectionTitle": "Access keys & MCP",
@@ -3910,5 +3920,8 @@
     "SSO_DISABLED": "Single sign-on is not enabled on this instance.",
     "SELF_UNLINK_FORBIDDEN": "To unlink your own SSO identities, use Sign-in methods in Settings.",
     "generic": "Single sign-on failed. Please try again."
+  },
+  "realEstate": {
+    "purchasePrice": "Purchase price"
   }
 }
