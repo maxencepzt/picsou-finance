@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { Pencil } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { CartesianGrid, Line, LineChart, XAxis, YAxis, usePlotArea, useXAxisScale, useYAxisScale } from 'recharts'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -21,25 +22,17 @@ import type { ProjectionScenario } from '@/types/api'
 import { AXIS_PROPS, AXIS_PROPS_FLUSH } from '@/lib/chart-axis'
 import { labelGutter, spreadLabels } from './projection-labels'
 
-const HORIZONS = [5, 10, 20, 30] as const
-
 /** The backend clamps the horizon to this range; the field says so rather than being silently corrected. */
 const MIN_YEARS = 1
 const MAX_YEARS = 40
 
 /**
- * Any horizon from 1 to 40 years, typed. Applied on Enter or when the field loses focus — not on
- * every keystroke, which would project 2 years on the way to 25.
+ * The horizon, from 1 to 40 years, typed in place. Applied on Enter or when the field loses focus
+ * — not on every keystroke, which would project 2 years on the way to 25.
  */
 function HorizonField({ years, onChange }: { years: number; onChange: (years: number) => void }) {
   const { t } = useTranslation()
   const [draft, setDraft] = useState(String(years))
-  const [shown, setShown] = useState(years)
-  // A preset clicked elsewhere replaces whatever was being typed.
-  if (shown !== years) {
-    setShown(years)
-    setDraft(String(years))
-  }
   const commit = () => {
     const parsed = Number.parseInt(draft, 10)
     if (Number.isNaN(parsed)) {
@@ -51,7 +44,7 @@ function HorizonField({ years, onChange }: { years: number; onChange: (years: nu
     if (clamped !== years) onChange(clamped)
   }
   return (
-    <label className="flex h-8 items-center gap-1.5 rounded-md bg-muted px-2 text-xs font-medium text-muted-foreground focus-within:ring-2 focus-within:ring-ring">
+    <label className="flex h-8 cursor-text items-center gap-1.5 rounded-md bg-muted px-2.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground focus-within:ring-2 focus-within:ring-ring">
       <span className="sr-only">{t('analysis.projection.customHorizon', { min: MIN_YEARS, max: MAX_YEARS })}</span>
       <input
         type="text"
@@ -62,9 +55,10 @@ function HorizonField({ years, onChange }: { years: number; onChange: (years: nu
         onKeyDown={(e) => {
           if (e.key === 'Enter') commit()
         }}
-        className="w-7 bg-transparent text-right font-semibold tabular-nums text-foreground outline-none focus-visible:outline-none focus-visible:ring-0"
+        className="w-5 bg-transparent text-right font-semibold tabular-nums text-foreground outline-none focus-visible:outline-none focus-visible:ring-0"
       />
       <span aria-hidden="true">{t('analysis.projection.yearsUnit')}</span>
+      <Pencil className="size-3" aria-hidden="true" />
     </label>
   )
 }
@@ -153,7 +147,7 @@ function niceCeiling(value: number): number {
 export function ProjectionSection({ className }: { className?: string }) {
   const { t } = useTranslation()
   const dateLabel = useProjectionDateLabel()
-  const [years, setYears] = useState<number>(20)
+  const [years, setYears] = useState<number>(10)
   // Two questions, one card: how much, and in what. Tabs rather than two cards because they
   // share a horizon — switching view must not lose it.
   const [view, setView] = useState<'wealth' | 'risk' | 'allocation'>('wealth')
@@ -259,10 +253,6 @@ export function ProjectionSection({ className }: { className?: string }) {
     value: key,
     label: t(`analysis.projection.views.${key}`),
   }))
-  const horizonOptions = HORIZONS.map((horizon) => ({
-    value: String(horizon),
-    label: t('analysis.projection.years', { count: horizon }),
-  }))
 
   return (
     <Card className={cn('min-w-0', className)}>
@@ -291,12 +281,6 @@ export function ProjectionSection({ className }: { className?: string }) {
             value={view}
             onChange={setView}
             ariaLabel={t('analysis.projection.viewLabel')}
-          />
-          <SegmentedControl
-            options={horizonOptions}
-            value={String(years)}
-            onChange={(value) => setYears(Number(value))}
-            ariaLabel={t('analysis.projection.horizonLabel')}
           />
           <HorizonField years={years} onChange={setYears} />
         </div>

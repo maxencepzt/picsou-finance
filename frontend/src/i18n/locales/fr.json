@@ -560,7 +560,6 @@
     },
     "projection": {
       "title": "Projection du patrimoine",
-      "years": "{{count}} ans",
       "basis": "Base investissable",
       "monthly": "versements",
       "nothingToProject": "Définissez un investissement mensuel dans Objectifs pour voir une projection.",
@@ -584,7 +583,6 @@
       "atHorizon": "À {{count}} ans",
       "atAge": "{{age}} ans",
       "viewLabel": "Vue",
-      "horizonLabel": "Horizon",
       "chartLabel": "Patrimoine projeté dans {{years}} ans : {{values}}",
       "risk": {
         "p10": "1 cas sur 10 en dessous",

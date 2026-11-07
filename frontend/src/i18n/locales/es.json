@@ -549,7 +549,6 @@
     },
     "projection": {
       "title": "Proyección del patrimonio",
-      "years": "{{count}} años",
       "basis": "Base invertible",
       "monthly": "aportaciones",
       "nothingToProject": "Define una inversión mensual en Objetivos para ver una proyección.",
@@ -573,7 +572,6 @@
       "atHorizon": "En {{count}} años",
       "atAge": "{{age}} años",
       "viewLabel": "Vista",
-      "horizonLabel": "Horizonte",
       "chartLabel": "Patrimonio proyectado en {{years}} años: {{values}}",
       "risk": {
         "p10": "1 de cada 10 por debajo",

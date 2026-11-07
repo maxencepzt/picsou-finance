@@ -549,7 +549,6 @@
     },
     "projection": {
       "title": "Vermögensprojektion",
-      "years": "{{count}} Jahre",
       "basis": "Anlagefähige Basis",
       "monthly": "Einzahlungen",
       "nothingToProject": "Lege unter Ziele eine monatliche Anlage an, um eine Projektion zu sehen.",
@@ -573,7 +572,6 @@
       "atHorizon": "In {{count}} Jahren",
       "atAge": "{{age}} Jahre",
       "viewLabel": "Ansicht",
-      "horizonLabel": "Horizont",
       "chartLabel": "Prognostiziertes Vermögen in {{years}} Jahren: {{values}}",
       "risk": {
         "p10": "1 von 10 darunter",

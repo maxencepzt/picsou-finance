@@ -560,7 +560,6 @@
     },
     "projection": {
       "title": "Wealth projection",
-      "years": "{{count}} years",
       "basis": "Investable base",
       "monthly": "contributions",
       "nothingToProject": "Set a monthly investment under Goals to see a projection.",
@@ -584,7 +583,6 @@
       "atHorizon": "In {{count}} years",
       "atAge": "age {{age}}",
       "viewLabel": "View",
-      "horizonLabel": "Horizon",
       "chartLabel": "Projected wealth in {{years}} years: {{values}}",
       "risk": {
         "p10": "1 in 10 below",
