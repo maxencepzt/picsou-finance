@@ -12,6 +12,7 @@ import type {
   HoldingClassificationView,
   Performance,
   Projection,
+  RiskOutlook,
   SecurityProfileRefresh,
   WealthPyramid,
 } from '@/types/api'
@@ -24,6 +25,9 @@ export const analysisApi = {
 
   projection: (years: number) =>
     api.get<Projection>('/analysis/projection', { params: { years } }).then(r => r.data),
+
+  projectionRisk: (years: number) =>
+    api.get<RiskOutlook>('/analysis/projection/risk', { params: { years } }).then(r => r.data),
 
   performance: (months: number) =>
     api.get<Performance>('/analysis/performance', { params: { months } }).then(r => r.data),

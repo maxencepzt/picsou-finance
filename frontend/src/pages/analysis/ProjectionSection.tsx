@@ -1,10 +1,12 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
+import { Pencil } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { CartesianGrid, Line, LineChart, XAxis, YAxis, usePlotArea, useXAxisScale, useYAxisScale } from 'recharts'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { CurrencyDisplay } from '@/components/shared/CurrencyDisplay'
 import { SegmentedControl } from '@/components/shared/SegmentedControl'
 import { AllocationTrajectory } from './AllocationTrajectory'
+import { RiskOutlook } from './RiskOutlook'
 import {
   ChartContainer,
   ChartTooltip,
@@ -20,7 +22,60 @@ import type { ProjectionScenario } from '@/types/api'
 import { AXIS_PROPS, AXIS_PROPS_FLUSH } from '@/lib/chart-axis'
 import { labelGutter, spreadLabels } from './projection-labels'
 
-const HORIZONS = [10, 20, 30] as const
+/** The backend clamps the horizon to this range; the field says so rather than being silently corrected. */
+const MIN_YEARS = 1
+const MAX_YEARS = 40
+
+type ProjectionViewKey = 'wealth' | 'risk' | 'allocation'
+
+/** The body of the selected tab. Only the selected one is mounted, so the risk tab fetches on demand. */
+function ProjectionView({ view, wealth, risk, allocation }: Readonly<{
+  view: ProjectionViewKey
+  wealth: ReactNode
+  risk: ReactNode
+  allocation: ReactNode
+}>) {
+  if (view === 'allocation') return allocation
+  if (view === 'risk') return risk
+  return wealth
+}
+
+/**
+ * The horizon, from 1 to 40 years, typed in place. Applied on Enter or when the field loses focus
+ * — not on every keystroke, which would project 2 years on the way to 25.
+ */
+function HorizonField({ years, onChange }: Readonly<{ years: number; onChange: (years: number) => void }>) {
+  const { t } = useTranslation()
+  const [draft, setDraft] = useState(String(years))
+  const commit = () => {
+    const parsed = Number.parseInt(draft, 10)
+    if (Number.isNaN(parsed)) {
+      setDraft(String(years))
+      return
+    }
+    const clamped = Math.min(MAX_YEARS, Math.max(MIN_YEARS, parsed))
+    setDraft(String(clamped))
+    if (clamped !== years) onChange(clamped)
+  }
+  return (
+    <label className="flex h-8 cursor-text items-center gap-1.5 rounded-md bg-muted px-2.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground focus-within:ring-2 focus-within:ring-ring">
+      <span className="sr-only">{t('analysis.projection.customHorizon', { min: MIN_YEARS, max: MAX_YEARS })}</span>
+      <input
+        type="text"
+        inputMode="numeric"
+        value={draft}
+        onChange={(e) => setDraft(e.target.value.replace(/\D/g, '').slice(0, 2))}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') commit()
+        }}
+        className="w-5 bg-transparent text-right font-semibold tabular-nums text-foreground outline-none focus-visible:outline-none focus-visible:ring-0"
+      />
+      <span aria-hidden="true">{t('analysis.projection.yearsUnit')}</span>
+      <Pencil className="size-3" aria-hidden="true" />
+    </label>
+  )
+}
 
 /**
  * The theme's chart tokens are a single-hue ramp, not five distinct hues — which suits ordered
@@ -106,10 +161,10 @@ function niceCeiling(value: number): number {
 export function ProjectionSection({ className }: { className?: string }) {
   const { t } = useTranslation()
   const dateLabel = useProjectionDateLabel()
-  const [years, setYears] = useState<number>(20)
+  const [years, setYears] = useState<number>(10)
   // Two questions, one card: how much, and in what. Tabs rather than two cards because they
   // share a horizon — switching view must not lose it.
-  const [view, setView] = useState<'wealth' | 'allocation'>('wealth')
+  const [view, setView] = useState<ProjectionViewKey>('wealth')
   // Everything visible until the reader says otherwise. Hidden rather than shown, so a scenario
   // added later to the payload appears without anyone remembering to opt it in.
   const [hidden, setHidden] = useState<Set<string>>(() => new Set())
@@ -208,13 +263,9 @@ export function ProjectionSection({ className }: { className?: string }) {
   const hasSomethingToProject =
     (projection.data?.baseValueEur ?? 0) > 0 || (projection.data?.monthlyInflowEur ?? 0) > 0
 
-  const viewOptions = (['wealth', 'allocation'] as const).map((key) => ({
+  const viewOptions = (['wealth', 'risk', 'allocation'] as const).map((key) => ({
     value: key,
     label: t(`analysis.projection.views.${key}`),
-  }))
-  const horizonOptions = HORIZONS.map((horizon) => ({
-    value: String(horizon),
-    label: t('analysis.projection.years', { count: horizon }),
   }))
 
   return (
@@ -245,12 +296,7 @@ export function ProjectionSection({ className }: { className?: string }) {
             onChange={setView}
             ariaLabel={t('analysis.projection.viewLabel')}
           />
-          <SegmentedControl
-            options={horizonOptions}
-            value={String(years)}
-            onChange={(value) => setYears(Number(value))}
-            ariaLabel={t('analysis.projection.horizonLabel')}
-          />
+          <HorizonField years={years} onChange={setYears} />
         </div>
       </CardHeader>
       <CardContent>
@@ -258,9 +304,11 @@ export function ProjectionSection({ className }: { className?: string }) {
           <p className="text-sm text-muted-foreground">{t('analysis.projection.nothingToProject')}</p>
         ) : (
           <>
-            {view === 'allocation' ? (
-              <AllocationTrajectory allocation={projection.data.allocation} />
-            ) : (
+            <ProjectionView
+              view={view}
+              allocation={<AllocationTrajectory allocation={projection.data.allocation} />}
+              risk={<RiskOutlook years={years} />}
+              wealth={
               <>
             <ChartContainer
               config={config}
@@ -359,7 +407,8 @@ export function ProjectionSection({ className }: { className?: string }) {
               {t('analysis.projection.blendNote')}
             </p>
               </>
-            )}
+              }
+            />
 
             <p className="mt-3 text-xs text-muted-foreground">
               {t('analysis.projection.disclaimer')}

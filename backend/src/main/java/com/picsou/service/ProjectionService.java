@@ -1,6 +1,7 @@
 package com.picsou.service;
 
 import com.picsou.dto.ProjectionResponse;
+import com.picsou.dto.RiskOutlookResponse;
 import com.picsou.dto.WealthPyramidResponse;
 import com.picsou.model.Goal;
 import com.picsou.model.GoalType;
@@ -162,6 +163,84 @@ public class ProjectionService {
             years,
             scenarios,
             allocation(startingMix, targets, plans, start, years));
+    }
+
+    /**
+     * The same base and plans as {@link #project}, drawn over many random futures.
+     *
+     * <p>A fixed seed: the same portfolio gives the same odds on every load, so a figure that
+     * changes means the portfolio changed, not the dice.
+     */
+    public RiskOutlookResponse riskOutlook(Long memberId, int requestedYears) {
+        int years = Math.max(MIN_YEARS, Math.min(MAX_YEARS, requestedYears));
+        Map<WealthTier, BigDecimal> startingMix = mixFrom(pyramidService.pyramid(memberId));
+        List<Plan> plans = plansFor(memberId);
+        YearMonth start = YearMonth.now();
+        int months = years * 12;
+
+        List<MonteCarloSimulator.Source> sources = new ArrayList<>();
+        for (WealthTier tier : INVESTABLE) {
+            double held = startingMix.getOrDefault(tier, BigDecimal.ZERO).doubleValue();
+            if (held <= 0) continue;
+            sources.add(new MonteCarloSimulator.Source(tier,
+                adjust(TIER_RATES.getOrDefault(tier, BigDecimal.ZERO), tier, BigDecimal.ZERO).doubleValue(),
+                held, 0, new boolean[months + 1]));
+        }
+        for (Plan plan : plans) {
+            if (!INVESTABLE.contains(plan.tier())) continue;
+            boolean[] active = new boolean[months + 1];
+            for (int m = 1; m <= months; m++) active[m] = plan.activeIn(start.plusMonths(m));
+            // Same floor as the reference curve: a negative stated rate on a risky tier is read as 0 %.
+            sources.add(new MonteCarloSimulator.Source(plan.tier(),
+                adjust(plan.annualPercent(), plan.tier(), BigDecimal.ZERO).doubleValue(),
+                0, plan.monthly().doubleValue(), active));
+        }
+
+        MonteCarloSimulator.Result result =
+            MonteCarloSimulator.run(sources, years, MonteCarloSimulator.PATHS, SEED);
+
+        List<RiskOutlookResponse.Band> points = new ArrayList<>();
+        for (int y = 0; y <= years; y++) {
+            points.add(new RiskOutlookResponse.Band(
+                start.plusYears(y).atEndOfMonth(),
+                eur(result.percentile(y, 10)),
+                eur(result.percentile(y, 25)),
+                eur(result.percentile(y, 50)),
+                eur(result.percentile(y, 75)),
+                eur(result.percentile(y, 90)),
+                eur(result.contributed()[y])));
+        }
+
+        RiskOutlookResponse.Summary summary = new RiskOutlookResponse.Summary(
+            eur(result.percentile(years, 5)),
+            percent(result.shareBelowContributed()),
+            percent(result.shareWithDrawdown()),
+            percent(MonteCarloSimulator.DRAWDOWN_THRESHOLD),
+            percent(result.medianWorstDrawdown()));
+
+        List<RiskOutlookResponse.Assumption> assumptions = INVESTABLE.stream()
+            .sorted()
+            .map(tier -> new RiskOutlookResponse.Assumption(tier,
+                TIER_RATES.getOrDefault(tier, BigDecimal.ZERO),
+                BigDecimal.valueOf(MonteCarloSimulator.VOLATILITY.getOrDefault(tier, 0.0))))
+            .toList();
+
+        BigDecimal base = INVESTABLE.stream()
+            .map(t -> startingMix.getOrDefault(t, BigDecimal.ZERO))
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        return new RiskOutlookResponse(base.setScale(2, RoundingMode.HALF_UP), years,
+            MonteCarloSimulator.PATHS, points, summary, assumptions);
+    }
+
+    private static final long SEED = 20_261_107L;
+
+    private static BigDecimal eur(double value) {
+        return BigDecimal.valueOf(value).setScale(2, RoundingMode.HALF_UP);
+    }
+
+    private static BigDecimal percent(double share) {
+        return BigDecimal.valueOf(share * 100).setScale(1, RoundingMode.HALF_UP);
     }
 
     // --- the starting picture, taken from the pyramid ------------------------

@@ -560,7 +560,6 @@
     },
     "projection": {
       "title": "Projection du patrimoine",
-      "years": "{{count}} ans",
       "basis": "Base investissable",
       "monthly": "versements",
       "nothingToProject": "Définissez un investissement mensuel dans Objectifs pour voir une projection.",
@@ -574,7 +573,8 @@
       "contributed": "Vos versements",
       "views": {
         "wealth": "Patrimoine",
-        "allocation": "Répartition"
+        "allocation": "Répartition",
+        "risk": "Risques"
       },
       "target": "Cible",
       "blendNote": "Taux effectif de votre mélange : chaque versement capitalise au taux de son support.",
@@ -583,8 +583,28 @@
       "atHorizon": "À {{count}} ans",
       "atAge": "{{age}} ans",
       "viewLabel": "Vue",
-      "horizonLabel": "Horizon",
-      "chartLabel": "Patrimoine projeté dans {{years}} ans : {{values}}"
+      "chartLabel": "Patrimoine projeté dans {{years}} ans : {{values}}",
+      "risk": {
+        "p10": "1 cas sur 10 en dessous",
+        "p50": "Médiane",
+        "p90": "1 cas sur 10 au-dessus",
+        "inner": "La moitié des cas",
+        "outer": "8 cas sur 10",
+        "legend": "Légende",
+        "rangeLabel": "En {{year}}, 8 cas sur 10",
+        "rangeNote": "La moitié des futurs finit au-dessus de {{median}}.",
+        "worstLabel": "Dans les 5 % de cas les plus durs",
+        "worstNote": "Ce qu'il resterait à l'horizon dans un futur très défavorable.",
+        "belowLabel": "Finir sous vos versements",
+        "belowNote": "Probabilité de finir sous les {{contributed}} versés.",
+        "drawdownLabel": "Traverser une baisse de {{threshold}}",
+        "drawdownNote": "Au pire moment, un futur typique perd {{median}} depuis son plus haut.",
+        "assumption": "{{tier}} : {{expected}} par an en moyenne, volatilité {{volatility}}",
+        "method": "Simulation de {{paths}} futurs possibles, mois par mois, avec les mêmes versements que les scénarios. Hors inflation, ce n'est pas une prévision.",
+        "chartLabel": "Projection en {{year}} : 8 cas sur 10 entre {{low}} et {{high}}, médiane {{median}}"
+      },
+      "customHorizon": "Horizon personnalisé, de {{min}} à {{max}} ans",
+      "yearsUnit": "ans"
     },
     "classification": {
       "title": "Classer ce titre",

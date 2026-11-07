@@ -9,6 +9,7 @@ import com.picsou.dto.EssentialExpenseEstimateResponse;
 import com.picsou.dto.FeesResponse;
 import com.picsou.dto.PerformanceResponse;
 import com.picsou.dto.ProjectionResponse;
+import com.picsou.dto.RiskOutlookResponse;
 import com.picsou.dto.SecurityProfileRefreshResponse;
 import com.picsou.dto.WealthPyramidResponse;
 import com.picsou.config.RateLimitConfig;
@@ -99,6 +100,15 @@ public class AnalysisController {
     @GetMapping("/projection")
     public ProjectionResponse projection(@RequestParam(defaultValue = "20") int years) {
         return projectionService.project(userContext.currentMemberId(), years);
+    }
+
+    /**
+     * The same projection drawn over thousands of random futures: a range with its odds, and the
+     * falls along the way that the steady scenario curves never show.
+     */
+    @GetMapping("/projection/risk")
+    public RiskOutlookResponse projectionRisk(@RequestParam(defaultValue = "20") int years) {
+        return projectionService.riskOutlook(userContext.currentMemberId(), years);
     }
 
     /**

@@ -390,4 +390,57 @@ class ProjectionServiceTest {
         assertThat(scenario(response, "REFERENCE").points().getLast().valueEur())
             .isGreaterThan(scenario(response, "PESSIMISTIC").points().getLast().valueEur());
     }
+
+    // --- the risk outlook (Monte-Carlo) --------------------------------------
+
+    @Test
+    void theRiskOutlookStartsFromTheSameBaseAsTheScenarios() {
+        holds(WealthTier.EQUITY, "50000");
+        holds(WealthTier.SAFETY_NET, "6000");
+        holds(WealthTier.REAL_ESTATE, "300000");
+
+        var outlook = service.riskOutlook(MEMBER, 10);
+
+        assertThat(outlook.baseValueEur()).isEqualByComparingTo("56000.00");
+        assertThat(outlook.points()).hasSize(11);
+        assertThat(outlook.points().getFirst().p50Eur()).isEqualByComparingTo("56000.00");
+    }
+
+    @Test
+    void theRiskOutlookOrdersItsPercentilesAndCountsThePlans() {
+        holds(WealthTier.EQUITY, "20000");
+        plan("500", AccountType.PEA);
+
+        var outlook = service.riskOutlook(MEMBER, 15);
+        var last = outlook.points().getLast();
+
+        assertThat(last.contributedEur()).isEqualByComparingTo("110000.00");
+        assertThat(last.p10Eur()).isLessThan(last.p25Eur());
+        assertThat(last.p25Eur()).isLessThan(last.p50Eur());
+        assertThat(last.p50Eur()).isLessThan(last.p75Eur());
+        assertThat(last.p75Eur()).isLessThan(last.p90Eur());
+        assertThat(outlook.summary().p5Eur()).isLessThan(last.p10Eur());
+        assertThat(outlook.summary().drawdownThresholdPercent()).isEqualByComparingTo("20.0");
+    }
+
+    @Test
+    void theRiskOutlookIsTheSameOnEveryLoad() {
+        holds(WealthTier.EQUITY, "30000");
+        holds(WealthTier.CRYPTO, "5000");
+
+        assertThat(service.riskOutlook(MEMBER, 20)).isEqualTo(service.riskOutlook(MEMBER, 20));
+    }
+
+    @Test
+    void theRiskOutlookFloorsANegativeEquityRateLikeTheReferenceCurve() {
+        plan("1000", AccountType.PEA, "-20", null, null);
+        var negative = service.riskOutlook(MEMBER, 5);
+
+        goals.clear();
+        plan("1000", AccountType.PEA, "0", null, null);
+        var zero = service.riskOutlook(MEMBER, 5);
+
+        // The reference curve reads a negative stated rate on a risky tier as 0 %; the fan must too.
+        assertThat(negative.points()).isEqualTo(zero.points());
+    }
 }

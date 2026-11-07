@@ -549,7 +549,6 @@
     },
     "projection": {
       "title": "Vermögensprojektion",
-      "years": "{{count}} Jahre",
       "basis": "Anlagefähige Basis",
       "monthly": "Einzahlungen",
       "nothingToProject": "Lege unter Ziele eine monatliche Anlage an, um eine Projektion zu sehen.",
@@ -563,7 +562,8 @@
       "contributed": "Ihre Einzahlungen",
       "views": {
         "wealth": "Vermögen",
-        "allocation": "Aufteilung"
+        "allocation": "Aufteilung",
+        "risk": "Risiko"
       },
       "target": "Ziel",
       "blendNote": "Effektiver Mischsatz: jede Einzahlung verzinst sich zum Satz ihres Trägers.",
@@ -572,8 +572,28 @@
       "atHorizon": "In {{count}} Jahren",
       "atAge": "{{age}} Jahre",
       "viewLabel": "Ansicht",
-      "horizonLabel": "Horizont",
-      "chartLabel": "Prognostiziertes Vermögen in {{years}} Jahren: {{values}}"
+      "chartLabel": "Prognostiziertes Vermögen in {{years}} Jahren: {{values}}",
+      "risk": {
+        "p10": "1 von 10 darunter",
+        "p50": "Median",
+        "p90": "1 von 10 darüber",
+        "inner": "Die Hälfte der Fälle",
+        "outer": "8 von 10 Fällen",
+        "legend": "Legende",
+        "rangeLabel": "{{year}}: 8 von 10 Fällen",
+        "rangeNote": "Die Hälfte der Szenarien endet über {{median}}.",
+        "worstLabel": "In den schlechtesten 5 % der Fälle",
+        "worstNote": "Was in einer sehr ungünstigen Zukunft am Horizont übrig bliebe.",
+        "belowLabel": "Unter den Einzahlungen enden",
+        "belowNote": "Wahrscheinlichkeit, unter den eingezahlten {{contributed}} zu enden.",
+        "drawdownLabel": "Einen Rückgang von {{threshold}} erleben",
+        "drawdownNote": "Im schlechtesten Moment liegt ein typischer Verlauf {{median}} unter seinem Höchststand.",
+        "assumption": "{{tier}}: im Schnitt {{expected}} pro Jahr, Volatilität {{volatility}}",
+        "method": "{{paths}} mögliche Verläufe, Monat für Monat simuliert, mit denselben Einzahlungen wie die Szenarien. Ohne Inflation; keine Prognose.",
+        "chartLabel": "Projektion {{year}}: 8 von 10 Fällen zwischen {{low}} und {{high}}, Median {{median}}"
+      },
+      "customHorizon": "Eigener Zeitraum, {{min}} bis {{max}} Jahre",
+      "yearsUnit": "J."
     },
     "classification": {
       "title": "Wertpapier einordnen",

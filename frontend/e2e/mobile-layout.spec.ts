@@ -49,7 +49,8 @@ const PAGES = [
   ['/settings?section=security', 'Appareils connectés'],
   ['/settings?section=mcp', 'Connecter votre client MCP'],
   ['/settings/family', 'Sélectionner'],
-  ['/analysis', '30 ans'],
+  // The projection header: three views and the horizon field, which must wrap on a phone.
+  ['/analysis', 'Répartition'],
   ['/accounts/2', 'Ajouter'],
   ['/goals', 'Apport immobilier'],
   ['/goals/1/calendar', 'Voyage au Japon'],

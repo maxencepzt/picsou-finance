@@ -560,7 +560,6 @@
     },
     "projection": {
       "title": "Wealth projection",
-      "years": "{{count}} years",
       "basis": "Investable base",
       "monthly": "contributions",
       "nothingToProject": "Set a monthly investment under Goals to see a projection.",
@@ -574,7 +573,8 @@
       "contributed": "Your contributions",
       "views": {
         "wealth": "Wealth",
-        "allocation": "Mix"
+        "allocation": "Mix",
+        "risk": "Risk"
       },
       "target": "Target",
       "blendNote": "Effective blended rate: each contribution compounds at its own vehicle's rate.",
@@ -583,8 +583,28 @@
       "atHorizon": "In {{count}} years",
       "atAge": "age {{age}}",
       "viewLabel": "View",
-      "horizonLabel": "Horizon",
-      "chartLabel": "Projected wealth in {{years}} years: {{values}}"
+      "chartLabel": "Projected wealth in {{years}} years: {{values}}",
+      "risk": {
+        "p10": "1 in 10 below",
+        "p50": "Median",
+        "p90": "1 in 10 above",
+        "inner": "Half of the futures",
+        "outer": "8 in 10 futures",
+        "legend": "Legend",
+        "rangeLabel": "In {{year}}, 8 in 10 futures",
+        "rangeNote": "Half of the futures end above {{median}}.",
+        "worstLabel": "In the worst 5% of futures",
+        "worstNote": "What would be left at the horizon in a very unfavourable future.",
+        "belowLabel": "Ending below what you paid in",
+        "belowNote": "Chance of ending below the {{contributed}} paid in.",
+        "drawdownLabel": "Going through a {{threshold}} fall",
+        "drawdownNote": "At its worst moment, a typical future is {{median}} below its high.",
+        "assumption": "{{tier}}: {{expected}} a year on average, volatility {{volatility}}",
+        "method": "{{paths}} possible futures simulated month by month, with the same contributions as the scenarios. Before inflation; not a forecast.",
+        "chartLabel": "Projection in {{year}}: 8 in 10 futures between {{low}} and {{high}}, median {{median}}"
+      },
+      "customHorizon": "Custom horizon, {{min}} to {{max}} years",
+      "yearsUnit": "yrs"
     },
     "classification": {
       "title": "Classify this security",

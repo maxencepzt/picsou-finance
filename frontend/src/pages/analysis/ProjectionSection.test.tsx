@@ -102,12 +102,26 @@ describe('ProjectionSection', () => {
     expect(screen.queryByText('analysis.projection.nothingToProject')).not.toBeInTheDocument()
   })
 
-  it('offers the three horizons and defaults to twenty years', () => {
+  it('opens on ten years', () => {
     render(<ProjectionSection />)
 
-    expect(screen.getByRole('button', { name: 'analysis.projection.years:10' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'analysis.projection.years:30' })).toBeInTheDocument()
-    expect(useProjection).toHaveBeenCalledWith(20)
+    expect(useProjection).toHaveBeenCalledWith(10)
+    expect(screen.getByRole('textbox', { name: /analysis\.projection\.customHorizon/ })).toHaveValue('10')
+  })
+
+  it('projects over a typed horizon once the field is left, clamped to forty years', () => {
+    render(<ProjectionSection />)
+    const field = screen.getByRole('textbox', { name: /analysis\.projection\.customHorizon/ })
+
+    fireEvent.change(field, { target: { value: '25' } })
+    expect(useProjection).not.toHaveBeenCalledWith(25)
+    fireEvent.blur(field)
+    expect(useProjection).toHaveBeenLastCalledWith(25)
+
+    fireEvent.change(field, { target: { value: '99' } })
+    fireEvent.keyDown(field, { key: 'Enter' })
+    expect(useProjection).toHaveBeenLastCalledWith(40)
+    expect(field).toHaveValue('40')
   })
 
   it('hides a scenario when its legend entry is clicked, and brings it back', () => {
