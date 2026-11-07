@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Area, CartesianGrid, ComposedChart, Line, XAxis, YAxis } from 'recharts'
 import { ChartContainer, ChartTooltip, type ChartConfig } from '@/components/ui/chart'
+import { Skeleton } from '@/components/ui/skeleton'
 import { useProjectionDateLabel, useProjectionRisk } from '@/features/analysis/hooks'
 import { useMoney } from '@/hooks/use-money'
 import { MONEY_AXIS_WIDTH } from '@/lib/money'
@@ -79,6 +80,17 @@ export function RiskOutlook({ years }: { years: number }) {
     [t],
   )
 
+  // Same footprint as the loaded view, so the card does not jump when the simulation answers.
+  if (risk.isLoading) {
+    return (
+      <div className="flex flex-col gap-4" aria-busy="true">
+        <Skeleton className="h-[300px] w-full rounded-xl" />
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-24 rounded-xl" />)}
+        </div>
+      </div>
+    )
+  }
   if (!risk.data) return null
   const last = risk.data.points.at(-1)
   if (!last) return null
@@ -144,10 +156,10 @@ export function RiskOutlook({ years }: { years: number }) {
           <XAxis dataKey="date" {...AXIS_PROPS} tickFormatter={(value: string) => value.slice(0, 4)} />
           <YAxis {...AXIS_PROPS_FLUSH} width={MONEY_AXIS_WIDTH} domain={[0, 'auto']} tickFormatter={money.tick} />
           <ChartTooltip content={<RiskTooltip />} />
-          <Area type="monotone" dataKey="outer" stroke="none" fill={BAND_COLOR} fillOpacity={0.14} activeDot={false} isAnimationActive={false} />
-          <Area type="monotone" dataKey="inner" stroke="none" fill={BAND_COLOR} fillOpacity={0.26} activeDot={false} isAnimationActive={false} />
-          <Line type="monotone" dataKey="contributed" stroke={CONTRIBUTED_COLOR} strokeWidth={1.5} strokeDasharray="4 4" dot={false} activeDot={false} isAnimationActive={false} />
-          <Line type="monotone" dataKey="median" stroke={BAND_COLOR} strokeWidth={3} dot={false} isAnimationActive={false} />
+          <Area type="monotone" dataKey="outer" stroke="none" fill={BAND_COLOR} fillOpacity={0.14} activeDot={false} animationDuration={900} />
+          <Area type="monotone" dataKey="inner" stroke="none" fill={BAND_COLOR} fillOpacity={0.26} activeDot={false} animationDuration={900} animationBegin={120} />
+          <Line type="monotone" dataKey="contributed" stroke={CONTRIBUTED_COLOR} strokeWidth={1.5} strokeDasharray="4 4" dot={false} activeDot={false} animationDuration={900} />
+          <Line type="monotone" dataKey="median" stroke={BAND_COLOR} strokeWidth={3} dot={false} animationDuration={900} animationBegin={240} />
         </ComposedChart>
       </ChartContainer>
 
@@ -159,8 +171,12 @@ export function RiskOutlook({ years }: { years: number }) {
       </ul>
 
       <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {facts.map((fact) => (
-          <div key={fact.key} className="flex flex-col gap-1 rounded-xl bg-muted/60 p-3">
+        {facts.map((fact, i) => (
+          <div
+            key={`${fact.key}-${years}`}
+            className="flex flex-col gap-1 rounded-xl bg-muted/60 p-3 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-1 motion-safe:fill-mode-both motion-safe:duration-300"
+            style={{ animationDelay: `${300 + i * 60}ms` }}
+          >
             <dt className="text-xs font-medium text-muted-foreground">{fact.label}</dt>
             <dd className="text-lg font-semibold tabular-nums text-foreground">{fact.value}</dd>
             <dd className="text-xs text-muted-foreground">{fact.note}</dd>

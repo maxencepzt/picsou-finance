@@ -51,6 +51,12 @@ describe('RiskOutlook', () => {
     expect(method).not.toHaveTextContent('analysis.tiers.SAFETY_NET')
   })
 
+  it('holds the place of the chart while the simulation runs', () => {
+    useProjectionRisk.mockReturnValue({ data: undefined, isLoading: true })
+    const { container } = render(<RiskOutlook years={20} />)
+    expect(container.querySelector('[aria-busy="true"]')).toBeInTheDocument()
+  })
+
   it('renders nothing until the simulation has answered', () => {
     useProjectionRisk.mockReturnValue({ data: undefined })
     const { container } = render(<RiskOutlook years={20} />)
