@@ -604,7 +604,9 @@
         "assumption": "{{tier}}: {{expected}} a year on average, volatility {{volatility}}",
         "method": "{{paths}} possible futures simulated month by month, with the same contributions as the scenarios. Before inflation; not a forecast.",
         "chartLabel": "Projection in {{year}}: 8 in 10 futures between {{low}} and {{high}}, median {{median}}"
-      }
+      },
+      "customHorizon": "Custom horizon, {{min}} to {{max}} years",
+      "yearsUnit": "yrs"
     },
     "classification": {
       "title": "Classify this security",

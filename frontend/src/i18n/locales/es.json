@@ -593,7 +593,9 @@
         "assumption": "{{tier}}: {{expected}} al año de media, volatilidad {{volatility}}",
         "method": "{{paths}} futuros posibles simulados mes a mes, con las mismas aportaciones que los escenarios. Sin inflación; no es una previsión.",
         "chartLabel": "Proyección en {{year}}: 8 de cada 10 casos entre {{low}} y {{high}}, mediana {{median}}"
-      }
+      },
+      "customHorizon": "Horizonte personalizado, de {{min}} a {{max}} años",
+      "yearsUnit": "años"
     },
     "classification": {
       "title": "Clasificar este valor",

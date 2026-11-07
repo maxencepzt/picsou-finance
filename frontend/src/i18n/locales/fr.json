@@ -604,7 +604,9 @@
         "assumption": "{{tier}} : {{expected}} par an en moyenne, volatilité {{volatility}}",
         "method": "Simulation de {{paths}} futurs possibles, mois par mois, avec les mêmes versements que les scénarios. Hors inflation, ce n'est pas une prévision.",
         "chartLabel": "Projection en {{year}} : 8 cas sur 10 entre {{low}} et {{high}}, médiane {{median}}"
-      }
+      },
+      "customHorizon": "Horizon personnalisé, de {{min}} à {{max}} ans",
+      "yearsUnit": "ans"
     },
     "classification": {
       "title": "Classer ce titre",

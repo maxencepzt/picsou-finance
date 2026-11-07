@@ -593,7 +593,9 @@
         "assumption": "{{tier}}: im Schnitt {{expected}} pro Jahr, Volatilität {{volatility}}",
         "method": "{{paths}} mögliche Verläufe, Monat für Monat simuliert, mit denselben Einzahlungen wie die Szenarien. Ohne Inflation; keine Prognose.",
         "chartLabel": "Projektion {{year}}: 8 von 10 Fällen zwischen {{low}} und {{high}}, Median {{median}}"
-      }
+      },
+      "customHorizon": "Eigener Zeitraum, {{min}} bis {{max}} Jahre",
+      "yearsUnit": "J."
     },
     "classification": {
       "title": "Wertpapier einordnen",

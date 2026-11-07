@@ -21,7 +21,53 @@ import type { ProjectionScenario } from '@/types/api'
 import { AXIS_PROPS, AXIS_PROPS_FLUSH } from '@/lib/chart-axis'
 import { labelGutter, spreadLabels } from './projection-labels'
 
-const HORIZONS = [10, 20, 30] as const
+const HORIZONS = [5, 10, 20, 30] as const
+
+/** The backend clamps the horizon to this range; the field says so rather than being silently corrected. */
+const MIN_YEARS = 1
+const MAX_YEARS = 40
+
+/**
+ * Any horizon from 1 to 40 years, typed. Applied on Enter or when the field loses focus — not on
+ * every keystroke, which would project 2 years on the way to 25.
+ */
+function HorizonField({ years, onChange }: { years: number; onChange: (years: number) => void }) {
+  const { t } = useTranslation()
+  const [draft, setDraft] = useState(String(years))
+  const [shown, setShown] = useState(years)
+  // A preset clicked elsewhere replaces whatever was being typed.
+  if (shown !== years) {
+    setShown(years)
+    setDraft(String(years))
+  }
+  const commit = () => {
+    const parsed = Number.parseInt(draft, 10)
+    if (Number.isNaN(parsed)) {
+      setDraft(String(years))
+      return
+    }
+    const clamped = Math.min(MAX_YEARS, Math.max(MIN_YEARS, parsed))
+    setDraft(String(clamped))
+    if (clamped !== years) onChange(clamped)
+  }
+  return (
+    <label className="flex h-8 items-center gap-1.5 rounded-md bg-muted px-2 text-xs font-medium text-muted-foreground focus-within:ring-2 focus-within:ring-ring">
+      <span className="sr-only">{t('analysis.projection.customHorizon', { min: MIN_YEARS, max: MAX_YEARS })}</span>
+      <input
+        type="text"
+        inputMode="numeric"
+        value={draft}
+        onChange={(e) => setDraft(e.target.value.replace(/\D/g, '').slice(0, 2))}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') commit()
+        }}
+        className="w-7 bg-transparent text-right font-semibold tabular-nums text-foreground outline-none focus-visible:outline-none focus-visible:ring-0"
+      />
+      <span aria-hidden="true">{t('analysis.projection.yearsUnit')}</span>
+    </label>
+  )
+}
 
 /**
  * The theme's chart tokens are a single-hue ramp, not five distinct hues — which suits ordered
@@ -252,6 +298,7 @@ export function ProjectionSection({ className }: { className?: string }) {
             onChange={(value) => setYears(Number(value))}
             ariaLabel={t('analysis.projection.horizonLabel')}
           />
+          <HorizonField years={years} onChange={setYears} />
         </div>
       </CardHeader>
       <CardContent>

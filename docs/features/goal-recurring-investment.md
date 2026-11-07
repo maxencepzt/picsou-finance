@@ -169,6 +169,9 @@ futures, month by month (`MonteCarloSimulator`, called from `ProjectionService.r
 - **Fixed seed.** The same portfolio gives the same odds on every load, so a figure that moves
   means the portfolio moved.
 - **Rounded on screen** to the thousand: odds over decades do not deserve euros and cents.
+- **Horizon.** Presets of 5, 10, 20 and 30 years, plus a field for any horizon from 1 to 40
+  (`HorizonField` in `ProjectionSection.tsx`), applied on Enter or blur so typing 25 does not
+  project 2 years first. All three tabs share it.
 - Fetched only when the tab is opened (`useProjectionRisk`). Demo mode answers with the closed-form
   log-normal fan around the demo's reference curve (`mockProjectionRisk`).
 
