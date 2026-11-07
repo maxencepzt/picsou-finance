@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
-import { Bitcoin, CheckCircle2, CircleAlert, Loader2 } from 'lucide-react'
+import { Bitcoin, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useGenerateCryptoKey } from '@/features/setup/hooks'
 import { useSetupFlowStore } from '@/stores/setup-flow-store'
 import { nextIntegrationRoute } from './navigation'
+import { SetupCard, SetupNote } from '../components/SetupCard'
 
 type Phase = 'idle' | 'running' | 'existed' | 'created' | 'error'
 
@@ -72,78 +73,49 @@ export function SetupStepCrypto() {
         : ''
 
   return (
-    <div className="space-y-8">
-      <div className="text-center space-y-2">
-        <div className="flex justify-center">
-          <span className="rounded-xl bg-primary/10 p-3 text-primary">
-            <Bitcoin className="h-6 w-6" />
-          </span>
-        </div>
-        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
-          {t('setup.crypto.title')}
-        </h1>
-        <p className="mx-auto max-w-md text-sm text-muted-foreground">
-          {t('setup.crypto.body')}
-        </p>
-      </div>
-
+    <SetupCard
+      icon={<Bitcoin />}
+      eyebrow={t('setup.steps.integrations')}
+      title={t('setup.crypto.title')}
+      description={t('setup.crypto.body')}
+      footer={
+        <>
+          <Button type="button" variant="ghost" onClick={skip} className="w-full sm:mr-auto sm:w-auto">
+            {t('setup.crypto.skip')}
+          </Button>
+          {phase === 'error' ? (
+            <Button onClick={run} disabled={gen.isPending} className="w-full sm:w-auto">
+              {t('setup.crypto.generateCta')}
+            </Button>
+          ) : (
+            <Button onClick={proceed} disabled={phase === 'running'} className="w-full sm:w-auto">
+              {t('setup.crypto.continue')}
+            </Button>
+          )}
+        </>
+      }
+    >
       {(phase === 'idle' || phase === 'running') && (
-        <div className="flex flex-col items-center gap-2 py-6 text-muted-foreground">
-          <Loader2 className="h-6 w-6 animate-spin" />
-          <p className="text-sm">{t('setup.crypto.generating')}</p>
-        </div>
+        <p className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+          {t('setup.crypto.generating')}
+        </p>
       )}
 
       {(phase === 'existed' || phase === 'created') && (
-        <div className="space-y-3 rounded-2xl border border-emerald-500/40 bg-emerald-500/5 p-6 text-center">
-          <CheckCircle2 className="mx-auto h-10 w-10 text-emerald-500" />
-          <p className="text-lg font-medium">{successCopy}</p>
+        <SetupNote tone="success" title={successCopy}>
           {keyPath && (
-            <p className="text-xs text-muted-foreground">
+            <>
               {t('setup.crypto.pathLabel')}{' '}
-              <span className="font-mono">{keyPath}</span>
-            </p>
+              <span className="font-mono break-all text-foreground">{keyPath}</span>
+            </>
           )}
-        </div>
+        </SetupNote>
       )}
 
       {phase === 'error' && (
-        <div
-          role="alert"
-          className="flex items-start gap-3 rounded-2xl border border-destructive/40 bg-destructive/5 p-6"
-        >
-          <CircleAlert className="mt-0.5 h-5 w-5 shrink-0 text-destructive" />
-          <p className="text-sm text-destructive">{t('setup.crypto.error')}</p>
-        </div>
+        <SetupNote tone="error" role="alert">{t('setup.crypto.error')}</SetupNote>
       )}
-
-      <div className="mx-auto flex w-full max-w-lg flex-col gap-3">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={skip}
-          className="w-full rounded-full"
-        >
-          {t('setup.crypto.skip')}
-        </Button>
-        {phase === 'error' ? (
-          <Button
-            onClick={run}
-            disabled={gen.isPending}
-            className="w-full rounded-full"
-          >
-            {t('setup.crypto.generateCta')}
-          </Button>
-        ) : (
-          <Button
-            onClick={proceed}
-            disabled={phase === 'running'}
-            className="w-full rounded-full"
-          >
-            {t('setup.crypto.continue')}
-          </Button>
-        )}
-      </div>
-    </div>
+    </SetupCard>
   )
 }

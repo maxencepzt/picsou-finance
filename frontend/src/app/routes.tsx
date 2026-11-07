@@ -8,10 +8,15 @@ import '@/pages/setup/setup.css'
 import {
   LoginPage,
   MfaChallengePage,
+  SsoCallbackPage,
+  SsoCompletePage,
   DashboardPage,
   AccountsPage,
   AccountDetailPage,
   AnalysisPage,
+  InvestmentsPage,
+  IncomePage,
+  RealEstatePage,
   GoalsPage,
   GoalCalendarPage,
   BudgetLayout,
@@ -76,6 +81,26 @@ export const router = createBrowserRouter([
     ),
   },
   {
+    // The IdP's redirect target (registered redirect_uri). Outside every guard, like /consent:
+    // the page only re-posts the IdP result to the backend SSO chain, signed in or not.
+    path: '/login/sso/callback',
+    element: (
+      <SuspensePage fallback={<RouteSpinner />}>
+        <SsoCallbackPage />
+      </SuspensePage>
+    ),
+  },
+  {
+    // Where the backend lands a successful SSO sign-in. Outside the guards: PublicOnly would
+    // redirect a tab that is still flagged as signed in before the page could reset its state.
+    path: '/login/sso-complete',
+    element: (
+      <SuspensePage fallback={<RouteSpinner />}>
+        <SsoCompletePage />
+      </SuspensePage>
+    ),
+  },
+  {
     // Spring Authorization Server redirects here (`consentPage("/consent")`) when an
     // interactive-consent OAuth2 client (every DCR-registered remote-MCP client) reaches
     // /oauth2/authorize. Deliberately NOT nested under the `/` + RequireAuth tree: the page
@@ -130,6 +155,9 @@ export const router = createBrowserRouter([
       { path: 'accounts', element: <SuspensePage><AccountsPage /></SuspensePage> },
       { path: 'accounts/:id', element: <SuspensePage><AccountDetailPage /></SuspensePage> },
       { path: 'analysis', element: <SuspensePage><AnalysisPage /></SuspensePage> },
+      { path: 'investments', element: <SuspensePage><InvestmentsPage /></SuspensePage> },
+      { path: 'income', element: <SuspensePage><IncomePage /></SuspensePage> },
+      { path: 'real-estate', element: <SuspensePage><RealEstatePage /></SuspensePage> },
       { path: 'goals', element: <SuspensePage><GoalsPage /></SuspensePage> },
       { path: 'goals/:id/calendar', element: <SuspensePage><GoalCalendarPage /></SuspensePage> },
       {

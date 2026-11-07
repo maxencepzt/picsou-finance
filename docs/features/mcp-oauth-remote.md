@@ -1,6 +1,6 @@
 # Feature: Remote-MCP OAuth for third-party clients (claude.ai)
 
-> Last updated: 2026-10-31
+> Last updated: 2026-11-03
 
 ## Context
 
@@ -96,7 +96,7 @@ Properties B (no `?memberId=` override) and C (scope-only authorities, never `RO
 - `db/migration/V54__oauth2_authorization_server.sql` — AS JDBC schema (blob columns → `text`; see Gotchas).
 
 **Frontend**
-- `pages/oauth/ConsentPage.tsx` (route `/consent`) + `features/oauthConsent/`.
+- `pages/oauth/ConsentPage.tsx` (route `/consent`) + `features/oauthConsent/`. Drawn in the shared `AuthScreen` card: scopes grouped read / write in divided lists, each row a real `name="scope"` checkbox (visually hidden, the row carries its focus ring), Deny and Approve in a footer.
 - `features/connectedApps/` + `pages/settings/sections/ConnectedAppsSection.tsx`.
 
 **Reverse proxy**

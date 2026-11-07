@@ -166,7 +166,8 @@ describe('SimplefinPanel', () => {
 
       expect(await screen.findByText('sync.simplefin.connected')).toBeInTheDocument()
       expect(screen.getByText('••••1234')).toBeInTheDocument()
-      expect(screen.getByText(/^sync\.simplefin\.lastSync: .*2026/)).toBeInTheDocument()
+      // Every provider panel words the last sync the same way, relative to now.
+      expect(screen.getByText('sync.panel.lastSync')).toBeInTheDocument()
       expect(screen.getByRole('button', { name: 'sync.simplefin.sync' })).toBeEnabled()
       expect(screen.queryByLabelText('sync.simplefin.token')).not.toBeInTheDocument()
     })

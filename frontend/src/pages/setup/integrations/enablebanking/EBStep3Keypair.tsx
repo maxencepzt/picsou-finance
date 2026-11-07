@@ -2,10 +2,12 @@ import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Check, Copy, Download, KeyRound, Loader2, Upload } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { SegmentedControl } from '@/components/shared/SegmentedControl'
 import { Label } from '@/components/ui/label'
 import { formatApiError } from '@/lib/errors'
 import { EBSubstepShell } from './EBSubstepShell'
 import { useSetupFlowStore } from '@/stores/setup-flow-store'
+import { SetupNote } from '../../components/SetupCard'
 import type { EnableBankingKeyMode } from '@/stores/setup-flow-store'
 import {
   useGenerateEnableBankingKeyPair,
@@ -109,198 +111,148 @@ export function EBStep3Keypair({ onNext, onBack }: Props) {
     updateEbDraft({ keyPair: null })
   }
 
+  const pemBlock = (
+    <pre
+      id="eb-public-pem"
+      className="max-h-64 overflow-auto rounded-xl bg-muted p-4 font-mono text-xs leading-snug whitespace-pre-wrap break-all text-foreground"
+    >
+      {pem}
+    </pre>
+  )
+
   return (
-    <EBSubstepShell current={4} total={5}>
-      <div className="space-y-6">
-        <div className="flex justify-center">
-          <span className="rounded-xl bg-primary/10 p-3 text-primary">
-            <KeyRound className="h-6 w-6" />
-          </span>
-        </div>
+    <EBSubstepShell
+      current={4}
+      total={5}
+      title={t(mode === 'import' ? 'setup.enablebanking.keypair.importTitle' : 'setup.enablebanking.keypair.title')}
+      description={t(mode === 'import' ? 'setup.enablebanking.keypair.importBody' : 'setup.enablebanking.keypair.body')}
+      footer={
+        <>
+          <Button type="button" variant="ghost" disabled={pending} onClick={onBack} className="w-full sm:mr-auto sm:w-auto">
+            {t('setup.enablebanking.back')}
+          </Button>
+          <Button onClick={onNext} disabled={!pem || pending} className="w-full sm:w-auto">
+            {t(mode === 'import' ? 'setup.enablebanking.continue' : 'setup.enablebanking.keypair.uploadedCta')}
+          </Button>
+        </>
+      }
+    >
+      {/* A disabled fieldset locks both segments while a request is in flight. */}
+      <fieldset disabled={pending} className="m-0 min-w-0 border-0 p-0">
+        <SegmentedControl
+          fill
+          ariaLabel={t('setup.enablebanking.keypair.title')}
+          value={mode}
+          onChange={handleSwitchMode}
+          options={[
+            { value: 'import', label: t('setup.enablebanking.keypair.modeImport') },
+            { value: 'generate', label: t('setup.enablebanking.keypair.modeGenerate') },
+          ]}
+        />
+      </fieldset>
 
-        <div className="flex flex-col rounded-lg border border-border/60 p-1 gap-1">
-          <button
-            type="button"
-            onClick={() => handleSwitchMode('import')}
-            disabled={pending}
-            aria-pressed={mode === 'import'}
-            className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-              mode === 'import'
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            {t('setup.enablebanking.keypair.modeImport')}
-          </button>
-          <button
-            type="button"
-            onClick={() => handleSwitchMode('generate')}
-            disabled={pending}
-            aria-pressed={mode === 'generate'}
-            className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-              mode === 'generate'
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            {t('setup.enablebanking.keypair.modeGenerate')}
-          </button>
-        </div>
+      {mode === 'generate' && (
+        <>
+          {generate.isPending && !pem && (
+            <p className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+              {t('setup.enablebanking.keypair.generating')}
+            </p>
+          )}
 
-        {mode === 'generate' && (
-          <>
-            <div className="text-center space-y-2">
-              <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">
-                {t('setup.enablebanking.keypair.title')}
-              </h2>
-              <p className="mx-auto max-w-md text-sm text-muted-foreground">
-                {t('setup.enablebanking.keypair.body')}
-              </p>
-            </div>
+          {!pem && !generate.isPending && (
+            <Button className="w-full sm:w-auto" onClick={handleGenerate}>
+              <KeyRound aria-hidden="true" />
+              {t('setup.enablebanking.keypair.generateCta')}
+            </Button>
+          )}
 
-            {generate.isPending && !pem && (
-              <div className="flex flex-col items-center gap-2 py-8 text-muted-foreground">
-                <Loader2 className="h-5 w-5 animate-spin" />
-                <p className="text-sm">{t('setup.enablebanking.keypair.generating')}</p>
-              </div>
-            )}
+          {generate.isError && !pem && (
+            <SetupNote tone="error" role="alert">
+              {formatApiError(generate.error, t, 'setup.enablebanking.keypair.error')}
+            </SetupNote>
+          )}
 
-            {!pem && !generate.isPending && (
-              <Button className="w-full" onClick={handleGenerate}>
-                {t('setup.enablebanking.keypair.generateCta')}
-              </Button>
-            )}
-
-            {generate.isError && !pem && (
-              <div className="space-y-3 rounded-xl border border-destructive/40 bg-destructive/5 p-4 text-center">
-                <p role="alert" className="text-sm text-destructive">
-                  {formatApiError(generate.error, t, 'setup.enablebanking.keypair.error')}
-                </p>
-              </div>
-            )}
-
-            {pem && (
-              <>
-                <pre
-                  id="eb-public-pem"
-                  className="max-h-64 overflow-auto rounded-xl border border-border/60 bg-muted/40 p-4 text-[11px] leading-snug font-mono whitespace-pre-wrap break-all"
-                >
-                  {pem}
-                </pre>
-                <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
-                  <Button type="button" variant="outline" size="sm" onClick={handleCopy} className="w-full sm:w-auto">
-                    {copied ? (
-                      <><Check className="mr-2 h-4 w-4" />{t('setup.enablebanking.keypair.copied')}</>
-                    ) : (
-                      <><Copy className="mr-2 h-4 w-4" />{t('setup.enablebanking.keypair.copy')}</>
-                    )}
-                  </Button>
-                  <Button type="button" variant="outline" size="sm" onClick={handleDownload} className="w-full sm:w-auto">
-                    <Download className="mr-2 h-4 w-4" />
-                    {t('setup.enablebanking.keypair.download')}
-                  </Button>
-                </div>
-                <p className="text-center text-xs text-muted-foreground">
-                  {t('setup.enablebanking.keypair.uploadInstruction')}
-                </p>
-              </>
-            )}
-          </>
-        )}
-
-        {mode === 'import' && (
-          <>
-            <div className="text-center space-y-2">
-              <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">
-                {t('setup.enablebanking.keypair.importTitle')}
-              </h2>
-              <p className="mx-auto max-w-md text-sm text-muted-foreground">
-                {t('setup.enablebanking.keypair.importBody')}
-              </p>
-            </div>
-
-            {!pem && (
-              <div className="space-y-3">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".pem,application/x-pem-file,text/plain"
-                  aria-label={t('setup.enablebanking.keypair.chooseFile')}
-                  disabled={pending}
-                  className="hidden"
-                  onChange={handleFileChange}
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full"
-                  disabled={pending}
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <Upload className="mr-2 h-4 w-4" />
-                  {t('setup.enablebanking.keypair.chooseFile')}
+          {pem && (
+            <>
+              <p className="text-[13px] text-muted-foreground">{t('setup.enablebanking.keypair.uploadInstruction')}</p>
+              {pemBlock}
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Button type="button" variant="outline" size="xs" onClick={handleCopy} className="w-full sm:w-auto">
+                  {copied ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
+                  {copied ? t('setup.enablebanking.keypair.copied') : t('setup.enablebanking.keypair.copy')}
                 </Button>
+                <Button type="button" variant="outline" size="xs" onClick={handleDownload} className="w-full sm:w-auto">
+                  <Download aria-hidden="true" />
+                  {t('setup.enablebanking.keypair.download')}
+                </Button>
+              </div>
+            </>
+          )}
+        </>
+      )}
 
-                <p className="text-center text-xs text-muted-foreground">
-                  {t('setup.enablebanking.keypair.orPaste')}
-                </p>
+      {mode === 'import' && (
+        <>
+          {!pem && (
+            <div className="space-y-3">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pem,application/x-pem-file,text/plain"
+                aria-label={t('setup.enablebanking.keypair.chooseFile')}
+                disabled={pending}
+                className="hidden"
+                onChange={handleFileChange}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                disabled={pending}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <Upload aria-hidden="true" />
+                {t('setup.enablebanking.keypair.chooseFile')}
+              </Button>
+
+              <div className="space-y-2">
                 <Label htmlFor="eb-private-pem">{t('setup.enablebanking.keypair.privateKeyLabel')}</Label>
+                <p className="text-[13px] text-muted-foreground">{t('setup.enablebanking.keypair.orPaste')}</p>
                 <textarea
                   id="eb-private-pem"
                   value={privatePem}
                   disabled={pending}
+                  spellCheck={false}
                   onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setPrivatePem(e.target.value)}
                   placeholder={"-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"}
-                  className="w-full rounded-xl border border-border/60 bg-muted/40 p-3 font-mono text-[11px] leading-snug min-h-[140px] resize-none"
+                  className="min-h-[140px] w-full resize-y rounded-md border border-input bg-input/20 px-4 py-3 font-mono text-xs leading-snug outline-none placeholder:text-muted-foreground/80 disabled:opacity-50 dark:bg-input/30"
                 />
-
-                {importError && (
-                  <p role="alert" className="text-sm text-destructive">{importError}</p>
-                )}
-
-                <Button
-                  className="w-full rounded-full"
-                  disabled={!privatePem.trim() || importKey.isPending}
-                  onClick={handleImport}
-                >
-                  {importKey.isPending ? (
-                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{t('setup.enablebanking.keypair.importing')}</>
-                  ) : (
-                    t('setup.enablebanking.keypair.importCta')
-                  )}
-                </Button>
               </div>
-            )}
 
-            {pem && (
-              <>
-                <p className="text-center text-sm text-muted-foreground">
-                  {t('setup.enablebanking.keypair.importSuccess')}
-                </p>
-                <pre
-                  id="eb-public-pem"
-                  className="max-h-64 overflow-auto rounded-xl border border-border/60 bg-muted/40 p-4 text-[11px] leading-snug font-mono whitespace-pre-wrap break-all"
-                >
-                  {pem}
-                </pre>
-              </>
-            )}
-          </>
-        )}
+              {importError && (
+                <SetupNote tone="error" role="alert">{importError}</SetupNote>
+              )}
 
-        <div className="flex flex-col gap-2 sm:flex-row sm:justify-between">
-          <Button type="button" variant="ghost" disabled={pending} onClick={onBack} className="w-full sm:w-auto">
-            {t('setup.enablebanking.back')}
-          </Button>
-          <Button
-            onClick={onNext}
-            disabled={!pem || pending}
-            className="w-full rounded-full sm:w-auto"
-          >
-            {t(mode === 'import' ? 'setup.enablebanking.continue' : 'setup.enablebanking.keypair.uploadedCta')}
-          </Button>
-        </div>
-      </div>
+              <Button
+                className="w-full sm:w-auto"
+                disabled={!privatePem.trim() || importKey.isPending}
+                onClick={handleImport}
+              >
+                {importKey.isPending && <Loader2 className="animate-spin" aria-hidden="true" />}
+                {importKey.isPending ? t('setup.enablebanking.keypair.importing') : t('setup.enablebanking.keypair.importCta')}
+              </Button>
+            </div>
+          )}
+
+          {pem && (
+            <>
+              <SetupNote tone="success">{t('setup.enablebanking.keypair.importSuccess')}</SetupNote>
+              {pemBlock}
+            </>
+          )}
+        </>
+      )}
     </EBSubstepShell>
   )
 }

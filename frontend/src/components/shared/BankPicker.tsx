@@ -1,10 +1,9 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Landmark } from 'lucide-react'
 import { Input } from '@/components/ui/input'
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { BankCountrySelect, DEFAULT_BANK_COUNTRY } from '@/components/shared/BankCountrySelect'
 import { useSearchInstitutions } from '@/features/sync/hooks'
+import { ProviderMark } from '@/components/shared/ProviderMark'
 
 interface BankPickerProps {
   id?: string
@@ -58,25 +57,18 @@ export function BankPicker({ id, value, placeholder, onChange }: BankPickerProps
       </div>
 
       {suggestions.length > 0 && (
-        <ul className="max-h-40 space-y-1 overflow-y-auto rounded-xl border p-1">
+        <ul className="max-h-48 space-y-0.5 overflow-y-auto rounded-xl border p-1">
           {suggestions.map((institution) => (
             <li key={institution.id}>
               <button
                 type="button"
-                className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm hover:bg-muted"
+                className="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left text-sm hover:bg-muted pointer-coarse:py-2.5"
                 onClick={() => {
                   setShowSuggestions(false)
                   onChange(institution.name, institution.id)
                 }}
               >
-                <Avatar className="size-4 shrink-0 rounded-sm after:rounded-sm">
-                  {institution.logoUrl && (
-                    <AvatarImage src={institution.logoUrl} alt="" className="rounded-sm object-contain" />
-                  )}
-                  <AvatarFallback className="rounded-sm bg-transparent">
-                    <Landmark className="size-4 text-muted-foreground" />
-                  </AvatarFallback>
-                </Avatar>
+                <ProviderMark size="xs" name={institution.name} logo={institution.logoUrl} />
                 <span className="min-w-0 truncate">{institution.name}</span>
                 <span className="ml-auto shrink-0 text-xs text-muted-foreground">{institution.country}</span>
               </button>

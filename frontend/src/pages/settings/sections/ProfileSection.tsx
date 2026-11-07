@@ -5,11 +5,14 @@ import { useMemberProfile, useSaveMemberProfile } from '@/features/profile/hooks
 import { CurrencyDisplay } from '@/components/shared/CurrencyDisplay'
 import { DateInput } from '@/components/shared/DateInput'
 import { NumericInput } from '@/components/shared/NumericInput'
+import { SegmentedControl } from '@/components/shared/SegmentedControl'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Check, Loader2 } from 'lucide-react'
 import { extractErrorMessage } from '@/lib/errors'
-import { formatPercent, getLocale, parseAmount } from '@/lib/utils'
+import { cn, formatPercent, getLocale, parseAmount } from '@/lib/utils'
 import type {
   HouseholdStatus,
   MemberProfile,
@@ -42,40 +45,92 @@ function text(value: number | null): string {
 }
 
 /**
- * A row of mutually exclusive choices, with the selected one clearable by clicking it again —
- * the only way to withdraw an answer once given.
+ * Mutually exclusive choices, the selected one clearable by clicking it again — the only way to
+ * withdraw an answer once given.
  */
-function ChoiceRow<T extends string | number>({
+function ChoiceField<T extends string | number>({
   label,
   options,
   value,
   onChange,
   render,
+  className,
 }: {
   label: string
   options: readonly T[]
   value: T | null
   onChange: (next: T | null) => void
   render: (option: T) => string
+  className?: string
 }) {
   return (
-    <div className="flex flex-col gap-2">
-      <Label>{label}</Label>
-      <div className="flex flex-wrap gap-2">
-        {options.map(option => (
-          <Button
-            key={String(option)}
-            type="button"
-            size="sm"
-            variant={value === option ? 'default' : 'outline'}
-            aria-pressed={value === option}
-            onClick={() => onChange(value === option ? null : option)}
-          >
-            {render(option)}
-          </Button>
-        ))}
-      </div>
+    <div className={cn('flex min-w-0 flex-col gap-2', className)}>
+      <p className="text-[13px] font-medium text-foreground">{label}</p>
+      <SegmentedControl
+        ariaLabel={label}
+        className="max-w-full self-start overflow-x-auto"
+        value={value == null ? '' : String(value)}
+        onChange={(picked) => {
+          const option = options.find((o) => String(o) === picked) ?? null
+          onChange(option === value ? null : option)
+        }}
+        options={options.map((o) => ({ value: String(o), label: render(o) }))}
+      />
     </div>
+  )
+}
+
+/** A numeric field with its unit drawn inside the input, and an optional hint under it. */
+function NumberField({
+  id,
+  label,
+  unit,
+  hint,
+  value,
+  onChange,
+  placeholder,
+}: {
+  id: string
+  label: string
+  unit?: string
+  hint?: React.ReactNode
+  value: string
+  onChange: (next: string) => void
+  placeholder?: string
+}) {
+  return (
+    <div className="flex min-w-0 flex-col gap-2">
+      <Label htmlFor={id} className="text-[13px]">{label}</Label>
+      <div className="relative">
+        <NumericInput
+          id={id}
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          placeholder={placeholder}
+          className={cn('h-9 px-3 tabular-nums', unit && 'pr-12')}
+        />
+        {unit && (
+          <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-muted-foreground" aria-hidden="true">
+            {unit}
+          </span>
+        )}
+      </div>
+      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
+    </div>
+  )
+}
+
+function ProfileGroup({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{title}</CardTitle>
+        {description && <CardDescription>{description}</CardDescription>}
+      </CardHeader>
+      <CardContent className="@container">
+        <div className="grid gap-x-6 gap-y-5 @lg:grid-cols-2">{children}</div>
+      </CardContent>
+    </Card>
   )
 }
 
@@ -89,10 +144,13 @@ function ChoiceRow<T extends string | number>({
 function ProfileForm({
   profile,
   saving,
+  saved,
   onSubmit,
 }: {
   profile: MemberProfile
   saving: boolean
+  /** The last save succeeded: shown until the member edits again. */
+  saved: boolean
   onSubmit: (body: MemberProfileRequest) => void
 }) {
   const { t } = useTranslation()
@@ -115,190 +173,188 @@ function ProfileForm({
   )
   const [retirementAge, setRetirementAge] = useState(() => text(profile.targetRetirementAge))
 
-  function submit() {
-    onSubmit({
-      birthDate: birthDate === '' ? null : birthDate,
-      marginalTaxRate,
-      householdStatus,
-      taxHouseholdParts: numberOrNull(parts),
-      dependents: numberOrNull(dependents),
-      annualGrossIncome: numberOrNull(annualGrossIncome),
-      monthlyNetBeforeTax: numberOrNull(netBeforeTax),
-      withholdingTaxRate: numberOrNull(withholding),
-      monthlySavingsCapacity: numberOrNull(savingsCapacity),
-      targetRetirementAge: numberOrNull(retirementAge),
-      riskProfile,
-    })
+  const body: MemberProfileRequest = {
+    birthDate: birthDate === '' ? null : birthDate,
+    marginalTaxRate,
+    householdStatus,
+    taxHouseholdParts: numberOrNull(parts),
+    dependents: numberOrNull(dependents),
+    annualGrossIncome: numberOrNull(annualGrossIncome),
+    monthlyNetBeforeTax: numberOrNull(netBeforeTax),
+    withholdingTaxRate: numberOrNull(withholding),
+    monthlySavingsCapacity: numberOrNull(savingsCapacity),
+    targetRetirementAge: numberOrNull(retirementAge),
+    riskProfile,
   }
+  // What the fields held when the form mounted: the form is keyed on the profile, so this is
+  // always the stored version, and any difference is an unsaved edit.
+  const [initial] = useState(() => JSON.stringify(body))
+  const dirty = JSON.stringify(body) !== initial
+  const eur = t('settings.profile.unitEur')
 
   return (
-    <div className="space-y-6">
+    <form
+      className="space-y-4"
+      onSubmit={e => {
+        e.preventDefault()
+        onSubmit(body)
+      }}
+    >
       <p className="text-sm text-muted-foreground">{t('settings.profile.hint')}</p>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="profile-birth-date">{t('settings.profile.birthDate')}</Label>
-          <DateInput id="profile-birth-date" value={birthDate} onChange={setBirthDate} />
+      <ProfileGroup title={t('settings.profile.groupHousehold')}>
+        <div className="flex min-w-0 flex-col gap-2">
+          <Label htmlFor="profile-birth-date" className="text-[13px]">{t('settings.profile.birthDate')}</Label>
+          <DateInput id="profile-birth-date" value={birthDate} onChange={setBirthDate} className="h-9 px-3" />
           {/* Derived server-side from the stored date; an age typed in would be wrong the
               morning after a birthday. */}
           {profile.age != null && (
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               {t('settings.profile.currentAge', { age: profile.age })}
             </p>
           )}
         </div>
+        <ChoiceField
+          label={t('settings.profile.householdStatus')}
+          options={HOUSEHOLD_STATUSES}
+          value={householdStatus}
+          onChange={setHouseholdStatus}
+          render={status => t(`settings.profile.household.${status}`)}
+        />
+        <NumberField
+          id="profile-dependents"
+          label={t('settings.profile.dependents')}
+          value={dependents}
+          onChange={setDependents}
+          placeholder="0"
+        />
+        <NumberField
+          id="profile-parts"
+          label={t('settings.profile.taxHouseholdParts')}
+          value={parts}
+          onChange={setParts}
+          placeholder="1"
+        />
+        <ChoiceField
+          className="@lg:col-span-2"
+          label={t('settings.profile.marginalTaxRate')}
+          options={TMI_BRACKETS}
+          value={marginalTaxRate}
+          onChange={setMarginalTaxRate}
+          render={bracket => formatPercent(bracket, { fractionDigits: 0 })}
+        />
+      </ProfileGroup>
 
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="profile-retirement-age">{t('settings.profile.retirementAge')}</Label>
-          <NumericInput
-            id="profile-retirement-age"
-            value={retirementAge}
-            onChange={e => setRetirementAge(e.target.value)}
-            placeholder="64"
-          />
-        </div>
-      </div>
-
-      <ChoiceRow
-        label={t('settings.profile.marginalTaxRate')}
-        options={TMI_BRACKETS}
-        value={marginalTaxRate}
-        onChange={setMarginalTaxRate}
-        render={bracket => formatPercent(bracket, { fractionDigits: 0 })}
-      />
-
-      <ChoiceRow
-        label={t('settings.profile.householdStatus')}
-        options={HOUSEHOLD_STATUSES}
-        value={householdStatus}
-        onChange={setHouseholdStatus}
-        render={status => t(`settings.profile.household.${status}`)}
-      />
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="profile-parts">{t('settings.profile.taxHouseholdParts')}</Label>
-          <NumericInput
-            id="profile-parts"
-            value={parts}
-            onChange={e => setParts(e.target.value)}
-            placeholder="1"
-          />
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="profile-dependents">{t('settings.profile.dependents')}</Label>
-          <NumericInput
-            id="profile-dependents"
-            value={dependents}
-            onChange={e => setDependents(e.target.value)}
-            placeholder="0"
-          />
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="profile-income">{t('settings.profile.annualGrossIncome')}</Label>
-          <NumericInput
-            id="profile-income"
-            value={annualGrossIncome}
-            onChange={e => setAnnualGrossIncome(e.target.value)}
-            placeholder="45000"
-          />
-          <p className="text-sm text-muted-foreground">{t('settings.profile.incomeHint')}</p>
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="profile-savings">{t('settings.profile.savingsCapacity')}</Label>
-          <NumericInput
-            id="profile-savings"
-            value={savingsCapacity}
-            onChange={e => setSavingsCapacity(e.target.value)}
-            placeholder="500"
-          />
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        <div>
-          <Label>{t('settings.profile.netPay')}</Label>
+      <ProfileGroup title={t('settings.profile.groupIncome')}>
+        <NumberField
+          id="profile-income"
+          label={t('settings.profile.annualGrossIncome')}
+          unit={eur}
+          hint={t('settings.profile.incomeHint')}
+          value={annualGrossIncome}
+          onChange={setAnnualGrossIncome}
+          placeholder="45000"
+        />
+        <div className="space-y-1 @lg:col-span-2">
           {/* Why two fields rather than one: gross cannot reach net on its own -- social
               contributions come off first, at a rate that varies by status and that nobody
               knows offhand. Both figures below are printed on every French payslip. */}
-          <p className="text-sm text-muted-foreground">{t('settings.profile.netPayHint')}</p>
+          <p className="text-[13px] font-medium text-foreground">{t('settings.profile.netPay')}</p>
+          <p className="text-xs text-muted-foreground">{t('settings.profile.netPayHint')}</p>
         </div>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="profile-net-before-tax">
-              {t('settings.profile.monthlyNetBeforeTax')}
-            </Label>
-            <NumericInput
-              id="profile-net-before-tax"
-              value={netBeforeTax}
-              onChange={e => setNetBeforeTax(e.target.value)}
-              placeholder="2750"
-            />
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="profile-withholding">
-              {t('settings.profile.withholdingTaxRate')}
-            </Label>
-            <NumericInput
-              id="profile-withholding"
-              value={withholding}
-              onChange={e => setWithholding(e.target.value)}
-              placeholder="7.3"
-            />
-          </div>
-        </div>
-
+        <NumberField
+          id="profile-net-before-tax"
+          label={t('settings.profile.monthlyNetBeforeTax')}
+          unit={eur}
+          value={netBeforeTax}
+          onChange={setNetBeforeTax}
+          placeholder="2750"
+        />
+        <NumberField
+          id="profile-withholding"
+          label={t('settings.profile.withholdingTaxRate')}
+          unit="%"
+          value={withholding}
+          onChange={setWithholding}
+          placeholder="7.3"
+        />
         {/* The figure the savings rate divides by, shown so the chain is visible rather than
             implied. It is the value the *server* derived, so it only updates after a save --
             recomputing it here would be a second implementation of the same formula. */}
         {profile.monthlyNetIncome != null && (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground @lg:col-span-2">
             {t('settings.profile.netIncomeDerived')}{' '}
-            <CurrencyDisplay value={profile.monthlyNetIncome} className="text-foreground" />
+            <CurrencyDisplay value={profile.monthlyNetIncome} className="font-medium text-foreground" />
           </p>
         )}
-      </div>
+      </ProfileGroup>
 
-      <ChoiceRow
-        label={t('settings.profile.riskProfile')}
-        options={RISK_PROFILES}
-        value={riskProfile}
-        onChange={setRiskProfile}
-        render={risk => t(`settings.profile.risk.${risk}`)}
-      />
+      <ProfileGroup title={t('settings.profile.groupPlan')}>
+        <NumberField
+          id="profile-savings"
+          label={t('settings.profile.savingsCapacity')}
+          unit={eur}
+          value={savingsCapacity}
+          onChange={setSavingsCapacity}
+          placeholder="500"
+        />
+        <NumberField
+          id="profile-retirement-age"
+          label={t('settings.profile.retirementAge')}
+          unit={t('settings.profile.unitYears')}
+          value={retirementAge}
+          onChange={setRetirementAge}
+          placeholder="64"
+        />
+        <ChoiceField
+          className="@lg:col-span-2"
+          label={t('settings.profile.riskProfile')}
+          options={RISK_PROFILES}
+          value={riskProfile}
+          onChange={setRiskProfile}
+          render={risk => t(`settings.profile.risk.${risk}`)}
+        />
+      </ProfileGroup>
 
-      <div className="flex justify-end">
-        <Button onClick={submit} disabled={saving}>
+      <div className="flex flex-wrap items-center justify-end gap-3">
+        <p className="text-[13px] text-muted-foreground" aria-live="polite">
+          {saving ? (
+            t('settings.profile.saving')
+          ) : dirty ? (
+            t('settings.profile.unsaved')
+          ) : saved ? (
+            <span className="inline-flex items-center gap-1.5 text-gain">
+              <Check className="size-3.5" aria-hidden="true" />
+              {t('settings.profile.saved')}
+            </span>
+          ) : null}
+        </p>
+        <Button type="submit" disabled={saving}>
+          {saving && <Loader2 className="animate-spin" aria-hidden="true" />}
           {t('common.save')}
         </Button>
       </div>
-    </div>
+    </form>
   )
 }
 
 export function ProfileSection() {
-  const { t } = useTranslation()
   const { data: profile, isLoading } = useMemberProfile()
   // Owned here rather than in the form: saving invalidates ['me','profile'], the refetch changes
   // the remount key, and TanStack Query drops the callbacks passed to a mutate() whose caller
   // has unmounted. Same reason as AllocationTargetsModal.
   const save = useSaveMemberProfile()
 
-  if (isLoading || !profile) return <Skeleton className="h-64 w-full" />
+  if (isLoading || !profile) return <Skeleton className="h-64 w-full rounded-2xl" />
 
   return (
     <ProfileForm
       key={JSON.stringify(profile)}
       profile={profile}
       saving={save.isPending}
+      saved={save.isSuccess}
       onSubmit={body =>
         save.mutate(body, {
-          onSuccess: () => toast.success(t('settings.profile.saved')),
           onError: error => toast.error(extractErrorMessage(error)),
         })
       }

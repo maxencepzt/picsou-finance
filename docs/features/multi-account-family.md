@@ -66,6 +66,12 @@ account or goal.
 
 The `FamilyViewService` aggregates shared data for the family dashboard.
 
+`/family` (`pages/family/FamilyDashboardPage.tsx`, the top bar's "Foyer") follows the Synthèse layout: a hero
+card with the shared worth as the display figure and the account count, then two cards side by side —
+shared accounts as rows (logo when the account is also one of the viewer's own, else its monogram; type
+label and owner; balance in ink, native currency under it) and shared goals (progress, amounts, a muted
+contributions tile). A failed request shows an `ErrorState` with retry instead of crashing on `data!`.
+
 ### Profile activation flow
 
 1. Admin creates a managed profile (no login). From the **Admin → Members** section
@@ -242,10 +248,10 @@ Step 3 is critical: without it, the next request would fail because the old JWT 
 - `frontend/src/lib/reset-client-state.ts` — `resetClientState(queryClient)`: resets profile-store + clears the Query cache; the one shared auth-boundary reset
 - `frontend/src/features/auth/hooks.ts` — `useLogout` calls `resetClientState` (logout side)
 - `frontend/src/features/mfa/hooks.ts` — `useLoginWithRememberMe` / `useVerifyMfa` call `resetClientState` before writing the new identity (login side)
-- `frontend/src/pages/settings/FamilySettingsPage.tsx` — member management + sharing config UI
+- `frontend/src/pages/settings/FamilySettingsPage.tsx` — member management + sharing config UI, rendered inside the settings frame (`SettingsShell`, "Famille" entry of the section list): members as rows with a colour avatar, a status dot (administrator, managed profile, activation pending, independent), the invite / regenerate-link action, delete, and the activation link with a copy button; sharing as one card with a `SegmentedControl` per resource type (Privé / Tout partager / Sélectionner) and, in manual mode, a checklist with bank logos
 - `frontend/src/pages/family/FamilyDashboardPage.tsx` — shared overview
-- `frontend/src/pages/activation/ActivationPage.tsx` — activation flow for new members
-- `frontend/src/pages/settings/SettingsPage.tsx` — username edit inline (pencil → input → save)
+- `frontend/src/pages/activation/ActivationPage.tsx` — activation flow for new members, in the shared `AuthScreen` card: the data-access notice, the acknowledgement checkbox, password and confirmation with errors under the field they concern, translated under `auth.activation.*`
+- `frontend/src/pages/settings/sections/AccountSection.tsx` — username edit inline (Modifier → input → Enregistrer / Annuler, Enter and Escape work)
 
 **Migrations:**
 - `V20__create_family_system.sql` — creates family_member, sharing_settings, shared_resource, goal_contributor tables; adds member_id to all owner tables

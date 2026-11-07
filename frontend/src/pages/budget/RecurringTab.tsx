@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { CalendarClock, Plus, RefreshCw } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { CalendarClock, Plus, RefreshCw, Repeat } from 'lucide-react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { NumericInput } from '@/components/shared/NumericInput'
 import { DateInput } from '@/components/shared/DateInput'
+import { NativeSelect } from '@/components/shared/NativeSelect'
 import { CurrencyDisplay } from '@/components/shared/CurrencyDisplay'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { ErrorState } from '@/components/shared/ErrorState'
@@ -26,9 +27,9 @@ import {
   useRecurring,
   useRecurringCalendar,
 } from '@/features/budget/hooks'
-import { formatNumber, getLocale, parseAmount } from '@/lib/utils'
+import { cn, formatNumber, getLocale, parseAmount } from '@/lib/utils'
 import type { RecurringCadence } from '@/types/api'
-import { ColorDot } from './budget-utils'
+import { BudgetToolbar, ColorDot } from './budget-utils'
 import { CADENCE_LABEL_KEY } from './budget-meta'
 import { SubscriptionCard } from './SubscriptionCard'
 import { ActivityFeed } from './ActivityFeed'
@@ -64,9 +65,9 @@ function RecurringForm({ open, onOpenChange }: {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{t('budget.recurring.add')}</DialogTitle>
+          <DialogTitle>{t('budget.recurring.addTitle')}</DialogTitle>
           <DialogDescription>{t('budget.recurring.formHint')}</DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
@@ -80,7 +81,7 @@ function RecurringForm({ open, onOpenChange }: {
             <Input id="rec-cp" value={counterparty} onChange={(e) => setCounterparty(e.target.value)}
               placeholder="NETFLIX.COM" />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="rec-amount">{t('budget.recurring.amount')}</Label>
               <NumericInput id="rec-amount" value={amount}
@@ -88,30 +89,28 @@ function RecurringForm({ open, onOpenChange }: {
             </div>
             <div className="space-y-2">
               <Label htmlFor="rec-cadence">{t('budget.recurring.cadence')}</Label>
-              <select id="rec-cadence" value={cadence}
-                onChange={(e) => setCadence(e.target.value as RecurringCadence)}
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus:border-ring">
+              <NativeSelect id="rec-cadence" value={cadence}
+                onChange={(e) => setCadence(e.target.value as RecurringCadence)}>
                 {CADENCES.map((c) => (
                   <option key={c} value={c}>{t(CADENCE_LABEL_KEY[c])}</option>
                 ))}
-              </select>
+              </NativeSelect>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="rec-due">{t('budget.recurring.nextDue')}</Label>
               <DateInput id="rec-due" value={nextDueDate} onChange={setNextDueDate} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="rec-cat">{t('budget.recurring.category')}</Label>
-              <select id="rec-cat" value={categoryId}
-                onChange={(e) => setCategoryId(e.target.value === '' ? '' : Number(e.target.value))}
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus:border-ring">
+              <NativeSelect id="rec-cat" value={categoryId}
+                onChange={(e) => setCategoryId(e.target.value === '' ? '' : Number(e.target.value))}>
                 <option value="">{t('budget.recurring.noCategory')}</option>
                 {(categories ?? []).filter((c) => !c.archived).map((c) => (
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
-              </select>
+              </NativeSelect>
             </div>
           </div>
         </div>
@@ -152,93 +151,93 @@ export function RecurringTab() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm text-muted-foreground">{t('budget.recurring.subtitle')}</p>
-        <div className="flex items-center gap-2">
-          <Button size="sm" variant="outline" onClick={() => detect.mutate()}
-            disabled={detect.isPending}>
-            <RefreshCw className={`size-4 ${detect.isPending ? 'animate-spin' : ''}`} />
-            {t('budget.recurring.detect')}
-          </Button>
-          <Button size="sm" onClick={() => setFormOpen(true)}>
-            <Plus className="size-4" /> {t('budget.recurring.add')}
-          </Button>
-        </div>
-      </div>
+      <BudgetToolbar lead={t('budget.recurring.subtitle')}>
+        <Button size="xs" variant="outline" className="flex-1 sm:flex-none" onClick={() => detect.mutate()}
+          disabled={detect.isPending}>
+          <RefreshCw className={cn('size-4', detect.isPending && 'animate-spin')} />
+          {t('budget.recurring.detect')}
+        </Button>
+        <Button size="xs" className="flex-1 sm:flex-none" onClick={() => setFormOpen(true)}>
+          <Plus className="size-4" /> {t('budget.recurring.add')}
+        </Button>
+      </BudgetToolbar>
 
       {/* "What changed" — silent auto-confirms + price steps, with per-item undo. */}
       <ActivityFeed />
 
-      {/* Upcoming agenda */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">{t('budget.recurring.upcoming')}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {calLoading && <Skeleton className="h-24 w-full rounded-xl" />}
-          {!calLoading && calError && (
-            <ErrorState message={t('budget.recurring.error')} onRetry={() => void refetchCal()} />
-          )}
-          {!calLoading && !calError && total === 0 && (
-            <EmptyState icon={<CalendarClock className="size-10" />}
-              title={t('budget.recurring.noUpcoming')}
-              description={t('budget.recurring.noUpcomingHint')} />
-          )}
-          {!calLoading && !calError && total > 0 && (
-            <div className="space-y-4">
-              {[...groups.entries()].map(([ym, occs]) => (
-                <div key={ym}>
-                  <p className="mb-2 text-xs font-semibold uppercase text-muted-foreground">
-                    {new Intl.DateTimeFormat(getLocale(), { month: 'long', year: 'numeric' })
-                      .format(new Date(`${ym}-01T00:00:00`))}
-                  </p>
-                  <div className="space-y-2">
-                    {(occs ?? []).map((occ) => {
-                      const displayLabel = `${occ.label}${occ.creditCardPayment && occ.rewardPoints != null ? ` · ${formatNumber(occ.rewardPoints)} ${t('accounts.amex.miles')}` : ''}`
-                      return (
-                      <div key={`${occ.seriesId}-${occ.dueDate}`}
-                        className="flex items-center gap-3 text-sm">
-                        <span className="w-10 shrink-0 text-center text-muted-foreground">
-                          {new Date(`${occ.dueDate}T00:00:00`).getDate()}
-                        </span>
-                        <ColorDot color={occ.categoryColor} />
-                        <span className="min-w-0 flex-1 truncate" title={displayLabel} aria-label={displayLabel}>{displayLabel}</span>
-                        <span className="shrink-0 tabular-nums">
-                          <CurrencyDisplay value={occ.expectedAmount} showSign />
-                        </span>
-                      </div>
-                      )
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-12">
+        {/* Series management — the page's main list. */}
+        <Card className="lg:col-span-7">
+          <CardHeader>
+            <CardTitle>{t('budget.recurring.series')}</CardTitle>
+            {(series?.length ?? 0) > 0 && (
+              <CardDescription>{t('budget.recurring.seriesCount', { count: series!.length })}</CardDescription>
+            )}
+          </CardHeader>
+          <CardContent>
+            {isLoading && <Skeleton className="h-40 w-full rounded-xl" />}
+            {!isLoading && seriesError && (
+              <ErrorState messageOnly message={t('budget.recurring.error')} onRetry={() => void refetchSeries()} />
+            )}
+            {!isLoading && !seriesError && (series?.length ?? 0) === 0 && (
+              <EmptyState className="py-8" icon={<Repeat className="size-8" />}
+                title={t('budget.recurring.noSeries')} />
+            )}
+            {!isLoading && !seriesError && (series?.length ?? 0) > 0 && (
+              <ul className="-mx-3 flex flex-col">
+                {series!.map((s) => <SubscriptionCard key={s.id} series={s} />)}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
 
-      {/* Series management */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">{t('budget.recurring.series')}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading && <Skeleton className="h-24 w-full rounded-xl" />}
-          {!isLoading && seriesError && (
-            <ErrorState message={t('budget.recurring.error')} onRetry={() => void refetchSeries()} />
-          )}
-          {!isLoading && !seriesError && (series?.length ?? 0) === 0 && (
-            <p className="py-6 text-center text-sm text-muted-foreground">
-              {t('budget.recurring.noSeries')}
-            </p>
-          )}
-          {!isLoading && !seriesError && (series?.length ?? 0) > 0 && (
-            <div>
-              {series!.map((s) => <SubscriptionCard key={s.id} series={s} />)}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        {/* Upcoming agenda */}
+        <Card className="lg:col-span-5">
+          <CardHeader>
+            <CardTitle>{t('budget.recurring.upcoming')}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {calLoading && <Skeleton className="h-40 w-full rounded-xl" />}
+            {!calLoading && calError && (
+              <ErrorState messageOnly message={t('budget.recurring.error')} onRetry={() => void refetchCal()} />
+            )}
+            {!calLoading && !calError && total === 0 && (
+              <EmptyState className="py-8" icon={<CalendarClock className="size-8" />}
+                title={t('budget.recurring.noUpcoming')}
+                description={t('budget.recurring.noUpcomingHint')} />
+            )}
+            {!calLoading && !calError && total > 0 && (
+              <div className="flex flex-col gap-4">
+                {[...groups.entries()].map(([ym, occs]) => (
+                  <section key={ym}>
+                    <h3 className="mb-1.5 text-xs font-medium text-muted-foreground first-letter:uppercase">
+                      {new Intl.DateTimeFormat(getLocale(), { month: 'long', year: 'numeric' })
+                        .format(new Date(`${ym}-01T00:00:00`))}
+                    </h3>
+                    <ul className="flex flex-col gap-2">
+                      {(occs ?? []).map((occ) => {
+                        const displayLabel = `${occ.label}${occ.creditCardPayment && occ.rewardPoints != null ? ` · ${formatNumber(occ.rewardPoints)} ${t('accounts.amex.miles')}` : ''}`
+                        return (
+                          <li key={`${occ.seriesId}-${occ.dueDate}`}
+                            className="flex items-center gap-2.5 text-[13px]">
+                            <span className="w-5 shrink-0 text-right text-xs text-muted-foreground tabular-nums">
+                              {new Date(`${occ.dueDate}T00:00:00`).getDate()}
+                            </span>
+                            <ColorDot color={occ.categoryColor} />
+                            <span className="min-w-0 flex-1 truncate font-medium" title={displayLabel} aria-label={displayLabel}>{displayLabel}</span>
+                            <CurrencyDisplay value={occ.expectedAmount} showSign
+                              className="shrink-0 font-semibold tabular-nums text-foreground" />
+                          </li>
+                        )
+                      })}
+                    </ul>
+                  </section>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
       <RecurringForm open={formOpen} onOpenChange={setFormOpen} />
     </div>

@@ -1,6 +1,6 @@
 # Feature: Add Account Modal
 
-> Last updated: 2026-11-01
+> Last updated: 2026-11-03
 
 ## Context
 
@@ -10,12 +10,13 @@ Creating a new account or connecting a sync provider required two separate entry
 
 The `AddAccountModal` is a state-machine dialog with two levels:
 
-1. **Selector screen** — buttons in a grid (Banks, Exchanges, Wallets, Trade Republic, BoursoBank, Bourse Direct, DEGIRO, Interactive Brokers, SimpleFIN, Amundi, Finary, Property, Manual). Each sync button enters its wizard or panel; the Manual button opens the existing `AccountForm` in a separate dialog.
-2. **Wizard screens** — Each sync type has its own compact wizard with a back button. Each wizard manages its own loading and error state inline.
+1. **Selector screen** — two hand-entered choices first (**Manual account**, highlighted, which opens the existing `AccountForm` in a separate dialog; **Property**, which opens `AddPropertyModal`), then "or connect an institution" and the provider catalog shared with `/sync` (`ProviderCatalog`: search, category chips, logo tiles; see [sync-page.md](./sync-page.md)) — banks, exchanges, wallets, Trade Republic, BoursoBank, Bourse Direct, DEGIRO, Interactive Brokers, SimpleFIN, Wise Jars, Amundi, Finary and the sidecar connectors. A tile enters its wizard or panel. Actual Budget and HomeBank are whole-budget imports with a page-sized mapping preview: their tiles close the dialog and open `/sync?tab=actual|homebank`.
+2. **Wizard screens** — Each sync type has its own compact wizard with a back button. Each wizard manages its own loading and error state inline. The dialog title shows the provider's mark and name.
 
 ### Key files
 
-- `frontend/src/components/shared/AddAccountModal.tsx` — dialog shell: `SOURCES` drives the selector grid, `PANEL_STEPS` renders every Panel-only step (Back button + `<XPanel onConnected={handleDone} />`) from one table
+- `frontend/src/components/shared/AddAccountModal.tsx` — dialog shell: the steps are catalog keys (the `/sync` `?tab=` keys); `WIZARD_STEPS` maps the guided flows, `PANEL_STEPS` renders every Panel-only step (Back button + `<XPanel onConnected={handleDone} />`, CMES and CIC included) from one table
+- `frontend/src/pages/sync/catalog.ts` + `ProviderCatalog.tsx` — the provider list and the catalog component shared with the Sync page
 - `frontend/src/components/shared/AddAccountWizards.tsx` — the modal-only wrappers (`BankWizard`, `ExchangeWizard`, `WalletWizard`, `TradeRepublicWizard`, `RevolutWizard`, `FinaryWizard`) plus `BackButton` / `SuccessState`. They hold what is specific to the modal (Back button, success screen, banner style); the flows themselves are the shared components below
 - `frontend/src/pages/accounts/AccountsPage.tsx` — wires `AddAccountModal` for create, keeps `AccountForm` for edit
 - `frontend/src/features/sync/hooks.ts` — all sync mutation hooks reused by the wizards (built on `useInvalidatingMutation`)
@@ -27,7 +28,8 @@ The modal and the `/sync` tabs render the same components, so a fix lands on bot
 
 | Shared piece | Used by the modal in | Used by the Sync page in |
 |---|---|---|
-| `components/sync/*Panel.tsx` (IBKR, SimpleFIN, Bourso, Caisse d'Epargne, Bourse Direct, DEGIRO, Amundi, Fortuneo, Amex, CORUM, Sofidy) | `PANEL_STEPS` | the matching `*Tab` |
+| `pages/sync/ProviderCatalog.tsx` | the selector | the "Add a connection" card |
+| `components/sync/*Panel.tsx` (IBKR, SimpleFIN, Wise, Bourso, Caisse d'Epargne, Banque Populaire, Bourse Direct, DEGIRO, Amundi, CMES, CIC, Fortuneo, Amex, CORUM, Sofidy) | `PANEL_STEPS` | the matching `*Tab` |
 | `components/sync/InstitutionSearch.tsx` | `BankWizard` (`layout="modal"`) | `BankSyncTab` (`layout="page"`) |
 | `components/sync/CryptoExchangeForm.tsx` | `ExchangeWizard` | `CryptoExchangeTab` |
 | `components/sync/CryptoWalletForm.tsx` | `WalletWizard` | `CryptoWalletTab` |
@@ -42,7 +44,9 @@ What stays per screen: the success screen after `onSuccess` (modal), the Cancel 
 ```
 AccountsPage → "Add account" button
   └─ AddAccountModal (step = "selector")
-       ├─ Banks → BankWizard
+       ├─ Manual → AccountForm (separate dialog)
+       ├─ Property → AddPropertyModal (separate dialog)
+       ├─ European banks → BankWizard
        │    └─ search institutions → select → initiate OAuth → redirect
        ├─ Exchanges → ExchangeWizard
        │    └─ pick type → API key + secret → add → success
@@ -51,6 +55,7 @@ AccountsPage → "Add account" button
        ├─ DEGIRO → DegiroPanel (onConnected → handleDone)
        ├─ Interactive Brokers → IbkrPanel (onConnected → handleDone)
        ├─ SimpleFIN → SimplefinPanel (onConnected → handleDone)
+       ├─ Wise Jars → WisePanel (onConnected → handleDone)
        ├─ Amundi → AmundiPanel (onConnected → handleDone)
        ├─ Fortuneo → FortuneoPanel (onConnected → handleDone)
        ├─ American Express → AmexPanel (onConnected → handleDone)
@@ -58,14 +63,15 @@ AccountsPage → "Add account" button
        ├─ Sofidy → SofidyPanel (onConnected → handleDone)
        ├─ Trade Republic → TradeRepublicWizard
        │    └─ phone + PIN (InputOTP 4-digit) → verification code (InputOTP 4-digit) → success
+       ├─ CMES / CIC / BoursoBank / Caisse d'Epargne / Bourse Direct → their Panel
        ├─ Finary → FinaryWizard (3-step)
        │    └─ login/upload → account mapping → results
-       └─ Manual → AccountForm (separate dialog)
+       └─ Actual Budget / HomeBank → close, navigate to /sync?tab=actual|homebank
 ```
 
 ### Error handling
 
-Each shared form owns its error state as a local `useState<string | null>` (the wallet and exchange forms, the bank wizard, Revolut). On mutation failure, the backend `detail` field is extracted (falling back to `err.message`, then a translated i18n key). In the modal, errors are shown in a dismissible red banner and cleared on the next attempt. On the Sync page the exchange form shows a plain banner and the wallet form reads the mutation's own error.
+Each shared form owns its error state as a local `useState<string | null>` (the wallet and exchange forms, the bank wizard, Revolut). On mutation failure, the backend `detail` field is extracted (falling back to `err.message`, then a translated i18n key). Both the modal and the Sync page show it through the panel kit's `PanelError` (`components/sync/ProviderPanel.tsx`, `role="alert"`); in the modal it carries a close action and is cleared on the next attempt.
 
 The Trade Republic wizard follows the same state rules as the dedicated Sync
 page: initiation errors keep the phone/PIN form visible and clear any stale
@@ -126,7 +132,7 @@ four locales, and the partial maps are gone.
 
 ### SyncPage integration
 
-`SyncPage` reads `?tab=` from the URL query params to set the initial tab. This was added for forward-compatibility; the modal does not redirect there — all wizards are inline.
+The catalog keys are the `/sync` `?tab=` keys, so both entry points name a provider the same way. Only the two whole-budget imports leave the modal for their Sync view; every other flow stays inline.
 
 ## Technical choices
 
@@ -169,7 +175,7 @@ assurance-vie and carries an opening date.
 
 - `frontend/src/lib/utils.test.ts` — `formatCurrency` regression case: an invalid code does not throw
   and the raw code appears in the output (issue #9).
-- `frontend/src/components/shared/AddAccountModal.test.tsx` — Trade Republic wizard regression cases; exchange, bank and Finary wizard cases; Bourse Direct, Amundi, IBKR, SimpleFIN, Amex, CORUM, and Sofidy wizard flow tests (mock panel → `onOpenChange(false)`).
+- `frontend/src/components/shared/AddAccountModal.test.tsx` — Trade Republic wizard regression cases; exchange, bank and Finary wizard cases; Bourse Direct, Amundi, IBKR, SimpleFIN, Wise, Amex, CORUM, Sofidy, CMES and CIC wizard flow tests (mock panel → `onOpenChange(false)`); catalog search, category filter, manual choice first, Actual/HomeBank routed to their Sync view.
 - `backend/src/test/java/com/picsou/validation/CurrencyValidatorTest.java` — accepts valid ISO 4217
   codes, rejects unknown ones, leaves null/blank to `@NotBlank`.
 
@@ -180,4 +186,4 @@ assurance-vie and carries an opening date.
 
 ### Sync all modal parity
 
-`SyncAllModal` lists the same sidecar connectors as the selector, including Amex, CORUM, Sofidy and Caisse d'Epargne. A session-based row is shown when its session is live or the member still has accounts whose `provider` matches. Caisse d'Epargne matches the `provider` its sync service stamps (`Caisse d'Epargne`). CORUM and Sofidy match the `provider` the SCPI reconciler stamps on the accounts it creates (`CORUM`, `Sofidy`), and also any SCPI account carrying their fund code (`scpi.corumFundCode` / `scpi.sofidyFundCode`), because an adopted manual SCPI keeps the provider the user typed. An expired session therefore stays listed; an inactive one routes to its Sync-page tab (`amex`/`corum`/`sofidy`/`caisse-epargne`) for re-authentication, and the batch *Sync all* skips it. Caisse d'Epargne stores no credentials, only session cookies, so its keypad and Sécur'Pass login can run only on that tab.
+The modal's layout (groups, progress, row states) is described in [sync-page.md](./sync-page.md); the connection rules below live in `pages/sync/use-sync-connections.ts`, shared with the Sync page overview. `SyncAllModal` lists the same sidecar connectors as the selector, including Amex, CORUM, Sofidy, Caisse d'Epargne and Banque Populaire. A session-based row is shown when its session is live or the member still has accounts whose `provider` matches. Caisse d'Epargne matches the `provider` its sync service stamps (`Caisse d'Epargne`). CORUM and Sofidy match the `provider` the SCPI reconciler stamps on the accounts it creates (`CORUM`, `Sofidy`), and also any SCPI account carrying their fund code (`scpi.corumFundCode` / `scpi.sofidyFundCode`), because an adopted manual SCPI keeps the provider the user typed. An expired session therefore stays listed; an inactive one routes to its Sync-page view (`amex`/`corum`/`sofidy`/`caisse-epargne`) for re-authentication, and the batch *Sync all* skips it. Caisse d'Epargne stores no credentials, only session cookies, so its keypad and Sécur'Pass login can run only on that view.

@@ -118,13 +118,13 @@ export function MfaEnrollDialog({
                 autoFocus
               />
             </div>
-            {error && <p className="text-sm text-destructive">{error}</p>}
-            <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
-              <Button type="button" variant="ghost" onClick={close}>
+            {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={close}>
                 {t('settings.mfaCancel')}
               </Button>
               <Button type="submit" disabled={enrollInit.isPending}>
-                {enrollInit.isPending && <Loader2 size={14} className="mr-1.5 animate-spin" />}
+                {enrollInit.isPending && <Loader2 className="animate-spin" aria-hidden="true" />}
                 {t('settings.mfaContinue')}
               </Button>
             </DialogFooter>
@@ -137,17 +137,17 @@ export function MfaEnrollDialog({
               <img
                 src={qrUri}
                 alt="2FA QR code"
-                className="size-48 sm:size-56 border rounded-lg bg-white p-2"
+                className="size-48 rounded-xl bg-white p-2 sm:size-56"
               />
             </div>
             <div className="space-y-1.5">
               <p className="text-xs text-muted-foreground">{t('settings.mfaEnrollSecretManual')}</p>
-              <code className="block w-full font-mono text-xs sm:text-sm break-all rounded border bg-muted/40 p-2 text-center">
+              <code className="block w-full break-all rounded-lg bg-muted p-2 text-center font-mono text-xs text-foreground sm:text-sm">
                 {secret}
               </code>
             </div>
-            <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
-              <Button type="button" variant="ghost" onClick={close}>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={close}>
                 {t('settings.mfaCancel')}
               </Button>
               <Button type="button" onClick={() => setStep(3)}>
@@ -176,13 +176,13 @@ export function MfaEnrollDialog({
                 className="text-center text-lg tracking-widest font-mono"
               />
             </div>
-            {error && <p className="text-sm text-destructive">{error}</p>}
-            <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
-              <Button type="button" variant="ghost" onClick={() => setStep(2)}>
+            {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setStep(2)}>
                 {t('settings.mfaPrevious')}
               </Button>
               <Button type="submit" disabled={enrollVerify.isPending || code.length !== 6}>
-                {enrollVerify.isPending && <Loader2 size={14} className="mr-1.5 animate-spin" />}
+                {enrollVerify.isPending && <Loader2 className="animate-spin" aria-hidden="true" />}
                 {t('settings.mfaConfirm')}
               </Button>
             </DialogFooter>

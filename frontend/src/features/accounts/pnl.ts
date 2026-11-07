@@ -12,7 +12,7 @@ import type { Account } from '@/types/api'
  * <p>A property is the exception. It holds nothing, so `AccountService.valuation` falls back
  * to `invested = currentBalance` and its PnL is structurally 0 — yet its real basis (purchase
  * price plus every acquisition fee) is right there on the account as
- * `realEstate.costBasis`, and is what `RealEstateSummaryCard` and the property valuation chart
+ * `realEstate.costBasis`, and is what the Property & loans page and the property valuation chart
  * already measure against. These helpers substitute it so the accounts page reports the same
  * gain those two do.
  */

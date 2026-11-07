@@ -1,6 +1,6 @@
 # Feature: Theme persistence + theme-adaptive rendering (dark / light / system)
 
-> Last updated: 2026-10-31
+> Last updated: 2026-11-03
 
 ## Context
 
@@ -8,7 +8,7 @@ Users can choose between dark, light, and system themes in Settings. Without per
 
 ## How it works
 
-Theme is stored in `localStorage` under the key `'theme'` (`'light' | 'dark' | 'system'`). On every page load, the external script `frontend/public/theme-init.js` (loaded `<script src="/theme-init.js">` in `index.html`, before `main.tsx`) reads that value and adds the `dark` class to `<html>` before any CSS or JS runs (preventing flash of unstyled content). React then picks up an already-correct DOM.
+Theme is stored in `localStorage` under the key `'theme'` (`'light' | 'dark' | 'system'`). When nothing is stored the theme is **dark** (`DEFAULT_THEME` in `lib/theme.ts`, mirrored in `theme-init.js`): Picsou is dark first since the "Coffre Nocturne" redesign (ADR `2026-11-03-coffre-nocturne-dark-first-redesign.md`). A user who wants to follow the OS picks "System". On every page load, the external script `frontend/public/theme-init.js` (loaded `<script src="/theme-init.js">` in `index.html`, before `main.tsx`) reads that value and adds the `dark` class to `<html>` before any CSS or JS runs (preventing flash of unstyled content). React then picks up an already-correct DOM.
 
 ### Key files
 
@@ -17,7 +17,7 @@ Theme is stored in `localStorage` under the key `'theme'` (`'light' | 'dark' | '
 - `frontend/src/hooks/use-dark-theme.ts` — observes the root `.dark` class for components that need the applied palette in JavaScript
 - `frontend/src/components/shared/Toaster.tsx` — passes the applied palette to Sonner through `useDarkTheme()`
 - `frontend/src/main.tsx` — calls `initSystemThemeListener()` + `applyTheme(getStoredTheme())` once at startup
-- `frontend/src/pages/settings/SettingsPage.tsx` — UI toggle, reads/writes via `lib/theme`
+- `frontend/src/pages/settings/sections/AppearanceSection.tsx` — the Thème row (Clair / Sombre / Système `SegmentedControl`) of Settings → Apparence, reads/writes via `lib/theme`
 - `frontend/src/index.css` — CSS variables under `:root` (light, `@custom-variant dark (&:is(.dark *))`) and `.dark` (dark)
 - Theme-adaptive assets/components: `AppSidebar.tsx`, `MobileBottomNav.tsx`, `ConnectionGuard.tsx`, `ErrorBoundary.tsx` (logo), `frontend/src/components/ui/dropdown-menu.tsx` (popover panel)
 
@@ -34,7 +34,7 @@ React mounts
        └─ watches matchMedia change
        └─ re-applies theme when OS preference changes (only if theme = 'system')
 
-User changes theme (SettingsPage)
+User changes theme (Settings → Apparence)
   └─ setTheme(value)
   └─ useEffect → applyTheme(theme)
        └─ toggles .dark class on document.documentElement

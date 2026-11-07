@@ -45,11 +45,21 @@ async function open(page: Page, path: string) {
 // Each page with the label that used to be cut, waited for since demo data arrives late.
 const PAGES = [
   ['/settings', 'Système'],
+  ['/settings?section=profile', 'Revenu brut annuel'],
+  ['/settings?section=security', 'Appareils connectés'],
+  ['/settings?section=mcp', 'Connecter votre client MCP'],
   ['/settings/family', 'Sélectionner'],
   ['/analysis', '30 ans'],
-  ['/accounts/2', '+ Ajouter'],
+  ['/accounts/2', 'Ajouter'],
   ['/goals', 'Apport immobilier'],
   ['/goals/1/calendar', 'Voyage au Japon'],
+  // The redesigned pages: KPI figures and breakdown legends must shrink or wrap, never run off.
+  ['/', 'Plus fortes variations'],
+  ['/accounts', "Classe d'actifs"],
+  ['/budget', 'Principaux commerçants'],
+  ['/investments', 'Performance'],
+  ['/income', 'Mois par mois'],
+  ['/real-estate', 'Résidence principale'],
 ] as const
 
 test.describe('Phone layout (360px)', () => {
@@ -84,13 +94,36 @@ test.describe('Phone layout (360px)', () => {
     }
   })
 
-  test('sync providers sit on one swipeable row', async ({ page }) => {
+  test('the settings section picker opens the section it names, by URL', async ({ page }) => {
+    await open(page, '/settings?section=security')
+    const picker = page.getByRole('main').getByRole('combobox').first()
+    await expect(picker).toHaveValue('security')
+    await picker.selectOption('profile')
+    await expect(page).toHaveURL(/section=profile/)
+    await expect(page.getByRole('main').getByText('Revenu brut annuel')).toBeVisible()
+  })
+
+  test('sync categories sit on one swipeable row, providers in one column', async ({ page }) => {
     await open(page, '/sync')
-    await expect(page.getByRole('tab', { name: 'Comptes' })).toBeAttached()
-    const tops = await page.getByRole('tab').evaluateAll((tabs) =>
-      new Set(tabs.map((tab) => Math.round(tab.getBoundingClientRect().top))).size,
+    const categories = page.getByRole('group', { name: 'Catégorie' }).getByRole('button')
+    await expect(categories.first()).toBeAttached()
+    const tops = await categories.evaluateAll((all) =>
+      new Set(all.map((c) => Math.round(c.getBoundingClientRect().top))).size,
     )
     expect(tops).toBe(1)
+    const lefts = await page.getByRole('region', { name: 'Ajouter une connexion' }).getByRole('listitem')
+      .evaluateAll((tiles) => new Set(tiles.map((t) => Math.round(t.getBoundingClientRect().left))).size)
+    expect(lefts).toBe(1)
+  })
+
+  test('nothing is clipped on the sync overview nor in a provider view', async ({ page }) => {
+    await open(page, '/sync')
+    await expect(page.getByRole('main').getByText('Vos connexions')).toBeVisible()
+    await expect(page.getByRole('main').getByText('BoursoBank').first()).toBeVisible()
+    expect(await clippedElements(page)).toEqual([])
+    await open(page, '/sync?tab=cmes')
+    await expect(page.getByLabel('Identifiant')).toBeVisible()
+    expect(await clippedElements(page)).toEqual([])
   })
 
   test('account filters sit on one swipeable row', async ({ page }) => {
@@ -107,35 +140,30 @@ test.describe('Phone layout (360px)', () => {
     await expect(page.getByRole('link', { name: /À catégoriser/ })).toBeInViewport({ ratio: 1 })
   })
 
-  test('a deep link to the CMES sync tab shows its tab and panel', async ({ page }) => {
+  test('a deep link to the CMES sync view shows its header and panel', async ({ page }) => {
     await open(page, '/sync?tab=cmes')
-    const tab = page.getByRole('tab', { name: 'Crédit Mutuel / CIC Épargne Salariale' })
-    await expect(tab).toHaveAttribute('aria-selected', 'true')
-    await expect(tab).toBeInViewport({ ratio: 1 })
-    await expect(page.getByRole('tabpanel')).not.toBeEmpty()
+    const name = 'Crédit Mutuel / CIC Épargne Salariale'
+    await expect(page.getByRole('heading', { level: 1, name })).toBeInViewport()
+    await expect(page.getByRole('region', { name })).not.toBeEmpty()
+    // The way back to the overview, full width on a phone.
+    await expect(page.getByRole('button', { name: 'Synchronisation' })).toBeInViewport({ ratio: 1 })
   })
 
-  test('a deep link to the last sync tab shows that tab', async ({ page }) => {
+  test('a deep link to the visible-accounts view shows it', async ({ page }) => {
     await open(page, '/sync?tab=visibility')
-    const tab = page.getByRole('tab', { name: 'Comptes' })
-    await expect(tab).toHaveAttribute('aria-selected', 'true')
-    await expect(tab).toBeInViewport({ ratio: 1 })
+    await expect(page.getByRole('heading', { level: 1, name: 'Comptes visibles' })).toBeInViewport({ ratio: 1 })
+    await expect(page.getByRole('region', { name: 'Comptes visibles' })).not.toBeEmpty()
   })
 
-  test('a deep-linked sync tab stays in view when the phone turns upright', async ({ page }) => {
-    await page.setViewportSize({ width: 844, height: 390 })
-    await open(page, '/sync?tab=visibility')
-    const tab = page.getByRole('tab', { name: 'Comptes' })
-    await expect(tab).toHaveAttribute('aria-selected', 'true')
-    await page.setViewportSize({ width: 390, height: 844 })
-    await expect(tab).toBeInViewport({ ratio: 1 })
-  })
-
-  test('selecting a half-hidden sync tab brings it fully into view', async ({ page }) => {
+  test('selecting a half-hidden sync category brings it fully into view', async ({ page }) => {
     await open(page, '/sync')
-    await expect(page.getByRole('tab').first()).toHaveAttribute('aria-selected', 'true')
-    const tabs = page.getByRole('tab')
-    const strip = page.getByRole('tablist').locator('xpath=..')
+    // The connections card above loads late and grows: wait for it, or the strip moves under the click.
+    await expect(page.getByRole('button', { name: /^BINANCE/ })).toBeVisible()
+    const group = page.getByRole('group', { name: 'Catégorie' })
+    await expect(group.getByRole('button').first()).toHaveAttribute('aria-pressed', 'true')
+    const tabs = group.getByRole('button')
+    const strip = group.locator('xpath=..')
+    await strip.scrollIntoViewIfNeeded()
     // Swipe so the first tab whose middle is past the right edge shows only its first half there.
     // A tab that overflows by less than half would need a negative swipe, so it can't be picked.
     const stripBox = (await strip.boundingBox())!
@@ -153,7 +181,7 @@ test.describe('Phone layout (360px)', () => {
     // A real pointer press on the visible half: Playwright's click() would scroll the tab into view itself.
     await page.mouse.click(box.x + 8, box.y + box.height / 2)
     const tab = tabs.nth(i)
-    await expect(tab).toHaveAttribute('aria-selected', 'true')
+    await expect(tab).toHaveAttribute('aria-pressed', 'true')
     await expect(tab).toBeInViewport({ ratio: 1 })
   })
 
@@ -176,7 +204,7 @@ test.describe('Phone layout (360px)', () => {
   const STRIP_ITEMS = [
     ['/accounts', 'button', 'Actions & Fonds'],
     ['/budget/review', 'link', /À catégoriser/],
-    ['/sync?tab=visibility', 'tab', 'Comptes'],
+    ['/sync', 'button', /^Bourse$/],
   ] as const
   for (const [path, role, name] of STRIP_ITEMS) {
     test(`the focus ring of a ${role} in the ${path} strip is not cut`, async ({ page }) => {
@@ -264,10 +292,11 @@ test.describe('Mobile layout', () => {
     expect(content.top).toBeGreaterThanOrEqual(NAV_INSET)
   })
 
-  test('Famille is reachable from the bottom nav', async ({ page }) => {
-    const famille = page.locator('nav.fixed').getByRole('link', { name: 'Famille' })
-    await famille.click()
+  test('Famille is reachable from the bottom nav through "Plus"', async ({ page }) => {
+    const more = page.locator('nav.fixed').getByRole('button', { name: 'Plus' })
+    await more.click()
+    await page.getByRole('dialog').getByRole('link', { name: 'Famille' }).click()
     await page.waitForURL('**/family')
-    await expect(famille).toHaveAttribute('aria-current', 'page')
+    await expect(more).toHaveAttribute('aria-current', 'page')
   })
 })

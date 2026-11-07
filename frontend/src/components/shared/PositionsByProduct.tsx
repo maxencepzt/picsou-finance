@@ -23,7 +23,7 @@ interface PositionsByProductProps {
 /** Same green/red convention as the flat holdings table. */
 function pnlColor(value: number | null): string {
   if (value == null) return ''
-  return value >= 0 ? 'text-emerald-500' : 'text-red-500'
+  return value >= 0 ? 'text-gain' : 'text-loss'
 }
 
 /** Fixed order rather than the API's: spot first, then what is put to work. */
@@ -75,7 +75,7 @@ export function PositionsByProduct({ positions }: PositionsByProductProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">{t('accounts.holdings')}</CardTitle>
+        <CardTitle>{t('accounts.holdings')}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-8">
         {groups.map(({ product, rows }) => {
@@ -121,7 +121,7 @@ export function PositionsByProduct({ positions }: PositionsByProductProps) {
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <HoldingLogo logoUrl={row.logoUrl} ticker={row.ticker} />
-                            <span className="font-mono font-medium">{row.ticker}</span>
+                            <span className="font-medium">{row.ticker}</span>
                           </div>
                         </TableCell>
                         {showYield && (
@@ -130,7 +130,7 @@ export function PositionsByProduct({ positions }: PositionsByProductProps) {
                           </TableCell>
                         )}
                         {showYield && (
-                          <TableCell className="text-right tabular-nums text-emerald-500">
+                          <TableCell className="text-right tabular-nums text-gain">
                             {row.interest != null ? money.quantity(row.interest) : '—'}
                           </TableCell>
                         )}

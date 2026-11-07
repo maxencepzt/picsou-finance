@@ -3,10 +3,10 @@ import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts'
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart'
 import { CurrencyDisplay } from '@/components/shared/CurrencyDisplay'
 import { useProjectionDateLabel } from '@/features/analysis/hooks'
-import { SLICE_PALETTE } from '@/lib/chart-palette'
 import { formatPercent } from '@/lib/utils'
 import type { AllocationPoint, WealthTier } from '@/types/api'
 import { AXIS_PROPS, AXIS_PROPS_FLUSH } from '@/lib/chart-axis'
+import { TIER_COLORS } from './tier-colors'
 
 /** Bottom to top, heaviest first — the order the pyramid itself reads in. */
 const TIER_ORDER: WealthTier[] = [
@@ -16,14 +16,6 @@ const TIER_ORDER: WealthTier[] = [
   'CRYPTO',
   'ALTERNATIVE',
 ]
-
-const TIER_COLOR: Record<WealthTier, string> = {
-  SAFETY_NET: SLICE_PALETTE[5],
-  REAL_ESTATE: SLICE_PALETTE[1],
-  EQUITY: SLICE_PALETTE[0],
-  CRYPTO: SLICE_PALETTE[3],
-  ALTERNATIVE: SLICE_PALETTE[8],
-}
 
 /**
  * Where the recurring plans take the mix, against the member's own targets.
@@ -44,7 +36,7 @@ export function AllocationTrajectory({ allocation }: { allocation: AllocationPoi
   const config = Object.fromEntries(
     TIER_ORDER.map((tier) => [
       tier,
-      { label: t(`analysis.tiers.${tier}`), color: TIER_COLOR[tier] },
+      { label: t(`analysis.tiers.${tier}`), color: TIER_COLORS[tier] },
     ]),
   ) as ChartConfig
 
@@ -59,9 +51,9 @@ export function AllocationTrajectory({ allocation }: { allocation: AllocationPoi
 
   return (
     <>
-      <ChartContainer config={config} className="h-[320px] w-full">
+      <ChartContainer config={config} className="h-[300px] w-full">
         <AreaChart data={rows} margin={{ left: 4, right: 8, top: 8, bottom: 0 }}>
-          <CartesianGrid vertical={false} strokeDasharray="3 3" />
+          <CartesianGrid vertical={false} />
           <XAxis
             dataKey="date"
             {...AXIS_PROPS}
@@ -99,59 +91,61 @@ export function AllocationTrajectory({ allocation }: { allocation: AllocationPoi
 
       {/* The numbers the chart is too coarse to read: where each tier lands, and how far that is
           from the target. A share on a stacked area is legible to within a few points at best. */}
-      <table className="mt-4 w-full text-sm">
-        <thead>
-          <tr className="text-xs text-muted-foreground">
-            <th className="pb-1 text-left font-normal">{t('analysis.projection.tier')}</th>
-            <th className="pb-1 text-right font-normal">{t('analysis.projection.today')}</th>
-            <th className="pb-1 text-right font-normal">
-              {t('analysis.projection.atHorizon', { count: allocation.length - 1 })}
-            </th>
-            <th className="pb-1 text-right font-normal">{t('analysis.projection.target')}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {TIER_ORDER.map((tier) => {
-            const now = first.tiers.find((s) => s.tier === tier)
-            const then = last.tiers.find((s) => s.tier === tier)
-            if (!now || !then) return null
-            return (
-              <tr key={tier} className="border-t border-border">
-                <td className="py-1.5">
-                  <span className="flex items-center gap-2">
-                    <span
-                      className="size-2 shrink-0 rounded-full"
-                      style={{ backgroundColor: TIER_COLOR[tier] }}
-                      aria-hidden="true"
-                    />
-                    {t(`analysis.tiers.${tier}`)}
-                  </span>
-                </td>
-                <td className="py-1.5 text-right tabular-nums text-muted-foreground">
-                  {formatPercent(now.percent)}
-                </td>
-                <td className="py-1.5 text-right tabular-nums text-foreground">
-                  {formatPercent(then.percent)}
-                  <span className="ml-2 text-xs text-muted-foreground">
-                    <CurrencyDisplay value={then.valueEur} />
-                  </span>
-                </td>
-                <td className="py-1.5 text-right tabular-nums text-muted-foreground">
-                  {/* The cushion is measured in euros against an absolute target, not as a share,
-                      so it has no percentage to compare against.
+      <div className="mt-4 overflow-x-auto">
+        <table className="w-full min-w-[30rem] text-[13px]">
+          <thead>
+            <tr className="text-xs text-muted-foreground">
+              <th scope="col" className="pb-2 text-left font-medium">{t('analysis.projection.tier')}</th>
+              <th scope="col" className="pb-2 text-right font-medium">{t('analysis.projection.today')}</th>
+              <th scope="col" className="pb-2 text-right font-medium">
+                {t('analysis.projection.atHorizon', { count: allocation.length - 1 })}
+              </th>
+              <th scope="col" className="pb-2 text-right font-medium">{t('analysis.projection.target')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {TIER_ORDER.map((tier) => {
+              const now = first.tiers.find((s) => s.tier === tier)
+              const then = last.tiers.find((s) => s.tier === tier)
+              if (!now || !then) return null
+              return (
+                <tr key={tier} className="border-t border-border">
+                  <td className="py-2">
+                    <span className="flex items-center gap-2">
+                      <span
+                        className="size-2.5 shrink-0 rounded-full"
+                        style={{ backgroundColor: TIER_COLORS[tier] }}
+                        aria-hidden="true"
+                      />
+                      {t(`analysis.tiers.${tier}`)}
+                    </span>
+                  </td>
+                  <td className="py-2 text-right tabular-nums text-muted-foreground">
+                    {formatPercent(now.percent)}
+                  </td>
+                  <td className="py-2 text-right tabular-nums font-semibold">
+                    {formatPercent(then.percent)}
+                    <span className="ml-2 text-xs font-normal text-muted-foreground">
+                      <CurrencyDisplay value={then.valueEur} />
+                    </span>
+                  </td>
+                  <td className="py-2 text-right tabular-nums text-muted-foreground">
+                    {/* The cushion is measured in euros against an absolute target, not as a share,
+                        so it has no percentage to compare against.
 
-                      Loose equality, and it is not a style choice: the API omits null fields
-                      entirely (spring.jackson default-property-inclusion: non_null), so this
-                      arrives as undefined and `=== null` was false — .toFixed then threw and took
-                      the whole tab down. Demo mode sends an explicit null, which is why the
-                      fixtures were happy. */}
-                  {then.targetPercent == null ? '—' : formatPercent(then.targetPercent, { fractionDigits: 0 })}
-                </td>
-              </tr>
-            )
-          })}
-        </tbody>
-      </table>
+                        Loose equality, and it is not a style choice: the API omits null fields
+                        entirely (spring.jackson default-property-inclusion: non_null), so this
+                        arrives as undefined and `=== null` was false — .toFixed then threw and took
+                        the whole tab down. Demo mode sends an explicit null, which is why the
+                        fixtures were happy. */}
+                    {then.targetPercent == null ? '—' : formatPercent(then.targetPercent, { fractionDigits: 0 })}
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
     </>
   )
 }

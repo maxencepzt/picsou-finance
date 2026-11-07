@@ -31,5 +31,16 @@ public record AccountRequest(
     // fifth anniversary, an assurance-vie's eighth). Optional, and null means "leave it alone"
     // rather than "clear it" -- the MCP tools have no such parameter and would otherwise erase
     // the date on any unrelated update. See AccountService.update.
-    @PastOrPresent LocalDate openedAt
-) {}
+    @PastOrPresent LocalDate openedAt,
+    // A PEA's contribution ceiling (150 000 EUR, 20 000 EUR for a PEA jeune). Null keeps the
+    // stored value, like openedAt and for the same reason (the MCP tools never send it).
+    @DecimalMin(value = "0", inclusive = false) @Digits(integer = 18, fraction = 2) BigDecimal depositCeiling
+) {
+    /** Pre-deposit-ceiling shape, kept so existing callers need not name the new component. */
+    public AccountRequest(String name, AccountType type, String provider, String currency,
+        BigDecimal currentBalance, boolean isManual, String color, String ticker, String logoKey,
+        String institutionId, LocalDate openedAt) {
+        this(name, type, provider, currency, currentBalance, isManual, color, ticker, logoKey,
+            institutionId, openedAt, null);
+    }
+}

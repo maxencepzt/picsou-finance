@@ -35,7 +35,7 @@
 
 ### AccountType
 
-`LEP` · `LIVRET_A` · `LDDS` · `LIVRET_JEUNE` · `PEL` · `CEL` · `PEA` · `COMPTE_TITRES` · `CRYPTO` · `CHECKING` · `SAVINGS` · `REAL_ESTATE` · `SCPI` · `LOAN` · `EMPLOYEE_SAVINGS` · `ASSURANCE_VIE` · `PER` · `CREDIT_CARD` · `PRECIOUS_METALS` · `OTHER`
+`LEP` · `LIVRET_A` · `LDDS` · `LIVRET_JEUNE` · `PEL` · `CEL` · `PEA` · `COMPTE_TITRES` · `CRYPTO` · `CHECKING` · `SAVINGS` · `REAL_ESTATE` · `SCPI` · `LOAN` · `EMPLOYEE_SAVINGS` · `ASSURANCE_VIE` · `PER` · `CREDIT_CARD` · `PRECIOUS_METALS` · `BROKERAGE` · `OTHER`
 
 ### WealthTier
 
@@ -413,6 +413,30 @@ Errors redirect with `ssoError={CODE}` to the page the flow came from: `/login` 
   "goalSummaries": [ /* GoalProgressResponse[] — see Goals section */ ]
 }
 ```
+
+#### `GET /api/dashboard/movers?limit=5`
+
+- **Auth:** Required
+- `limit` defaults to 5, clamped to 1..10 per list.
+
+Day-over-day move of each held security (non-hidden PEA, CTO, crypto, assurance-vie, PER and
+employee-savings accounts), merged by ticker with share-weighted quantities, from its two most
+recent `price_snapshot` days within the last 10. Reads no provider. See
+[Dashboard movers](../../docs/features/dashboard-movers.md).
+
+**Response `200` — `MoversResponse`** (null keys are sent as `null`, never omitted):
+```json
+{
+  "date": "2026-11-03", "previousDate": "2026-10-31",
+  "gainers": [{ "ticker": "AAPL", "name": "Apple", "logoUrl": null, "priceEur": 190.1,
+                "previousPriceEur": 185.0, "changePercent": 2.76, "valueEur": 1901.0, "valueChangeEur": 51.0 }],
+  "losers": []
+}
+```
+
+`gainers`: `changePercent > 0`, largest first; `losers`: `< 0`, worst first. `date` /
+`previousDate` are null when no held ticker has two snapshots. `logoUrl` is a stored instrument
+mark, null for crypto.
 
 ---
 
@@ -1060,6 +1084,58 @@ as a last resort. Divided by the months actually observed, not by six.
 `estimate` is `null` when there is no usable history — never `0`, which would be
 indistinguishable from "this member spends nothing" and would set a target of zero.
 
+#### `GET /api/analysis/performance?months={n}`
+
+Time-weighted (TWR) and money-weighted (XIRR) return of the member's non-hidden investment
+accounts (`PEA`, `COMPTE_TITRES`, `CRYPTO`, `ASSURANCE_VIE`, `PER`, `EMPLOYEE_SAVINGS`), at their
+ownership share. `months` ∈ `3, 6, 12, 36, 60, 0` (0 = all history, default 12); anything else is
+`400`. Formulas and null rules: `docs/features/investment-performance.md`. Unlike the global
+`non_null` default, null fields are **sent as `null`**.
+
+**Response `200`:**
+```json
+{
+  "from": "2025-11-03", "to": "2026-11-03",
+  "valueEur": 123456.78, "investedEur": 100000.00,
+  "twrPercent": 8.42, "annualizedPercent": 8.1, "xirrPercent": 7.9, "volatilityPercent": 12.3,
+  "maxDrawdownPercent": -9.8, "maxDrawdownFrom": "2026-03-02", "maxDrawdownTo": "2026-04-07",
+  "points": [{ "date": "2025-11-03", "valueEur": 110000.00, "investedEur": 95000.00, "index": 100.0 }]
+}
+```
+
+#### `GET /api/analysis/benchmark?key={key}&months={n}`
+
+Daily EUR closes of a benchmark ETF: `MSCI_WORLD` (`IWDA.AS`), `SP500` (`SXR8.DE`), `CAC40`
+(`C40.PA`); any other key is `400`, default `MSCI_WORLD`. **Read-only**: it returns whatever
+`price_snapshot` holds for the ticker over the window (`months=0`: every cached day), and `points`
+is `[]` until the price jobs have filled it — `PriceBackfillRunner` backfills 5 years at startup
+and `SchedulerService.refreshPrices` adds a row each day, both only once the instance holds
+something.
+
+**Response `200`:**
+```json
+{ "key": "MSCI_WORLD", "ticker": "IWDA.AS", "label": "MSCI World",
+  "points": [{ "date": "2025-11-03", "priceEur": 98.12 }] }
+```
+
+#### `GET /api/analysis/fees?months={n}`
+
+What the held positions cost: each line's TER (from the security profile, justETF), the
+value-weighted TER and its yearly cost, and the broker fees paid over the window (`Transaction.fees`
+plus the absolute amount of `FEE` transactions, at the member's share). `weightedTerPercent` and
+`annualCostEur` are `null` when no line has a TER. Null fields are sent as `null`.
+
+**Response `200`:**
+```json
+{
+  "from": "2025-11-03", "to": "2026-11-03",
+  "weightedTerPercent": 0.220, "annualCostEur": 210.50,
+  "coveredValueEur": 95000.00, "totalValueEur": 123456.78,
+  "lines": [{ "ticker": "IWDA.AS", "name": "iShares Core MSCI World", "valueEur": 40000.00, "terPercent": 0.200 }],
+  "brokerFeesEur": 45.60, "brokerFeesCount": 12
+}
+```
+
 ---
 
 ### 6. Geocoding — `/api/geocode`
@@ -1235,6 +1311,27 @@ answer `400` for a recurring plan: they count towards a deadline it does not hav
 - **Path:** `yearMonth` in format `yyyy-MM`
 
 **Response `200` — `GoalMonthEntryResponse`** (with `override: null`).
+
+---
+
+#### `GET /api/goals/{id}/recurring-stats`
+
+- **Auth:** Required
+- `400` for a `SAVINGS_TARGET`, `404` when the goal is not the member's.
+
+`BUY` rows of the plan's allocation tickers on its accounts, over the last 12 calendar months
+(current one included) intersected with `[startDate, endDate ?? today]`. See
+[Recurring plan stats](../../docs/features/recurring-plan-stats.md).
+
+**Response `200` — `RecurringStatsResponse`** (null keys are sent as `null`):
+```json
+{ "from": "2025-12-01", "to": "2026-11-03",
+  "investedEur": 1200.0, "purchases": 12, "monthsWithPurchase": 11, "monthsElapsed": 12,
+  "currentValueEur": 1350.0, "gainEur": 150.0, "gainPercent": 12.5 }
+```
+
+`currentValueEur` (bought quantity × today's EUR price), `gainEur` and `gainPercent` are null when
+a bought ticker has no price; the gains are also null when nothing was bought.
 
 ---
 
@@ -2309,9 +2406,13 @@ never Yahoo or Nasdaq, and are scoped to the accounts the member can read. See
   "currency": "EUR",
   "exDate": "2026-10-01",
   "amountPerShare": 0.85,
-  "countsInBudget": false
+  "countsInBudget": false,
+  "amountEur": 59.50
 }]
 ```
+
+`amountEur` is `amount` in EUR: unchanged for a EUR credit, else at the latest FX rate (the price
+provider keeps no FX history), and an explicit `null` when no rate is available.
 
 `id` matches the forecast line it fulfils; with no known ex-date it is
 `HOLDING:accountId:ticker:tx<transactionId>` and `exDate`/`amountPerShare` are null. A `DIVIDEND`
@@ -2320,6 +2421,97 @@ row with no ticker is listed on the credited account with `ticker` null and the 
 is the account holding the line (a Trade Republic cash dividend reports the PEA); with no readable
 holder of that ticker, or several of the same provider, it stays the credited account. `amount` is
 the credit as booked, not weighted by the member's share.
+
+---
+
+### 16d. Wise jars — `/api/wise`
+
+One connection per member: a Wise personal API token, stored encrypted. Each sync reads the jars
+(`SAVINGS` balances) of every profile the token sees and keeps them as savings accounts, balance
+only. Only `https://api.wise.com` is contacted. Connect and sync share one per-IP limit of 6
+requests per minute; over it, both return `429`. See
+[`docs/features/wise-jars.md`](../../docs/features/wise-jars.md).
+
+#### `POST /api/wise/connect`
+
+- **Auth:** Required
+- **Rate limit:** Per IP — 6 / min, shared with `/sync`
+
+**Request body:**
+```json
+{ "token": "Wise personal API token (required, at most 512 characters)" }
+```
+
+**Response `200` — `AccountResponse[]`:** the imported jars. The token is stored only when Wise
+accepted it.
+
+**Errors:** 422 (blank or oversized token; malformed token, with `code: "INVALID_TOKEN"`; Wise
+refused it, with `code: "SESSION_EXPIRED"`; Wise rate limiting, with `code: "RATE_LIMITED"`; Wise
+unreachable), 404 (unknown member), 429
+
+---
+
+#### `GET /api/wise/status`
+
+- **Auth:** Required
+
+**Response `200` — `WiseConnectionStatusResponse`:**
+```json
+{
+  "connected": true,
+  "connectionId": 3,
+  "status": "CONNECTED",
+  "lastSyncedAt": "2026-11-03T08:00:00Z",
+  "maskedToken": "••••e1f0"
+}
+```
+
+Without a connection every field but `connected: false` is `null`. `status` is
+`REAUTH_REQUIRED` after Wise refused the stored token (connect again with a new one to replace it
+in place) and `ERROR` after any other failed sync.
+
+---
+
+#### `POST /api/wise/sync`
+
+- **Auth:** Required
+- **Rate limit:** Per IP — 6 / min, shared with `/connect`
+
+**Response `200` — `AccountResponse[]`:** the jars updated by this sync.
+
+**Errors:** 422 (no connection; Wise refused the token, with `code: "SESSION_EXPIRED"`, and the
+connection becomes `REAUTH_REQUIRED`; Wise rate limiting, with `code: "RATE_LIMITED"`; other
+Wise failures), 429
+
+---
+
+#### `DELETE /api/wise/connection`
+
+- **Auth:** Required
+
+**Response `204`.** The token is removed; imported jars and their history are kept.
+
+---
+
+### 16e. Spending — `/api/spending`
+
+#### `GET /api/spending/by-merchant?period=CYCLE&anchor=2026-11-03&limit=10`
+
+- **Auth:** Required
+- `period` (`CYCLE` | `YTD`) and `anchor` work as on `/api/spending/by-category`, with the same
+  exclusions (transfer-kind categories, credits). `limit` defaults to 10, clamped to 1..25.
+
+**Response `200` — `MerchantSpendingResponse`:**
+```json
+{ "from": "2026-10-25", "to": "2026-11-24", "total": 1834.2,
+  "merchants": [{ "key": "brand:12", "label": "Carrefour", "logoUrl": null,
+                  "amount": 412.3, "count": 7, "share": 22.48 }] }
+```
+
+`key` is `brand:<id>` for a matched brand, else `label:<match key>` of the merchant label (or of
+the cleaned counterparty, then description). `share` is a percentage of `total`, which covers
+every expense of the span. `logoUrl` is `/api/merchants/<id>/logo` when the member enabled logos
+and the brand has one, else null. See [Spending by merchant](../../docs/features/spending-by-merchant.md).
 
 ---
 

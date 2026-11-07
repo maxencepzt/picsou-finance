@@ -13,6 +13,8 @@ test.describe('Goals page', () => {
       const card = page.locator('[data-slot="card"]').filter({ hasText: name })
       await expect(card).toBeVisible()
       await expect(card.getByRole('progressbar')).toBeVisible()
+      // The trajectory chart drawn from GET /goals/{id}/history.
+      await expect(card.getByRole('img')).toBeVisible()
     }
   })
 
@@ -41,6 +43,12 @@ test.describe('Goals page', () => {
     // The target machinery is replaced, not merely hidden alongside.
     await expect(page.getByLabel('Montant mensuel')).toBeVisible()
     await expect(page.getByLabel('Montant cible')).toHaveCount(0)
+  })
+
+  test('should show how regularly a plan was kept over the last twelve months', async ({ page }) => {
+    const card = page.locator('[data-slot="card"]').filter({ hasText: 'DCA mensuel PEA' })
+    // GET /goals/4/recurring-stats in demo mode: 11 months with a purchase out of 12.
+    await expect(card.getByText('11 / 12', { exact: true })).toBeVisible()
   })
 
   test('should reveal a plan position breakdown from its card', async ({ page }) => {
@@ -77,7 +85,7 @@ test.describe('Goals page', () => {
   })
 
   test('should compare the savings rate against the French average', async ({ page }) => {
-    await expect(page.getByText("Taux d'épargne")).toBeVisible()
+    await expect(page.getByText("Taux d'épargne", { exact: true })).toBeVisible()
     // The benchmark is indicative only, so it is quoted in a tooltip rather than as a verdict.
     await page.getByRole('button', { name: 'À propos de la moyenne française' }).hover()
     await expect(page.getByRole('tooltip')).toContainText(/ménages en France.*17[.,]5\s%/)

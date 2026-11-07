@@ -4,12 +4,16 @@
 
 ## Context
 
-The holding detail modal already showed one ETF's countries and sectors. The Analysis section
-answers the question that actually matters: across the **whole** equity sleeve — several funds,
+The holding detail modal already showed one ETF's countries and sectors. The diversification
+section answers the question that actually matters: across the **whole** equity sleeve — several funds,
 several directly held shares, several accounts — how concentrated is it?
 
 Two scores come out of it, one per axis, each with the share of the portfolio it could actually
 measure stated beside it.
+
+Since the "Coffre Nocturne" redesign the section renders on the Investments page (`/investments`,
+see [investments-page.md](./investments-page.md)) rather than on `/analysis`; the component still
+lives in `pages/analysis/` and the endpoint is unchanged.
 
 ## How it works
 
@@ -172,7 +176,8 @@ and "deliberately unclassified" cannot diverge.
 - `backend/src/main/java/com/picsou/adapter/JustEtfProvider.java` — fees, policy, fallback breakdown
 - `backend/src/main/java/com/picsou/model/ClassificationKeys.java` — the unlisted sector and region
 - `frontend/src/lib/treemap.ts` — the layout, shared with the account distribution chart
-- `frontend/src/pages/analysis/BreakdownChart.tsx`, `SliceContributors.tsx`
+- `frontend/src/components/shared/BreakdownChart.tsx` (moved from `pages/analysis/`, shared with
+  the `Breakdown` component), `frontend/src/pages/analysis/SliceContributors.tsx`
 - `frontend/src/pages/analysis/DiversificationSection.tsx`, `frontend/src/lib/chart-palette.ts`
 - `frontend/src/pages/analysis/HoldingClassificationModal.tsx` — the editor, shared by both entry points
 
@@ -248,11 +253,13 @@ PUT /api/accounts/{id}/holdings/{ticker}/classification
   renormalised, override per field, unclassified reported not renormalised, same ticker twice,
   shares applied once, `N_eff` on concentrated vs even portfolios, `EXPOSURE` vs `MIXED`, a line
   the provider files as real estate left out, the member's tier beating the provider's
-- `DiversificationSection.test.tsx`, `e2e/analysis.spec.ts`
+- `DiversificationSection.test.tsx`, `e2e/analysis.spec.ts` (the diversification tests now
+  `goto('/investments')`)
 
 ## Links
 
 - ADR: [Domicile vs exposure](../decisions/2026-08-13-equity-domicile-vs-etf-exposure.md)
 - ADR: [Persisted security profiles](../decisions/2026-08-13-persisted-security-profiles.md)
 - Related: [Security Insight](./security-insight.md) — the per-ETF composition this builds on
-- Related: [Wealth pyramid](./wealth-pyramid.md) — the same Analysis page, and the same override row
+- Related: [Wealth pyramid](./wealth-pyramid.md) — the same override row
+- Related: [Investments page](./investments-page.md) — where the section renders

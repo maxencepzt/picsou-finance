@@ -1,6 +1,6 @@
 # Feature: Revolut Sidecar Connector
 
-> Last updated: 2026-10-31 (hCaptcha content-quad clipping; shared architecture-aware Camoufox base; legacy Enable Banking coexistence and IBAN log privacy)
+> Last updated: 2026-11-03
 > Status: ⚠️ Code shipped + unit-tested; live end-to-end coverage still depends on a real Revolut
 > approval session.
 
@@ -200,6 +200,9 @@ and while polling for approval; shared app initialization does not replace it.
   history account-id set (the latter fixes a double-count once real pocket balances flow).
 - `backend/.../model/RevolutSession.java`; `db/migration/V48__revolut_session.sql`, `V49__…credentials.sql`.
 - `frontend/src/pages/sync/RevolutTab.tsx` — auto-sync tab (live phase → auto-confirm all, no selection).
+  Remembered credentials: a status card ("Connecté", last sync, the live phase while busy) with
+  *Forget credentials* behind a confirmation and *Sync Revolut*. Otherwise the phase shows in a waiting
+  card above `RevolutCredentialsForm` (same fields in the add-account wizard, without the card).
 - `frontend/src/components/sync/RevolutSelectionCard.tsx` — Add-account selection (only not-imported;
   child-check implies parent-check). `features/sync/revolut-phase.ts` — shared phase and error labels.
 - `frontend/src/features/sync/{api.ts,hooks.ts}` (`useSyncProgress`/`useStartRevolutSync`/`useConfirmRevolutSync`),

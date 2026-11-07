@@ -11,7 +11,7 @@ test.describe('Demo mode', () => {
 
     // The sidebar is immediate; this assertion waits for the dashboard query
     // and avoids mistaking the navigation label for loaded page content.
-    await expect(page.getByText('Patrimoine total').first()).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByText('Patrimoine net').first()).toBeVisible({ timeout: 15_000 })
     // Charts are rendered as SVGs inside a grid
     await expect(page.locator('.grid').first()).toBeVisible()
   })

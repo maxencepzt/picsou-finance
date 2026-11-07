@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
-import { AlertBanner } from '@/components/shared/AlertBanner'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Eye, EyeOff, Loader2 } from 'lucide-react'
+import { SegmentedControl } from '@/components/shared/SegmentedControl'
+import { PanelError, PanelField, PanelForm } from '@/components/sync/ProviderPanel'
+import { PANEL_ACTION, PANEL_INPUT } from '@/components/sync/panel-styles'
+import { Eye, EyeOff, KeyRound, Loader2, Lock } from 'lucide-react'
 import type { ExchangeType } from '@/types/api'
 import { SUPPORTED_EXCHANGES, exchangeRequiresApiSecret } from '@/types/api'
 import { useAddCryptoExchange } from '@/features/sync/hooks'
@@ -15,7 +17,7 @@ interface CryptoExchangeFormProps {
   onSuccess: () => void
   /** Cancel button beside Connect; only the `page` variant renders it. */
   onCancel?: () => void
-  /** `page`: Connect + Cancel row, alert paragraph cleared on exchange change. `modal`: full-width Connect with spinner, dismissible banner. */
+  /** `page`: a card with Cancel + Connect, error cleared on exchange change. `modal`: no card, Connect only, dismissible error. */
   variant: 'page' | 'modal'
 }
 
@@ -65,89 +67,87 @@ export function CryptoExchangeForm({ onSuccess, onCancel, variant }: CryptoExcha
   }
 
   return (
-    <>
-      {error && (modal ? (
-        <AlertBanner onDismiss={() => setError(null)}>{error}</AlertBanner>
-      ) : (
-        <AlertBanner variant="plain" role="alert">{error}</AlertBanner>
-      ))}
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <Label>{t('sync.exchanges.type')}</Label>
-          {/* wrap: these buttons are wide (px-8) and there is no room for three in a row on a
-              narrow viewport — without it the row stretches the whole form past the dialog. */}
-          <div className="flex flex-wrap gap-2">
-            {SUPPORTED_EXCHANGES.map((exchange) => (
-              <Button
-                key={exchange.type}
-                type="button"
-                variant={exchangeType === exchange.type ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => selectExchange(exchange.type)}
-              >
-                {exchange.type}
+    <div className="space-y-4">
+      {error && (
+        <PanelError
+          onRetry={modal ? () => setError(null) : undefined}
+          retryLabel={modal ? t('common.close') : undefined}
+        >
+          {error}
+        </PanelError>
+      )}
+      <PanelForm
+        bare={modal}
+        onSubmit={handleSubmit}
+        actions={
+          <>
+            {!modal && (
+              <Button type="button" variant="ghost" size="xs" className={PANEL_ACTION} onClick={onCancel}>
+                {t('common.cancel')}
               </Button>
-            ))}
-          </div>
+            )}
+            <Button type="submit" size="xs" disabled={addMutation.isPending} className={PANEL_ACTION}>
+              {addMutation.isPending && <Loader2 className="animate-spin" />}
+              {t('sync.exchanges.connect')}
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-1.5">
+          <Label>{t('sync.exchanges.type')}</Label>
+          <SegmentedControl
+            ariaLabel={t('sync.exchanges.type')}
+            options={SUPPORTED_EXCHANGES.map((exchange) => ({ value: exchange.type, label: exchange.type }))}
+            value={exchangeType}
+            onChange={selectExchange}
+          />
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="exchange-api-key">{t('sync.exchanges.apiKey')}</Label>
+        <PanelField
+          id="exchange-api-key"
+          label={t('sync.exchanges.apiKey')}
+          icon={KeyRound}
+          hint={requiresSecret ? undefined : t('sync.exchanges.apiKeyOnly')}
+        >
           <Input
             id="exchange-api-key"
+            className={PANEL_INPUT}
             value={apiKey}
             onChange={(e) => setApiKey(e.target.value)}
-            placeholder={t('sync.exchanges.apiKey')}
+            autoComplete="off"
             required
             maxLength={EXCHANGE_API_KEY_MAX_LENGTH}
           />
-          {!requiresSecret && (
-            <p className="text-xs text-muted-foreground">{t('sync.exchanges.apiKeyOnly')}</p>
-          )}
-        </div>
+        </PanelField>
 
         {requiresSecret && (
-          <div className="space-y-2">
-            <Label htmlFor="exchange-api-secret">{t('sync.exchanges.apiSecret')}</Label>
+          <PanelField id="exchange-api-secret" label={t('sync.exchanges.apiSecret')} icon={Lock}>
             <div className="relative">
               <Input
                 id="exchange-api-secret"
                 type={showSecret ? 'text' : 'password'}
                 value={apiSecret}
                 onChange={(e) => setApiSecret(e.target.value)}
-                placeholder={t('sync.exchanges.apiSecret')}
+                autoComplete="off"
                 required
                 maxLength={EXCHANGE_API_SECRET_MAX_LENGTH}
-                className="pr-10"
+                className={`${PANEL_INPUT} pr-10`}
               />
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon-xs"
                 onClick={() => setShowSecret((p) => !p)}
                 aria-label={t(showSecret ? 'sync.exchanges.hideSecret' : 'sync.exchanges.showSecret')}
-                className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                aria-pressed={showSecret}
+                className="absolute top-1/2 right-1 size-7 -translate-y-1/2 text-muted-foreground hover:text-foreground"
               >
-                {showSecret ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-              </button>
+                {showSecret ? <EyeOff /> : <Eye />}
+              </Button>
             </div>
-          </div>
+          </PanelField>
         )}
-
-        {!modal ? (
-          <div className="flex gap-2">
-            <Button type="submit" disabled={addMutation.isPending}>
-              {t('sync.exchanges.connect')}
-            </Button>
-            <Button type="button" variant="outline" onClick={onCancel}>
-              {t('common.cancel')}
-            </Button>
-          </div>
-        ) : (
-          <Button type="submit" disabled={addMutation.isPending} className="w-full">
-            {addMutation.isPending && <Loader2 className="size-4 animate-spin" />}
-            {t('sync.exchanges.connect')}
-          </Button>
-        )}
-      </form>
-    </>
+      </PanelForm>
+    </div>
   )
 }

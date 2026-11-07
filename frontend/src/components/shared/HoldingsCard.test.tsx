@@ -176,7 +176,7 @@ describe('HoldingsCard', () => {
 
     expect(screen.getByText('950')).toBeInTheDocument()
     expect(screen.getByRole('img', { name: 'accounts.priceAsOf 2026-08-18' }))
-      .toHaveClass('bg-amber-500')
+      .toHaveClass('bg-warning')
   })
 
   it('shows a fresh live quote in green', () => {
@@ -187,7 +187,7 @@ describe('HoldingsCard', () => {
     render(<HoldingsCard />)
 
     expect(screen.getByRole('img', { name: 'accounts.priceLive' }))
-      .toHaveClass('bg-emerald-500')
+      .toHaveClass('bg-gain')
   })
 
   it('writes the quantity in the interface language, not the browser one', () => {

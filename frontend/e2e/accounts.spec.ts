@@ -25,6 +25,31 @@ test.describe('Accounts page', () => {
     await expect(page.locator('.grid').first()).toBeVisible()
   })
 
+  test('opens an account in the side panel from its row', async ({ page }) => {
+    await page.getByRole('main').getByRole('button', { name: /PEA BoursoBank/ }).first().click()
+    const panel = page.getByRole('dialog')
+    await expect(panel.getByRole('heading', { name: 'PEA BoursoBank' })).toBeVisible()
+    // Still on the list: the panel is not the detail page, it links to it.
+    expect(page.url()).toMatch(/\/accounts$/)
+    await panel.locator('a[href^="/accounts/"]').click()
+    await page.waitForURL(/\/accounts\/\d+$/)
+  })
+
+  test('opens the edit form from ?edit=<id> and clears it on close', async ({ page }) => {
+    await page.goto('/accounts?edit=2')
+    const dialog = page.getByRole('dialog')
+    await expect(dialog).toBeVisible()
+    await page.keyboard.press('Escape')
+    await expect(dialog).not.toBeVisible()
+    await expect(page).toHaveURL(/\/accounts$/)
+  })
+
+  test('ignores ?edit= with an unknown id', async ({ page }) => {
+    await page.goto('/accounts?edit=999999')
+    await expect(page.getByRole('main').getByRole('button', { name: /PEA BoursoBank/ }).first()).toBeVisible()
+    await expect(page.getByRole('dialog')).toHaveCount(0)
+  })
+
   test('should open add account dialog', async ({ page }) => {
     await page.getByRole('button', { name: 'Ajouter un compte' }).click()
     // Dialog should appear with the source choices

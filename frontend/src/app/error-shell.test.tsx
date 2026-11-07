@@ -60,8 +60,8 @@ it('stays on the error page when a query of the real app shell fails there', asy
     </QueryClientProvider>,
   )
 
-  const heading = await screen.findByRole('heading', { name: '500' })
-  expect(within(screen.getByRole('main')).getByRole('heading', { name: '500' })).toBe(heading)
+  const heading = await screen.findByRole('heading', { name: 'error.serverErrorTitle' })
+  expect(within(screen.getByRole('main')).getByRole('heading', { name: 'error.serverErrorTitle' })).toBe(heading)
   await waitFor(() => expect(requested).toContain('/family/members'))
   await act(() => new Promise((resolve) => setTimeout(resolve, 50)))
 

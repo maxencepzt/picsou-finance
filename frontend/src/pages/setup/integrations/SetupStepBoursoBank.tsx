@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
-import { Boxes, CheckCircle2, CircleAlert, Loader2 } from 'lucide-react'
+import { Loader2, RotateCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useBoursoBankHealth } from '@/features/setup/hooks'
 import { useSetupFlowStore } from '@/stores/setup-flow-store'
 import { nextIntegrationRoute } from './navigation'
+import { IntegrationMark } from '../components/IntegrationMark'
+import { SetupCard, SetupNote } from '../components/SetupCard'
 
 type Phase = 'checking' | 'ok' | 'ko'
 
@@ -63,79 +65,43 @@ export function SetupStepBoursoBank() {
   const proceed = () => navigate(nextIntegrationRoute('boursobank', selected))
 
   return (
-    <div className="space-y-8">
-      <div className="text-center space-y-2">
-        <div className="flex justify-center">
-          <span className="rounded-xl bg-primary/10 p-3 text-primary">
-            <Boxes className="h-6 w-6" />
-          </span>
-        </div>
-        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
-          {t('setup.bourso.title')}
-        </h1>
-        <p className="mx-auto max-w-md text-sm text-muted-foreground">
-          {t('setup.bourso.body')}
-        </p>
-      </div>
-
+    <SetupCard
+      icon={<IntegrationMark integration="boursobank" label={t('setup.integrations.cards.boursobank.title')} className="size-10 rounded-xl after:rounded-xl" />}
+      eyebrow={t('setup.steps.integrations')}
+      title={t('setup.bourso.title')}
+      description={t('setup.bourso.body')}
+      footer={
+        <>
+          <Button type="button" variant="ghost" onClick={proceed} className="w-full sm:mr-auto sm:w-auto">
+            {t('setup.bourso.skip')}
+          </Button>
+          {phase === 'ko' ? (
+            <Button onClick={run} disabled={health.isPending} className="w-full sm:w-auto">
+              <RotateCw aria-hidden="true" />
+              {t('setup.bourso.retry')}
+            </Button>
+          ) : (
+            <Button onClick={proceed} disabled={phase === 'checking'} className="w-full sm:w-auto">
+              {t('setup.bourso.continue')}
+            </Button>
+          )}
+        </>
+      }
+    >
       {phase === 'checking' && (
-        <div className="flex flex-col items-center gap-2 py-6 text-muted-foreground">
-          <Loader2 className="h-6 w-6 animate-spin" />
-          <p className="text-sm">{t('setup.bourso.pinging')}</p>
-        </div>
+        <p className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+          {t('setup.bourso.pinging')}
+        </p>
       )}
 
-      {phase === 'ok' && (
-        <div className="flex flex-col items-center gap-3 rounded-2xl border border-emerald-500/40 bg-emerald-500/5 p-6 text-center">
-          <CheckCircle2 className="h-10 w-10 text-emerald-500" />
-          <p className="text-lg font-medium">{t('setup.bourso.ok')}</p>
-        </div>
-      )}
+      {phase === 'ok' && <SetupNote tone="success">{t('setup.bourso.ok')}</SetupNote>}
 
       {phase === 'ko' && (
-        <div
-          role="alert"
-          className="space-y-3 rounded-2xl border border-destructive/40 bg-destructive/5 p-6"
-        >
-          <div className="flex items-start gap-3">
-            <CircleAlert className="mt-0.5 h-5 w-5 shrink-0 text-destructive" />
-            <div className="space-y-1">
-              <p className="font-medium text-destructive">{t('setup.bourso.downTitle')}</p>
-              <p className="text-sm text-muted-foreground">
-                {detail ?? t('setup.bourso.downHint')}
-              </p>
-            </div>
-          </div>
-        </div>
+        <SetupNote tone="error" role="alert" title={t('setup.bourso.downTitle')}>
+          {detail ?? t('setup.bourso.downHint')}
+        </SetupNote>
       )}
-
-      <div className="flex flex-col gap-2 sm:flex-row sm:justify-between">
-        <Button
-          type="button"
-          variant="ghost"
-          onClick={proceed}
-          className="w-full sm:w-auto"
-        >
-          {t('setup.bourso.skip')}
-        </Button>
-        {phase === 'ko' ? (
-          <Button
-            onClick={run}
-            disabled={health.isPending}
-            className="w-full rounded-full"
-          >
-            {t('setup.bourso.retry')}
-          </Button>
-        ) : (
-          <Button
-            onClick={proceed}
-            disabled={phase === 'checking'}
-            className="w-full rounded-full"
-          >
-            {t('setup.bourso.continue')}
-          </Button>
-        )}
-      </div>
-    </div>
+    </SetupCard>
   )
 }

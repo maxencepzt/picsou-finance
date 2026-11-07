@@ -31,35 +31,36 @@
     "currency": "EUR",
     "category": "Category",
     "done": "Done",
-    "labelColon": "{{label}}:"
+    "labelColon": "{{label}}:",
+    "notFound": "Not found."
   },
   "nav": {
-    "dashboard": "Dashboard",
-    "dashboard.desc": "Overview",
+    "dashboard": "Overview",
     "accounts": "Accounts",
-    "accounts.desc": "Balances & transactions",
     "goals": "Goals",
-    "goals.desc": "Track your savings",
     "budget": "Budget",
-    "budget.desc": "Spending & cashflow",
     "sync": "Sync",
     "settings": "Settings",
-    "settings.desc": "Preferences & account",
     "family": "Family",
-    "family.desc": "Shared view",
     "account": "My account",
     "managedProfile": "Managed profile",
     "switchProfile": "Switch profile",
     "unknownProfile": "Unknown profile",
     "admin": "Administration",
     "analysis": "Analysis",
-    "analysis.desc": "Allocation & diversification",
     "hideAmounts": "Hide amounts",
-    "showAmounts": "Show amounts"
+    "showAmounts": "Show amounts",
+    "investments": "Investments",
+    "investShort": "Invest",
+    "income": "Passive income",
+    "realEstate": "Property & loans",
+    "more": "More",
+    "moreDescription": "The other Picsou pages",
+    "main": "Main navigation"
   },
   "auth": {
     "login": "Sign in",
-    "loginTagline": "Picsou",
+    "loginTagline": "Sign in to your Picsou instance.",
     "username": "Username",
     "password": "Password",
     "loginButton": "Sign in",
@@ -87,17 +88,43 @@
     "mfaTooManyAttempts": "Too many attempts, try again in a few minutes",
     "mfaSessionExpired": "Verification session expired, sign in again",
     "mfaGenericError": "We couldn't verify the code. Please try again.",
+    "sso": {
+      "button": "Sign in with {{provider}}",
+      "or": "or",
+      "redirecting": "Redirecting to your sign-in provider...",
+      "completing": "Completing sign-in...",
+      "infoError": "Couldn't load the sign-in options."
+    },
     "validation": {
       "usernameTooShort": "The username must contain at least 3 characters.",
       "usernameTooLong": "The username must contain 50 characters or fewer.",
       "usernameFormat": "Use only letters, numbers, dots, underscores, or hyphens.",
       "passwordTooShort": "The password must contain at least 8 characters.",
       "passwordTooLong": "The password must contain 128 characters or fewer."
+    },
+    "mfaRecoveryDesc": "Enter one of the recovery codes you saved when you turned on 2FA.",
+    "backToLogin": "Back to sign-in",
+    "activation": {
+      "title": "Activate your account",
+      "subtitle": "Choose a password to finish setting up your account.",
+      "noticeTitle": "Data access notice",
+      "noticeBody": "The administrator of this Picsou instance has technical access to all data stored here, including bank account details and API credentials. By activating your account, you acknowledge this.",
+      "acknowledge": "I understand that the administrator has access to all data on this instance.",
+      "passwordHint": "At least 8 characters.",
+      "confirmPassword": "Confirm password",
+      "errorAcknowledge": "Acknowledge the data access notice to continue.",
+      "errorMismatch": "The passwords do not match.",
+      "errorInvalidLink": "This activation link is not valid.",
+      "errorFailed": "Activation failed. The link may have expired: ask the administrator for a new one.",
+      "submit": "Activate my account",
+      "submitting": "Activating…",
+      "successTitle": "Account activated",
+      "successBody": "Taking you to sign-in…"
     }
   },
   "dashboard": {
-    "title": "Dashboard",
-    "netWorth": "Total net worth",
+    "title": "Overview",
+    "netWorth": "Net worth",
     "grossWorth": "Gross worth",
     "financialWorth": "Financial assets",
     "syncAccounts": "Sync accounts",
@@ -145,7 +172,113 @@
       "net": "Net worth evolution",
       "gross": "Gross assets evolution",
       "financial": "Financial assets evolution"
-    }
+    },
+    "rangeLabel": "Period",
+    "overRange": {
+      "24H": "over 24 h",
+      "7D": "over 7 days",
+      "1M": "over 1 month",
+      "3M": "over 3 months",
+      "YTD": "since 1 January",
+      "1Y": "over 1 year",
+      "ALL": "since the start"
+    },
+    "assetsMinusDebts": "Assets minus debts:",
+    "kpi": {
+      "grossAssets": "Gross assets",
+      "accountCount": "{{count}} account",
+      "accountCount_other": "{{count}} accounts",
+      "debts": "Debts",
+      "noLoan": "No ongoing loan",
+      "monthChange": "Change over 1 month",
+      "noHistory": "Not enough history",
+      "passiveIncome": "Passive income / year",
+      "savingsRate": "Savings rate",
+      "savingsRateHint": "Current budget cycle",
+      "available": "Available cash",
+      "availableHint": "Current and savings accounts"
+    },
+    "allocationGroupBy": "Group by",
+    "byClass": "Class",
+    "byAccount": "Account",
+    "noAssets": "No assets yet.",
+    "grossAssets": "Gross assets",
+    "liquidity": {
+      "title": "Liquidity",
+      "description": "How fast your assets turn back into available money.",
+      "available": "Available",
+      "availableHint": "current and savings accounts",
+      "market": "Market",
+      "marketHint": "brokerage, crypto",
+      "locked": "Locked",
+      "lockedHint": "PEA, life insurance, pension",
+      "illiquid": "Illiquid",
+      "illiquidHint": "property, SCPI"
+    },
+    "upcoming": {
+      "title": "Next 30 days",
+      "calendar": "Calendar",
+      "empty": "Nothing planned in the next 30 days.",
+      "dividend": "Dividend",
+      "scpi": "SCPI distribution",
+      "recurring": "Recurring payment",
+      "cardStatement": "Card statement"
+    },
+    "attention": {
+      "title": "To do",
+      "none": "Nothing to do for now.",
+      "overBudget": "{{name}}: envelope overspent.",
+      "overBudget_other": "{{count}} envelopes overspent, including {{name}}.",
+      "uncategorized": "{{count}} transaction to categorise.",
+      "uncategorized_other": "{{count}} transactions to categorise.",
+      "stalePrices": "The price of {{name}} is out of date.",
+      "stalePrices_other": "{{count}} prices are out of date, including {{name}}."
+    },
+    "health": {
+      "title": "Wealth health",
+      "outOf": "/ 100",
+      "misplaced": "To move to reach your targets",
+      "loanToValue": "Loan-to-value",
+      "excess": "Above target:"
+    },
+    "goalOnTrack": "On track",
+    "goalBehind": "Behind",
+    "movers": {
+      "title": "Biggest movers",
+      "versus": "{{date}} vs {{previous}}",
+      "side": "Direction of the move",
+      "gainers": "Gainers",
+      "losers": "Losers",
+      "error": "Could not load today's moves.",
+      "empty": "Moves will show once your securities have two days of prices.",
+      "none": {
+        "gainers": "No security is up.",
+        "losers": "No security is down."
+      }
+    },
+    "peers": {
+      "title": "You and households your age",
+      "bracket": {
+        "under30": "Households under 30",
+        "30to39": "Households aged 30 to 39",
+        "40to49": "Households aged 40 to 49",
+        "50to59": "Households aged 50 to 59",
+        "60to69": "Households aged 60 to 69",
+        "70plus": "Households aged 70 or over",
+        "all": "All households"
+      },
+      "ofMedian": "the median of these households",
+      "yours": "Gross worth of this view",
+      "median": "Median gross wealth",
+      "gap": "Gap",
+      "noAge": "Without a birth date, the comparison is with all households.",
+      "fillProfile": "Complete your profile",
+      "caveat": "A rough guide: the INSEE median is the gross wealth of a whole household, by age of its reference person, in early 2024; it is set against the gross worth of this view.",
+      "sourceLabel": "Source",
+      "source": "Insee Focus no. 371, Histoire de vie et Patrimoine survey 2023-2024",
+      "error": "Could not load your profile."
+    },
+    "viewAll": "View all"
   },
   "transactions": {
     "detail": "Transaction detail",
@@ -193,6 +326,7 @@
     "balance": "Balance",
     "lastSync": "Last sync",
     "lastValuation": "Last valuation",
+    "viaProvider": "via {{provider}}",
     "syncStale": "Synced {{time}}",
     "syncStaleTooltip": "This account has not synced recently. Run a sync or reconnect the provider.",
     "holdings": "Holdings",
@@ -225,6 +359,9 @@
     "valueAndInvested": "Value and invested capital",
     "manual": "Manual",
     "accountName": "Account name",
+    "beneficiary": "Borrower",
+    "beneficiaryPlaceholder": "Jean, Marie…",
+    "peerLoanSetupHint": "The amount lent and the cash account are entered on the next step, on the loan page.",
     "accountType": "Account type",
     "provider": "Provider",
     "bankPickerHint": "Pick your bank from the list to show its logo.",
@@ -290,9 +427,12 @@
       "CHECKING": "Current accounts",
       "CRYPTO": "Crypto",
       "REAL_ESTATE": "Real estate",
+      "RECEIVABLES": "Receivables",
       "DEBTS": "Debts",
       "OTHER": "Other"
     },
+    "showClosedLoans": "Show closed loans",
+    "hideClosedLoans": "Hide closed loans",
     "fees": "Fees",
     "export": {
       "button": "Export data",
@@ -310,7 +450,42 @@
       "amountDue": "Amount to pay",
       "dueDate": "Direct debit date",
       "miles": "Miles earned this cycle"
-    }
+    },
+    "kpi": {
+      "tracked": "Tracked accounts",
+      "manual": "including {{count}} manual",
+      "manual_other": "including {{count}} manual",
+      "upToDate": "Up to date",
+      "upToDateHint": "Synced within the last 24 h",
+      "noSynced": "No synced account"
+    },
+    "groupBy": {
+      "label": "Group accounts by",
+      "class": "Asset class",
+      "institution": "Institution",
+      "manual": "Manual",
+      "property": "Properties"
+    },
+    "breakdown": {
+      "title": "Breakdown by asset class"
+    },
+    "panel": {
+      "latestTransactions": "Latest transactions",
+      "viewDetail": "View details"
+    },
+    "detail": {
+      "rate": "Annual rate",
+      "ceiling": "Ceiling",
+      "share": "Your share"
+    },
+    "ceiling": {
+      "deposits": "Contribution ceiling",
+      "usedOf": "{{used}} of {{ceiling}}",
+      "remaining": "Left",
+      "reached": "Ceiling reached",
+      "ariaLabel": "{{pct}} of the ceiling ({{used}} / {{ceiling}})"
+    },
+    "depositCeilingHint": "€150,000 for a PEA, €20,000 for a PEA jeune."
   },
   "analysis": {
     "title": "Analysis",
@@ -406,7 +581,10 @@
       "tier": "Tier",
       "today": "Today",
       "atHorizon": "In {{count}} years",
-      "atAge": "age {{age}}"
+      "atAge": "age {{age}}",
+      "viewLabel": "View",
+      "horizonLabel": "Horizon",
+      "chartLabel": "Projected wealth in {{years}} years: {{values}}"
     },
     "classification": {
       "title": "Classify this security",
@@ -437,6 +615,60 @@
       "SINGLE_ASSET_CONCENTRATION": "{{label}} is {{percent}} of your wealth — a single asset carries most of the risk.",
       "EMPTY_TIER": "Nothing at all in {{label}}: this tier is empty, not merely under target.",
       "CUSHION_OVERFUNDED": "{{value}} beyond your cushion target — money available to put elsewhere."
+    },
+    "pyramid": {
+      "title": "Wealth pyramid",
+      "description": "Riskiest at the top, safest at the bottom · the line marks the target"
+    },
+    "fi": {
+      "title": "Financial independence",
+      "rule": "{{value}} rule",
+      "target": "Target capital",
+      "formula": "{{expenses}} of essential expenses × 12 ÷ {{rate}}",
+      "expensesDefault": "Essential expenses not stated: default value. Set them in My targets.",
+      "assets": "Financial assets today",
+      "progress": "{{value}} of the way, excluding property and SCPI.",
+      "estimatedAge": "Estimated age",
+      "estimatedWhen": "Estimated date",
+      "paceYear": "in {{year}}, at your current pace",
+      "pace": "at your current pace",
+      "retirement": "Target retirement",
+      "notSet": "Not set",
+      "fillProfile": "Add your birth date to your profile to see an age instead of a duration.",
+      "goToProfile": "Complete your profile",
+      "reached": "Already reached",
+      "beyondYears": "Over {{count}} year",
+      "beyondYears_other": "Over {{count}} years",
+      "beyondAge": "After age {{age}}",
+      "inYears": "In {{count}} year",
+      "inYears_other": "In {{count}} years",
+      "inYear": "in {{year}}",
+      "sim": {
+        "title": "Financial independence simulator",
+        "description": "Move one assumption: the age and the capital update straight away.",
+        "reset": "Reset",
+        "savings": "Monthly savings",
+        "savingsHint": "Today: {{value}} per month",
+        "return": "Annual return",
+        "returnHint": "After fees, before inflation",
+        "expenses": "Essential expenses",
+        "expensesHint": "Stated in your targets: {{value}} per month",
+        "expensesDefault": "Not stated: default value",
+        "withdrawal": "Withdrawal rate",
+        "withdrawalHint": "Share of the capital spent each year",
+        "perMonth": "{{value}} / month",
+        "presets": "Quick amounts",
+        "todayPreset": "{{value}} · today",
+        "earlier": "{{count}} year earlier than your current pace",
+        "earlier_other": "{{count}} years earlier than your current pace",
+        "later": "{{count}} year later than your current pace",
+        "later_other": "{{count}} years later than your current pace",
+        "same": "Same date as your current pace",
+        "withHypotheses": "With these assumptions",
+        "currentPace": "At your current pace · {{value}} per month",
+        "capitalAt": "Capital at age {{age}}",
+        "extraEffort": "Extra effort"
+      }
     }
   },
   "accountTypes": {
@@ -449,7 +681,7 @@
     "pel": "PEL",
     "cel": "CEL",
     "pea": "PEA",
-    "compteTitres": "Brokerage",
+    "compteTitres": "Securities account",
     "crypto": "Crypto",
     "realEstate": "Real estate",
     "loan": "Loan",
@@ -458,8 +690,159 @@
     "assuranceVie": "Life insurance",
     "per": "PER (retirement savings)",
     "preciousMetals": "Precious metals",
+    "brokerage": "Brokerage account",
     "scpi": "SCPI",
-    "creditCard": "Credit card"
+    "creditCard": "Credit card",
+    "peerLoan": "Peer loan"
+  },
+  "peerLoan": {
+    "termsDescription": "The amount lent, the date, and optionally a rate and a forecast.",
+    "borrowerHint": "The borrower is the account's own name. One account, one loan.",
+    "linkedAccountHint": "Required: the account that receives the repayments, so net worth stays correct.",
+    "termsHint": {
+      "noCashLeg": "The outflow is already reflected in the cash account balance: no entry will be created.",
+      "syncedAccount": "Synced account: Picsou writes no bank movement."
+    },
+    "setupHint": "Enter the amount lent and the cash account to start tracking.",
+    "saved": "Terms saved.",
+    "repaymentSaved": "Repayment recorded.",
+    "repaymentDeleted": "Repayment deleted.",
+    "closed": "Loan closed.",
+    "configure": "Set up the loan",
+    "create": "Create a loan",
+    "editTerms": "Edit terms",
+    "addRepayment": "Add a repayment",
+    "editRepayment": "Edit repayment",
+    "withCashLeg": "Create the cash movement",
+    "repaymentsTitle": "Repayments",
+    "empty": "No repayment recorded yet.",
+    "repaymentHint": {
+      "single": "Accrued interest is applied first; the rest reduces the capital.",
+      "noCashLeg": "The capital falls with no bank deposit: use it for a compensation or a payment already booked elsewhere."
+    },
+    "ledger": {
+      "interestPart": "of which {{amount}} interest",
+      "noCashLeg": "No cash movement"
+    },
+    "noPlan": "No forecast set. Add a duration or a monthly payment to estimate one.",
+    "closedHint": "This loan is closed. Delete its write-off to reopen it.",
+    "cashflowHint": "So this loan is not counted as spending, categorise the matching bank transfer as 'Internal transfer'.",
+    "fields": {
+      "beneficiary": "Borrower",
+      "principal": "Amount lent",
+      "lentAt": "Lending date",
+      "expectedBack": "Expected return",
+      "ratePct": "Rate (%)",
+      "ratePeriod": "Rate period",
+      "rateAnnual": "Annual rate",
+      "rateMonthly": "Monthly rate",
+      "plannedMonths": "Planned duration (months)",
+      "plannedMonthly": "Planned monthly payment",
+      "linkedAccount": "Linked cash account",
+      "outflowAlreadyBooked": "The outflow is already in the account balance",
+      "selectLinkedAccount": "Select an account",
+      "note": "Note",
+      "paidOn": "Date",
+      "amount": "Amount",
+      "kind": "Kind"
+    },
+    "ratePeriod": {
+      "ANNUAL": "Annual",
+      "MONTHLY": "Monthly"
+    },
+    "kinds": {
+      "PRINCIPAL": "Repayment",
+      "INTEREST": "Interest",
+      "WRITE_OFF": "Write-off"
+    },
+    "summary": {
+      "open": "Open",
+      "closed": "Closed",
+      "lent": "Lent",
+      "remaining": "Remaining",
+      "repaid": "Repaid",
+      "interestCalculated": "Interest calculated",
+      "interestDue": "Interest due",
+      "principalRepaid": "Capital repaid",
+      "writtenOff": "Written off"
+    },
+    "forecast": {
+      "title": "Forecast",
+      "planTitle": "Simulator",
+      "scheduled": "Scheduled today",
+      "actual": "Actual",
+      "plannedInterest": "Planned interest",
+      "behind": "{{count}} installment behind",
+      "behind_other": "{{count}} installments behind",
+      "ahead": "{{count}} installment ahead",
+      "ahead_other": "{{count}} installments ahead",
+      "onTrack": "On schedule",
+      "disclaimer": "Indicative forecast, never contractual.",
+      "simulationResult": "{{months}} months · {{monthlyPayment}}/month · {{interest}} of interest",
+      "accruedHint": "Interest accrued so far:"
+    },
+    "overview": {
+      "title": "Peer loans",
+      "subtitle": "Who owes what, and where the repayments stand.",
+      "totalOutstanding": "Total outstanding",
+      "openLoans": "Open loans",
+      "interestAccrued": "Interest accrued",
+      "curveTitle": "Outstanding over 12 months",
+      "columns": {
+        "borrower": "Borrower",
+        "remaining": "Remaining",
+        "repaid": "Repaid",
+        "status": "Status",
+        "lastPayment": "Last payment",
+        "expectedBack": "Expected back"
+      },
+      "status": {
+        "closed": "Closed",
+        "behind_one": "{{count}} instalment behind",
+        "behind_other": "{{count}} instalments behind",
+        "onTime": "On time",
+        "noPlan": "No plan"
+      }
+    },
+    "fromTransaction": {
+      "action": "Create a peer loan",
+      "title": "Create a loan from this transaction",
+      "description": "The money already left: this transaction becomes the loan's cash leg, without being copied.",
+      "beneficiaryHint": "This name becomes the account's name and identifies the loan.",
+      "beneficiaryRequired": "The borrower is required.",
+      "confirm": "Create the loan",
+      "created": "Loan created.",
+      "assignAction": "Assign to a repayment"
+    },
+    "assignRepayment": {
+      "title": "Assign to a repayment",
+      "description": "The transaction becomes the repayment's cash leg, without being copied.",
+      "loan": "Loan",
+      "selectLoan": "Select a loan",
+      "loanRequired": "Select a loan.",
+      "noLoans": "No open loan.",
+      "confirm": "Assign",
+      "created": "Repayment recorded."
+    },
+    "actions": {
+      "close": "Close the loan",
+      "simulate": "Calculate"
+    },
+    "close": {
+      "title": "Close the loan",
+      "description": "The remaining balance ({{amount}}) will be written off and removed from net worth today.",
+      "confirm": "Close"
+    },
+    "validation": {
+      "principal": "The amount lent must be greater than zero.",
+      "rateNegative": "The rate cannot be negative.",
+      "linkedAccount": "The cash account is required.",
+      "lentAt": "The lending date is required.",
+      "plan": "Provide a duration or a monthly payment, but not both.",
+      "simulation": "This forecast could not be computed.",
+      "amount": "The amount must be greater than zero.",
+      "paidOn": "The date is required."
+    }
   },
   "scpi": {
     "add": {
@@ -494,12 +877,7 @@
     "edit": "Edit",
     "save": "Save",
     "summary": {
-      "title": "Paper property",
-      "gross": "Withdrawal value",
-      "debt": "Linked loan",
-      "net": "Net",
-      "hint": "Kept out of the price-per-square-metre estimate. The subscription price is not in this total.",
-      "incomplete": "One share still uses its last known balance: the withdrawal price is missing."
+      "title": "Paper property"
     },
     "sync": {
       "found_one": "1 fund found",
@@ -559,11 +937,13 @@
     "loanProgress": "Loan progress",
     "monthlyBreakdown": "Monthly breakdown",
     "noLinkedAsset": "No linked asset",
-    "linkedAssetHint": "Linking this loan to a property is what makes net property wealth computable."
+    "linkedAssetHint": "Linking this loan to a property is what makes net property wealth computable.",
+    "repaid": "Capital repaid"
   },
   "portfolio": {
     "cash": "Cash",
-    "value": "Value"
+    "value": "Value",
+    "all": "All"
   },
   "holdings": {
     "totalValue": "Total value",
@@ -736,7 +1116,56 @@
       "benchmark": "The average savings rate of French households sits at around {{rate}} of their gross disposable income",
       "needsIncome": "Add your monthly net before tax and your withholding rate to see your savings rate.",
       "goToSettings": "Go to settings"
-    }
+    },
+    "card": {
+      "active": "Active",
+      "upcoming": "Upcoming",
+      "perMonth": "{{value}} / month",
+      "into": "into {{account}}",
+      "required": "Required effort",
+      "average": "Average paid in",
+      "accounts": "Linked account",
+      "accounts_other": "Linked accounts"
+    },
+    "kpi": {
+      "saved": "Total saved",
+      "ofTarget": "of {{target}} · {{percent}}",
+      "onTrack": "On track",
+      "behind": "{{count}} behind",
+      "behind_other": "{{count}} behind",
+      "noneBehind": "None behind",
+      "required": "Monthly effort needed",
+      "averaged": "Average: {{value}}",
+      "noAverage": "No history yet",
+      "plans": "Invested every month",
+      "running": "{{count}} active plan",
+      "running_other": "{{count}} active plans"
+    },
+    "trajectory": {
+      "saved": "Saved",
+      "ideal": "Path to the target",
+      "chartLabel": "Linked accounts' savings against the path to {{target}}",
+      "empty": "Not enough history yet to draw the path.",
+      "error": "History unavailable.",
+      "onTime": "Reached in {{month}} at the average pace of {{pace}}",
+      "late": "{{count}} month late: reached in {{month}} at the average pace of {{pace}}",
+      "late_other": "{{count}} months late: reached in {{month}} at the average pace of {{pace}}",
+      "never": "Not reached at the average pace of {{pace}}",
+      "shrinking": "Not reached: the linked savings shrink by {{pace}} on average"
+    },
+    "planStats": {
+      "title": "Purchases since {{date}}",
+      "invested": "Invested",
+      "months": "Months with a purchase",
+      "value": "Current value",
+      "gain": "Gain",
+      "noPrice": "Value unavailable: a price is missing for one of the positions bought.",
+      "noPurchase": "No purchase for this plan over the period.",
+      "needsSplit": "Split the plan across positions to track its purchases.",
+      "error": "Purchase tracking unavailable."
+    },
+    "objectiveShort": "target {{value}}",
+    "nameLabel": "Goal name"
   },
   "budget": {
     "surtitle": "FINANCES",
@@ -774,7 +1203,8 @@
       "cycle": "Cycle",
       "ytd": "Year",
       "prev": "Previous period",
-      "next": "Next period"
+      "next": "Next period",
+      "label": "Period"
     },
     "asset": {
       "current": "Checking",
@@ -784,16 +1214,10 @@
     },
     "overview": {
       "netThisCycle": "Net this cycle",
-      "incomeVsExpense": "{{income}} € in · {{expense}} € out",
-      "envelopes": "Envelopes",
       "onTrack": "Everything on track",
       "overBudget": "{{count}} envelope over budget",
       "overBudget_other": "{{count}} envelopes over budget",
-      "upcoming30": "Upcoming (30 d)",
-      "upcomingCount": "{{count}} payment due",
-      "upcomingCount_other": "{{count}} payments due",
       "investable": "Savings & invest.",
-      "contributedThisCycle": "{{amount}} € contributed this cycle",
       "toCategorize": "{{count}} transaction to categorize",
       "toCategorize_other": "{{count}} transactions to categorize",
       "topEnvelopes": "Most-used envelopes",
@@ -804,12 +1228,41 @@
       "capitalIncomeEmpty": "No capital income expected in the next 60 days.",
       "reinvested": "Reinvested",
       "staysInEnvelope": "Stays in the envelope",
-      "capitalizedOutside": "capitalized, outside the budget"
+      "capitalizedOutside": "capitalized, outside the budget",
+      "cashflowTitle": "Income and expenses by cycle",
+      "savingsRateHint": "(Income − expenses) ÷ income, cycle by cycle since January.",
+      "savingsRateAverage": "Average over the period: {{rate}}, dashed",
+      "vsPreviousCycle": "vs previous cycle",
+      "saved": "Saved and invested",
+      "toPay": "Still to pay this cycle",
+      "toPayCount": "{{count}} debit expected",
+      "toPayCount_other": "{{count}} debits expected",
+      "subscriptions": {
+        "title": "Subscriptions and direct debits",
+        "count": "{{count}} confirmed recurring debit",
+        "count_other": "{{count}} confirmed recurring debits",
+        "perMonth": "per month",
+        "perYear": "Per year",
+        "nextDue": "Next due",
+        "empty": "No confirmed recurring debit yet."
+      },
+      "merchants": {
+        "title": "Top merchants",
+        "total": "Spent this cycle",
+        "count": "{{count}} purchase",
+        "count_other": "{{count}} purchases",
+        "others": "Other merchants",
+        "empty": "No spending this cycle.",
+        "error": "Couldn't load spending by merchant."
+      }
     },
     "cashflow": {
       "income": "Income",
       "expense": "Expense",
-      "net": "Net"
+      "net": "Net",
+      "subtitle": "Money in, money out and net balance (transfers excluded).",
+      "empty": "No transactions in this period.",
+      "error": "Could not load cashflow."
     },
     "flow": {
       "subtitle": "How your money moves.",
@@ -913,7 +1366,10 @@
         "autoConfirmedDesc": "Detected and confirmed automatically",
         "priceChangeDesc": "Price went from {{from}} to {{to}}",
         "acknowledge": "Got it"
-      }
+      },
+      "seriesCount": "{{count}} tracked series",
+      "seriesCount_other": "{{count}} tracked series",
+      "addTitle": "New recurring payment"
     },
     "categorize": {
       "subtitle": "Assign a category to unclassified transactions.",
@@ -1005,31 +1461,39 @@
   },
   "addAccount": {
     "title": "Add account",
-    "manual": "Manual",
+    "manual": "Manual account",
     "exchangeConnected": "Exchange connected!",
     "walletConnected": "Wallet tracked!",
     "trConnected": "Trade Republic connected!",
     "desc": {
-      "banks": "Connect your banks via OAuth",
+      "banks": "Find your bank: current accounts through PSD2",
       "exchanges": "Binance, Meria...",
       "wallets": "Bitcoin, Ethereum, BNB, Solana...",
-      "tr": "Trade Republic",
+      "tr": "Stocks, ETFs and cash account",
       "revolut": "Phone + passcode, on-demand sync",
       "bourso": "Current accounts, savings, PEA and securities accounts held at BoursoBank",
       "bourseDirect": "Sync your PEA and securities accounts",
       "degiro": "Sync your DEGIRO securities account",
       "ibkr": "Sync your Interactive Brokers account via Flex Query",
       "simplefin": "Import bank accounts with a SimpleFIN setup token",
+      "wise": "Your Wise Jars, which the bank connection cannot see",
       "finary": "Import from Finary",
       "manual": "Create an account manually",
       "amundi": "PEE, PEG, PERCO, PER held at Amundi",
       "amex": "American Express credit card: balance and transactions",
       "corum": "CORUM SCPI and CORUM Life insurance: units, valuation and operations",
-      "sofidy": "Sofidy SCPI units, at the withdrawal price",
+      "sofidy": "Sofidy SCPI shares, at withdrawal price",
+      "actual": "Accounts, categories and transactions of an Actual budget",
+      "homebank": "HomeBank backup or QIF export",
       "property": "House, apartment, land…",
       "fortuneo": "Sync your Fortuneo accounts",
-      "caisseEpargne": "Current account, Livret A, LDDS, PER, loans and cards at Caisse d'Epargne"
-    }
+      "caisseEpargne": "Current account, Livret A, LDDS, PER, loans and cards at Caisse d'Epargne",
+      "cmes": "PEE, PEG, PERCOL at Crédit Mutuel or CIC",
+      "cic": "CIC current and savings accounts (Livret A, LDDS, PEL…)",
+      "banquePopulaire": "Current account, Livret A, Livret Jeune and LDDS at Banque Populaire"
+    },
+    "subtitle": "Enter an account yourself, or connect an institution to sync it.",
+    "connectHeading": "or connect an institution"
   },
   "sync": {
     "title": "Synchronization",
@@ -1044,7 +1508,7 @@
       "TOTP_REQUIRED": "2FA code required"
     },
     "banks": {
-      "title": "Banks",
+      "title": "European banks",
       "search": "Search a bank",
       "country": "Country",
       "countriesLoadError": "Couldn't load all countries — showing France only.",
@@ -1062,6 +1526,11 @@
       "callbackError": "Sync error",
       "initiateError": "Connection failed",
       "psd2ScopeNote": "Enable Banking only syncs current accounts (PSD2 limitation). For PEA, life insurance, savings: use Trade Republic, Boursobank, Finary, or add them manually.",
+      "wiseJarsMissing": "Your Wise Jars do not come through this connection.",
+      "wiseJarsConnect": "Connect the Jars",
+      "wiseJarsConnected": "Your Wise Jars sync through the Wise Jars connector.",
+      "wiseJarsFailed": "The last sync of your Wise Jars failed.",
+      "wiseJarsOpen": "Open Wise Jars",
       "proBadge": "Pro",
       "proBadgeTitle": "Business account — this bank only serves professional customers"
     },
@@ -1090,7 +1559,8 @@
         "pinRequired": "PIN is required.",
         "validationFailed": "Invalid data.",
         "unknownError": "An unexpected error occurred."
-      }
+      },
+      "tanPrompt": "Enter the {{length}}-digit code Trade Republic sent you, by text or in the app."
     },
     "revolut": {
       "title": "Revolut",
@@ -1101,7 +1571,6 @@
       "syncing": "Syncing...",
       "connected": "Connected",
       "forget": "Forget credentials",
-      "lastSync": "Last sync",
       "notConnected": "Not connected",
       "syncSuccess": "Your accounts are up to date.",
       "phase": {
@@ -1138,7 +1607,6 @@
       "disconnectConfirm": "Remove the stored Interactive Brokers connection?",
       "connected": "Connected",
       "statusError": "Last sync failed",
-      "lastSync": "Last sync",
       "neverSynced": "Never synced",
       "syncedToast": "Interactive Brokers synced: {{count}} account(s)",
       "errors": {
@@ -1160,13 +1628,43 @@
       "disconnectConfirm": "Remove the stored SimpleFIN connection? Imported accounts stay, and they stop updating.",
       "connected": "Connected",
       "statusError": "Last sync failed",
-      "lastSync": "Last sync",
       "neverSynced": "Never synced",
       "syncedToast": "SimpleFIN synced: {{count}} account(s)",
       "errors": {
         "connectFailed": "Could not connect to SimpleFIN. Check the setup token and try again.",
         "syncFailed": "SimpleFIN sync failed. Try again, or create a new setup token if access was revoked.",
         "disconnectFailed": "Could not remove the connection. Please try again."
+      }
+    },
+    "wise": {
+      "title": "Wise Jars",
+      "intro": "This connector is only for your Wise Jars: the Wise bank connection on the Banks tab cannot see them. Your Wise current account and its transactions stay on the Banks tab.",
+      "setupHint": "On wise.com, create a read-only personal API token, then paste it here.",
+      "createToken": "Create a token",
+      "token": "Wise API token",
+      "tokenPlaceholder": "Paste the Wise token",
+      "connect": "Connect",
+      "sync": "Sync",
+      "syncing": "Syncing…",
+      "disconnect": "Disconnect",
+      "disconnectConfirm": "Remove the stored Wise token? Imported Jars stay, and stop updating.",
+      "connected": "Connected",
+      "statusError": "Last sync failed",
+      "lastSync": "Last sync",
+      "neverSynced": "Never synced",
+      "syncedToast": "Wise synced: {{count}} Jar",
+      "syncedToast_other": "Wise synced: {{count}} Jars",
+      "statusTokenRefused": "Token refused by Wise",
+      "replaceTokenHint": "Wise refused the stored token. Create a new one on wise.com and paste it here to resume syncing.",
+      "replaceToken": "Replace the token",
+      "scopeNote": "Only Jar balances are tracked: in Europe, Wise does not share their history with a personal token.",
+      "errors": {
+        "tokenRefused": "Wise refused this token. It may have been revoked: create a new read-only one on wise.com.",
+        "invalidToken": "This is not a Wise API token. Copy it again from wise.com.",
+        "rateLimited": "Wise is limiting requests right now. Try again in a few minutes.",
+        "connectFailed": "Could not connect to Wise. Check the token and try again.",
+        "syncFailed": "Wise sync failed. Try again, or create a new token if it was revoked.",
+        "disconnectFailed": "Could not remove the connection. Try again."
       }
     },
     "exchanges": {
@@ -1184,7 +1682,7 @@
       "remove": "Remove",
       "removeConfirm": "Remove this exchange?",
       "noExchanges": "No exchanges connected",
-      "lastSync": "Last sync"
+      "sync": "Synchronize"
     },
     "wallets": {
       "title": "Wallets",
@@ -1199,11 +1697,11 @@
       "remove": "Remove",
       "removeConfirm": "Remove this wallet?",
       "noWallets": "No wallets tracked",
-      "lastSync": "Last sync",
-      "evmHint": "One address, all EVM chains — Ethereum, BNB Chain, Polygon, Arbitrum, Optimism, Base and Avalanche."
+      "evmHint": "One address, all EVM chains — Ethereum, BNB Chain, Polygon, Arbitrum, Optimism, Base and Avalanche.",
+      "sync": "Synchronize"
     },
     "visibility": {
-      "title": "Accounts",
+      "title": "Visible accounts",
       "description": "Choose which accounts appear in app. A hidden account keeps syncing normally — it's just removed from display.",
       "manualGroup": "Manual"
     },
@@ -1294,7 +1792,6 @@
       "login": "Connect to Finary",
       "connected": "Connected",
       "notConnected": "Not connected",
-      "lastSync": "Last sync",
       "neverSynced": "Never",
       "sync": "Sync now",
       "syncing": "Syncing...",
@@ -1360,17 +1857,26 @@
     },
     "all": {
       "title": "Sync accounts",
-      "syncAll": "Sync all",
       "syncing": "Syncing...",
       "noConnections": "No active sync connections",
-      "lastSync": "Last sync",
       "openFinary": "Open Finary page to sync",
-      "openRevolut": "Open the Revolut page to connect",
       "sessionExpired": "Session expired",
       "reconnect": "Reconnect on the provider's tab",
       "trManualInfo": "Trade Republic is the only bank that requires manual re-authentication. You will need to re-enter your phone number and PIN each time you sync.",
       "trSlowWarning": "Connection may take a few moments, this is normal.",
-      "revolutManualInfo": "Revolut requires approval on your phone. Click the icon to enter your credentials."
+      "revolutManualInfo": "Revolut requires approval on your phone. Click the icon to enter your credentials.",
+      "neverSynced": "Never synced",
+      "lastSyncAgo": "Synced {{time}}",
+      "synced": "Synced",
+      "connectionCount_one": "{{count}} connection",
+      "connectionCount_other": "{{count}} connections",
+      "emptyHint": "No connection yet. Add your bank, your broker or a crypto wallet.",
+      "groupReconnect": "To reconnect",
+      "groupConnected": "Connected",
+      "reconnectAction": "Reconnect",
+      "syncOne": "Sync {{name}}",
+      "syncingProgress": "Syncing… {{done}}/{{total}}",
+      "syncAllCount": "Sync all ({{count}})"
     },
     "bourso": {
       "title": "BoursoBank",
@@ -1453,6 +1959,59 @@
         "countdownLabel": "Time left:"
       }
     },
+    "banquePopulaire": {
+      "title": "Banque Populaire",
+      "customerId": "Identifier",
+      "region": "Your Banque Populaire",
+      "regionPlaceholder": "Choose your bank",
+      "connect": "Connect",
+      "connecting": "Connecting…",
+      "sync": "Sync",
+      "queued": "Sync queued…",
+      "syncing": "Syncing…",
+      "syncSuccess": "Banque Populaire accounts synced.",
+      "clearSession": "Disconnect",
+      "disconnectConfirm": "This deletes the session stored in Picsou. The Banque Populaire session itself is not ended and may stay active until it expires.",
+      "disconnectConfirmAction": "Delete the stored session",
+      "noSession": "No active session",
+      "sessionActive": "Session active",
+      "scope": "Syncs your Banque Populaire current accounts, Livret A, Livret Jeune and LDDS on demand. Only the session is kept, encrypted. Contracts Picsou cannot import are listed but never created.",
+      "notice": {
+        "neverStored": "Picsou never sees or stores your password. You click it on the bank's keypad yourself; only the positions of the keys are sent, once.",
+        "noRetry": "Picsou never retries a sign-in. If it fails, nothing is sent again until you submit the form yourself.",
+        "lockRisk": "Wrong attempts count against your bank access and can lock your Banque Populaire account. Check your identifier and the digits you click on the keypad before validating."
+      },
+      "securPassPrompt": "Approve the sign-in in your Sécur'Pass app.",
+      "securPassHint": "Picsou does not touch your phone. This page continues on its own once you approve.",
+      "countdownLabel": "Time left to approve:",
+      "unsupportedTitle": "Contracts not imported",
+      "unsupportedHint": "Picsou does not support these contract families yet (family code shown).",
+      "errors": {
+        "rateLimited": "Too many sign-in attempts. Please wait before trying again.",
+        "rateLimitedRetryAfter": "Too many sign-in attempts. Try again in {{minutes}} min.",
+        "invalidCredentials": "The bank refused the identifier or password. Check them before trying again: repeated failures can lock your account.",
+        "keypadChanged": "The keypad changed, please start again. Nothing was sent.",
+        "appValidationTimeout": "The sign-in was not approved in Sécur'Pass in time. Start over if you want to try again.",
+        "authAttemptExpired": "The sign-in attempt expired. Start over if you want to try again.",
+        "sessionExpired": "The Banque Populaire session expired. Please reconnect.",
+        "formatChanged": "The Banque Populaire website format changed. Your existing data was kept.",
+        "invalidSessionState": "The stored session could not be read. Please reconnect.",
+        "serverError": "Could not reach Banque Populaire. Please try again later.",
+        "keypadExpired": "The keypad expired before you validated. Start over if you want to try again.",
+        "invalidPositions": "The keypad entry was not accepted. Start over and enter 6 to 12 keys."
+      },
+      "keypad": {
+        "title": "Click your password",
+        "description": "Click the keys of your password on the bank's keypad, in order. The digits are only shown on the keys themselves.",
+        "key": "Key {{n}}",
+        "entered": "{{count}} keys entered",
+        "clear": "Clear",
+        "cancel": "Cancel",
+        "validate": "Validate",
+        "sending": "Sending…",
+        "countdownLabel": "Time left:"
+      }
+    },
     "degiro": {
       "title": "DEGIRO",
       "username": "Username",
@@ -1464,7 +2023,6 @@
       "noSession": "No active session",
       "sessionActive": "Active session",
       "reauthRequired": "Reconnection needed",
-      "lastSyncedAt": "Last synced on",
       "totpPrompt": "Enter the 6-digit code from your authenticator app",
       "errors": {
         "tooManyAttempts": "Too many attempts. Please wait.",
@@ -1754,6 +2312,47 @@
         "invalidData": "Fortuneo returned inconsistent portfolio data. Your existing data was kept unchanged.",
         "serverError": "Could not reach Fortuneo. Please try again."
       }
+    },
+    "catalog": {
+      "title": "Add a connection",
+      "description": "Banks, brokers, crypto, employee savings, SCPI or a file import.",
+      "search": "Search for an institution",
+      "searchPlaceholder": "Search for an institution…",
+      "categoriesLabel": "Category",
+      "noMatch": "No institution matches this search.",
+      "categories": {
+        "all": "All",
+        "banks": "Banks",
+        "brokers": "Brokers",
+        "crypto": "Crypto",
+        "savings": "Employee savings",
+        "scpi": "SCPI",
+        "files": "Imports"
+      },
+      "kind": {
+        "banks": "Bank",
+        "brokers": "Broker",
+        "crypto": "Crypto",
+        "savings": "Employee savings",
+        "scpi": "SCPI",
+        "files": "Import"
+      }
+    },
+    "overview": {
+      "title": "Your connections",
+      "empty": "No connection yet: choose an institution below.",
+      "syncNow": "Sync"
+    },
+    "view": {
+      "notConnected": "Not connected",
+      "toReconnect_one": "{{count}} to reconnect",
+      "toReconnect_other": "{{count}} to reconnect"
+    },
+    "panel": {
+      "lastSync": "Last synced {{time}}",
+      "disconnectTitle": "Disconnect {{name}}?",
+      "disconnectDescription": "Picsou deletes the stored session. Accounts already imported stay; sign in again to sync them.",
+      "or": "or"
     }
   },
   "settings": {
@@ -1765,6 +2364,8 @@
     "themeDark": "Dark",
     "themeSystem": "System",
     "currentPassword": "Current password",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm password",
     "appearanceDescription": "Customize the application appearance",
     "dateFormat": "Date format",
     "dateFormatLocale": "Localized",
@@ -1786,9 +2387,8 @@
     "adminButton": "Open administration",
     "family": "Family",
     "familyDescription": "Manage members and sharing settings",
-    "familyManage": "Manage family members and sharing",
     "security": "Security",
-    "securityDescription": "Two-factor authentication and trusted devices",
+    "securityDescription": "Two-factor authentication, connected devices and data export",
     "mfaStatus": "Two-factor authentication",
     "mfaEnabled": "Enabled",
     "mfaDisabled": "Disabled",
@@ -1822,7 +2422,6 @@
     "exportTitle": "Export my data",
     "exportShortDesc": "Download a complete archive (JSON + CSV) of everything we hold for your account.",
     "exportDesc": "Re-authenticate to download a ZIP archive containing your full data. Sensitive credentials (password hash, 2FA secret, bank tokens) are excluded.",
-    "exportButton": "Export data",
     "exportDownload": "Download",
     "exportIncludeSnapshots": "Include daily balance history",
     "exportIncludeSnapshotsHint": "Off by default. Adds the per-account daily snapshots used by charts — large for long-running accounts.",
@@ -1838,9 +2437,6 @@
     "sessionsLastUsed": "Last used",
     "sessionsRevoke": "Revoke",
     "sessionsRevokeAllOthers": "Sign out other devices",
-    "amounts": "Amounts",
-    "amountsVisible": "Visible",
-    "amountsHidden": "Hidden",
     "profile": {
       "title": "Profile",
       "description": "Your personal and tax context",
@@ -1856,14 +2452,14 @@
       },
       "taxHouseholdParts": "Tax household shares",
       "dependents": "Dependents",
-      "annualGrossIncome": "Annual gross income (€)",
+      "annualGrossIncome": "Annual gross income",
       "incomeHint": "The gross figure from your payslip. Fiscal context — the savings rate is computed on the net below.",
       "netPay": "What actually reaches the account",
       "netPayHint": "Both figures are on your payslip. Gross is not enough: social contributions come off first, at a rate that depends on your status.",
-      "monthlyNetBeforeTax": "Monthly net before tax (€)",
-      "withholdingTaxRate": "Withholding tax rate (%)",
+      "monthlyNetBeforeTax": "Monthly net before tax",
+      "withholdingTaxRate": "Withholding tax rate",
       "netIncomeDerived": "Monthly net received:",
-      "savingsCapacity": "Monthly savings capacity (€)",
+      "savingsCapacity": "Monthly savings capacity",
       "riskProfile": "Risk profile",
       "risk": {
         "PRUDENT": "Cautious",
@@ -1871,8 +2467,59 @@
         "DYNAMIC": "Dynamic",
         "AGGRESSIVE": "Aggressive"
       },
-      "saved": "Profile saved"
-    }
+      "saved": "Profile saved",
+      "groupHousehold": "Household and tax",
+      "groupIncome": "Income",
+      "groupPlan": "Savings and horizon",
+      "unitEur": "€",
+      "unitYears": "years",
+      "saving": "Saving…",
+      "unsaved": "Unsaved changes"
+    },
+    "sectionsNav": "Settings sections",
+    "themeHint": "Dark by default; “System” follows your device.",
+    "languageHint": "Interface language.",
+    "dateFormatHint": "How dates are shown across Picsou.",
+    "amountsHint": "Hides every amount on screen, handy in public.",
+    "sidebarStyleHint": "Layout of the navigation menu on a computer.",
+    "usernameHint": "The name you sign in with.",
+    "dangerZone": "Sensitive zone",
+    "otherDevices": "Other devices",
+    "otherDevicesHint": "Closes the “Remember me” sessions open elsewhere.",
+    "otherDevicesNone": "No other device is signed in.",
+    "logoutHint": "Ends your session on this device.",
+    "mfaEnabledHint": "A code from your authenticator app is required at every sign-in.",
+    "mfaDisabledHint": "Only your password protects this account.",
+    "mfaRecoveryCodes": "Recovery codes",
+    "dataTitle": "Your data",
+    "exportAction": "Export",
+    "signInMethods": {
+      "title": "Sign-in methods",
+      "password": "Password",
+      "passwordOn": "You can sign in with your username and password.",
+      "passwordOff": "No password: you sign in with {{provider}}.",
+      "turnOff": "Turn off password login",
+      "turnOffHint": "Sign in once with {{provider}} before turning off password login.",
+      "setPassword": "Set a password",
+      "identityFallback": "{{provider}} account",
+      "lastSignIn": "Last sign-in",
+      "neverUsed": "Not used to sign in yet",
+      "unlink": "Unlink",
+      "unlinkHint": "Set a password before unlinking your last sign-in method.",
+      "link": "Link {{provider}} account",
+      "adminGroupNote": "Admin rights follow your group in {{provider}}.",
+      "linked": "Account linked. You can now sign in with it.",
+      "removePasswordTitle": "Turn off password login?",
+      "removePasswordDesc": "You will sign in with {{provider}} only. Your other devices will be signed out, and two-factor authentication will be turned off if it is on.",
+      "setPasswordDesc": "You will be able to sign in with your username and this password as well as with {{provider}}. Your other devices will be signed out.",
+      "passwordMismatch": "The passwords do not match.",
+      "unlinkTitle": "Unlink this account?",
+      "unlinkDesc": "You will no longer be able to sign in with this {{provider}} account.",
+      "linkTitle": "Link a {{provider}} account",
+      "linkDesc": "Confirm your identity, then sign in with the {{provider}} account to link.",
+      "linkMfaNote": "When you sign in with {{provider}}, Picsou doesn't ask for your authenticator code: a second factor is then the sign-in provider's job. Password sign-ins still ask for the code, except on a trusted device."
+    },
+    "usernameTaken": "This username is already taken."
   },
   "accessKeys": {
     "sectionTitle": "Access keys & MCP",
@@ -2019,7 +2666,8 @@
         "label": "AI categorization",
         "desc": "Start AI categorization of uncategorized transactions and read its progress"
       }
-    }
+    },
+    "keysTitle": "Access keys"
   },
   "oauthConsent": {
     "title": "Allow {{app}} to access your Picsou data?",
@@ -2120,7 +2768,6 @@
       "save": "Save",
       "saving": "Saving...",
       "saved": "Saved",
-      "ready": "Enable Banking is ready.",
       "incomplete": "Enable Banking is not fully configured. Missing: {{fields}}. Bank search and sync will fail until this is resolved.",
       "keypair": {
         "title": "Private key",
@@ -2141,7 +2788,28 @@
         "uploadInstruction": "In your Enable Banking dashboard → your app → Public key → paste this block.",
         "copy": "Copy public key",
         "copied": "Copied!",
-        "download": "Download public.pem"
+        "download": "Download public.pem",
+        "present": "Present",
+        "missing": "Missing"
+      },
+      "statusReady": "Ready",
+      "statusIncomplete": "Incomplete",
+      "debug": {
+        "title": "API call log",
+        "description": "The raw HTTP calls (endpoint, request, response) to Enable Banking, to diagnose a sync.",
+        "view": "View calls",
+        "dialogTitle": "Enable Banking — raw API calls",
+        "count": "{{count}} call in memory",
+        "count_other": "{{count}} calls in memory",
+        "refresh": "Refresh",
+        "export": "Export as .txt",
+        "clear": "Clear",
+        "error": "Could not load the call log.",
+        "empty": "No call captured yet. Run an Enable Banking sync to record some.",
+        "colMethod": "Method",
+        "colEndpoint": "Endpoint",
+        "requestBody": "Request body",
+        "responseBody": "Response body"
       }
     },
     "integrations": {
@@ -2161,7 +2829,7 @@
     "members": {
       "title": "Members",
       "description": "Manage family member accounts",
-      "createUser": "Create user",
+      "createUser": "Add member",
       "createUserPlaceholder": "Member name",
       "displayName": "Display name",
       "noLogin": "—",
@@ -2177,6 +2845,12 @@
       "resetMfaConfirmTitle": "Reset two-factor auth?",
       "resetMfaConfirmDesc": "This disables 2FA on the member's account, revokes their recovery codes, and signs them out everywhere. Use only when they have lost access to their authenticator and cannot use a recovery code.",
       "mfaOn": "2FA on",
+      "signInPassword": "Password",
+      "signInSso": "SSO",
+      "unlinkSso": "Unlink SSO",
+      "unlinkSsoTitle": "Unlink SSO for {{name}}?",
+      "unlinkSsoDescription": "This member will no longer sign in with SSO and will be signed out everywhere. If no password remains, they will need a password reset link to sign in again.",
+      "unlinkSsoFailed": "Unlinking SSO for {{name}} failed.",
       "delete": "Delete",
       "deleteConfirmTitle": "Delete member",
       "deleteConfirmDesc": "This will delete the member and all their data. This action cannot be undone.",
@@ -2184,7 +2858,8 @@
       "copyLink": "Copy",
       "copied": "Copied!",
       "noMembers": "No members",
-      "loading": "Loading..."
+      "loading": "Loading...",
+      "moreActions": "More actions for {{name}}"
     },
     "aiActivity": {
       "title": "AI activity",
@@ -2216,6 +2891,11 @@
       "updateTitle": "Update available",
       "releaseNotes": "Release notes",
       "later": "Later"
+    },
+    "nav": {
+      "label": "Administration sections",
+      "ai": "AI",
+      "telemetry": "Telemetry"
     }
   },
   "error": {
@@ -2223,13 +2903,17 @@
     "noConnection": "Cannot connect to server",
     "noConnectionDesc": "Make sure the server is running and try again.",
     "degradedMode": "No connection to server. Some features may not work.",
-    "notFound": "The page you are looking for does not exist.",
+    "notFound": "This address does not lead to any page. Check the link, or go back to the dashboard.",
     "backToDashboard": "Back to dashboard",
-    "forbidden": "You do not have permission to access this page.",
+    "forbidden": "Your account cannot open this page. If you need it, ask the administrator of this instance.",
     "serverError": "An unexpected error occurred on the server.",
     "crashTitle": "Something went wrong",
     "crashDesc": "An unexpected error occurred. Please reload the page.",
-    "reload": "Reload page"
+    "reload": "Reload page",
+    "code": "Error {{code}}",
+    "notFoundTitle": "Page not found",
+    "forbiddenTitle": "Access denied",
+    "serverErrorTitle": "Server error"
   },
   "family": {
     "dashboard": {
@@ -2242,7 +2926,6 @@
       "contributions": "Contributions"
     },
     "settings": {
-      "title": "Family",
       "members": "Family members",
       "membersDesc": "Add and manage family members and managed profiles.",
       "you": "you",
@@ -2260,7 +2943,9 @@
       "shareGoals": "Share goals",
       "shareNone": "Private",
       "shareAll": "Share all",
-      "shareManual": "Select"
+      "shareManual": "Select",
+      "sharing": "Sharing with the family",
+      "sharingDesc": "What the other members see of your accounts and goals."
     }
   },
   "setup": {
@@ -2316,6 +3001,9 @@
       "submitError": "We couldn't create the account. Please try again.",
       "showPassword": "Show password",
       "hidePassword": "Hide password",
+      "ssoHint": "Picsou's administrator signs in with {{provider}}. Use an account from the administrators group.",
+      "ssoContinue": "Continue with {{provider}}",
+      "ssoMisconfigured": "Creating the administrator requires single sign-on, but its settings are invalid. Check the server logs.",
       "strength": {
         "weak": "Password security is weak.",
         "fair": "Password security is fair.",
@@ -2459,7 +3147,6 @@
         "running": "Testing...",
         "success": "Enable Banking is configured",
         "retry": "Retry test",
-        "backToPrevious": "Back to previous step",
         "activationNotice": "Before testing, use \"Activate by linking accounts\" in the Enable Banking Control Panel and authorise your own accounts. Restricted mode only allows those linked accounts. \"Request activation\" is the commercial path.",
         "hints": {
           "invalid_application_id": "The Application ID doesn't match what Enable Banking has on file. Double-check it on the credentials step.",
@@ -2498,7 +3185,6 @@
       "skip": "Don't enable Trade Republic"
     },
     "revolut": {
-      "surtitle": "REVOLUT",
       "title": "Revolut is ready to go.",
       "body": "Nothing to configure here — you'll connect Revolut with your phone number and passcode, then an approval from your mobile app, when you add the account.",
       "tip": "Head to Accounts → Add account → Revolut once setup is done.",
@@ -2541,10 +3227,6 @@
       "cta": "Enable Fortuneo",
       "skip": "Don't enable Fortuneo"
     }
-  },
-  "pockets": {
-    "subAccountsCount": "{{count}} pocket",
-    "subAccountsCount_other": "{{count}} pockets"
   },
   "savings": {
     "configSection": "Savings configuration",
@@ -2734,15 +3416,6 @@
       "net": "Net value",
       "equityShare": "{{pct}} of the property is genuinely yours"
     },
-    "summary": {
-      "title": "Property wealth",
-      "gross": "Gross",
-      "debt": "Debt",
-      "net": "Net",
-      "gain": "Gain",
-      "loanToValue": "Loan-to-value: {{pct}} of the properties' value",
-      "rentalIncome": "Monthly rental income:"
-    },
     "ownership": {
       "title": "Ownership split",
       "hint": "Set each member's share. Everyone counts only their own part in their net worth.",
@@ -2908,8 +3581,347 @@
       "interest": "Interest",
       "insurance": "Insurance",
       "totalPayment": "Payment",
+      "peerLoan": "Peer loan",
+      "borrower": "Borrower",
+      "lentAt": "Lent on",
+      "expectedBack": "Expected back",
+      "ratePeriod": "Rate period",
+      "plannedMonthly": "Planned monthly",
+      "plannedMonths": "Planned months",
+      "plannedInterest": "Planned interest",
+      "principal": "Principal lent",
+      "principalRemaining": "Remaining capital",
+      "interestAccrued": "Interest accrued",
+      "interestReceived": "Interest received",
+      "writtenOff": "Written off",
+      "closedAt": "Closed on",
+      "cashAccount": "Cash account",
+      "repaymentJournal": "Repayment journal",
+      "paidOn": "Paid on",
+      "amount": "Amount",
+      "kind": "Kind",
+      "note": "Note",
       "yes": "Yes",
       "no": "No"
     }
+  },
+  "topbar": {
+    "search": "Search an account, a security, a page…",
+    "scope": "Scope",
+    "scopeMe": "Me",
+    "scopeHousehold": "Household",
+    "synced": "Synced {{time}}",
+    "syncAttention": "Sync needs attention"
+  },
+  "palette": {
+    "title": "Search",
+    "description": "Find an account, a security, a page or an action.",
+    "placeholder": "Account, security, page, action…",
+    "esc": "Esc",
+    "navigate": "navigate",
+    "open": "open",
+    "anywhere": "from any page",
+    "syncAll": "Sync all accounts",
+    "groups": {
+      "pages": "Go to",
+      "accounts": "Accounts",
+      "holdings": "Securities",
+      "actions": "Quick actions"
+    }
+  },
+  "assetClasses": {
+    "cash": "Cash",
+    "savings": "Regulated savings",
+    "equity": "Stocks & ETFs",
+    "crypto": "Crypto",
+    "funds": "Funds (life insurance, pension)",
+    "scpi": "SCPI",
+    "realestate": "Property",
+    "other": "Other"
+  },
+  "breakdown": {
+    "view": "Chart type",
+    "bar": "Stacked bar",
+    "donut": "Donut",
+    "treemap": "Treemap"
+  },
+  "income": {
+    "error": "Could not load passive income.",
+    "empty": {
+      "title": "No passive income yet",
+      "description": "Dividends, SCPI distributions, rent and savings interest will show up here as soon as one of your accounts produces some."
+    },
+    "hero": {
+      "projected": "Passive income expected over 12 months",
+      "perMonth": "≈ {{amount}} per month",
+      "received": "{{amount}} in dividends received over 12 months",
+      "sources": "Where it comes from",
+      "coverage": "Essential expenses covered",
+      "coverageDetail": "{{income}} per month against {{expenses}} of essential expenses.",
+      "coverageUnknown": "Set your monthly essential expenses to see how much of them it covers:"
+    },
+    "source": {
+      "dividends": "Dividends",
+      "scpi": "SCPI",
+      "rent": "Rent",
+      "interest": "Savings interest"
+    },
+    "type": {
+      "dividends": "Stock / ETF",
+      "scpi": "SCPI",
+      "rent": "Real estate",
+      "interest": "Savings account"
+    },
+    "payment": {
+      "dividends": "Dividend",
+      "scpi": "SCPI distribution",
+      "interest": "Yearly interest"
+    },
+    "months": {
+      "title": "Month by month",
+      "description": "Forecast for the next 12 months",
+      "period": "Period",
+      "periods": {
+        "past": "Received",
+        "next": "Forecast",
+        "both": "Both"
+      },
+      "descriptions": {
+        "past": "Dividends received over the last 12 months",
+        "both": "Dividends received over the last 12 months, forecast for the next 12"
+      },
+      "received": "Dividends received",
+      "forecastOf": "{{source}} (forecast)",
+      "empty": "Nothing over this period.",
+      "receivedError": "Could not load the dividends received.",
+      "unconverted": "{{count}} dividend received without an exchange rate is not counted.",
+      "unconverted_other": "{{count}} dividends received without an exchange rate are not counted."
+    },
+    "upcoming": {
+      "title": "Next payments",
+      "empty": "No payment expected.",
+      "exDate": "ex-dividend date"
+    },
+    "table": {
+      "title": "Income by source",
+      "description": "Income expected over 12 months",
+      "source": "Source",
+      "type": "Type",
+      "amount": "Yearly income",
+      "rate": "Rate",
+      "cadence": "Frequency",
+      "next": "Next"
+    }
+  },
+  "realEstatePage": {
+    "perYearSuffix": "/yr",
+    "kpi": {
+      "gross": "Gross value",
+      "debt": "Property debt",
+      "net": "Net value",
+      "gain": "Unrealised gain",
+      "loanToValue": "Loan-to-value",
+      "rent": "Monthly rent",
+      "propertyCount": "{{count}} property",
+      "propertyCount_other": "{{count}} properties",
+      "scpiCount": "{{count}} SCPI",
+      "scpiCount_other": "{{count}} SCPIs",
+      "loanCount": "{{count}} linked loan",
+      "loanCount_other": "{{count}} linked loans",
+      "netWorthShare": "{{pct}} of net worth",
+      "sincePurchase": "since purchase",
+      "loanToValueHint": "Debt over gross value",
+      "rentHint": "Rent declared on your properties"
+    },
+    "property": {
+      "boughtIn": "bought in {{date}}",
+      "range": "Range",
+      "updated": "Updated"
+    },
+    "scpi": {
+      "subscriptionValue": "Value at subscription price",
+      "distribution": "Distribution"
+    },
+    "loan": {
+      "totalInterest": "Total interest cost",
+      "remainingInterest": "Interest still to pay"
+    },
+    "dti": {
+      "title": "Debt-to-income ratio",
+      "over": "Above {{pct}}",
+      "under": "Below the {{pct}} threshold",
+      "ofIncome": "of net pay before tax",
+      "threshold": "threshold {{pct}}",
+      "detail": "{{payments}} in loan payments for {{income}} of monthly net pay before tax declared in your profile.",
+      "needsIncome": "Enter your monthly net pay before tax in the settings to compute your debt-to-income ratio."
+    },
+    "cards": {
+      "title": "Upcoming card statements"
+    },
+    "empty": {
+      "properties": "No property yet",
+      "propertiesHint": "Add a property to track its estimated value and the loan that finances it.",
+      "loansHint": "Add a loan account to track its amortisation."
+    }
+  },
+  "investments": {
+    "value": "Portfolio value",
+    "unrealisedGain": "unrealized gain",
+    "unrealisedLoss": "unrealized loss",
+    "dividends12m": "Dividends over 12 months",
+    "lines": "Lines",
+    "wrapperCount": "{{count}} account",
+    "wrapperCount_other": "{{count}} accounts",
+    "chartTitle": "Portfolio value over time",
+    "empty": "No investments tracked yet.",
+    "emptyHint": "Add a PEA, a brokerage account, a crypto wallet or a life insurance contract to follow your positions here.",
+    "positions": {
+      "title": "Positions",
+      "count": "{{count}} line",
+      "count_other": "{{count}} lines",
+      "filter": "Account type",
+      "other": "Other",
+      "position": "Position",
+      "wrapper": "Account type",
+      "avgCost": "Avg cost",
+      "price": "Price",
+      "pnl": "Unrealized +/−",
+      "weight": "Weight"
+    },
+    "concentration": {
+      "title": "Concentration and currencies",
+      "top": "Top {{count}} line",
+      "top_other": "Top {{count}} lines",
+      "largest": "{{name}} is {{share}} of the portfolio."
+    },
+    "realized": {
+      "description": "Where they come from · weighted average cost, fees included",
+      "year": "Year",
+      "net": "Net realized in {{year}}",
+      "summary": "{{gains}} in gains, {{losses}} in losses, over {{count}} sale",
+      "summary_other": "{{gains}} in gains, {{losses}} in losses, over {{count}} sales",
+      "gains": "Realized gains",
+      "noGains": "No gain realized that year.",
+      "losses": "Losses"
+    },
+    "tax": {
+      "title": "Tax wrappers",
+      "years": "{{count}} year",
+      "years_other": "{{count}} years",
+      "months": "{{count}} month",
+      "months_other": "{{count}} months",
+      "ageOf": "Age of {{name}}",
+      "pea": {
+        "pending": "Gains exempt from income tax from {{date}}.",
+        "reached": "Gains exempt from income tax since {{date}}."
+      },
+      "av": {
+        "pending": "Yearly allowance on withdrawn gains from {{date}}.",
+        "reached": "Yearly allowance on withdrawn gains since {{date}}."
+      },
+      "missing": "Opening date not set: the age cannot be worked out.",
+      "setDate": "Set it in Accounts"
+    },
+    "dividendsSkipped": "Leaving out {{count}} credit with no exchange rate",
+    "dividendsSkipped_other": "Leaving out {{count}} credits with no exchange rate",
+    "perf": {
+      "title": "Performance",
+      "window": "From {{from}} to {{to}}",
+      "period": "Period",
+      "periods": {
+        "3": "3M",
+        "6": "6M",
+        "12": "1Y",
+        "36": "3Y",
+        "60": "5Y",
+        "0": "All"
+      },
+      "twr": "Performance (TWR)",
+      "twrNote": "Your deposits left out",
+      "annualized": "Annualised performance",
+      "annualizedNote": "Average pace per year",
+      "xirr": "Return (XIRR)",
+      "xirrNote": "Per year, given your deposits",
+      "volatility": "Volatility",
+      "volatilityNote": "Size of the swings, per year",
+      "drawdown": "Worst fall",
+      "drawdownDates": "From {{from}} to {{to}}",
+      "noDrawdown": "No fall over the period",
+      "missing": {
+        "history": "Not enough history yet",
+        "year": "Less than a year of history",
+        "xirr": "History too short or incomplete",
+        "returns": "Fewer than 20 days of data"
+      },
+      "explain": "TWR measures your investments without the effect of your deposits, so it can be compared with an index; XIRR measures what your money earned, given when and how much you put in.",
+      "empty": "No performance history yet",
+      "emptyHint": "Picsou records the value of your investments every day: performance will show up within a few days."
+    },
+    "benchmark": {
+      "compareTo": "Compare with an index",
+      "none": "No index",
+      "portfolio": "Your portfolio",
+      "base": "Base 100 on {{date}}, deposits left out",
+      "gap": "Gap",
+      "points": "{{value}} pts",
+      "summary": "Over the period: your portfolio {{portfolio}}, {{name}} {{benchmark}}, a gap of {{gap}}.",
+      "empty": "{{name}} prices are not available yet: Picsou fetches them with the price update. Your portfolio is shown alone in the meantime."
+    },
+    "fees": {
+      "title": "Fees",
+      "description": "Ongoing charges of the funds you hold, and broker fees over 12 months",
+      "ter": "Average ongoing charges (TER)",
+      "perYear": "{{value}} a year",
+      "annualCost": "About {{amount}} a year on what you hold",
+      "unknown": "The ongoing charges of these holdings are not known: shares and crypto have none, and no TER was found for your funds.",
+      "coverage": "TER known for {{share}} of the value",
+      "costliest": "Most expensive lines",
+      "lineTer": "TER {{value}}",
+      "costPerYear": "{{amount}} / year",
+      "rest": "{{count}} other line: {{amount}} a year",
+      "rest_other": "{{count}} other lines: {{amount}} a year",
+      "broker": "Broker fees over 12 months",
+      "brokerCount": "{{count}} transaction with a fee",
+      "brokerCount_other": "{{count}} transactions with a fee",
+      "empty": "No fees to show yet."
+    }
+  },
+  "activation": {
+    "subtitleSso": "Activate it with {{provider}}, or choose a password to complete your account setup.",
+    "ssoButton": "Activate with {{provider}}"
+  },
+  "reauth": {
+    "confirm": "Confirm",
+    "confirmWith": "Confirm with {{provider}}",
+    "ssoHint": "{{provider}} will ask you to sign in again, then bring you back here.",
+    "expired": "Your confirmation has expired. Please confirm your identity again."
+  },
+  "ssoErrors": {
+    "NOT_LINKED": "This account is not linked to your sign-in provider. Sign in with your password, then link it from Settings.",
+    "NOT_IN_ADMIN_GROUP": "Your account is not in the group required to administer this instance.",
+    "IDENTITY_IN_USE": "This identity is already linked to another account.",
+    "REAUTH_REQUIRED": "Please confirm your identity again to continue.",
+    "REAUTH_TOO_OLD": "Your last confirmation is too old. Please confirm your identity again.",
+    "REAUTH_WRONG_ACCOUNT": "You confirmed a different account than the one you are signed in with. Please use the same account.",
+    "ACCOUNT_INACTIVE": "This account is inactive. Contact your administrator.",
+    "ADMIN_RECOVERY_ACTIVE": "An administrator recovery is in progress for this account. Finish it before signing in with SSO.",
+    "ACTIVATION_INVALID": "Single sign-on isn't available with this link. If it's a password reset link, set a new password with the form instead. Otherwise the link is invalid, has expired or was already used: ask your administrator for a new one.",
+    "SETUP_ALREADY_CLAIMED": "The initial setup has already been claimed by another administrator.",
+    "IDP_UNAVAILABLE": "The sign-in provider is unreachable. Please try again in a few minutes.",
+    "IDP_ERROR": "The sign-in provider returned an error. Please try again.",
+    "SESSION_EXPIRED": "Your sign-in attempt expired. Please start again.",
+    "RATE_LIMITED": "Too many attempts. Please wait a moment and try again.",
+    "SSO_ADMIN_REQUIRED": "First-time setup requires an administrator from your sign-in provider. Use SSO to create the administrator account.",
+    "IDENTITY_NOT_USED_YET": "You have not signed in with SSO yet. Sign in once with it before turning off password sign-in.",
+    "LAST_SIGN_IN_METHOD": "This is your last sign-in method. Add another one before removing it.",
+    "PASSWORD_ALREADY_SET": "A password is already set for this account.",
+    "REAUTH_FAILED": "Re-authentication failed. Check your credentials and try again.",
+    "SSO_REVALIDATE": "Your session needs to be re-validated with your sign-in provider.",
+    "SSO_DISABLED": "Single sign-on is not enabled on this instance.",
+    "SELF_UNLINK_FORBIDDEN": "To unlink your own SSO identities, use Sign-in methods in Settings.",
+    "generic": "Single sign-on failed. Please try again."
+  },
+  "realEstate": {
+    "purchasePrice": "Purchase price"
   }
 }

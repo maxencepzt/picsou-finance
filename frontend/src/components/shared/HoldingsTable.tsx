@@ -59,7 +59,7 @@ export function HoldingsTable({ holdings, onEdit, onDelete }: HoldingsTableProps
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">{t('accounts.holdings')}</CardTitle>
+        <CardTitle>{t('accounts.holdings')}</CardTitle>
       </CardHeader>
       <CardContent>
         <Table>
@@ -82,7 +82,7 @@ export function HoldingsTable({ holdings, onEdit, onDelete }: HoldingsTableProps
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <HoldingLogo logoUrl={h.logoUrl} logoUrlDark={h.logoUrlDark} ticker={h.ticker} name={h.name} />
-                    <span className="font-mono font-medium">{h.ticker}</span>
+                    <span className="font-medium">{h.ticker}</span>
                   </div>
                 </TableCell>
                 <TableCell>{h.name ?? h.ticker}</TableCell>
@@ -102,10 +102,10 @@ export function HoldingsTable({ holdings, onEdit, onDelete }: HoldingsTableProps
                 <TableCell className="text-right font-medium">
                   {h.currentValueEur != null ? <CurrencyDisplay value={h.currentValueEur} className="text-sm" /> : '\u2014'}
                 </TableCell>
-                <TableCell className={cn('text-right', h.pnlEur != null && h.pnlEur >= 0 ? 'text-emerald-500' : h.pnlEur != null && h.pnlEur < 0 ? 'text-red-500' : '')}>
+                <TableCell className={cn('text-right', h.pnlEur != null && h.pnlEur >= 0 ? 'text-gain' : h.pnlEur != null && h.pnlEur < 0 ? 'text-loss' : '')}>
                   {h.pnlEur != null ? <CurrencyDisplay value={h.pnlEur} showSign className="text-sm" /> : '\u2014'}
                 </TableCell>
-                <TableCell className={cn('text-right', h.pnlPercent != null && h.pnlPercent >= 0 ? 'text-emerald-500' : h.pnlPercent != null && h.pnlPercent < 0 ? 'text-red-500' : '')}>
+                <TableCell className={cn('text-right', h.pnlPercent != null && h.pnlPercent >= 0 ? 'text-gain' : h.pnlPercent != null && h.pnlPercent < 0 ? 'text-loss' : '')}>
                   {h.pnlPercent != null ? formatPercent(h.pnlPercent, { signed: true }) : '\u2014'}
                 </TableCell>
                 {(onEdit || onDelete) && (

@@ -6,11 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { CashflowSankey } from '@/components/shared/CashflowSankey'
 import { CurrencyDisplay } from '@/components/shared/CurrencyDisplay'
+import { Delta } from '@/components/shared/Delta'
 import { ErrorState } from '@/components/shared/ErrorState'
 import { useCashflowFlow, useSpendingByCategory } from '@/features/budget/hooks'
+import { formatPercent } from '@/lib/utils'
 import type { CashflowPeriod, CategorySpend } from '@/types/api'
 import { FALLBACK_COLOR } from './budget-meta'
-import { PeriodToggle } from './budget-utils'
+import { BudgetToolbar, PeriodToggle } from './budget-utils'
 import { PeriodNavigator } from './PeriodNavigator'
 import { useBudgetPeriod } from './BudgetPeriodContext'
 
@@ -25,26 +27,17 @@ import { useBudgetPeriod } from './BudgetPeriodContext'
 function FlowSummary({ income, expense, net }: { income: number; expense: number; net: number }) {
   const { t } = useTranslation()
   return (
-    <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 text-sm">
-      <span className="text-muted-foreground">
+    <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 text-[13px] text-muted-foreground">
+      <span>
         {t('budget.cashflow.income')}{' '}
-        <CurrencyDisplay value={income} className="font-medium text-emerald-600 dark:text-emerald-400" />
+        <CurrencyDisplay value={income} className="font-semibold text-foreground tabular-nums" />
       </span>
-      <span className="text-muted-foreground">
+      <span>
         {t('budget.cashflow.expense')}{' '}
-        <CurrencyDisplay value={expense} className="font-medium text-foreground" />
+        <CurrencyDisplay value={expense} className="font-semibold text-foreground tabular-nums" />
       </span>
-      <span className="text-muted-foreground">
-        {t('budget.cashflow.net')}{' '}
-        <CurrencyDisplay
-          value={net}
-          showSign
-          className={
-            net >= 0
-              ? 'font-medium text-emerald-600 dark:text-emerald-400'
-              : 'font-medium text-destructive'
-          }
-        />
+      <span className="inline-flex items-baseline gap-1">
+        {t('budget.cashflow.net')} <Delta amount={net} />
       </span>
     </div>
   )
@@ -64,12 +57,18 @@ function BreakdownRow({ row, total }: { row: CategorySpend; total: number }) {
             className="inline-block size-2.5 shrink-0 rounded-full"
             style={{ backgroundColor: color }}
           />
-          <span className="truncate text-sm font-medium">{name}</span>
-          <span className="shrink-0 text-xs text-muted-foreground">
+          <span className="truncate text-[13px] font-semibold">{name}</span>
+          <span className="hidden shrink-0 text-xs text-muted-foreground sm:inline">
             {t('budget.flow.transactionsCount', { count: row.count })}
           </span>
         </span>
-        <CurrencyDisplay value={row.amount} className="shrink-0 text-sm font-semibold tabular-nums" />
+        <span className="flex shrink-0 items-baseline gap-2">
+          <CurrencyDisplay value={row.amount} className="text-[13px] font-semibold tabular-nums text-foreground" />
+          {/* A share, so it stays legible in privacy mode. */}
+          <span className="w-9 text-right text-xs text-muted-foreground tabular-nums">
+            {formatPercent(share * 100, { fractionDigits: 0 })}
+          </span>
+        </span>
       </div>
       <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted">
         <div
@@ -186,27 +185,28 @@ export function SpendingPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-3">
-          <p className="text-sm text-muted-foreground">{t('budget.flow.subtitle')}</p>
-          <Link
-            to="/budget/transactions"
-            className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <Receipt size={12} />
-            {t('transactions.viewAll')}
-          </Link>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <PeriodNavigator
-            period={period}
-            from={flow.data?.from}
-            to={flow.data?.to}
-            onAnchorChange={setAnchor}
-          />
-          <PeriodToggle value={period} onChange={(p) => { setPeriod(p); setAnchor(undefined) }} />
-        </div>
-      </div>
+      <BudgetToolbar
+        lead={
+          <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            {t('budget.flow.subtitle')}
+            <Link
+              to="/budget/transactions"
+              className="inline-flex items-center gap-1 text-[13px] font-medium text-primary transition-colors hover:text-foreground"
+            >
+              <Receipt className="size-3.5" aria-hidden="true" />
+              {t('transactions.viewAll')}
+            </Link>
+          </span>
+        }
+      >
+        <PeriodNavigator
+          period={period}
+          from={flow.data?.from}
+          to={flow.data?.to}
+          onAnchorChange={setAnchor}
+        />
+        <PeriodToggle value={period} onChange={(p) => { setPeriod(p); setAnchor(undefined) }} />
+      </BudgetToolbar>
 
       {isError && (
         <ErrorState
@@ -220,15 +220,15 @@ export function SpendingPage() {
 
       {isLoading && !isError && (
         <>
-          <Skeleton className="h-[360px] w-full rounded-xl" />
-          <Skeleton className="h-48 w-full rounded-xl" />
+          <Skeleton className="h-[360px] w-full rounded-2xl" />
+          <Skeleton className="h-48 w-full rounded-2xl" />
         </>
       )}
 
       {!isLoading && !isError && flow.data && (
         <Card>
           <CardHeader className="gap-1.5">
-            <CardTitle className="text-base">{t('budget.flow.diagram')}</CardTitle>
+            <CardTitle>{t('budget.flow.diagram')}</CardTitle>
             <FlowSummary income={flow.data.income} expense={flow.data.expense} net={flow.data.net} />
           </CardHeader>
           <CardContent>
@@ -244,7 +244,7 @@ export function SpendingPage() {
       {!isLoading && !isError && breakdown.data && breakdown.data.categories.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">{t('budget.flow.breakdown')}</CardTitle>
+            <CardTitle>{t('budget.flow.breakdown')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-0.5">
             {buildDisplay(breakdown.data.categories).map((item) =>

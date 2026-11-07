@@ -3,20 +3,14 @@ import { useTranslation } from 'react-i18next'
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { BrainCircuit } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+import { NativeSelect } from '@/components/shared/NativeSelect'
 import { extractErrorMessage } from '@/lib/errors'
 import { useUpdateAi, useTestAi } from '@/features/admin/hooks'
 import type { AdminAiSettings } from '@/features/admin/api'
+import { SettingRow, SettingsCard, StatusText } from '../components/SettingsBlocks'
 
 const schema = z.object({
   provider: z.string().min(1),
@@ -94,131 +88,119 @@ export function AiCategorizationSection({ settings }: { settings: AdminAiSetting
   }
 
   return (
-    <Card className="rounded-4xl bg-card shadow-md">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <BrainCircuit className="size-5 text-muted-foreground" />
-          {t('admin.ai.title')}
-        </CardTitle>
-        <CardDescription>{t('admin.ai.description')}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={onSubmit} className="space-y-4" noValidate>
-          {/* Provider select */}
-          <div className="space-y-1.5">
-            <Label htmlFor="admin-ai-provider">{t('admin.ai.provider')}</Label>
-            <select
-              id="admin-ai-provider"
-              className="h-7 w-full min-w-0 rounded-md border border-input bg-input/20 px-2 py-0.5 text-sm transition-colors outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 dark:bg-input/30"
-              {...register('provider')}
-            >
-              {PROVIDER_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.labelKey ? t(opt.labelKey) : opt.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {provider === 'none' ? (
-            <p className="text-sm text-muted-foreground">{t('admin.ai.disabledHint')}</p>
-          ) : (
-            <>
-              {/* Base URL */}
-              <div className="space-y-1.5">
-                <Label htmlFor="admin-ai-baseUrl">{t('admin.ai.baseUrl')}</Label>
-                <Input
-                  id="admin-ai-baseUrl"
-                  placeholder={defaults?.baseUrl}
-                  {...register('baseUrl')}
-                />
-              </div>
-
-              {/* Model */}
-              <div className="space-y-1.5">
-                <Label htmlFor="admin-ai-model">{t('admin.ai.model')}</Label>
-                <Input
-                  id="admin-ai-model"
-                  placeholder={defaults?.model}
-                  {...register('model')}
-                />
-              </div>
-
-              {/* Max concurrency */}
-              <div className="space-y-1.5">
-                <Label htmlFor="admin-ai-maxConcurrency">{t('admin.ai.maxConcurrency')}</Label>
-                <Input
-                  id="admin-ai-maxConcurrency"
-                  type="number"
-                  min={1}
-                  max={16}
-                  {...register('maxConcurrency', { valueAsNumber: true })}
-                />
-                <p className="text-xs text-muted-foreground">{t('admin.ai.maxConcurrencyHint')}</p>
-              </div>
-
-              {/* API Key — hidden for Ollama */}
-              {provider !== 'ollama' && (
-                <div className="space-y-1.5">
-                  <Label htmlFor="admin-ai-apiKey">{t('admin.ai.apiKey')}</Label>
-                  <Input
-                    id="admin-ai-apiKey"
-                    type="password"
-                    {...register('apiKey')}
-                  />
-                  {keyKept && (
-                    <p className="text-xs text-muted-foreground">
-                      {t('admin.ai.apiKeyHintPresent')}
-                    </p>
-                  )}
-                  {formState.errors.apiKey && (
-                    <p role="alert" className="text-xs text-destructive">
-                      {formState.errors.apiKey.message}
-                    </p>
-                  )}
-                </div>
+    <form onSubmit={onSubmit} noValidate>
+      <SettingsCard
+        title={t('admin.ai.title')}
+        description={t('admin.ai.description')}
+        footer={
+          <>
+            {/* Test result and save outcome, left of the buttons */}
+            <div className="flex min-w-0 flex-col gap-1 sm:mr-auto">
+              {provider !== 'none' && testAi.data?.ok === true && (
+                <StatusText tone="ok" className="whitespace-normal">{testAi.data.message}</StatusText>
               )}
-
-              {/* Test result */}
-              {testAi.data?.ok === true && (
-                <p className="text-sm text-emerald-600">{testAi.data.message}</p>
-              )}
-              {(testAi.isError || testAi.data?.ok === false) && (
-                <p role="alert" className="text-sm text-destructive">
+              {provider !== 'none' && (testAi.isError || testAi.data?.ok === false) && (
+                <p role="alert" className="text-[13px] text-destructive">
                   {testAi.data?.message ?? extractErrorMessage(testAi.error)}
                 </p>
               )}
-            </>
-          )}
-
-          {/* Save error */}
-          {update.error && (
-            <p role="alert" className="text-sm text-destructive">
-              {extractErrorMessage(update.error)}
-            </p>
-          )}
-
-          {/* Buttons — stack on mobile, row on sm */}
-          <div className="flex flex-col gap-2 sm:flex-row">
+              {update.error && (
+                <p role="alert" className="text-[13px] text-destructive">
+                  {extractErrorMessage(update.error)}
+                </p>
+              )}
+              {update.isSuccess && !formState.isDirty && <StatusText tone="ok">{t('admin.ai.saved')}</StatusText>}
+            </div>
             {provider !== 'none' && (
-              <Button
-                type="button"
-                variant="outline"
-                disabled={testAi.isPending}
-                onClick={handleTest}
-              >
+              <Button type="button" variant="outline" size="xs" disabled={testAi.isPending} onClick={handleTest}>
+                {testAi.isPending && <Loader2 className="animate-spin" aria-hidden="true" />}
                 {testAi.isPending ? t('admin.ai.testing') : t('admin.ai.test')}
               </Button>
             )}
-            <Button type="submit" disabled={update.isPending}>
+            <Button type="submit" size="xs" disabled={update.isPending}>
+              {update.isPending && <Loader2 className="animate-spin" aria-hidden="true" />}
               {update.isPending ? t('admin.ai.saving') : t('admin.ai.save')}
             </Button>
-          </div>
-          {update.isSuccess && !formState.isDirty && (
-            <span className="text-sm text-emerald-600">{t('admin.ai.saved')}</span>
-          )}
-        </form>
-      </CardContent>
-    </Card>
+          </>
+        }
+      >
+        <SettingRow
+          htmlFor="admin-ai-provider"
+          label={t('admin.ai.provider')}
+          description={provider === 'none' ? t('admin.ai.disabledHint') : undefined}
+        >
+          <NativeSelect id="admin-ai-provider" className="h-9" {...register('provider')}>
+            {PROVIDER_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.labelKey ? t(opt.labelKey) : opt.label}
+              </option>
+            ))}
+          </NativeSelect>
+        </SettingRow>
+
+        {provider !== 'none' && (
+          <>
+            <SettingRow htmlFor="admin-ai-baseUrl" label={t('admin.ai.baseUrl')}>
+              <Input
+                id="admin-ai-baseUrl"
+                placeholder={defaults?.baseUrl}
+                spellCheck={false}
+                className="h-9 font-mono text-[13px]"
+                {...register('baseUrl')}
+              />
+            </SettingRow>
+
+            <SettingRow htmlFor="admin-ai-model" label={t('admin.ai.model')}>
+              <Input
+                id="admin-ai-model"
+                placeholder={defaults?.model}
+                spellCheck={false}
+                className="h-9 font-mono text-[13px]"
+                {...register('model')}
+              />
+            </SettingRow>
+
+            <SettingRow
+              htmlFor="admin-ai-maxConcurrency"
+              label={t('admin.ai.maxConcurrency')}
+              description={t('admin.ai.maxConcurrencyHint')}
+            >
+              <Input
+                id="admin-ai-maxConcurrency"
+                type="number"
+                min={1}
+                max={16}
+                className="h-9 tabular-nums"
+                {...register('maxConcurrency', { valueAsNumber: true })}
+              />
+            </SettingRow>
+
+            {/* API Key — hidden for Ollama */}
+            {provider !== 'ollama' && (
+              <SettingRow
+                htmlFor="admin-ai-apiKey"
+                label={t('admin.ai.apiKey')}
+                description={keyKept ? t('admin.ai.apiKeyHintPresent') : undefined}
+              >
+                <Input
+                  id="admin-ai-apiKey"
+                  type="password"
+                  autoComplete="off"
+                  aria-invalid={!!formState.errors.apiKey}
+                  placeholder={keyKept ? '••••••••' : undefined}
+                  className="h-9"
+                  {...register('apiKey')}
+                />
+                {formState.errors.apiKey && (
+                  <p role="alert" className="mt-1.5 text-[13px] text-destructive">
+                    {formState.errors.apiKey.message}
+                  </p>
+                )}
+              </SettingRow>
+            )}
+          </>
+        )}
+      </SettingsCard>
+    </form>
   )
 }

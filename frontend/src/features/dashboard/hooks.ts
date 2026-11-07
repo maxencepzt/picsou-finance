@@ -27,3 +27,12 @@ export function usePnl(accountIds: number[], from?: string) {
     staleTime: QUERY_STALE_TIMES.dashboard,
   })
 }
+
+/** Today's biggest gains and losses among held securities. Under `['dashboard']`, so a holding change refreshes it. */
+export function useMovers(limit = 5) {
+  return useQuery({
+    queryKey: ['dashboard', 'movers', limit],
+    queryFn: () => dashboardApi.getMovers(limit),
+    staleTime: QUERY_STALE_TIMES.dashboard,
+  })
+}

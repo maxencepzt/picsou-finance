@@ -132,6 +132,12 @@ readable holder of that ticker, or several of the same provider, the credited ac
 A CORUM Life coupon (ticker `CORUM-LIFE-<CODE>`, budget-neutral) is listed too, with
 `countsInBudget` false like every assurance-vie dividend.
 
+Each line also carries `amountEur`: the credit (`amount`, in `currency`) converted to EUR. A EUR
+credit passes through unchanged; another currency is multiplied by `PriceService.getFxRateEur`,
+asked once per currency per request, and rounded to 2 dp. `PriceProviderPort` keeps no FX
+history, so the rate is the latest one, not the rate of `receivedDate`. With no rate the field is
+an explicit `null` (`@JsonInclude(ALWAYS)`), never the unconverted amount.
+
 ### API
 
 `GET /api/dividends/upcoming?horizonDays=60[&accountId=12]` (horizon clamped to 1..366). Each
@@ -142,9 +148,12 @@ notifier (iOS, 2.0) can use to tell "already sent" from "new".
 
 - **Budget overview**: "Revenus du capital à venir" card, total of the next 60 days for
   `countsInBudget` lines, next payments, and a muted line for the amount kept in envelopes.
-- **Account detail** (compte-titres, PEA): carousel of cards for the next 12 months, each with
-  ex-date and amount, payment date (or "unknown") and amount, amount per share, and an
-  "Annoncé" / "Estimé" badge.
+- **Account detail** (compte-titres, PEA): carousel of raised tiles (`bg-muted`) for the next 12 months, each with
+  ex-date and amount, payment date (or "unknown") and amount, amount per share, and one slate caption line
+  ("Annoncé" / "Estimé" · "Reste dans l'enveloppe" · cadence) instead of a row of badges.
+- **Dashboard and Passive income page**: the "Next 30 days" card (`pages/dashboard/UpcomingCard.tsx`)
+  and `/income` read the forecast through `useUpcomingDividends`; `/income` and `/investments` read
+  `/received` through `useReceivedDividends` (see [passive-income-page.md](./passive-income-page.md)).
 - **SCPI forms**: annual distribution per share and frequency. Omitting either field leaves
   the stored value alone, the same way an omitted fund code does. An explicit null clears it.
 
@@ -158,7 +167,7 @@ notifier (iOS, 2.0) can use to tell "already sent" from "new".
 - `db/migration/V116__dividend_forecast.sql` — `dividend_source`, `dividend_event`, SCPI fields,
   `revenus-capital` category back-fill
 - `frontend/src/features/dividends/`, `components/dividends/AccountDividendsSection.tsx`,
-  `pages/budget/OverviewTab.tsx`
+  `pages/budget/OverviewTab.tsx` (`CapitalIncomeAhead`)
 
 ## Gotchas / Pitfalls
 
@@ -179,7 +188,8 @@ notifier (iOS, 2.0) can use to tell "already sent" from "new".
   holding the same ticker can be reported for a credit on the member's own cash account.
 - A co-owned row is classified by the owner only, so it can be listed by `received` before the
   owner's next sync.
-- `amount` in `/received` is the credit as booked, not weighted by the member's share.
+- `amount` in `/received` is the credit as booked, not weighted by the member's share. So is
+  `amountEur`, which also uses today's FX rate for a past foreign credit.
 - `/received` lists every readable `DIVIDEND` row, including a broker-typed one that no stored
   event fits (then `exDate` and `amountPerShare` are null, and the row may stay uncategorised).
 - In `/received`, `exDate` and `amountPerShare` come from the newest event in the 60 days before

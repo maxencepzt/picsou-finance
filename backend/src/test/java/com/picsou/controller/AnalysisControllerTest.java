@@ -3,9 +3,11 @@ package com.picsou.controller;
 import com.picsou.dto.AllocationTargetsRequest;
 import com.picsou.dto.AllocationTargetsResponse;
 import com.picsou.dto.EssentialExpenseEstimateResponse;
+import com.picsou.dto.PerformanceResponse;
 import com.picsou.dto.WealthPyramidResponse;
 import com.picsou.service.AllocationTargetService;
 import com.picsou.service.EssentialExpenseEstimator;
+import com.picsou.service.InvestmentPerformanceService;
 import com.picsou.service.UserContext;
 import com.picsou.service.WealthPyramidService;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,6 +32,7 @@ class AnalysisControllerTest {
     @Mock WealthPyramidService pyramidService;
     @Mock AllocationTargetService allocationTargetService;
     @Mock EssentialExpenseEstimator expenseEstimator;
+    @Mock InvestmentPerformanceService performanceService;
     @Mock UserContext userContext;
 
     @InjectMocks AnalysisController controller;
@@ -55,6 +58,15 @@ class AnalysisControllerTest {
         // The scoping contract at this layer: the member id never comes from the request body
         // or a path variable, only from UserContext.
         verify(pyramidService).pyramid(MEMBER);
+    }
+
+    @Test
+    void performanceIsScopedToTheMemberFromTheUserContext() {
+        PerformanceResponse expected = new PerformanceResponse(null, null, BigDecimal.ZERO, BigDecimal.ZERO,
+            null, null, null, null, null, null, null, List.of());
+        when(performanceService.performance(MEMBER, 36)).thenReturn(expected);
+
+        assertThat(controller.performance(36)).isSameAs(expected);
     }
 
     @Test

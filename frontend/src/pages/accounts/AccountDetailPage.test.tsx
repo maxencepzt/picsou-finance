@@ -138,7 +138,7 @@ describe('AccountDetailPage PER balance', () => {
       </QueryClientProvider>,
     )
 
-    expect(screen.getByText('Fonds euro:')).toBeInTheDocument()
+    expect(screen.getByText('Fonds euro')).toBeInTheDocument()
     expect(screen.getByText('1234')).toBeInTheDocument()
     expect(screen.queryByText('dashboard.portfolioPerformance')).not.toBeInTheDocument()
     expect(screen.queryByText('0')).not.toBeInTheDocument()
@@ -187,5 +187,29 @@ describe('AccountDetailPage PER balance', () => {
     )
 
     expect(screen.queryByText('accounts.lifeContract.title')).not.toBeInTheDocument()
+  })
+
+  it('draws the deposit-ceiling gauge of a PEA jeune from its invested capital', () => {
+    hooks.useAccount.mockReturnValue({
+      data: { ...PER_ACCOUNT, type: 'PEA', cashBalance: null, depositCeiling: 20000, investedEur: 4000 } satisfies Account,
+      isLoading: false,
+    })
+    hooks.useHistory.mockReturnValue({
+      data: [{ date: '2026-08-19', total: 9987, invested: 5000, pnl: 4987 }],
+    })
+    const client = new QueryClient()
+    render(
+      <QueryClientProvider client={client}>
+        <MemoryRouter initialEntries={['/accounts/42']}>
+          <Routes>
+            <Route path="/accounts/:id" element={<AccountDetailPage />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+
+    // 5 000 € of the 20 000 € ceiling: the page's own "Capital investi" wins over the list figure.
+    expect(screen.getByRole('meter')).toHaveAttribute('aria-valuenow', '25')
+    expect(screen.getByText('accounts.ceiling.deposits')).toBeInTheDocument()
   })
 })

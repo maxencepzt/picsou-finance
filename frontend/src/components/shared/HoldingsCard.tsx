@@ -37,6 +37,7 @@ const FILTER_TABS: { value: FilterType; labelKey: string; match: (type: Account[
   { value: 'all', labelKey: 'dashboard.allHoldings', match: () => true },
   { value: 'PEA', labelKey: 'accountTypes.pea', match: (t) => t === 'PEA' },
   { value: 'COMPTE_TITRES', labelKey: 'accountTypes.compteTitres', match: (t) => t === 'COMPTE_TITRES' },
+  { value: 'BROKERAGE', labelKey: 'accountTypes.brokerage', match: (t) => t === 'BROKERAGE' },
   { value: 'CRYPTO', labelKey: 'accountTypes.crypto', match: (t) => t === 'CRYPTO' },
   { value: 'cash', labelKey: 'portfolio.cash', match: (t) => ['CHECKING', 'SAVINGS', 'LEP', 'LIVRET_A', 'LDDS', 'LIVRET_JEUNE', 'PEL', 'CEL', 'OTHER']
       .includes(t) },
@@ -98,7 +99,7 @@ function HoldingsItem({ line, onClick }: { line: PortfolioLine; onClick?: () => 
             <span
               className={cn(
                 'inline-flex items-center gap-1 text-xs font-medium tabular-nums',
-                line.pnlPercent >= 0 ? 'text-emerald-500' : 'text-red-500',
+                line.pnlPercent >= 0 ? 'text-gain' : 'text-loss',
               )}
             >
               {line.pnlPercent >= 0

@@ -53,12 +53,6 @@
   animation: hello-fade-down 400ms ease-in both;
 }
 
-.setup-gradient {
-  background:
-    radial-gradient(80rem 80rem at 50% -20%, color-mix(in oklab, var(--primary) 10%, transparent), transparent 60%),
-    radial-gradient(60rem 60rem at 80% 100%, color-mix(in oklab, var(--accent, var(--primary)) 8%, transparent), transparent 70%);
-}
-
 .font-homemade {
   font-family: 'Homemade Apple', 'Segoe Script', 'Snell Roundhand', cursive;
   font-weight: 400;

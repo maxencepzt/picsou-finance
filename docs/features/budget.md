@@ -1,6 +1,6 @@
 # Feature: Budget & Cashflow
 
-> Last updated: 2026-06-27
+> Last updated: 2026-11-03
 
 ## Context
 
@@ -40,13 +40,15 @@ contribution.
 
 ### Information architecture (`/budget/*`)
 
-A single `BudgetLayout` (segmented sub-nav on desktop, bottom bar on mobile — same pattern as
-`/setup`) owns an `<Outlet/>` over nested routes (`app/routes.tsx`, nav in
-`pages/budget/budget-nav.ts`):
+A single `BudgetLayout` owns an `<Outlet/>` over nested routes (`app/routes.tsx`, nav in
+`pages/budget/budget-nav.ts`). Its section switch is one row of links in a `ScrollStrip`, drawn
+like `SegmentedControl` (muted track, the current section on the card surface with a hairline)
+at the 40px page rhythm; the review count is a small warning-tinted number, and the strip scrolls
+the current section into view on a phone:
 
 | Route | Page | Content |
 |-------|------|---------|
-| `/budget` (index) | `BudgetOverviewPage` | Hero "left to spend", mini-flow, Review banner (only if items), upcoming subscriptions, top categories |
+| `/budget` (index) | `BudgetOverviewPage` → `OverviewTab` | KPI row, Review banner (only if items), flow Sankey, top envelopes, cash flow and savings rate by cycle, top merchants, subscriptions summary, capital income ahead — see [Overview](#overview-coffre-nocturne-redesign) |
 | `/budget/spending` | `SpendingPage` | Cashflow **flow diagram**: Sankey in a card ≥ 640px, Flow Bars below |
 | `/budget/spending/:categoryId` | `CategoryDetailPage` | Per-category drill: transactions with `MerchantAvatar` |
 | `/budget/subscriptions` | `SubscriptionsPage` | Recurring series **v2**: auto-confirm + runtime/price badges (`SubscriptionCard`), "what changed" feed + undo (`ActivityFeed`), upcoming agenda |
@@ -192,9 +194,79 @@ It deliberately has no empty-rules early-out: the brand KB alone categorizes a r
   **deterministic colour derived from the name**, fully offline; switches to a proxied `<img>` only
   when `logo_fetch_enabled` (M5). Used across every transaction list.
 
+### Overview ("Coffre Nocturne" redesign)
+
+`pages/budget/OverviewTab.tsx`, for the cycle the `PeriodNavigator` shows:
+
+1. **KPI row** (`KpiTile`): income and expenses, each with its change against the previous cycle
+   (`previousBucket` over the year's series); saved this cycle (`allocation.totalContributions`,
+   with the investable stock); savings rate (`savingsRate(income, expense)`, with the cycle net);
+   debits still due before the cycle closes (current cycle only).
+2. **To-categorise nudge**, then the **flow Sankey** beside the **top six envelopes** (current
+   cycle only).
+3. **Cash flow** (`CashflowTab`, revived: it had no caller left) — income against expenses, one
+   pair of bars per cycle — beside **`SavingsRateCard`** (`pages/budget/`), the savings rate of
+   each cycle with the rate of the summed flows as a dashed average (`savingsRateTrend`). Both
+   read one series, `useCashflow('YTD', …)`: the cycles since 1 January, ending on the displayed
+   one.
+4. **Top merchants** (`TopMerchantsCard`) — the displayed cycle's six largest merchants from
+   `useSpendingByMerchant('CYCLE', anchor, 6)` (see [spending-by-merchant.md](./spending-by-merchant.md)):
+   logo or monogram (`MerchantAvatar`), amount, purchase count and share bar; the rest of the
+   cycle's spend (`total` minus the listed amounts) on one "other merchants" line. Beside it, on
+   the current cycle only, the **subscriptions summary** (`SubscriptionsSummaryCard`): the
+   confirmed recurring debits from `useRecurring()` (the recurring tab's own query) as a
+   monthly-equivalent and a yearly cost, the next four due dates and a link to
+   `/budget/subscriptions`. `subscriptions.ts` converts cadences on 52 weeks / 26 fortnights /
+   12 months / 4 quarters a year (never 4 weeks a month), and leaves out a `STALE` series — the
+   backend already drops it from the calendar as stopped.
+5. **Capital income ahead** (`CapitalIncomeAhead`, current window only; see
+   [dividend-forecast.md](./dividend-forecast.md)).
+
+The cycle's cash flow, envelopes, recurring calendar and allocation queries gate the page; the
+nudge, the flow, the series, the merchants and the subscriptions load on their own and fail
+without replacing the recap.
+
+- **The savings-rate chart has a percent Y axis.** The money guard requires `money.tick` on every
+  Y axis; `SavingsRateCard.tsx` is on its `percentCharts` allow-list (with `AllocationTrajectory`)
+  because a rate has no amount to mask.
+- **A cycle straddling 1 January** gets only its January part in the YTD series, so its bar is
+  short and it has no previous cycle (`shortcut:` in `OverviewTab`).
+- `pages/goals/SavingsRateCard.tsx` is a different card: the share of income the recurring plans
+  pay in (see [goal-recurring-investment.md](./goal-recurring-investment.md)).
+
+### Sub-pages (polish pass, 2026-11-03)
+
+Every sub-page now has the Overview's anatomy. Shared pieces live in `budget-utils.tsx`:
+
+- **`BudgetToolbar`** — the row under the section switch: the page's one-line description (or the
+  way back) on the left, its controls on the right; on a phone the controls take the full width
+  under it. Spending, the category drill, Allocation, Subscriptions and Review use it.
+- **`PeriodToggle`** is the compact `SegmentedControl` (Cycle / Year), and **`PeriodNavigator`**
+  is drawn as the same muted 32px track (prev · label with the jump menu · next), so the two sit
+  side by side at one height.
+- **`StatusDot`** — a status word with its dot (`gain` / `warning` / `loss` / muted), never a
+  filled badge: series status (`STATUS_TONE`), runtime urgency (`RUNTIME_STATUS_META.tone`).
+  `budget-meta.ts` has no raw palette class left; `ASSET_CLASS_COLOR` maps to the `--class-*`
+  tokens.
+
+Per page:
+
+| Page | Layout |
+|------|--------|
+| Spending | Toolbar (description, link to the transactions, navigator + toggle); flow card whose summary shows income and expenses in ink and the net as a `Delta`; breakdown rows with amount and share (the count hides on a phone so names do not truncate). |
+| Category drill | Toolbar with the back link; a headline card (dot, name, count, total in ink); sub-category rows with amount and share; an `EmptyState` card when the period has nothing. |
+| Transactions | Date, account and category filters in one row above the list (two pairs on a phone); empty state in a card. |
+| Subscriptions | Toolbar (Detect, Add); "What changed" card; then the series list (7/12) beside the upcoming agenda (5/12). A series row: merchant mark, name + status, meta line (cadence · next date · variable · runtime status), the auto-confirm / price-change line, the amount in ink with its sign, then the actions in a fixed-width column so the amounts line up. |
+| Envelopes | One card listing every envelope with the Overview's row (spent / limit, bar amber from 80 %, loss past 100 %, remaining line), edit and delete on the row, Add in the card header; Allocation below with its toolbar, the stock drawn by `Breakdown` (bar · donut · treemap, class colours, legend) and the contributions as share rows. |
+| Review | One "To categorise" card; a row per transaction: mark, label, date and the AI suggestion on the meta line, signed amount, then category select, rule and assign (one row on a desktop, the select over the two buttons on a phone). The rule picker's dialog / sheet names the transaction. |
+| Settings | Categories and rules (7/12) beside pay cycle, logos and AI (5/12). Category and rule rows: dot, name, meta line (kind · default, match type · learned), icon actions. |
+
+Dialogs use `NativeSelect` (40px) instead of hand-made `h-9` selects, and stack their two-column
+fields on a phone.
+
 ### Period navigation
 
-All five period-aware budget views — Overview (cycle only), Cashflow/Spending flow, Allocation,
+All five period-aware budget views — Overview (cycle only; its by-cycle charts follow the same anchor), Spending flow, Allocation,
 Spending breakdown, and the per-category drill — expose a **`PeriodNavigator`** component. It sits
 next to the Cycle / Year toggle and lets the user step through past periods without leaving the page.
 
@@ -224,6 +296,8 @@ label and step size from them rather than recomputing on the client.
 - **Prev / Next arrows** — step to the immediately preceding or following cycle (month) or year.
 - **Jump dropdown** — lists a fixed set of recent months (cycle mode) or years (year mode) for
   direct navigation without repeated clicking.
+- **Look** — one muted 32px track like `SegmentedControl`, so it lines up with the Cycle / Year
+  switch (`PeriodToggle`, itself a `SegmentedControl`).
 - **No future periods** — the Next arrow is disabled when the current anchor is at or past the
   current period; the user cannot navigate into the future.
 - **Cycle↔Year reset** — switching the Cycle / Year toggle resets the anchor to today so the
@@ -390,6 +464,8 @@ overlap guard added in M4): `model/Budget.java` + `BudgetService` + `BudgetContr
 `pages/budget/BudgetPeriodContext.tsx` (`BudgetPeriodProvider` / `useBudgetPeriod()`,
 `sessionStorage`-backed anchor, key `picsou_budget_anchor`) + `budget-nav.ts` + the nested pages above;
 `pages/budget/{SubscriptionCard,ActivityFeed}.tsx` + `budget-meta.ts` (runtime/activity lookups);
+`pages/budget/{OverviewTab,CashflowTab,SavingsRateCard,TopMerchantsCard,SubscriptionsSummaryCard}.tsx` +
+`savings-rate.ts` + `subscriptions.ts` (the overview);
 `features/budget/{api,hooks}.ts` (TanStack Query, cascade invalidations rooted at `['budget']`);
 `components/shared/{MerchantAvatar,CashflowSankey,FlowBars,flow-utils}.ts(x)`;
 `types/api.ts`; demo mocks in `demo/data/budget.ts` + `demo/index.ts`.
@@ -524,7 +600,11 @@ Enable Banking sync ─▶ SyncService.fetchTransactions ─▶ dedup ─▶ per
 - `MerchantLogoServiceTest` — per-brand TTL cache, hits/misses cached separately, opt-in gate lives
   in the controller (not the service), graceful empty on a failing provider
 - Frontend: `flow-utils.test.ts`, `MerchantAvatar.test.tsx`, `features/budget` hooks via
-  `make test-frontend`
+  `bunx vitest run`; `pages/budget/savings-rate.test.ts` (rate, trend average of summed flows,
+  previous bucket), `OverviewTab.test.tsx` (capital income card, KPI debits due and the
+  previous-cycle comparison), `CashflowTab.test.tsx` (privacy mode masks the axis and tooltip),
+  `subscriptions.test.ts` (cadence → yearly cost, confirmed debits only, `STALE` left out, next due
+  soonest first), `TopMerchantsCard.test.tsx` (the "other merchants" line, empty cycle)
 - **`BudgetSeedWriteOnReadPostgresTest`** — the one Testcontainers integration test (real Postgres
   16, self-skips without Docker): seeding/recategorizing from a read-only caller must escape via
   `REQUIRES_NEW`, a write-on-read trap H2 masks but Postgres rejects with SQLSTATE `25006`. See

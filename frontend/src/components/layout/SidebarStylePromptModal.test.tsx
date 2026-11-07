@@ -35,47 +35,35 @@ function sketch(optionLabel: string) {
 }
 
 describe('SidebarStylePromptModal miniatures', () => {
-  it('sketches the classic sidebar as a fit-height card that ends on the member row, right under the nav list', () => {
+  it('sketches the classic sidebar with the member row right under the routes, Settings last among them', () => {
     const { column, nav, member } = sketch('settings.sidebarStyleClassic')
-
-    expect(column).toHaveClass('h-fit')
-    expect(column).not.toHaveClass('h-full')
-    expect(column.children).toHaveLength(3)
-    expect(nav.nextElementSibling).toBe(member)
-    expect(member).not.toHaveClass('mt-auto')
-    expect(member.querySelector('.lucide-settings')).toBeNull()
-    expect(member.querySelector('.lucide-chevron-down')).not.toBeNull()
-  })
-
-  it('lists Settings between the routes and Family in the classic sketch, as the classic sidebar does', () => {
-    const { nav } = sketch('settings.sidebarStyleClassic')
     const rows = Array.from(nav.children)
 
-    expect(rows).toHaveLength(NAV_ITEMS.length + 2)
-    expect(rows.at(-2)?.querySelector('.lucide-settings')).not.toBeNull()
-    expect(rows.at(-1)?.querySelector('.lucide-users')).not.toBeNull()
+    expect(column.children).toHaveLength(3)
+    expect(member).not.toHaveClass('mt-auto')
+    expect(member.children).toHaveLength(1)
+    expect(member.querySelector('.lucide-chevron-down')).not.toBeNull()
+    expect(rows).toHaveLength(NAV_ITEMS.length + 1)
+    expect(rows.at(-1)?.querySelector('.lucide-settings')).not.toBeNull()
   })
 
-  it('sketches the current sidebar full height, with the member row and the settings gear pinned to the bottom', () => {
-    const { column, nav, member } = sketch('settings.sidebarStyleCurrent')
+  it('sketches the current sidebar with Sync, Settings and the member row pinned to the bottom', () => {
+    const { nav, member } = sketch('settings.sidebarStyleCurrent')
 
-    expect(column).toHaveClass('h-full')
     expect(member).toHaveClass('mt-auto')
+    expect(member.querySelector('.lucide-refresh-cw')).not.toBeNull()
     expect(member.querySelector('.lucide-settings')).not.toBeNull()
-    expect(nav.children).toHaveLength(NAV_ITEMS.length + 1)
+    expect(nav.children).toHaveLength(NAV_ITEMS.length)
   })
 
   it.each(['settings.sidebarStyleClassic', 'settings.sidebarStyleCurrent'])(
-    'draws %s with the logo left of the privacy toggle and two-line nav rows',
+    'draws %s with the logo on top and single-line nav rows',
     (label) => {
-      const { column, header, nav } = sketch(label)
+      const { header, nav } = sketch(label)
 
-      expect(column).not.toHaveClass('items-center')
-      expect(header).toHaveClass('justify-between')
       expect(header.firstElementChild?.tagName).toBe('IMG')
-      expect(header.lastElementChild).toHaveClass('lucide-eye')
       for (const row of Array.from(nav.children)) {
-        expect(row.lastElementChild?.children).toHaveLength(2)
+        expect(row.children).toHaveLength(2)
       }
     },
   )

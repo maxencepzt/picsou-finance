@@ -2,25 +2,34 @@ import { useEffect, useRef, useState } from "react"
 import type { ReactNode } from "react"
 import type { UseMutationResult, UseQueryResult } from "@tanstack/react-query"
 import {
-  AlertTriangle,
+  CheckCircle2,
   Lock,
-  LogOut,
   RefreshCw,
   ShieldCheck,
   Smartphone,
   type LucideIcon,
 } from "lucide-react"
 import { useTranslation } from "react-i18next"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { NativeSelect } from "@/components/shared/NativeSelect"
+import {
+  PanelDisconnect,
+  PanelError,
+  PanelField,
+  PanelForm,
+  PanelIntro,
+  PanelLoading,
+  PanelStatus,
+  PanelWaiting,
+} from "@/components/sync/ProviderPanel"
+import { PANEL_ACTION, PANEL_CODE_INPUT, PANEL_INPUT, PANEL_SELECT } from "@/components/sync/panel-styles"
 import { useProviderSession } from "@/features/sync/hooks"
 import { sidecarProviders } from "@/features/sync/providers"
 import type { Credentials, PanelProviderId, SecondFactor } from "@/features/sync/providers"
 import { extractErrorMessage, getErrorCode, getErrorStatus } from "@/lib/errors"
+import { formatTimeAgo } from "@/lib/utils"
 import type { SidecarAuthInitResponse, SidecarSessionStatus } from "@/types/api"
 
 /**
@@ -333,280 +342,235 @@ export function SidecarSessionPanel({
     onConnected?.()
   }, [onConnected, syncStatus])
 
-  if (status.isLoading)
-    return (
-      <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
+  if (status.isLoading) return <PanelLoading />
+
+  const lastSync = status.data?.lastSyncCompletedAt
+  const startLogin = () => {
+    setError(null)
+    initiate.mutate(
+      {
+        login,
+        password,
+        ...(extraField ? { [extraField.id]: extraValue } : {}),
+        ...(rememberCredentials ? { remember } : {}),
+      },
+      { onSuccess: handleInitResult, onError: handleInitError }
     )
+  }
 
   return (
-    <div className="space-y-6">
-      <Card size="sm">
-        <CardContent className="py-4">
-          <Badge
-            className={
-              connected
-                ? "bg-green-500/10 text-green-600 dark:text-green-400"
-                : undefined
-            }
-            variant={connected ? "default" : "outline"}
-          >
-            {connected ? t(key("sessionActive")) : t(key("noSession"))}
-          </Badge>
-          <p className="mt-2 text-xs text-muted-foreground">
-            {t(key("scope"))}
-          </p>
-          {connected && rememberCredentials && status.data?.credentialsRemembered === true && (
-            <p className="mt-2 text-xs text-muted-foreground">
-              {t(key("credentialsRemembered"))}
-            </p>
+    <div className="space-y-4">
+      {connected ? (
+        <PanelStatus
+          tone={isSyncing ? "busy" : backgroundError ? "error" : "ok"}
+          label={t(key("sessionActive"))}
+          meta={[lastSync && t("sync.panel.lastSync", { time: formatTimeAgo(lastSync) })]}
+          actions={
+            <>
+              <PanelDisconnect
+                label={t(key("clearSession"))}
+                provider={t(key("title"))}
+                pending={logout.isPending}
+                onConfirm={() => {
+                  setError(null)
+                  logout.mutate(undefined, {
+                    onSuccess: () => {
+                      notifyConnectedOnSuccess.current = false
+                      resetAuth()
+                    },
+                    onError: (value) => setError(formatError(value)),
+                  })
+                }}
+              />
+              <Button
+                size="xs"
+                className={PANEL_ACTION}
+                onClick={() => {
+                  setError(null)
+                  sync.mutate(undefined, {
+                    onError: (value) => setError(formatError(value)),
+                  })
+                }}
+                disabled={requestingSync}
+              >
+                <RefreshCw className={requestingSync ? "animate-spin" : undefined} />
+                {requestingSync ? t(key("syncing")) : t(key("sync"))}
+              </Button>
+            </>
+          }
+        >
+          {rememberCredentials && status.data?.credentialsRemembered === true && (
+            <p className="text-xs text-muted-foreground">{t(key("credentialsRemembered"))}</p>
           )}
           {isSyncing && (
-            <p className="mt-2 text-sm text-muted-foreground">
+            <p className="text-muted-foreground">
               {syncStatus === "QUEUED" ? t(key("queued")) : t(key("syncing"))}
             </p>
           )}
-          {syncStatus === "SUCCESS" && status.data?.lastSyncCompletedAt && (
+          {syncStatus === "SUCCESS" && lastSync && (
             successSummary ?? (
-              <p className="mt-2 text-sm text-emerald-600 dark:text-emerald-400">
+              <p className="flex items-center gap-1.5 text-gain">
+                <CheckCircle2 className="size-4 shrink-0" aria-hidden />
                 {t(key("syncSuccess"))}
               </p>
             )
           )}
-        </CardContent>
-      </Card>
-
-      {visibleError && (
-        <Card size="sm" className="border-destructive/30">
-          <CardContent className="flex items-center gap-3 py-4">
-            <AlertTriangle className="size-5 shrink-0 text-destructive" />
-            <p className="flex-1 text-sm text-destructive">{visibleError}</p>
-            {(error || statusError) && (
+          {recoveryAction && (
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <p className="flex-1 text-xs text-muted-foreground">{recoveryAction.description}</p>
               <Button
                 variant="outline"
-                size="sm"
-                onClick={() => {
+                size="xs"
+                className={PANEL_ACTION}
+                disabled={recoveryAction.busy || requestingSync}
+                onClick={recoveryAction.onRun}
+              >
+                {recoveryAction.busy ? recoveryAction.busyLabel : recoveryAction.label}
+              </Button>
+            </div>
+          )}
+        </PanelStatus>
+      ) : (
+        // The provider view's header already says "not connected".
+        <PanelIntro>{t(key("scope"))}</PanelIntro>
+      )}
+
+      {visibleError && (
+        <PanelError
+          onRetry={
+            error || statusError
+              ? () => {
                   setError(null)
                   resetAuth()
                   if (statusError) void status.refetch()
-                }}
-              >
-                {t("common.retry")}
-              </Button>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {connected && recoveryAction && (
-        <Card size="sm" className="border-border/60">
-          <CardContent className="flex flex-col gap-2 py-4 sm:flex-row sm:items-center">
-            <p className="flex-1 text-xs text-muted-foreground">{recoveryAction.description}</p>
-            <Button variant="outline" size="sm" disabled={recoveryAction.busy || requestingSync} onClick={recoveryAction.onRun}>
-              {recoveryAction.busy ? recoveryAction.busyLabel : recoveryAction.label}
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
-      {connected && (
-        <div className="flex flex-wrap gap-3">
-          <Button
-            onClick={() => {
-              setError(null)
-              sync.mutate(undefined, {
-                onError: (value) => setError(formatError(value)),
-              })
-            }}
-            disabled={requestingSync}
-          >
-            <RefreshCw
-              className={requestingSync ? "animate-spin" : undefined}
-            />
-            {requestingSync ? t(key("syncing")) : t(key("sync"))}
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={() => {
-              setError(null)
-              logout.mutate(undefined, {
-                onSuccess: () => {
-                  notifyConnectedOnSuccess.current = false
-                  resetAuth()
-                },
-                onError: (value) => setError(formatError(value)),
-              })
-            }}
-            disabled={logout.isPending}
-          >
-            <LogOut />
-            {t(key("clearSession"))}
-          </Button>
-        </div>
+                }
+              : undefined
+          }
+        >
+          {visibleError}
+        </PanelError>
       )}
 
       {!connected && authState === "IDLE" && canReconnect && (
-        <Card size="sm">
-          <CardContent className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center">
-            <p className="flex-1 text-sm text-muted-foreground">{t(key("reconnectHint"))}</p>
-            <Button
-              disabled={reconnect.isPending}
-              onClick={() => {
-                setError(null)
-                startReconnect()
-              }}
-            >
-              <RefreshCw className={reconnect.isPending ? "animate-spin" : undefined} />
-              {reconnect.isPending ? t(key("connecting")) : t(key("reconnect"))}
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
-      {!connected && authState === "IDLE" && (
-        <form
-          className="space-y-4"
+        <PanelForm
           onSubmit={(event) => {
             event.preventDefault()
             setError(null)
-            initiate.mutate(
-              {
-                login,
-                password,
-                ...(extraField ? { [extraField.id]: extraValue } : {}),
-                ...(rememberCredentials ? { remember } : {}),
-              },
-              { onSuccess: handleInitResult, onError: handleInitError }
-            )
+            startReconnect()
           }}
+          actions={
+            <Button type="submit" size="xs" className={PANEL_ACTION} disabled={reconnect.isPending}>
+              <RefreshCw className={reconnect.isPending ? "animate-spin" : undefined} />
+              {reconnect.isPending ? t(key("connecting")) : t(key("reconnect"))}
+            </Button>
+          }
         >
-          <Card size="sm">
-            <CardContent className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor={`${fieldIdPrefix}-login`}>
-                  <LoginIcon className="mr-1 inline-block size-4" />
-                  {t(key("login"))}
-                </Label>
-                <Input
-                  id={`${fieldIdPrefix}-login`}
-                  autoComplete="username"
-                  value={login}
-                  onChange={(event) => setLogin(event.target.value)}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor={`${fieldIdPrefix}-password`}>
-                  <Lock className="mr-1 inline-block size-4" />
-                  {t(key("password"))}
-                </Label>
-                <Input
-                  id={`${fieldIdPrefix}-password`}
-                  type="password"
-                  autoComplete="current-password"
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                  required
-                />
-              </div>
-              {extraField && (
-                <div className="space-y-2">
-                  <Label htmlFor={`${fieldIdPrefix}-${extraField.id}`}>
-                    {extraField.label}
-                  </Label>
-                  <select
-                    id={`${fieldIdPrefix}-${extraField.id}`}
-                    className="border-input flex h-9 w-full rounded-md border bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:ring-2"
-                    value={extraValue}
-                    onChange={(event) => setExtraValue(event.target.value)}
-                  >
-                    {extraField.options.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-              {rememberCredentials && (
-                <label className="flex cursor-pointer items-center gap-2">
-                  <Checkbox
-                    id={`${fieldIdPrefix}-remember`}
-                    checked={remember}
-                    onCheckedChange={(checked) => setRemember(checked === true)}
-                    disabled={initiate.isPending}
-                  />
-                  <span className="text-sm text-muted-foreground">{t(key("remember"))}</span>
-                </label>
-              )}
-              <Button type="submit" disabled={initiate.isPending}>
-                {initiate.isPending && <RefreshCw className="animate-spin" />}
-                {initiate.isPending
-                  ? t(key("connecting"))
-                  : t(key("connect"))}
-              </Button>
-            </CardContent>
-          </Card>
-        </form>
+          <p className="text-sm text-muted-foreground">{t(key("reconnectHint"))}</p>
+        </PanelForm>
+      )}
+
+      {!connected && authState === "IDLE" && (
+        <PanelForm
+          onSubmit={(event) => {
+            event.preventDefault()
+            startLogin()
+          }}
+          actions={
+            <Button type="submit" size="xs" className={PANEL_ACTION} disabled={initiate.isPending}>
+              {initiate.isPending && <RefreshCw className="animate-spin" />}
+              {initiate.isPending ? t(key("connecting")) : t(key("connect"))}
+            </Button>
+          }
+        >
+          <PanelField id={`${fieldIdPrefix}-login`} label={t(key("login"))} icon={LoginIcon}>
+            <Input
+              id={`${fieldIdPrefix}-login`}
+              className={PANEL_INPUT}
+              autoComplete="username"
+              value={login}
+              onChange={(event) => setLogin(event.target.value)}
+              required
+            />
+          </PanelField>
+          <PanelField id={`${fieldIdPrefix}-password`} label={t(key("password"))} icon={Lock}>
+            <Input
+              id={`${fieldIdPrefix}-password`}
+              className={PANEL_INPUT}
+              type="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              required
+            />
+          </PanelField>
+          {extraField && (
+            <PanelField id={`${fieldIdPrefix}-${extraField.id}`} label={extraField.label}>
+              <NativeSelect
+                id={`${fieldIdPrefix}-${extraField.id}`}
+                className={PANEL_SELECT}
+                value={extraValue}
+                onChange={(event) => setExtraValue(event.target.value)}
+              >
+                {extraField.options.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </NativeSelect>
+            </PanelField>
+          )}
+          {rememberCredentials && (
+            <label className="flex cursor-pointer items-center gap-2">
+              <Checkbox
+                id={`${fieldIdPrefix}-remember`}
+                checked={remember}
+                onCheckedChange={(checked) => setRemember(checked === true)}
+                disabled={initiate.isPending}
+              />
+              <span className="text-sm text-muted-foreground">{t(key("remember"))}</span>
+            </label>
+          )}
+        </PanelForm>
       )}
 
       {!connected && authState === "AWAITING_APP" && (
-        <Card size="sm">
-          <CardContent className="flex items-center gap-3 py-4">
-            <Smartphone className="size-5 shrink-0 text-muted-foreground" />
-            <div className="flex-1 space-y-1">
-              <p className="text-sm">{t(key("appValidationPrompt"))}</p>
-              <p className="text-xs text-muted-foreground">
-                {t(key("appValidationHint"))}
-              </p>
-            </div>
-            <RefreshCw className="size-4 shrink-0 animate-spin text-muted-foreground" />
-          </CardContent>
-        </Card>
+        <PanelWaiting
+          icon={Smartphone}
+          title={t(key("appValidationPrompt"))}
+          hint={t(key("appValidationHint"))}
+        />
       )}
 
       {!connected && authState === "AWAITING_OTP" && (
-        <form
+        <PanelForm
           onSubmit={(event) => {
             event.preventDefault()
             if (!processId) return
             submitSecondFactor(processId, code)
           }}
+          step={{ icon: ShieldCheck, title: t(key("otpPrompt")) }}
+          actions={
+            <Button type="submit" size="xs" className={PANEL_ACTION} disabled={complete.isPending || code.length < 4}>
+              {complete.isPending && <RefreshCw className="animate-spin" />}
+              {complete.isPending ? t(key("validating")) : t(key("validate"))}
+            </Button>
+          }
         >
-          <Card size="sm">
-            <CardContent className="space-y-4 py-4">
-              <p className="text-sm text-muted-foreground">
-                {t(key("otpPrompt"))}
-              </p>
-              <div className="space-y-2">
-                <Label htmlFor={`${fieldIdPrefix}-otp`}>
-                  <ShieldCheck className="mr-1 inline-block size-4" />
-                  {t(key("otpCode"))}
-                </Label>
-                <Input
-                  id={`${fieldIdPrefix}-otp`}
-                  inputMode="numeric"
-                  autoComplete="one-time-code"
-                  pattern="[0-9]{4,10}"
-                  maxLength={10}
-                  value={code}
-                  onChange={(event) =>
-                    setCode(event.target.value.replace(/\D/g, ""))
-                  }
-                  required
-                />
-              </div>
-              <Button
-                type="submit"
-                disabled={complete.isPending || code.length < 4}
-              >
-                {complete.isPending && <RefreshCw className="animate-spin" />}
-                {complete.isPending
-                  ? t(key("validating"))
-                  : t(key("validate"))}
-              </Button>
-            </CardContent>
-          </Card>
-        </form>
+          <PanelField id={`${fieldIdPrefix}-otp`} label={t(key("otpCode"))}>
+            <Input
+              id={`${fieldIdPrefix}-otp`}
+              className={PANEL_CODE_INPUT}
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              pattern="[0-9]{4,10}"
+              maxLength={10}
+              value={code}
+              onChange={(event) => setCode(event.target.value.replace(/\D/g, ""))}
+              required
+              autoFocus
+            />
+          </PanelField>
+        </PanelForm>
       )}
     </div>
   )

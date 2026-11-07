@@ -47,7 +47,8 @@ import {
 export function BackButton({ onClick }: { onClick: () => void }) {
   const { t } = useTranslation()
   return (
-    <Button variant="ghost" size="sm" className="mb-2" onClick={onClick}>
+    // justify-self-start: the dialog body is a grid, which would stretch it across the width.
+    <Button variant="ghost" size="xs" className="-ml-3 justify-self-start px-3 text-muted-foreground" onClick={onClick}>
       <ArrowLeft className="size-4" />
       {t('common.back')}
     </Button>
@@ -57,7 +58,7 @@ export function BackButton({ onClick }: { onClick: () => void }) {
 export function SuccessState({ message }: { message: string }) {
   return (
     <div className="flex flex-col items-center gap-3 py-10 text-center">
-      <CheckCircle2 className="size-8 text-green-500" />
+      <CheckCircle2 className="size-8 text-gain" />
       <p className="text-sm font-medium">{message}</p>
     </div>
   )

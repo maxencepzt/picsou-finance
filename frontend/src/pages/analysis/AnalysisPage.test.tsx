@@ -1,11 +1,24 @@
 import '@testing-library/jest-dom'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render as rtlRender, screen } from '@testing-library/react'
+import { MemoryRouter } from 'react-router'
 import { AnalysisPage } from './AnalysisPage'
 import type { WealthPyramid } from '@/types/api'
 
 const useWealthPyramid = vi.fn()
 const useAllocationTargets = vi.fn()
+const useMemberProfile = vi.fn()
+
+// The financial-independence card links to the profile settings.
+const render = (ui: React.ReactElement) => rtlRender(<MemoryRouter>{ui}</MemoryRouter>)
+
+vi.mock('@/features/dashboard/hooks', () => ({
+  useDashboard: () => ({
+    data: { distribution: [{ accountType: 'PEA', balanceEur: 50000 }, { accountType: 'REAL_ESTATE', balanceEur: 300000 }] },
+  }),
+}))
+vi.mock('@/features/profile/hooks', () => ({ useMemberProfile: () => useMemberProfile() }))
+vi.mock('@/features/budget/hooks', () => ({ useCashflow: () => ({ isLoading: false, data: { net: 800 } }) }))
 
 vi.mock('@/features/analysis/hooks', () => ({
   useWealthPyramid: () => useWealthPyramid(),
@@ -17,6 +30,9 @@ vi.mock('@/features/analysis/hooks', () => ({
   useEssentialExpenseEstimate: () => ({ data: undefined }),
   useSaveAllocationTargets: () => ({ mutate: vi.fn(), isPending: false }),
 }))
+
+// jsdom has no matchMedia; the end labels' phone check is not what these tests are about.
+vi.mock('@/hooks/use-mobile', () => ({ useIsMobile: () => false }))
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -38,6 +54,7 @@ const emptyPyramid: WealthPyramid = {
 describe('AnalysisPage', () => {
   beforeEach(() => {
     useAllocationTargets.mockReturnValue({ data: undefined })
+    useMemberProfile.mockReturnValue({ isLoading: false, data: { age: 34, targetRetirementAge: 62 } })
     useWealthPyramid.mockReturnValue({ isLoading: true, isError: false, data: undefined })
   })
 
@@ -86,5 +103,8 @@ describe('AnalysisPage', () => {
 
     expect(screen.getByText('analysis.score.title')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /analysis.editTargets/ })).toBeEnabled()
+    // Diversification moved to /investments.
+    expect(screen.queryByText(/analysis\.diversification/)).not.toBeInTheDocument()
+    expect(screen.getByText('analysis.fi.sim.title')).toBeInTheDocument()
   })
 })

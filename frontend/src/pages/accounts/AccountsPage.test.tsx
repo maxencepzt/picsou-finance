@@ -1,11 +1,13 @@
 import '@testing-library/jest-dom'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { fireEvent, render, screen } from '@testing-library/react'
-import type { Account, RealEstateMetadata } from '@/types/api'
+import { MemoryRouter, useLocation } from 'react-router'
+import type { Account, PeerLoansOverview, RealEstateMetadata } from '@/types/api'
 import type { NetWorthPoint } from '@/features/history/api'
 
 const useAccounts = vi.fn()
 const useHistory = vi.fn()
+const usePeerLoansOverview = vi.fn<() => { data: PeerLoansOverview | undefined }>(() => ({ data: undefined }))
 
 vi.mock('@/features/accounts/hooks', async (importActual) => ({
   // useAccountTree is a pure useMemo over the accounts handed in -- it groups Revolut pockets
@@ -13,6 +15,8 @@ vi.mock('@/features/accounts/hooks', async (importActual) => ({
   // the real one stays and only the query hooks are replaced.
   ...(await importActual<typeof import('@/features/accounts/hooks')>()),
   useAccounts: () => useAccounts(),
+  // Reads the budget settings query, which has no client in this test and nothing to say here.
+  useInstitutionLogoUrl: () => () => null,
   useAccountDeletionImpact: () => ({ data: undefined }),
   useUpdateAccount: () => ({ mutate: vi.fn(), isPending: false }),
   useDeleteAccount: () => ({ mutate: vi.fn(), isPending: false }),
@@ -28,9 +32,21 @@ vi.mock('@/features/history/hooks', () => ({
   useHistory: () => useHistory(),
 }))
 
+// The closed-loan filter is a query of its own; it has nothing to say about gain/loss.
+vi.mock('@/features/peer-loans/hooks', () => ({
+  usePeerLoansOverview: () => usePeerLoansOverview(),
+}))
+
 // The form and the two add-account modals drag in zod and the whole connector catalog. They
 // are never opened here, so stubbing them keeps this suite about the summary card.
-vi.mock('@/components/shared/AccountForm', () => ({ AccountForm: () => null }))
+vi.mock('@/components/shared/AccountForm', () => ({
+  AccountForm: ({ open, defaultValues, onOpenChange }: { open: boolean; defaultValues?: { name?: string }; onOpenChange: (open: boolean) => void }) =>
+    open ? <div data-testid="edit-form">{defaultValues?.name}<button onClick={() => onOpenChange(false)}>close-form</button></div> : null,
+}))
+// The panel reads the detail page's queries; its own content is not what these cases are about.
+vi.mock('./AccountPanel', () => ({
+  AccountPanel: ({ account }: { account: Account | null }) => (account ? <div data-testid="panel">{account.name}</div> : null),
+}))
 vi.mock('@/components/shared/AddAccountModal', () => ({ AddAccountModal: () => null }))
 vi.mock('@/components/property/AddPropertyModal', () => ({ AddPropertyModal: () => null }))
 vi.mock('@/components/shared/AccountsStackedChart', () => ({
@@ -39,7 +55,10 @@ vi.mock('@/components/shared/AccountsStackedChart', () => ({
   ),
 }))
 
-vi.mock('react-router', () => ({ useNavigate: () => vi.fn() }))
+vi.mock('react-router', async (importActual) => ({
+  ...(await importActual<typeof import('react-router')>()),
+  useNavigate: () => vi.fn(),
+}))
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -55,6 +74,14 @@ vi.stubGlobal('ResizeObserver', class {
 })
 
 const { AccountsPage } = await import('./AccountsPage')
+
+function Search() {
+  return <output data-testid="search">{useLocation().search}</output>
+}
+
+function renderPage(path = '/accounts') {
+  return render(<MemoryRouter initialEntries={[path]}><AccountsPage /><Search /></MemoryRouter>)
+}
 
 function property(id: number, balanceEur: number, costBasis?: number): Account {
   return {
@@ -110,10 +137,11 @@ function selectRealEstate() {
   fireEvent.click(screen.getByRole('button', { name: 'accounts.filters.REAL_ESTATE' }))
 }
 
-describe('AccountsPage — Immobilier gain / loss', () => {
+describe('AccountsPage - Immobilier gain / loss', () => {
   beforeEach(() => {
     useAccounts.mockReset()
     useHistory.mockReset()
+    usePeerLoansOverview.mockReturnValue({ data: undefined })
   })
 
   it('shows the gain against the property cost basis, not the snapshot invested amount', () => {
@@ -121,7 +149,7 @@ describe('AccountsPage — Immobilier gain / loss', () => {
     useAccounts.mockReturnValue({ data: accounts, isLoading: false })
     useHistory.mockReturnValue({ data: history(accounts), isLoading: false })
 
-    render(<AccountsPage />)
+    renderPage()
     selectRealEstate()
 
     // 300 000 - 250 000 = +50 000, i.e. +20.0 %
@@ -134,7 +162,7 @@ describe('AccountsPage — Immobilier gain / loss', () => {
     useAccounts.mockReturnValue({ data: accounts, isLoading: false })
     useHistory.mockReturnValue({ data: history(accounts), isLoading: false })
 
-    render(<AccountsPage />)
+    renderPage()
     selectRealEstate()
 
     expect(screen.getByTestId('pnl-chart')).toBeInTheDocument()
@@ -146,7 +174,7 @@ describe('AccountsPage — Immobilier gain / loss', () => {
     useAccounts.mockReturnValue({ data: accounts, isLoading: false })
     useHistory.mockReturnValue({ data: history(accounts), isLoading: false })
 
-    render(<AccountsPage />)
+    renderPage()
     selectRealEstate()
 
     expect(screen.queryByText('dashboard.portfolioPerformance')).not.toBeInTheDocument()
@@ -158,7 +186,7 @@ describe('AccountsPage — Immobilier gain / loss', () => {
     useAccounts.mockReturnValue({ data: accounts, isLoading: false })
     useHistory.mockReturnValue({ data: history(accounts), isLoading: false })
 
-    render(<AccountsPage />)
+    renderPage()
     selectRealEstate()
 
     // Gain stays +50 000 over a 450 000 basis (250 000 + the second property's own value),
@@ -183,7 +211,7 @@ describe('AccountsPage — Immobilier gain / loss', () => {
       isLoading: false,
     })
 
-    render(<AccountsPage />)
+    renderPage()
 
     expect(screen.queryByText('dashboard.portfolioPerformance')).not.toBeInTheDocument()
     const chartData = JSON.parse(screen.getByTestId('pnl-chart').getAttribute('data-chart') ?? '[]') as Array<Record<string, string | number>>
@@ -204,7 +232,7 @@ describe('AccountsPage — Immobilier gain / loss', () => {
       isLoading: false,
     })
 
-    render(<AccountsPage />)
+    renderPage()
     fireEvent.click(screen.getByRole('button', { name: 'accounts.filters.STOCKS' }))
 
     const chartData = JSON.parse(screen.getByTestId('pnl-chart').getAttribute('data-chart') ?? '[]') as Array<Record<string, string | number>>
@@ -212,10 +240,11 @@ describe('AccountsPage — Immobilier gain / loss', () => {
   })
 })
 
-describe('AccountsPage — card actions on touch screens', () => {
+describe('AccountsPage - card actions on touch screens', () => {
   beforeEach(() => {
     useAccounts.mockReset()
     useHistory.mockReset()
+    usePeerLoansOverview.mockReturnValue({ data: undefined })
   })
 
   it('keeps the edit and delete buttons visible without hover', () => {
@@ -224,12 +253,78 @@ describe('AccountsPage — card actions on touch screens', () => {
     useAccounts.mockReturnValue({ data: accounts, isLoading: false })
     useHistory.mockReturnValue({ data: history(accounts), isLoading: false })
 
-    render(<AccountsPage />)
+    renderPage()
 
     for (const name of ['common.edit', 'common.delete']) {
       const actions = screen.getByRole('button', { name }).parentElement
       expect(actions).toHaveClass('pointer-coarse:opacity-100', 'group-focus-within:opacity-100')
     }
+  })
+})
+
+describe('AccountsPage - closed peer loans', () => {
+  beforeEach(() => {
+    useAccounts.mockReset()
+    useHistory.mockReset()
+    usePeerLoansOverview.mockReturnValue({ data: undefined })
+  })
+
+  it('hides a closed loan by default and reveals it with the Receivables toggle', () => {
+    const closedLoan: Account = {
+      id: 99,
+      name: 'Camille',
+      type: 'PEER_LOAN',
+      provider: null,
+      currency: 'EUR',
+      currentBalance: 0,
+      currentBalanceEur: 0,
+      lastSyncedAt: null,
+      isManual: true,
+      color: '#0d9488',
+      ticker: null,
+      logoUrl: null,
+      logoKey: null,
+      createdAt: '2026-01-01T00:00:00Z',
+      hidden: false,
+    }
+    useAccounts.mockReturnValue({ data: [closedLoan], isLoading: false })
+    useHistory.mockReturnValue({ data: history([closedLoan]), isLoading: false })
+    usePeerLoansOverview.mockReturnValue({
+      data: {
+        totalOutstanding: 0,
+        openCount: 0,
+        closedCount: 1,
+        interestAccrued: 0,
+        loans: [{
+          accountId: 99,
+          name: 'Camille',
+          principal: 300,
+          principalRemaining: 0,
+          repaidPct: 100,
+          interestAccrued: 0,
+          interestReceived: 0,
+          closedAt: '2026-11-05',
+        }],
+        history: [],
+      },
+    })
+
+    renderPage()
+
+    // Not an active card, and the Créances overview is not on screen yet.
+    expect(screen.queryByText('Camille')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'accounts.filters.RECEIVABLES' }))
+    // The overview table lists it even before the toggle: only the cards are filtered.
+    expect(screen.getAllByText('Camille')).toHaveLength(1)
+    expect(screen.getAllByText('peerLoan.overview.status.closed')).toHaveLength(1)
+    expect(screen.queryByText('peerLoan.summary.closed')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'accounts.showClosedLoans' }))
+    // The closed loan now appears both in the overview table and on its account card.
+    expect(screen.getAllByText('Camille')).toHaveLength(2)
+    expect(screen.getAllByText('peerLoan.overview.status.closed')).toHaveLength(1)
+    expect(screen.getAllByText('peerLoan.summary.closed')).toHaveLength(1)
   })
 })
 
@@ -243,7 +338,7 @@ describe('AccountsPage — Métaux and Autre filters', () => {
   })
 
   it('lists a PRECIOUS_METALS account under Métaux and no longer an OTHER one', () => {
-    render(<AccountsPage />)
+    renderPage()
     fireEvent.click(screen.getByRole('button', { name: 'accounts.filters.METALS' }))
 
     expect(screen.getByText('Compte 1')).toBeInTheDocument()
@@ -251,10 +346,58 @@ describe('AccountsPage — Métaux and Autre filters', () => {
   })
 
   it('keeps an OTHER account reachable under its own filter', () => {
-    render(<AccountsPage />)
+    renderPage()
     fireEvent.click(screen.getByRole('button', { name: 'accounts.filters.OTHER' }))
 
     expect(screen.getByText('Compte 2')).toBeInTheDocument()
     expect(screen.queryByText('Compte 1')).not.toBeInTheDocument()
+  })
+})
+
+describe('AccountsPage — grouping, panel and edit deep link', () => {
+  beforeEach(() => {
+    useAccounts.mockReset()
+    useHistory.mockReset()
+  })
+
+  function setup(accounts: Account[]) {
+    useAccounts.mockReturnValue({ data: accounts, isLoading: false })
+    useHistory.mockReturnValue({ data: history(accounts), isLoading: false })
+  }
+
+  it('switches the list from asset classes to institutions', () => {
+    setup([investmentAccount(1, 'PEA', 1000), property(2, 300000)])
+    renderPage()
+    // The group headers name their section; the breakdown's legend repeats the class names.
+    expect(screen.getByRole('region', { name: 'assetClasses.equity' })).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'accounts.groupBy.institution' }))
+    expect(screen.getByRole('region', { name: 'Example' })).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'accounts.groupBy.property' })).toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: 'assetClasses.equity' })).not.toBeInTheDocument()
+  })
+
+  it('opens the side panel when a row is clicked', () => {
+    setup([investmentAccount(1, 'PEA', 1000)])
+    renderPage()
+    expect(screen.queryByTestId('panel')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: /Compte 1/ }))
+    expect(screen.getByTestId('panel')).toHaveTextContent('Compte 1')
+  })
+
+  it('opens the edit form from ?edit=<id> and drops the parameter on close', () => {
+    setup([investmentAccount(1, 'PEA', 1000), investmentAccount(2, 'PER', 500)])
+    renderPage('/accounts?edit=2')
+    expect(screen.getByTestId('edit-form')).toHaveTextContent('Compte 2')
+
+    fireEvent.click(screen.getByText('close-form'))
+    expect(screen.queryByTestId('edit-form')).not.toBeInTheDocument()
+    expect(screen.getByTestId('search')).toHaveTextContent(/^$/)
+  })
+
+  it('ignores an unknown id', () => {
+    setup([investmentAccount(1, 'PEA', 1000)])
+    renderPage('/accounts?edit=99')
+    expect(screen.queryByTestId('edit-form')).not.toBeInTheDocument()
   })
 })

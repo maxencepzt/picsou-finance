@@ -1,5 +1,5 @@
 import { api } from '@/lib/api-client'
-import type { DashboardData } from '@/types/api'
+import type { DashboardData, Movers } from '@/types/api'
 
 export interface IntradayPoint {
   timestamp: string
@@ -32,4 +32,8 @@ export const dashboardApi = {
     api.get<PnlData>('/history/pnl', {
       params: { accountIds: accountIds.join(','), ...(from ? { from } : {}) },
     }).then(r => r.data),
+
+  /** Day-over-day moves of held securities; `limit` per side is clamped server-side to 1..10. */
+  getMovers: (limit: number) =>
+    api.get<Movers>('/dashboard/movers', { params: { limit } }).then(r => r.data),
 }

@@ -4,11 +4,5 @@ import { ErrorScreen } from './ErrorScreen'
 
 export function ForbiddenPage() {
   const { t } = useTranslation()
-  return (
-    <ErrorScreen
-      icon={<ShieldX className="size-12 text-destructive" />}
-      code="403"
-      message={t('error.forbidden')}
-    />
-  )
+  return <ErrorScreen icon={<ShieldX />} code="403" title={t('error.forbiddenTitle')} message={t('error.forbidden')} />
 }

@@ -18,6 +18,13 @@ interface TransactionsListProps {
   logoUrlFor?: (brandId: number | null | undefined) => string | null
   categories?: Category[]
   onCategorize?: (txId: number, categoryId: number) => void
+  /** Turns an outgoing transaction into a peer loan. Absent where the action has no route. */
+  onCreatePeerLoan?: (tx: Transaction) => void
+  /** Whether this row can start a loan; defaults to "any outgoing movement". */
+  canCreatePeerLoan?: (tx: Transaction) => boolean
+  onAssignRepayment?: (tx: Transaction) => void
+  /** Whether this row can repay a loan; defaults to "any incoming movement". */
+  canAssignRepayment?: (tx: Transaction) => boolean
   /** Buttons rendered in the card header (add, import). The card stays visible when empty if set. */
   actions?: ReactNode
   /** The provider of the one account the list shows; left out on lists spanning accounts. */
@@ -36,6 +43,10 @@ export function TransactionsList({
   logoUrlFor,
   categories,
   onCategorize,
+  onCreatePeerLoan,
+  canCreatePeerLoan,
+  onAssignRepayment,
+  canAssignRepayment,
   actions,
   accountProvider,
 }: TransactionsListProps) {
@@ -71,7 +82,7 @@ export function TransactionsList({
     <>
       <Card>
         <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 space-y-0">
-          <CardTitle className="text-base">{t('accounts.transactions')}</CardTitle>
+          <CardTitle>{t('accounts.transactions')}</CardTitle>
           {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
         </CardHeader>
         <CardContent className="space-y-0">
@@ -95,12 +106,11 @@ export function TransactionsList({
                 {formatTransactionDate(date, locale, showYear)}
               </p>
               <div className="space-y-0.5">
-                {grouped[date].map((tr, rowIdx) => (
+                {grouped[date].map((tr) => (
                   <TransactionRow
                     key={tr.id}
                     transaction={tr}
                     logoUrlFor={logoUrlFor}
-                    index={rowIdx}
                     onClick={setSelectedTx}
                     accountProvider={accountProvider}
                   />
@@ -118,6 +128,10 @@ export function TransactionsList({
         logoUrlFor={logoUrlFor}
         categories={categories}
         onCategorize={onCategorize}
+        onCreatePeerLoan={onCreatePeerLoan}
+        canCreatePeerLoan={canCreatePeerLoan}
+        onAssignRepayment={onAssignRepayment}
+        canAssignRepayment={canAssignRepayment}
         onEdit={onEdit}
         onDelete={onDelete}
         accountProvider={accountProvider}

@@ -4,7 +4,8 @@ import en from './locales/en.json'
 import es from './locales/es.json'
 import fr from './locales/fr.json'
 
-const modal = Object.values(import.meta.glob('../components/shared/AddAccountModal.tsx', {
+// The modal lists the /sync catalog, so the descriptions live there.
+const modal = Object.values(import.meta.glob('../pages/sync/catalog.ts', {
   query: '?raw',
   import: 'default',
   eager: true,

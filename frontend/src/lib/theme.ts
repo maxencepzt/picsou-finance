@@ -1,7 +1,10 @@
 export type Theme = 'light' | 'dark' | 'system'
 
+/** Dark is Picsou's primary theme ("Coffre Nocturne"); light and system stay one setting away. */
+export const DEFAULT_THEME: Theme = 'dark'
+
 export function getStoredTheme(): Theme {
-  return (localStorage.getItem('theme') as Theme) ?? 'system'
+  return (localStorage.getItem('theme') as Theme) ?? DEFAULT_THEME
 }
 
 export function applyTheme(theme: Theme) {

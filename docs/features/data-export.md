@@ -11,7 +11,7 @@ The export is **self-only**: a user exports their own data plus resources shared
 
 ## Goals
 
-- Each authenticated user can download an export of their own data from `Settings → Security & Privacy`.
+- Each authenticated user can download an export of their own data from `Settings → Sécurité → Vos données` (`/settings?section=security`).
 - Export is delivered as a single `picsou-export-<username>-YYYYMMDD-HHmmss.zip` (UTC timestamp; any username character outside `[A-Za-z0-9._-]` becomes `_` so the quoted header value stays valid) containing both a hierarchical `data.json` and a flat `csv/` directory (one file per entity).
 - Export contains every domain field tied to the user, with explicit exclusion of secrets (passwords, MFA secrets, recovery codes, encrypted bank-session credentials, persistent-session tokens, requisition tokens).
 - A toggle lets the user opt in to including their `BalanceSnapshot` history (off by default — keeps the ZIP small for the common case).
@@ -33,9 +33,9 @@ The export is **self-only**: a user exports their own data plus resources shared
 ### High-level flow
 
 ```
-Settings → Security & Privacy
+Settings → Sécurité → Vos données
    │
-   │  user clicks "Export my data"
+   │  user clicks "Exporter"
    ▼
 ExportDataDialog (frontend)
    ├─ account without a password (SSO only): ReauthPanel first
@@ -135,6 +135,9 @@ RFC 4180: UTF-8 (no BOM), comma-separated, CRLF line endings, fields containing 
 | `goal_manual_contributions.csv`| `GoalManualContribution`               | id, **goalId**, date, amount                           |
 | `goal_month_overrides.csv`     | `GoalMonthOverride`                    | id, **goalId**, month, amount                          |
 | `debts.csv`                    | `Debt`                                 | id, lender, principal, interestRate, ...               |
+| `peer_counterparties.csv`      | `PeerCounterparty`                     | id, memberId, name, note                               |
+| `peer_loan_terms.csv`          | `PeerLoanTerms`                        | id, **accountId**, **counterpartyId**, principal, rate, plan |
+| `peer_loan_repayments.csv`     | `PeerLoanRepayment`                    | id, **accountId**, paidOn, amount, kind, cashLegOwned  |
 | `wallet_addresses.csv`         | `WalletAddress`                        | id, chain, address, label                              |
 | `linked_identities.csv`        | `UserIdentity` (own SSO identities)    | id, issuer, subject, email, display_name, created_at, last_login_at |
 | `shared_resources.csv`         | `SharedResource`                       | id, resourceType, resourceId, sharedWithMemberId       |
@@ -171,14 +174,14 @@ Backend:
 - `backend/src/main/java/com/picsou/export/DataExportService.java` — orchestrator: opens ZIP, drives all exporters
 - `backend/src/main/java/com/picsou/service/ReAuthService.java` — accepts a valid `reauth_proof` cookie (same user id and token version), else verifies password OR TOTP based on `user.mfaEnabled`; also backs `POST /api/auth/reauth` and the SSO sign-in-method changes
 - `backend/src/main/java/com/picsou/export/EntityExporter.java` — interface: `void writeJson(JsonGenerator g)` + `void writeCsv(Writer w)` + `String csvFileName()` + `String jsonKey()`
-- `backend/src/main/java/com/picsou/export/{Profile,Accounts,Holdings,Transactions,Goals,Debts,WalletAddresses,SharedResources,BankConnections,BalanceSnapshots}Exporter.java` — one per entity root (family members are folded into `ProfileExporter`)
+- `backend/src/main/java/com/picsou/export/{Profile,Accounts,Holdings,Transactions,Goals,Debts,WalletAddresses,SharedResources,BankConnections,BalanceSnapshots,PeerCounterparties,PeerLoanTerms,PeerLoanRepayments}Exporter.java` — one per entity root (family members are folded into `ProfileExporter`)
 - `backend/src/main/java/com/picsou/dto/ExportRequest.java` — record `(ReAuthDto reAuth, boolean includeBalanceSnapshots)`
 - `backend/src/main/java/com/picsou/dto/ReAuthDto.java` — record `(String password, String totpCode)` (XOR depending on user)
 - `backend/src/main/java/com/picsou/config/RateLimitConfig.java` — extend with the export bucket (5/h per userId)
 
 Frontend:
 
-- `frontend/src/pages/settings/security/SecuritySection.tsx` — section card hosting the "Export my data" button
+- `frontend/src/pages/settings/security/SecuritySection.tsx` — the "Vos données" card whose "Exporter" row opens the dialog
 - `frontend/src/pages/settings/security/ExportDataDialog.tsx` — modal with toggle + re-auth field + download trigger; for an account without a password it shows `ReauthPanel` (IdP re-authentication) first
 - `frontend/src/pages/settings/security/ReauthPanel.tsx` — mints the `reauth_proof` (password + TOTP, or an IdP round trip that returns with `resume=export`)
 - `frontend/src/features/export/api.ts` — `requestExport(opts)` returning a `Blob`

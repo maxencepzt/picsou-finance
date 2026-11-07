@@ -1,5 +1,5 @@
 import { api } from '@/lib/api-client'
-import type { UpcomingDividend } from '@/types/api'
+import type { ReceivedDividend, UpcomingDividend } from '@/types/api'
 
 /**
  * Read-only forecast of dividends and SCPI distributions. The horizon is clamped
@@ -13,4 +13,7 @@ export const dividendsApi = {
     api.get<UpcomingDividend[]>('/dividends/upcoming', {
       params: accountId == null ? { horizonDays } : { horizonDays, accountId },
     }).then(r => r.data),
+  /** Dividends credited over the last `days` days (clamped server-side to 1..366). */
+  received: (days = 365) =>
+    api.get<ReceivedDividend[]>('/dividends/received', { params: { days } }).then(r => r.data),
 }

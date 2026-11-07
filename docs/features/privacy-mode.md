@@ -1,6 +1,6 @@
 # Feature: Privacy mode (hiding amounts)
 
-> Last updated: 2026-10-31
+> Last updated: 2026-11-03
 
 ## Context
 
@@ -9,8 +9,9 @@ Showing Picsou to someone meant showing what its owner is worth. Demo mode (`VIT
 build-time flag meant for the public deployment, and it therefore shows an installation that is
 not yours.
 
-Privacy mode is the opposite — the real app, the real structure, no figures. An eye button beside
-the sidebar logo replaces every amount with a fixed-length mask, chart scales included.
+Privacy mode is the opposite — the real app, the real structure, no figures. An eye button in the
+top bar (every page, desktop and mobile) replaces every amount with a fixed-length mask, chart scales
+included. The search palette offers the same toggle as a quick action.
 
 ## How it works
 
@@ -39,8 +40,8 @@ placement and the entire total responds immediately to the privacy toggle.
 - `frontend/src/components/shared/CurrencyDisplay.tsx` — the default path, plus the `publicQuote` opt-out
 - `frontend/src/components/shared/MoneyChartTooltip.tsx` — for charts that relied on the shadcn default
 - `frontend/src/stores/app-store.ts` — `hideAmounts`, `toggleHideAmounts`, `setHideAmounts`
-- `frontend/src/components/layout/AppSidebar.tsx` — the eye button
-- `frontend/src/pages/settings/SettingsPage.tsx` — the second entry point, reachable on mobile
+- `frontend/src/components/layout/AppTopBar.tsx` — the eye button (`PrivacyToggle`)
+- `frontend/src/pages/settings/sections/AppearanceSection.tsx` — the second entry point: the "Masquer les montants" switch of Settings → Apparence
 
 ## What is masked, and what is not
 
@@ -70,13 +71,13 @@ Placeholders in the goal calendar *are* masked: they are display-only, unlike a 
 | A hook, not a store read inside the formatter | `useAppStore.getState()` returns the right string but does not re-render the component holding the closure, so chart axes would keep stale ticks | `formatDate`'s non-reactive `getState()` pattern |
 | Keeping the currency symbol and the sign in the mask | `***** €` reads as "an amount, hidden"; a bare `*****` reads as a rendering fault. The sign states a direction, not a magnitude, and the visible percentages give that away anyway | Masking the whole string |
 | Masked axis ticks rather than a hidden axis | Every `<YAxis>` already carries an explicit `width`, so masked ticks shift nothing, the grid keeps its lines, and the mask is the only in-frame evidence of redaction on a cropped screen-share | `<YAxis hide>` |
-| A second toggle in Settings | The sidebar is `hidden md:flex`, so the eye button does not exist on mobile — where shoulder-surfing is likeliest | Sidebar only; a sixth item in the mobile bottom bar |
-| `size-7` on the button | `size="icon"` is `size-10` (40 px) against a 28 px logo, and the classic sidebar aligns its nav on a hard-coded `mt-[47px]` | The default icon size |
+| A second toggle in Settings | Kept from when the eye lived in the desktop-only sidebar; the top bar now shows it on mobile too | Removing it |
+| The eye in the top bar | Reachable on every page and on phones, next to search and Sync | The sidebar, absent on mobile |
 
 ## Gotchas / Pitfalls
 
 - **`partialize` in `app-store` is an allowlist.** A field left out is silently not persisted — no
-  type error, no runtime error, the setting just does not survive a reload. `AppSidebar.test.tsx`
+  type error, no runtime error, the setting just does not survive a reload. `AppTopBar.test.tsx`
   asserts the stored value for exactly this reason.
 - **A masked amount still contains `€`.** Asserting `not.toContain('€')` in a test is wrong; assert
   the absence of the digits instead.
@@ -116,7 +117,7 @@ Placeholders in the goal calendar *are* masked: they are display-only, unlike a 
   cannot catch
 - `AllocationTab.test.tsx` — the donut centre masks on toggle, restores when revealed, masks zero
   on initial render, and follows app language changes without relying on a locale translation key
-- `AppSidebar.test.tsx` — the toggle flips, `aria-pressed` follows, and the choice is persisted
+- `AppTopBar.test.tsx` — the toggle flips, `aria-pressed` follows, and the choice is persisted
 
 ## Links
 

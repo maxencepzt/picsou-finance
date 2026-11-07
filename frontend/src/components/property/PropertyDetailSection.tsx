@@ -1,12 +1,10 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pencil } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { CurrencyDisplay } from '@/components/shared/CurrencyDisplay'
 import { PropertyMetadataForm } from './PropertyMetadataForm'
 import { PropertyValuationCard } from './PropertyValuationCard'
-import { PropertyValuationChart } from './PropertyValuationChart'
 import { PropertyFinancingCard } from './PropertyFinancingCard'
 import { OwnershipEditor } from './OwnershipEditor'
 import { useRealEstateSummary } from '@/features/accounts/hooks'
@@ -21,7 +19,8 @@ interface PropertyDetailSectionProps {
  * Everything specific to a property, mounted from the account detail page.
  *
  * <p>Mirrors the shape of the loan slice: a set of focused cards rather than one page-level
- * component, so each can be read and changed on its own.
+ * component, so each can be read and changed on its own. The value, the gain since purchase and
+ * the valuation chart sit in the page's hero row, so they are not repeated here.
  */
 export function PropertyDetailSection({ account }: PropertyDetailSectionProps) {
   const { t } = useTranslation()
@@ -46,8 +45,8 @@ export function PropertyDetailSection({ account }: PropertyDetailSectionProps) {
   if (!metadata || editing) {
     return (
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">
+        <CardHeader>
+          <CardTitle>
             {metadata ? t('property.form.editTitle') : t('property.form.createTitle')}
           </CardTitle>
         </CardHeader>
@@ -75,23 +74,22 @@ export function PropertyDetailSection({ account }: PropertyDetailSectionProps) {
     )
   }
 
-  const gain = account.currentBalanceEur - metadata.costBasis
-  const gainPct = metadata.costBasis > 0 ? (gain / metadata.costBasis) * 100 : null
-
   return (
-    <div className="space-y-4">
+    <div className="grid items-start gap-4 lg:grid-cols-2">
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between gap-2 pb-3">
-          <CardTitle className="text-base">{t('property.details.title')}</CardTitle>
+        <CardHeader>
+          <CardTitle>{t('property.details.title')}</CardTitle>
           {isOwner && (
-            <Button size="sm" variant="outline" onClick={() => setEditing(true)}>
-              <Pencil className="mr-2 size-4" />
-              {t('common.edit')}
-            </Button>
+            <CardAction>
+              <Button size="sm" variant="outline" className="h-8 px-3" onClick={() => setEditing(true)}>
+                <Pencil className="size-3.5" />
+                {t('common.edit')}
+              </Button>
+            </CardAction>
           )}
         </CardHeader>
-        <CardContent className="space-y-4">
-          <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <CardContent className="flex flex-col gap-4">
+          <dl className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3">
             {metadata.propertyType && (
               <Fact label={t('property.form.propertyType')}
                     value={t(`property.kind.${metadata.propertyType}`, { defaultValue: metadata.propertyType })} />
@@ -114,26 +112,10 @@ export function PropertyDetailSection({ account }: PropertyDetailSectionProps) {
           </dl>
 
           {metadata.address && (
-            <p className="text-sm text-muted-foreground">
+            <p className="border-t pt-3 text-[13px] text-muted-foreground">
               {[metadata.address, metadata.postalCode, metadata.city].filter(Boolean).join(', ')}
             </p>
           )}
-
-          <div className="grid grid-cols-2 gap-3 border-t pt-3 sm:grid-cols-3">
-            <Fact label={t('property.details.costBasis')}
-                  value={<CurrencyDisplay value={metadata.costBasis} />} />
-            <Fact label={t('property.details.currentValue')}
-                  value={<CurrencyDisplay value={account.currentBalanceEur} />} />
-            <Fact
-              label={t('property.details.gain')}
-              value={
-                <span className={gain >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-destructive'}>
-                  <CurrencyDisplay value={gain} showSign />
-                  {gainPct != null && <span className="ml-1 text-xs">({formatPercent(gainPct)})</span>}
-                </span>
-              }
-            />
-          </div>
 
           {isCoOwned && (
             <p className="text-xs text-muted-foreground">
@@ -154,8 +136,6 @@ export function PropertyDetailSection({ account }: PropertyDetailSectionProps) {
 
       {line && <PropertyFinancingCard line={line} />}
 
-      <PropertyValuationChart accountId={account.id} costBasis={metadata.costBasis} />
-
       <OwnershipEditor accountId={account.id} canEdit={isOwner} />
     </div>
   )
@@ -163,9 +143,9 @@ export function PropertyDetailSection({ account }: PropertyDetailSectionProps) {
 
 function Fact({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="flex flex-col">
-      <dt className="text-xs text-muted-foreground">{label}</dt>
-      <dd className="text-sm font-medium tabular-nums">{value}</dd>
+    <div className="flex min-w-0 flex-col gap-0.5">
+      <dt className="text-[13px] font-medium text-muted-foreground">{label}</dt>
+      <dd className="truncate text-sm font-semibold tabular-nums text-foreground">{value}</dd>
     </div>
   )
 }

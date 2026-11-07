@@ -43,7 +43,7 @@ export function MoneyChartTooltip({
               <span className="text-muted-foreground">
                 {config[name as string]?.label ?? name}
               </span>
-              <span className="font-mono font-medium text-foreground tabular-nums">
+              <span className="font-medium text-foreground tabular-nums">
                 {money.amount(Number(value), currency)}
               </span>
             </div>

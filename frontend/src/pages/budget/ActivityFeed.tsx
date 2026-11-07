@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { MerchantAvatar } from '@/components/shared/MerchantAvatar'
 import { useRecurringActivity, useUndoRecurring } from '@/features/budget/hooks'
-import { formatDate, getLocale } from '@/lib/utils'
+import { cn, formatDate, getLocale } from '@/lib/utils'
 import { useMoney } from '@/hooks/use-money'
 import type { RecurringActivity } from '@/types/api'
 
@@ -30,31 +30,31 @@ function ActivityRow({ entry }: { entry: RecurringActivity }) {
     : t('budget.recurring.activity.autoConfirmedDesc')
 
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-border py-3 last:border-0">
-      <MerchantAvatar label={entry.label} color={entry.categoryColor} size="sm" />
+    <li className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl px-3 py-2 transition-colors hover:bg-muted/50">
+      <MerchantAvatar label={entry.label} color={entry.categoryColor} size="md" />
 
       <div className="min-w-0 flex-1 basis-40">
-        <div className="flex items-center gap-1.5">
-          {isPriceChange
-            ? <TrendingUp className="size-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
-            : <Sparkles className="size-3.5 shrink-0 text-violet-600 dark:text-violet-400" />}
-          <p className="truncate font-medium">{entry.label}</p>
-        </div>
-        <p className="truncate text-xs text-muted-foreground">{description}</p>
+        <p className="truncate text-sm font-semibold">{entry.label}</p>
+        <p className={cn('flex min-w-0 flex-wrap items-center gap-x-1 text-xs font-medium', isPriceChange ? 'text-warning' : 'text-muted-foreground')}>
+          {/* Inline icon, so it wraps with the sentence instead of being left alone on a line. */}
+          <span className="min-w-0">
+            {isPriceChange
+              ? <TrendingUp className="mr-1 inline size-3 align-[-2px]" aria-hidden="true" />
+              : <Sparkles className="mr-1 inline size-3 align-[-2px]" aria-hidden="true" />}
+            {description}
+          </span>
+          {entry.occurredOn && (
+            <span className="shrink-0 text-muted-foreground tabular-nums">· {formatDate(entry.occurredOn, getLocale())}</span>
+          )}
+        </p>
       </div>
 
-      {entry.occurredOn && (
-        <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
-          {formatDate(entry.occurredOn, getLocale())}
-        </span>
-      )}
-
-      <Button size="sm" variant="ghost" className="ml-auto w-28 shrink-0" disabled={undo.isPending}
+      <Button size="xs" variant="outline" className="ml-auto shrink-0" disabled={undo.isPending}
         onClick={() => undo.mutate(entry.seriesId)}>
         {isPriceChange ? <Check className="size-4" /> : <Undo2 className="size-4" />}
         {isPriceChange ? t('budget.recurring.activity.acknowledge') : t('budget.recurring.undo')}
       </Button>
-    </div>
+    </li>
   )
 }
 
@@ -68,15 +68,14 @@ export function ActivityFeed() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base">
-          <Sparkles className="size-4 text-violet-600 dark:text-violet-400" />
-          {t('budget.recurring.activity.title')}
-        </CardTitle>
+        <CardTitle>{t('budget.recurring.activity.title')}</CardTitle>
       </CardHeader>
       <CardContent>
-        {activity.map((entry) => (
-          <ActivityRow key={`${entry.seriesId}-${entry.type}-${entry.occurredOn ?? ''}`} entry={entry} />
-        ))}
+        <ul className="-mx-3 flex flex-col">
+          {activity.map((entry) => (
+            <ActivityRow key={`${entry.seriesId}-${entry.type}-${entry.occurredOn ?? ''}`} entry={entry} />
+          ))}
+        </ul>
       </CardContent>
     </Card>
   )

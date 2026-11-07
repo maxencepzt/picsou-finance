@@ -14,11 +14,16 @@ interface ErrorStateProps {
 export function ErrorState({ title, message, onRetry, messageOnly }: ErrorStateProps) {
   const { t } = useTranslation()
   return (
+    // Same build as EmptyState (small icon on a disc, card-sized title) so a failure reads calm, not loud.
     <div className="flex flex-col items-center justify-center py-12 text-center">
-      {!messageOnly && <AlertTriangle className="size-10 text-destructive mb-4" />}
-      {!messageOnly && <h3 className="text-lg font-medium">{title ?? t('common.errorTitle')}</h3>}
+      {!messageOnly && (
+        <div className="mb-3 flex size-10 items-center justify-center rounded-full bg-destructive/10 text-destructive" aria-hidden="true">
+          <AlertTriangle className="size-5" />
+        </div>
+      )}
+      {!messageOnly && <h3 className="text-sm font-semibold text-foreground">{title ?? t('common.errorTitle')}</h3>}
       {message && (
-        <p className={messageOnly ? 'text-sm text-muted-foreground' : 'mt-1 text-sm text-muted-foreground'}>{message}</p>
+        <p className={messageOnly ? 'max-w-md text-sm text-balance text-muted-foreground' : 'mt-1 max-w-md text-sm text-balance text-muted-foreground'}>{message}</p>
       )}
       {onRetry && (
         <Button variant="outline" onClick={onRetry} className="mt-4">

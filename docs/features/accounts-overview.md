@@ -1,50 +1,114 @@
-# Feature: Accounts Overview (PnL chart + summary card + asset type filters)
+# Feature: Accounts Overview (KPI row + grouped account rows + side panel + breakdown + PnL chart + filters) and the account detail page
 
 > Last updated: 2026-11-05
 
 ## Context
 
-The Accounts page (`/accounts`) shows a grid of account cards. Users need a visual overview of PnL evolution over time, with the ability to filter by asset type (stocks, savings, crypto, etc.). A summary card at top shows the total balance and PnL for the current filter, similar to the Dashboard hero card.
+The Accounts page (`/accounts`) lists every account as a compact row, grouped by asset class. Users need a visual overview of PnL evolution over time, with the ability to filter by asset type (stocks, savings, crypto, etc.). A KPI row covers every account; a total card beside the list shows the balance and PnL of the current filter.
 
 ## How it works
 
-### Account card anatomy
+### Page layout
 
-`AccountCard` renders every account to the same five-line shape, so the grid stays on one
-rhythm whatever the asset:
+Since the "Coffre Nocturne" redesign, `AccountsPage.tsx` shows, top to bottom: the savings
+suggestions banner (a neutral card with an icon and a "Configure" button — not a green fill, since
+gain green is for movement only), a KPI row (`KpiTile` ×4 from `accountKpis`: gross assets with net worth,
+debts, accounts tracked with the manual count, synced accounts refreshed within a day), the
+filter strip, then a 12-column grid — the grouped rows on the left (7 columns), the total card,
+the asset-class breakdown and the PnL chart on the right (5 columns). The filter strip is wrapped in
+a plain `div`: `ScrollStrip`'s own `-m-1` (room for the focus ring) otherwise overrides the
+`space-y-6` margin and glues the strip to the cards below it.
 
-| Line | Bank / broker / crypto account | Property (`REAL_ESTATE`) |
+The list card has a header — the number of accounts in the current filter as its title, the
+grouping switch on the right.
+
+`groupByAssetClass` (`pages/accounts/account-groups.ts`) groups the top-level accounts by
+`assetClassOf(type)` in the palette's order, liabilities last under "Debts"; each group header
+shows the class colour and the group total, and rows inside a group are sorted by absolute
+balance, largest first. A wallet's pockets render as nested rows under it and count only
+through the wallet's balance. `signedBalance` reads a `LOAN` (stored positive) and a card debt
+(stored negative) both as negative.
+
+### Grouping by asset class or by institution
+
+A `SegmentedControl` at the top of the list card switches the grouping (local state, default
+asset class). `groupByInstitution` groups the same items by `provider` (trimmed, compared
+lower-cased, spelled as the first account of the group spells it), banks by net total
+descending, then the accounts that name no institution ("Manual") and the properties
+(`REAL_ESTATE`) in their own bucket. A manual account that names its bank — a loan typed in by
+hand — stays with that bank: the view answers "what do I have where". Institution headers carry
+no colour dot, since colour belongs to the asset class. Both groupings share `bucket()` (wallet
+counts once, largest row first).
+
+### Breakdown by asset class
+
+A `Breakdown` card (bar by default, `lib/asset-classes.ts` colours) over the filtered top-level
+accounts: `sumBy(..., assetClassOf, ASSET_CLASS_ORDER)` drops liabilities and empty classes,
+largest first. Hidden when nothing is left (the Debts filter).
+
+### Account side panel
+
+Clicking a row (or a pocket) opens `AccountPanel` (`pages/accounts/AccountPanel.tsx`), a right
+`Sheet` (full width on a phone): name, type and provider, the signed balance, the
+`BalanceHistoryChart` of `useAccountHistory`, the positions for a `HOLDING_ACCOUNT_TYPES` account
+(`PositionsByProduct` or a read-only `HoldingsTable`, as on the detail page), the five latest
+transactions (`TransactionRow`, dated), then a "View details" link to `/accounts/:id` beside
+"Edit" and "Delete" (no delete for a pocket). Edit and delete close the panel first, then open the
+edit form or the delete confirmation. The header shows the account's mark (`AccountMark`). It
+reads the detail page's own hooks, so the detail page opens from the cache.
+
+### Edit deep link
+
+The edit form and its save logic (account, then a loan's debt details) live in
+`AccountEditDialog` (`pages/accounts/AccountEditDialog.tsx`), shared by this page and the account
+detail page. `/accounts?edit=<id>` opens that account's edit form: the open form *is* the URL parameter —
+`editingAccount` is derived from `?edit` and the account list, the edit button sets it and closing
+the form removes it (both `replace`). An unknown id opens nothing. Query structural sharing keeps
+the account object stable across refetches, so `AccountForm`'s reset-on-`defaultValues` does not
+wipe what the user is typing unless the account itself changed on the server.
+
+### Account row anatomy
+
+`AccountRow` (`pages/accounts/AccountRow.tsx`) renders every account to the same one-line shape:
+
+| Slot | Bank / broker / crypto account | Property (`REAL_ESTATE`) |
 |---|---|---|
-| Mark | wallet logo key, connector logo, bundled brand asset, or color circle — see [bank-logos.md](./bank-logos.md) | the property-kind glyph on a tint of the account color |
-| Name | `name` + type badge + co-ownership share | same |
-| Subtitle | `provider` | property kind and city, joined by ` · ` |
-| Balance | `currentBalanceEur` (negated and red for a `LOAN`) | same |
-| Freshness | `lastSyncedAt`, graded green → yellow → orange → red by age | `realEstate.lastValuedAt`, graded on the monthly scale |
+| Mark (`AccountMark`) | `logoKeyUrl(logoKey) ?? logoUrl ?? providerLogoUrl(provider)`, else the monogram of the name (`deriveMonogram`) — see [bank-logos.md](./bank-logos.md) | the glyph of its `propertyKind` from `PROPERTY_KIND_ICONS` on a muted square |
+| Name | `name` + co-ownership share (only below 100 %) | same |
+| Subtitle | freshness dot · `provider` · time since `lastSyncedAt` (plus the borrowed amount for a `LOAN`) | freshness dot · property kind and city · time since `realEstate.lastValuedAt` |
+| Balance | `signedBalance(account)`, preceded by a 16 px ceiling ring when the account has a ceiling (tooltip and `aria-label` "22 % of the ceiling (5 000 € / 22 950 €)"); the ring sits left of the balance so every balance keeps the same right edge | same |
+| Actions | edit and delete in a fixed `w-16` column, shown on hover, on keyboard focus and always on touch screens; a pocket has no delete; below `sm` the column is not rendered and both actions live in the side panel | same |
+
+There is no type badge and no "N sub-accounts" label any more: the group header says the class,
+and the nested rows say the pockets.
+
+The actions column has a fixed width (whether or not the row has a delete button) and the group
+header reserves the same `w-16` (`hidden sm:block`), so every balance — wallet, pocket and group
+total — ends on the same vertical line. On a phone the column goes away entirely, which gives the
+name back ~70px and avoids two 28px touch targets per row.
 
 A property is a manual account: it has no `provider` and nothing ever writes its
-`lastSyncedAt`, so before this shape it rendered two lines shorter than its neighbours *and*
-carried an unrealized-gain line no other type showed. The gain now lives only on the account
-detail page and in `RealEstateSummaryCard`; the kind, the city and the valuation date fill
-the two slots that were empty.
+`lastSyncedAt`, so its kind, city and valuation date fill those slots. The unrealised gain lives
+on the account detail page and on the Property & loans page ([real-estate-page.md](./real-estate-page.md)).
 
-Every line is still conditional — an account with no provider and no sync date (a manual
-`OTHER` account, or a property described but never valued) renders short, as it always has.
-Only the property case, where the data existed but was not surfaced, was fixed.
+Every slot is still conditional — an account with no provider and no sync date (a manual
+`OTHER` account, or a property described but never valued) renders a short subtitle.
 
-The freshness line is colour-graded by age, so how old a figure is reads at a glance instead
+The freshness dot is colour-graded by age, so how old a figure is reads at a glance instead
 of only crossing one 48h threshold. `freshnessLevel(date, bounds, now)`
 (`frontend/src/lib/utils.ts`) buckets the age against a bounds object; `FRESHNESS_TEXT_CLASS`
-maps the bucket to a Tailwind pair that stays legible in both themes.
+maps the bucket to a movement token (`text-gain`, `text-warning`, `text-loss`), and the row's
+`DOT_CLASS` matches it.
 
 **Two scales, because the two dates are produced on entirely different cadences** — a scale
 that cries wolf is one users learn to ignore:
 
-| Level | `lastSyncedAt` (daily jobs) | `lastValuedAt` (monthly job) | Colour |
+| Level | `lastSyncedAt` (daily jobs) | `lastValuedAt` (monthly job) | Token |
 |---|---|---|---|
-| `fresh` | < 24 h | < 35 d | green |
-| `recent` | < 48 h | < 60 d | yellow |
-| `stale` | < 7 d | < 90 d | orange |
-| `old` | beyond | beyond | red |
+| `fresh` | < 24 h | < 35 d | `gain` |
+| `recent` | < 48 h | < 60 d | `warning` |
+| `stale` | < 7 d | < 90 d | `warning` |
+| `old` | beyond | beyond | `loss` |
 
 Both live in `frontend/src/lib/constants.ts` as `SYNC_FRESHNESS_BOUNDS_MS` and
 `VALUATION_FRESHNESS_BOUNDS_MS`. The valuation scale is month-shaped because
@@ -52,23 +116,66 @@ Both live in `frontend/src/lib/constants.ts` as `SYNC_FRESHNESS_BOUNDS_MS` and
 themselves refresh twice a year: a 40-day-old estimate is the system working as designed, and
 would be permanently red on the sync scale.
 
-The `TriangleAlert` glyph and its tooltip are **narrower than the colour**: they appear only on
-the `stale`/`old` levels *and* only for non-manual accounts. Colour alone carries no meaning for
+The stale warning (`TriangleAlert` + `accounts.syncStale`, with the `accounts.syncStaleTooltip`
+tooltip) is **narrower than the colour**: it replaces the time-ago text only on the
+`stale`/`old` levels *and* only for non-manual accounts. Colour alone carries no meaning for
 a colour-blind reader, so the worst levels need a second signal — but the tooltip names a dead
 provider session and tells the user to reconnect, which is meaningless for a figure they type in
 themselves. A manual account still gets the colour, since age is age.
 
 A missing date is `unknown`, not `old`: never synced is not the same as very stale, and must not
-read as an alarm. In this card the line is simply not rendered in that case.
+read as an alarm. In a row the dot is simply not rendered in that case.
 
-The card re-renders on a 5-minute interval so a tab left open crosses a boundary without a
-remount, and `now` is a parameter of `freshnessLevel` rather than a `Date.now()` call inside it,
-which keeps the helper pure and its tests free of fake timers.
+`now` is read once by the page (`useState(() => Date.now())`) and passed to every row and to
+`accountKpis`, and it is a parameter of `freshnessLevel` rather than a `Date.now()` call inside
+it, which keeps the helper pure and its tests free of fake timers. The grades are therefore those
+of the page's mount time.
 
 The glyphs come from `frontend/src/lib/property-icons.ts` (`PROPERTY_KIND_ICONS`), which
 `AddPropertyModal`'s kind picker shares so a property looks the same wherever it is shown.
 They are keyed on `RealEstateMetadata.propertyKind` — the backend's `PropertyKind.parse` of
 the free-text `property_type` column — never on the raw string.
+
+### Account detail page (`/accounts/:id`)
+
+`AccountDetailPage.tsx`, top to bottom:
+
+1. **Header** — a "Comptes" back link, the account mark (`AccountMark size="lg"`: logo, monogram
+   or property glyph), the name, then type · institution (a property: kind · city), "Manual" for a
+   hand-kept account, and the freshness from `accountFreshness` (`account-groups.ts`, shared with
+   the row): a dot and "Synced 3 hours ago", "Last valuation: …" for a property, or the stale
+   warning with its tooltip. On a phone the freshness takes its own line. Actions on the right:
+   "Monthly statements" (`MonthEndBalanceModal`), "Edit" (`AccountEditDialog`, owners only) and an
+   export icon button (`ExportAccountsModal` with this one account; hidden in demo mode, which has
+   no export handler). There is no per-account sync: the top bar's Sync covers it.
+2. **Hero row** — a card with the balance in display size and one `Delta`, plus the figures that
+   matter for the type; beside it (from `xl`) the value chart. The hero is a container: beside the
+   chart its figures sit under the balance (hairline between, two columns); full width they sit to
+   its right, one column per figure.
+
+   | Type | Label | Delta | Figures |
+   |---|---|---|---|
+   | Holdings (`HOLDING_ACCOUNT_TYPES`) | Portfolio value | unrealised P&L (amount, %) when the basis is known | capital invested, deposit-ceiling gauge (`PEA` only), cash / euro fund, positions, opening date |
+   | `CREDIT_CARD` | Card debt | month change | amount due, due date, card type, miles |
+   | `LOAN` | Remaining capital | month change, inverted (a falling debt is good news) | borrowed, monthly payment, rate, end date |
+   | `REAL_ESTATE` | Current value | gain since purchase (when there is a cost basis) | cost basis, living area |
+   | `SCPI` | Current balance | month change | shares, withdrawal price, subscription price, distribution per share |
+   | configured livret | Current balance | month change | annual rate, ceiling gauge (see *Ceiling gauge*), projected interest of the year (`useSavingsInterest`, its own component so the query mounts only there) |
+
+   A co-owned account adds "Your share". The **month change** is `monthChange(history)`: the latest
+   snapshot against the last one dated a calendar month or more before it; it is left out when the
+   history is shorter or the account is not in euros (snapshots are in the account's currency).
+   The chart is `NetWorthChart` (value and capital invested) for holdings, the property's
+   `PropertyValuationChart` (falls back to the balance history below two estimates), else
+   `BalanceHistoryChart`; a loan has none here.
+3. **Type sections** — `LoanDetailSection` (amortisation curve beside a progress card that also
+   splits one monthly payment into capital / interest / insurance on the chart ramp, then the cost
+   summary as three tiles), `PropertyDetailSection` (characteristics, valuation, financing and
+   ownership as a two-column grid), `ScpiDetailSection` (dividend policy, schedule, identifiers and
+   provider links — the share count and prices are in the hero).
+4. Upcoming dividends (`COMPTE_TITRES`, `PEA`), positions and realised P&L for holdings.
+5. **Activity** — transactions (8 columns) beside the ten latest snapshots (4 columns) from `xl`;
+   for a savings account they sit in the "Overview" tab next to the livret configuration.
 
 ### Sorting the position tables
 
@@ -121,6 +228,33 @@ The column is deliberately general rather than `pea_opened_at`: a PER, a PEA-PME
 assurance-vie all have the same shape of rule at different thresholds. Extending the field to
 another type is one entry in `OPENING_DATE_TYPES`.
 
+### Ceiling gauge
+
+`accountCeiling` (`lib/ceiling.ts`) says how far an account is into its ceiling, or null when it has
+none: a livret's balance against `savingsConfig.ceiling`, or a PEA's contributions against
+`account.deposit_ceiling` (V142, nullable; the form field "Contribution ceiling" is offered for a
+`PEA` only, null keeps the stored value like `openedAt`) or, unset, `PEA_DEFAULT_DEPOSIT_CEILING`
+(150 000 €; a PEA jeune states 20 000 €). The PEA figure is the cost basis: the detail page's
+"Capital invested", else `AccountResponse.investedEur`, which the API fills for a `PEA` only
+(shortcut: cost basis approximates net deposits; reinvested dividends and gains differ).
+
+`CeilingRing` (`components/shared/CeilingRing.tsx`) draws it as a `role="meter"` ring: `--primary`
+below 80 %, `--warning` from 80 % (with an icon on the detail page), ink at 100 % with "Ceiling
+reached" and a check. `sm` is the row mark; `CeilingGauge` is the hero version (percentage in the
+centre, "5 000 € of 22 950 €", room left). Amounts go through `useMoney`, so privacy mode masks them.
+
+### Receivables tab
+
+When the **RECEIVABLES** filter is active, the header also offers **"Create a loan"**: it
+opens the manual form with the peer-loan type preselected, then lands on the account detail
+where "Configure the loan" is waiting. The generic summary card is replaced by the
+peer-loans overview (`components/peer-loan/PeerLoansOverviewCard.tsx`): total outstanding,
+open loans and accrued interest, the 12-month outstanding curve, and one row per borrower.
+The **"Show closed loans"** header toggle reveals closed loans in the account rows; the overview
+table always keeps them (muted, with a "Closed" badge) so their history and deletion stay
+readable. The overview is deliberately here rather than on the Dashboard or Analysis: it is
+an operational "who owes what" view, not a wealth-allocation one.
+
 ### Life-insurance contract figures
 
 A synced assurance-vie (CORUM Life) carries `AccountResponse.contract` — `paidInEur` (gross
@@ -137,11 +271,11 @@ left out rather than shown as a dash. That portfolio performance uses the contra
 never a sum over the fund lines — for the reason in [corum-life.md](./corum-life.md). Amounts render in
 the foreground ink, like every other figure on the page.
 
-### Summary card
+### Total card
 
-A `Card` at the top of the page shows the total balance for the filtered accounts. When the filter
-holds anything with a cost basis distinct from its value, it also displays the aggregate PnL with a
-green/red trend icon and percentage, in the same style as the Dashboard net worth card.
+A `Card` beside the account list shows the total balance for the filtered accounts. When the filter
+holds anything with a cost basis distinct from its value, it also displays the aggregate PnL as a
+`Delta` (signed amount, percentage and arrow).
 
 That test is `hasPnl`, and it covers two different sources of a basis:
 
@@ -158,9 +292,9 @@ A property holds nothing, so `AccountService.valuation()` falls back to
 `invested = currentBalance` and the snapshot's `pnl` is structurally 0 — the Immobilier filter
 showed a total and no gain line for exactly that reason. Its real basis is the purchase price plus
 every acquisition fee, already on the wire as `RealEstateMetadataResponse.costBasis`, and already
-what `RealEstateSummaryCard` and `PropertyValuationChart` measure against.
+what `PropertyValuationChart` measures against.
 
-`frontend/src/features/accounts/pnl.ts` substitutes it. Two pure helpers, used by the summary card
+`frontend/src/features/accounts/pnl.ts` substitutes it. Two pure helpers, used by the total card
 *and* both branches of the chart so the three cannot drift apart:
 
 | | `accountInvestedAt` | `accountPnlAt` |
@@ -199,57 +333,64 @@ PnL is only computable from the account itself — that is where its cost basis 
 
 ### Asset type filters
 
-Seven asset categories defined in `AccountsPage.tsx`:
+Nine asset categories (plus ALL) defined in `AccountsPage.tsx`:
 
 | Filter key | Account types | Chart color |
 |-----------|--------------|-------------|
-| STOCKS | PEA, COMPTE_TITRES, EMPLOYEE_SAVINGS, ASSURANCE_VIE, PER | `#6366f1` |
-| METALS | PRECIOUS_METALS | `#eab308` |
-| SAVINGS | LEP, LIVRET_A, LDDS, LIVRET_JEUNE, PEL, CEL, SAVINGS | `#22c55e` |
-| CHECKING | CHECKING | `#0ea5e9` |
-| CRYPTO | CRYPTO | `#f97316` |
-| REAL_ESTATE | REAL_ESTATE, SCPI | `#a855f7` |
-| OTHER | OTHER | see `AccountsPage.tsx` |
+| STOCKS | PEA, COMPTE_TITRES, BROKERAGE, EMPLOYEE_SAVINGS, ASSURANCE_VIE, PER | `--class-equity` |
+| METALS | PRECIOUS_METALS | `--class-other` |
+| SAVINGS | LEP, LIVRET_A, LDDS, LIVRET_JEUNE, PEL, CEL, SAVINGS | `--class-savings` |
+| CHECKING | CHECKING | `--class-cash` |
+| CRYPTO | CRYPTO | `--class-crypto` |
+| REAL_ESTATE | REAL_ESTATE, SCPI | `--class-realestate` |
+| RECEIVABLES | PEER_LOAN | `--chart-4` |
+| DEBTS | `LIABILITY_ACCOUNT_TYPES` (LOAN, CREDIT_CARD) | `--loss` |
+| OTHER | OTHER | `--muted-foreground` |
 
-The filter affects the summary card, chart, and account card grid simultaneously.
+The filter affects the total card, the chart and the account rows simultaneously; the KPI row
+always covers every top-level account.
 
 ### History fetching
 
-`useAllAccountsHistory` fetches `/accounts/{id}/history` for every account in parallel, merges all snapshots into a unified time series, and forward-fills missing values. It returns `{ balances, invested }` — two parallel arrays of `{ date, [accountId]: value }` points. Both are forward-filled independently.
-
-It also injects each account's current balance at today's date if no snapshot exists for today, and carries the latest known `investedAmount` forward.
+`useHistory(allAccountIds, 12, true)` (`features/history/hooks.ts`) calls `GET /history` once for
+every non-pocket account in split mode: each `NetWorthPoint` carries an `accounts` map of
+`{ total, invested, pnl }` per account id, which the total card and both chart branches read.
 
 ### Key files
 
 - `frontend/src/components/shared/AccountForm.tsx` — `OPENING_DATE_TYPES` and the date field
 - `frontend/src/components/accounts/LifeContractSection.tsx` — an assurance-vie's contract figures on the detail page
 - `backend/src/main/resources/db/migration/V91__account_opened_at.sql`
-- `frontend/src/pages/accounts/AccountsPage.tsx` — page with summary card, PnL chart, and grid
-- `frontend/src/components/shared/AccountCard.tsx` — one card; `AccountAvatar` / `PropertyAvatar`
+- `frontend/src/pages/accounts/AccountsPage.tsx` — page: KPI row, filters, grouped rows, total card, PnL chart
+- `frontend/src/pages/accounts/AccountRow.tsx` — one row; `AccountMark`
+- `frontend/src/pages/accounts/AccountPanel.tsx` — the side panel
+- `frontend/src/pages/accounts/AccountEditDialog.tsx` — the edit form and its save, shared with the detail page
+- `frontend/src/pages/accounts/AccountDetailPage.tsx` — the detail page
+- `frontend/src/pages/accounts/account-groups.ts` — `signedBalance`, `groupByAssetClass`, `groupByInstitution`, `accountKpis`, `accountFreshness`, `monthChange`
 - `frontend/src/lib/property-icons.ts` — `PROPERTY_KIND_ICONS`, shared with `AddPropertyModal`
 - `frontend/src/components/shared/AccountsStackedChart.tsx` — PnL line chart component
-- `frontend/src/features/accounts/hooks.ts` — `useAllAccountsHistory` hook (returns `AccountsHistoryData`)
+- `frontend/src/features/history/hooks.ts` — `useHistory` (split mode)
 - `frontend/src/demo/index.ts` — mock history data (12 months per account)
 
 ### Flow
 
 ```
 AccountsPage
-  ├─ useAccounts()                    → list of all accounts
-  ├─ useAllAccountsHistory()          → { balances, invested } merged time series
+  ├─ useAccounts() + useAccountTree() → top-level accounts, wallets and their pockets
+  ├─ useHistory(ids, 12, split=true)  → per-account points
   │
-  ├─ filteredAccounts (useMemo)       → accounts matching current filter
-  ├─ hasHoldings                      → true if any filtered account is investment type
+  ├─ accountKpis(...)                 → KPI row (all top-level accounts)
+  ├─ filteredNonPockets (useMemo)     → accounts matching current filter
+  ├─ groupByAssetClass(...)           → grouped AccountRow list (pockets nested)
+  ├─ hasPnl                           → an investment account or a property with a basis
   │
-  ├─ Summary card (totalBalance + PnL)
+  ├─ Total card (totalBalance + PnL)
   │
   ├─ chartPnlData (useMemo)
-  │   ├─ ALL  → aggregate (balance - invested) per type group per date
-  │   └─ else → (balance - invested) per individual account per date
+  │   ├─ ALL  → aggregate PnL per type group per date
+  │   └─ else → PnL per individual account per date
   │
-  ├─ <AccountsStackedChart> (only if hasHoldings)
-  │
-  └─ Account card grid
+  └─ <AccountsStackedChart> (only if hasPnl)
 ```
 
 ## Technical choices
@@ -268,14 +409,14 @@ AccountsPage
 - **A new `PropertyKind` needs an entry in `PROPERTY_KIND_ICONS`.** The map is typed
   `Record<PropertyKind, LucideIcon>`, so a missing key fails the build rather than silently
   dropping the glyph — but the enum lives in the backend, and adding a value there without
-  adding it to `PropertyKind.parse` leaves `propertyKind` null and the card back on the color
-  circle.
-- **The property glyph tints itself with relative color syntax.** `PropertyAvatar` sets
-  `--account-color` inline and derives both the disc and the glyph from it, darkening the
-  glyph in light mode and brightening it in dark (see the
-  [CSS relative color ADR](../decisions/2026-04-08-css-relative-color-syntax.md)). The
-  account palette runs from indigo to yellow; a raw yellow-500 glyph on its own pale tint is
-  barely visible in light mode.
+  adding it to `PropertyKind.parse` leaves `propertyKind` null and the row back on the logo or
+  monogram mark.
+- **`assetClassOf` decides the groups.** A type it maps to `null` (a liability) is filed under
+  "Debts"; a `PEER_LOAN` gets its own "Receivables" group (`account-groups.ts`), before the debts.
+  Class choices for the 1.2.0 types: BROKERAGE is equity; PRECIOUS_METALS is "other" (a ninth hue
+  would break the validated palette) but counts as market liquidity, not illiquid; PEER_LOAN is
+  "other" (an asset owed back, never an investment class). `CLASS_OF` in `lib/asset-classes.ts` is a `Record<AccountType, …>`, so a new type fails
+  the build until it is placed.
 - **Never derive an account type's label key from its name.** `accountTypeLabelKey()` in `lib/constants.ts` is the only mapping; a local `type.toLowerCase()` renders the raw key (`accountTypes.livret_a`) for any type whose key isn't simply its lowercased value. See [add-account-modal.md](./add-account-modal.md#account-type-labels).
 - **`TYPE_TO_GROUP` must cover every `AccountType`** — if a new type is added to the enum but not to this map, those accounts silently disappear from the ALL chart. It is typed `Record<AccountType, string>`, so the compiler catches the omission; `ASSET_FILTER_MAP` is **not** exhaustive by type and needs the same edit by hand.
 - **This grouping is not the investment pyramid's.** `WealthTier.of()` answers a different question (the role an asset plays, not how a user browses it) and lives on the backend — see [wealth-pyramid.md](./wealth-pyramid.md). Do not collapse the two without deciding which answer to lose.
@@ -284,17 +425,29 @@ AccountsPage
 - **`Account.id` cast to `number`** — virtual group accounts use string keys (`'STOCKS'`, `'CRYPTO'`) cast as `number` via `as unknown as number`. This works because Recharts uses `dataKey` as a string lookup, but it's fragile.
 - **`totalInvested` relies on the last invested point** — if an account has no snapshots at all, its invested amount is 0 and PnL equals its full balance. This is correct for newly created accounts where balance = invested.
 - **Cash accounts have `investedAmount = balance`** — set by `AccountService.calculateInvestedAmount()` which returns `currentBalance` for accounts without holdings. This means their PnL = 0.
-- **`useAllAccountsHistory` returns `AccountsHistoryData`** — not a flat array. Consumers must destructure `{ balances, invested }`.
-- **Demo mock history** — `generateHistory()` in `frontend/src/demo/index.ts` creates 12 monthly points. The last point should match the account's `currentBalance` to stay consistent.
+- **Demo mock history** — the `GET /history` handler in `frontend/src/demo/index.ts` builds the points with `netWorthHistory(ids, months, split, …)`. The last point should match the account's `currentBalance` to stay consistent.
 
 ## Tests
 
-- `frontend/src/components/shared/AccountCard.test.tsx` — a property renders its kind glyph
-  instead of the color circle, each kind gets its own glyph, an unparseable `property_type`
-  falls back to the circle, kind and city stand in for the provider line (and either half
-  may be missing), the valuation date replaces the sync date, and the unrealized gain is
-  gone. Glyph assertions match lucide's own `lucide-<icon>` class. A second block covers the
-  stale badge: flagged past 48h, the plain last-sync line below it, never on a manual account.
+- `frontend/src/pages/accounts/AccountRow.test.tsx` — the monogram without a logo, the logo
+  order (connector, bundled, connector over bundled, own key over everything, provider when the
+  key has no asset), one glyph per property kind (matched on lucide's `lucide-<icon>` class),
+  kind and city standing in for the provider, the stale warning on a synced account not
+  refreshed for days, none on a recent sync or a manual account.
+- `frontend/src/pages/accounts/account-groups.test.ts` — group order with debts last and summed
+  negative; institutions netted and ordered, a hand-typed loan kept with its bank, the manual and
+  property buckets last; the KPI split of assets and debts and the count of synced accounts
+  refreshed within a day; `monthChange` (month-end and January dates, too-short history, no
+  percent from zero) and `accountFreshness` (valuation scale for a property, no warning on a manual
+  account).
+- `frontend/src/pages/accounts/AccountDetailPage.test.tsx` and
+  `AccountDetailPage.duplicateSections.test.tsx` — the PER euro-fund figure without an implied
+  zero P&L, one holdings card and one realised P&L section, dividends only on a CTO or PEA.
+- `frontend/src/pages/accounts/AccountsPage.test.tsx` — the property gain against its cost basis,
+  the PnL chart on the Immobilier filter, partial bases, the row actions visible on touch screens,
+  the grouping switch, a row opening the panel, `?edit=<id>` opening and clearing, an unknown id.
+- `e2e/accounts.spec.ts` — the panel from a row and its link to the detail page, the `?edit=`
+  deep link opening and clearing, an unknown id.
 - `frontend/src/hooks/use-table-sort.test.ts` — direction flips, a new column starting at its
   natural direction, nulls last both ways, collator ordering, stability, and that the caller's
   array is never mutated.
@@ -309,13 +462,13 @@ AccountsPage
   the scheduled payment with its cadence, rows hidden when null, nothing without a contract.
   `AccountDetailPage.test.tsx` shows the section on an assurance-vie with contract figures and
   leaves it off otherwise.
-- Nothing covers the PnL chart, the summary card or the filters yet.
 
 ## Links
 
-- i18n keys: `accounts.lifeContract.*`, `accounts.pnl`, `accounts.total`, `accounts.filters.*`, `accounts.lastSync`,
-  `accounts.lastValuation`, `property.kind.*`
+- i18n keys: `accounts.lifeContract.*`, `accounts.pnl`, `accounts.total`, `accounts.filters.*`, `accounts.groupBy.*`,
+  `accounts.breakdown.*`, `accounts.panel.*`, `accounts.lastSync`,
+  `accounts.lastValuation`, `property.kind.*`, `dashboard.netWorthChange`
 - Related: [dashboard-time-range-isolation.md](./dashboard-time-range-isolation.md) — Dashboard PnL chart
 - Related: [live-prices-holdings.md](./live-prices-holdings.md) — per-holding PnL calculation
-- Related: [bank-logos.md](./bank-logos.md) — account card avatar (bank logo, falls back to `color`)
+- Related: [bank-logos.md](./bank-logos.md) — the row's mark (bank logo, falls back to the monogram)
 - Related: [real-estate-valuation.md](./real-estate-valuation.md) — where `propertyKind` and `lastValuedAt` come from

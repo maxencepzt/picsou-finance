@@ -52,7 +52,7 @@ function PnlTooltip({ active, payload, accounts, labels }: {
               style={{ backgroundColor: account.color }}
             />
             <span className="text-muted-foreground truncate">{account.name}</span>
-            <span className={`ml-auto font-mono font-medium tabular-nums ${item.value >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+            <span className={`ml-auto font-medium tabular-nums ${item.value >= 0 ? 'text-gain' : 'text-loss'}`}>
               {item.value >= 0 ? '+' : ''}{money.amount(item.value, labels.currency)}
             </span>
           </div>
@@ -60,7 +60,7 @@ function PnlTooltip({ active, payload, accounts, labels }: {
       </div>
       <div className="my-1.5 border-t border-border" />
       <div className="flex items-center justify-between py-0.5">
-        <span className={`font-mono font-medium tabular-nums ${total >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+        <span className={`font-medium tabular-nums ${total >= 0 ? 'text-gain' : 'text-loss'}`}>
           {total >= 0 ? '+' : ''}{money.amount(total, labels.currency)}
         </span>
       </div>
@@ -90,6 +90,11 @@ export function AccountsStackedChart({ accounts, data }: AccountsStackedChartPro
   const [range, setRange] = useState<TimeRange>('1Y')
 
   const filteredData = useMemo(() => filterByRange(data, range), [data, range])
+  // One tick per calendar month: daily points labelled "nov." twice (1st and 3rd) read as a glitch.
+  const monthTicks = useMemo(
+    () => filteredData.filter((p, i, all) => i === 0 || p.date.slice(0, 7) !== all[i - 1].date.slice(0, 7)).map((p) => p.date),
+    [filteredData],
+  )
   const yWidth = yAxisWidth(
     filteredData.flatMap(p => accounts.map(a => p[a.id]).filter(v => typeof v === 'number')),
     money.tick,
@@ -124,6 +129,9 @@ export function AccountsStackedChart({ accounts, data }: AccountsStackedChartPro
           <XAxis
             dataKey="date"
             {...AXIS_PROPS}
+            ticks={monthTicks}
+            interval="preserveStartEnd"
+            minTickGap={12}
             tickFormatter={(value) => new Date(value).toLocaleDateString(locale, { month: 'short' })}
           />
           <YAxis

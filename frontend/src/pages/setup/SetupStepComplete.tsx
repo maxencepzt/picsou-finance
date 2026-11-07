@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
-import { CheckCircle2, Loader2 } from 'lucide-react'
+import { ArrowRight, Bitcoin, CheckCircle2, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Confetti } from './components/Confetti'
+import { IntegrationMark } from './components/IntegrationMark'
+import { SetupCard, SetupNote } from './components/SetupCard'
 import { useCompleteSetup, useSetupStatus } from '@/features/setup/hooks'
 import { useSetupFlowStore, type IntegrationKey } from '@/stores/setup-flow-store'
 import { consumeSetupCredentials } from '@/stores/setup-credentials'
@@ -18,13 +20,14 @@ type AutoLoginState = 'idle' | 'attempting' | 'success' | 'failed'
  * Final screen. On mount:
  *   1. POST /api/setup/complete to flip setup.state to COMPLETE
  *   2. Immediately attempt auto-login with the in-memory credentials
- *      stashed by SetupStepAdmin (cleared here — one-shot consumption)
+ *      stashed by SetupStepAdmin (cleared here — one-shot consumption),
+ *      or, without them, through the session the SSO callback opened
  *   3. Show the confetti + "Open my dashboard" CTA
  *
- * Auto-login is best-effort: if credentials were cleared by a refresh or
- * the /login call itself rejects, the CTA falls back to routing the user
- * to /login manually. setup.state is COMPLETE either way, so the app
- * behaves normally from here.
+ * Auto-login is best-effort: if the /login call or the session probe
+ * rejects, the CTA falls back to routing the user to /login manually.
+ * setup.state is COMPLETE either way, so the app behaves normally from
+ * here.
  */
 export function SetupStepComplete() {
   const { t } = useTranslation()
@@ -62,15 +65,12 @@ export function SetupStepComplete() {
         }
       }
 
+      // No stashed password (SSO admin, or a reload mid-wizard): the session the SSO callback
+      // opened may still be there. Probing it before /complete resolves would answer 503.
       const creds = consumeSetupCredentials()
-      if (!creds) {
-        setAutoLogin('failed')
-        return
-      }
-
       setAutoLogin('attempting')
       try {
-        const user = await authApi.login(creds.username, creds.password)
+        const user = creds ? await authApi.login(creds.username, creds.password) : await authApi.refresh()
         loginIntoStore(user)
         // Make sure RequireSetup sees fresh status on dashboard nav.
         await refetchStatus()
@@ -108,75 +108,48 @@ export function SetupStepComplete() {
           content around. The parent is relative so pieces anchor correctly. */}
       <Confetti />
 
-      <div className="relative space-y-8">
-        <div className="text-center space-y-2">
-          <div className="flex justify-center">
-            <span className="rounded-2xl bg-emerald-500/10 p-3 text-emerald-500">
-              <CheckCircle2 className="h-8 w-8" />
-            </span>
-          </div>
-          <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight">
-            {t('setup.complete.title')}
-          </h1>
-          {displayName && (
-            <p className="mx-auto max-w-md text-sm text-muted-foreground">
-              {t('setup.complete.subtitle', { name: displayName })}
-            </p>
-          )}
-        </div>
-
-        {integrationList.length > 0 ? (
-          <div className="rounded-2xl border border-border/60 bg-card p-4 sm:p-5">
-            <p className="mb-3 text-xs font-semibold tracking-[0.18em] text-muted-foreground">
-              {t('setup.complete.summaryTitle')}
-            </p>
-            <ul className="space-y-2">
-              {integrationList.map((key) => (
-                <li key={key} className="flex items-center gap-2 text-sm">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                  {t(`setup.integrations.cards.${key}.title`)}
-                </li>
-              ))}
-            </ul>
-          </div>
-        ) : (
-          <div className="rounded-2xl border border-border/60 bg-muted/30 p-4 text-center text-xs text-muted-foreground">
-            {t('setup.complete.noIntegrations')}
-          </div>
-        )}
-
-        {complete.isPending && (
-          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            {t('setup.complete.completing')}
-          </div>
-        )}
-
-        {autoLogin === 'attempting' && (
-          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            {t('setup.complete.loggingIn')}
-          </div>
-        )}
-
-        <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
-          {autoLogin === 'success' ? (
-            <Button
-              onClick={goToDashboard}
-              className="w-full rounded-full"
-            >
+      <SetupCard
+        icon={<CheckCircle2 className="text-gain" />}
+        title={t('setup.complete.title')}
+        description={displayName ? t('setup.complete.subtitle', { name: displayName }) : undefined}
+        footer={
+          autoLogin === 'success' ? (
+            <Button onClick={goToDashboard} className="w-full sm:w-auto">
               {t('setup.complete.cta')}
+              <ArrowRight aria-hidden="true" />
             </Button>
           ) : autoLogin === 'failed' ? (
-            <Button
-              onClick={goToLogin}
-              className="w-full rounded-full"
-            >
+            <Button onClick={goToLogin} className="w-full sm:w-auto">
               {t('setup.complete.loginFallback')}
             </Button>
-          ) : null}
-        </div>
-      </div>
+          ) : (
+            <p className="flex items-center justify-center gap-2 text-sm text-muted-foreground" role="status">
+              <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+              {autoLogin === 'attempting' ? t('setup.complete.loggingIn') : t('setup.complete.completing')}
+            </p>
+          )
+        }
+      >
+        {integrationList.length > 0 ? (
+          <section className="space-y-2">
+            <h2 className="text-[13px] font-medium text-muted-foreground">{t('setup.complete.summaryTitle')}</h2>
+            <ul className="divide-y divide-border overflow-hidden rounded-xl ring-1 ring-border">
+              {integrationList.map((key) => {
+                const title = t(`setup.integrations.cards.${key}.title`)
+                return (
+                  <li key={key} className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-foreground">
+                    <IntegrationMark integration={key} label={title} icon={key === 'crypto' ? Bitcoin : undefined} className="size-8" />
+                    <span className="min-w-0 flex-1">{title}</span>
+                    <CheckCircle2 className="size-4 shrink-0 text-gain" aria-hidden="true" />
+                  </li>
+                )
+              })}
+            </ul>
+          </section>
+        ) : (
+          <SetupNote>{t('setup.complete.noIntegrations')}</SetupNote>
+        )}
+      </SetupCard>
     </div>
   )
 }

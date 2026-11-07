@@ -56,22 +56,23 @@ describe('error routes', () => {
   afterEach(cleanup)
 
   it.each([
-    ['/does-not-exist', '404'],
-    ['/error/403', '403'],
-    ['/error/500', '500'],
-  ])('renders %s inside the app shell for a signed-in user', async (path, code) => {
+    // Each error screen titles itself; its code sits in the caption above.
+    ['/does-not-exist', 'error.notFoundTitle'],
+    ['/error/403', 'error.forbiddenTitle'],
+    ['/error/500', 'error.serverErrorTitle'],
+  ])('renders %s inside the app shell for a signed-in user', async (path, title) => {
     useAuthStore.setState({ user: USER, isAuthenticated: true })
 
     await renderAt(path)
 
-    const heading = await screen.findByRole('heading', { name: code })
-    expect(within(screen.getByTestId('app-shell')).getByRole('heading', { name: code })).toBe(heading)
+    const heading = await screen.findByRole('heading', { name: title })
+    expect(within(screen.getByTestId('app-shell')).getByRole('heading', { name: title })).toBe(heading)
   })
 
   it('renders the 404 without the app shell for a signed-out visitor', async () => {
     await renderAt('/does-not-exist')
 
-    expect(await screen.findByRole('heading', { name: '404' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'error.notFoundTitle' })).toBeInTheDocument()
     expect(screen.queryByTestId('app-shell')).not.toBeInTheDocument()
     expect(refresh).toHaveBeenCalledTimes(1)
   })
@@ -81,8 +82,8 @@ describe('error routes', () => {
 
     await renderAt('/does-not-exist')
 
-    const heading = await screen.findByRole('heading', { name: '404' })
-    expect(within(screen.getByTestId('app-shell')).getByRole('heading', { name: '404' })).toBe(heading)
+    const heading = await screen.findByRole('heading', { name: 'error.notFoundTitle' })
+    expect(within(screen.getByTestId('app-shell')).getByRole('heading', { name: 'error.notFoundTitle' })).toBe(heading)
     expect(useAuthStore.getState().user).toEqual(USER)
   })
 

@@ -1,10 +1,12 @@
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
-import { PiggyBank } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAcknowledgeIntegration } from '@/features/setup/hooks'
 import { useSetupFlowStore } from '@/stores/setup-flow-store'
 import { nextIntegrationRoute } from './navigation'
+import { IntegrationMark } from '../components/IntegrationMark'
+import { SetupCard, SetupNote } from '../components/SetupCard'
 
 export function SetupStepFinary() {
   const { t } = useTranslation()
@@ -26,42 +28,24 @@ export function SetupStepFinary() {
   const skip = () => navigate(nextIntegrationRoute('finary', selected))
 
   return (
-    <div className="space-y-8">
-      <div className="text-center space-y-2">
-        <div className="flex justify-center">
-          <span className="rounded-xl bg-primary/10 p-3 text-primary">
-            <PiggyBank className="h-6 w-6" />
-          </span>
-        </div>
-        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
-          {t('setup.finary.title')}
-        </h1>
-        <p className="mx-auto max-w-md text-sm text-muted-foreground">
-          {t('setup.finary.body')}
-        </p>
-      </div>
-
-      <div className="rounded-2xl border border-border/60 bg-muted/30 p-4 text-center text-xs text-muted-foreground">
-        {t('setup.finary.tip')}
-      </div>
-
-      <div className="mx-auto flex w-full max-w-lg flex-col gap-3">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={skip}
-          className="w-full rounded-full"
-        >
-          {t('setup.finary.skip')}
-        </Button>
-        <Button
-          onClick={proceed}
-          disabled={ack.isPending}
-          className="w-full rounded-full"
-        >
-          {t('setup.finary.cta')}
-        </Button>
-      </div>
-    </div>
+    <SetupCard
+      icon={<IntegrationMark integration="finary" label={t('setup.integrations.cards.finary.title')} className="size-10 rounded-xl after:rounded-xl" />}
+      eyebrow={t('setup.steps.integrations')}
+      title={t('setup.finary.title')}
+      description={t('setup.finary.body')}
+      footer={
+        <>
+          <Button type="button" variant="ghost" onClick={skip} disabled={ack.isPending} className="w-full sm:mr-auto sm:w-auto">
+            {t('setup.finary.skip')}
+          </Button>
+          <Button onClick={proceed} disabled={ack.isPending} className="w-full sm:w-auto">
+            {ack.isPending && <Loader2 className="animate-spin" aria-hidden="true" />}
+            {t('setup.finary.cta')}
+          </Button>
+        </>
+      }
+    >
+      <SetupNote>{t('setup.finary.tip')}</SetupNote>
+    </SetupCard>
   )
 }

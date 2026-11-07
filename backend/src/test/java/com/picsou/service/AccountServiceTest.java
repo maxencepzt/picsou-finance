@@ -27,6 +27,8 @@ import com.picsou.repository.AccountHoldingRepository;
 import com.picsou.repository.AccountRepository;
 import com.picsou.repository.BalanceSnapshotRepository;
 import com.picsou.repository.DebtRepository;
+import com.picsou.repository.PeerLoanRepaymentRepository;
+import com.picsou.repository.PeerLoanTermsRepository;
 import com.picsou.repository.PriceSnapshotRepository;
 import com.picsou.repository.PropertyValuationRepository;
 import com.picsou.repository.RealEstateMetadataRepository;
@@ -231,6 +233,21 @@ class AccountServiceTest {
 
         assertThat(saved.getBalance()).isEqualByComparingTo("-800");
         assertThat(card.getCurrentBalance()).isEqualByComparingTo("-800");
+    }
+
+    @Test
+    void addManualSnapshot_rejectsAPeerLoanWhoseBalanceComesFromItsLedger() {
+        Account loan = Account.builder().id(1L).name("Jean").type(AccountType.PEER_LOAN)
+            .currency("EUR").isManual(true).currentBalance(new BigDecimal("500")).build();
+        when(accountRepository.findByIdAndMemberId(1L, 7L)).thenReturn(Optional.of(loan));
+
+        assertThatThrownBy(() -> accountService.addManualSnapshot(
+            1L, 7L, new SnapshotRequest(new BigDecimal("500"), LocalDate.now())))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("repayment ledger");
+
+        assertThat(loan.getCurrentBalance()).isEqualByComparingTo("500");
+        verify(accountRepository, never()).save(any());
     }
 
     @Test
@@ -815,6 +832,51 @@ class AccountServiceTest {
         assertThat(valuation.investedEur()).isEqualByComparingTo("900");
     }
 
+    /**
+     * A SimpleFIN brokerage account: the balance is in USD, one fund resolves on the price feed
+     * and one (a 401(k) fund known only by its CUSIP) does not, so only the bridge's own value,
+     * stored converted to EUR at sync time, stands for it. Dropping that line from the value
+     * while the cost baseline stays the whole balance reported a loss the size of the fund.
+     */
+    private Account simplefinBrokerage() {
+        return Account.builder().id(1L).name("Retirement").type(AccountType.BROKERAGE)
+            .provider("SimpleFIN").currency("USD").currentBalance(new BigDecimal("10000")).build();
+    }
+
+    @Test
+    void valuation_simplefinPositionYahooCannotPrice_isValuedAtTheBridgesFigureNotDropped() {
+        Account account = simplefinBrokerage();
+        AccountHolding priced = AccountHolding.builder().ticker("AAA").quantity(new BigDecimal("20")).build();
+        AccountHolding unpriced = AccountHolding.builder().ticker("BBB").quantity(new BigDecimal("50"))
+            .providerValueEur(new BigDecimal("7000")).providerPriceDate(LocalDate.of(2026, 1, 2)).build();
+        when(holdingRepository.findByAccount_Id(1L)).thenReturn(List.of(priced, unpriced));
+        stubQuotes("AAA", "100", "BBB", null);
+        when(priceService.getFxRateEur("USD")).thenReturn(new BigDecimal("0.9"));
+
+        AccountService.Valuation valuation = accountService.valuation(account);
+
+        assertThat(valuation.liveEur()).isEqualByComparingTo("9000"); // 20 x 100 + 7000
+        assertThat(valuation.investedEur()).isEqualByComparingTo("9000"); // 10000 USD at 0.9: no false loss
+    }
+
+    @Test
+    void valuation_simplefinPortfolioNoPriceFeedKnows_isTheSumOfTheBridgesFiguresNotZero() {
+        Account account = simplefinBrokerage();
+        AccountHolding first = AccountHolding.builder().ticker("31617H102").quantity(new BigDecimal("12"))
+            .providerValueEur(new BigDecimal("6000")).build();
+        AccountHolding second = AccountHolding.builder().ticker("922908553").quantity(new BigDecimal("3"))
+            .providerValueEur(new BigDecimal("3000")).build();
+        when(holdingRepository.findByAccount_Id(1L)).thenReturn(List.of(first, second));
+        stubQuotes("31617H102", null, "922908553", null);
+        when(priceService.getFxRateEur("USD")).thenReturn(new BigDecimal("0.9"));
+
+        AccountService.Valuation valuation = accountService.valuation(account);
+
+        assertThat(valuation.liveEur()).isEqualByComparingTo("9000");
+        assertThat(valuation.investedEur()).isEqualByComparingTo("9000");
+        assertThat(valuation.anyPriced()).isTrue();
+    }
+
     @Test
     void liveBalanceEur_cashAccount_convertsStoredBalance() {
         Account cash = Account.builder()
@@ -1366,7 +1428,8 @@ class AccountServiceTest {
         AccountService service = new AccountService(accountRepository, snapshotRepository, holdingRepository,
             transactionRepository, realEstateMetadataRepository, propertyValuationRepository, debtRepository,
             savingsInterestConfigRepository, realPrices, loanAmortizationService, accessResolver,
-            bankLogoResolver, cryptoLogoService, instrumentLogoService, scpiPositionRepository, scpiFundService);
+            bankLogoResolver, cryptoLogoService, instrumentLogoService, scpiPositionRepository, scpiFundService,
+            mock(PeerLoanTermsRepository.class), mock(PeerLoanRepaymentRepository.class));
         // What a verified-EUR Finary crypto snapshot stores: 10 REG that Finary values at 10 EUR.
         Account account = Account.builder().id(9L).name("Finary wallet").type(AccountType.CRYPTO)
             .currency("EUR").currentBalance(BigDecimal.TEN).build();
@@ -1735,5 +1798,47 @@ class AccountServiceTest {
 
         // SUI is also a listed share's symbol; a coin must never borrow that company's mark.
         verifyNoInteractions(instrumentLogoService);
+    }
+
+    // ─── PEA deposit ceiling ──────────────────────────────────────────────────
+
+    private static AccountRequest peaRequest(String depositCeiling) {
+        return new AccountRequest("PEA jeune", AccountType.PEA, null, "EUR", null, true, "#6366f1",
+            null, null, null, null, depositCeiling == null ? null : new BigDecimal(depositCeiling));
+    }
+
+    @Test
+    void update_storesTheDepositCeiling_andKeepsItWhenTheClientSendsNone() {
+        Account account = Account.builder().id(1L).name("PEA jeune").type(AccountType.PEA)
+            .currency("EUR").build();
+        when(accountRepository.findByIdAndMemberId(1L, 7L)).thenReturn(Optional.of(account));
+        when(accountRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        AccountResponse set = accountService.update(1L, peaRequest("20000"), 7L);
+        assertThat(account.getDepositCeiling()).isEqualByComparingTo("20000");
+        assertThat(set.depositCeiling()).isEqualByComparingTo("20000");
+
+        // The MCP update_account tool sends no ceiling: a rename must not erase it.
+        accountService.update(1L, peaRequest(null), 7L);
+        assertThat(account.getDepositCeiling()).isEqualByComparingTo("20000");
+    }
+
+    @Test
+    void findById_reportsAPeasCostBasis_andOnlyAPeas() {
+        Account pea = Account.builder().id(1L).name("PEA").type(AccountType.PEA).currency("EUR")
+            .currentBalance(new BigDecimal("5000")).depositCeiling(new BigDecimal("20000")).build();
+        Account checking = Account.builder().id(2L).name("Courant").type(AccountType.CHECKING)
+            .currency("EUR").currentBalance(new BigDecimal("300")).build();
+        when(accessResolver.requireReadable(1L, 7L)).thenReturn(pea);
+        when(accessResolver.requireReadable(2L, 7L)).thenReturn(checking);
+        when(priceService.toEur(any(), eq("EUR"), any())).thenAnswer(inv -> inv.getArgument(0));
+
+        AccountResponse peaResponse = accountService.findById(1L, 7L);
+        assertThat(peaResponse.depositCeiling()).isEqualByComparingTo("20000");
+        assertThat(peaResponse.investedEur()).isEqualByComparingTo("5000");
+
+        AccountResponse checkingResponse = accountService.findById(2L, 7L);
+        assertThat(checkingResponse.investedEur()).isNull();
+        assertThat(checkingResponse.depositCeiling()).isNull();
     }
 }

@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
+import { CartesianGrid, Line, LineChart, XAxis, YAxis, usePlotArea, useXAxisScale, useYAxisScale } from 'recharts'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { CurrencyDisplay } from '@/components/shared/CurrencyDisplay'
+import { SegmentedControl } from '@/components/shared/SegmentedControl'
 import { AllocationTrajectory } from './AllocationTrajectory'
 import {
   ChartContainer,
@@ -12,31 +12,82 @@ import {
 } from '@/components/ui/chart'
 import { useProjection, useProjectionDateLabel } from '@/features/analysis/hooks'
 import { useMoney } from '@/hooks/use-money'
+import { useIsMobile } from '@/hooks/use-mobile'
 import { MONEY_AXIS_WIDTH } from '@/lib/money'
 import { MoneyChartTooltip } from '@/components/shared/MoneyChartTooltip'
 import { cn, formatPercent } from '@/lib/utils'
 import type { ProjectionScenario } from '@/types/api'
 import { AXIS_PROPS, AXIS_PROPS_FLUSH } from '@/lib/chart-axis'
+import { labelGutter, spreadLabels } from './projection-labels'
 
 const HORIZONS = [10, 20, 30] as const
 
 /**
  * The theme's chart tokens are a single-hue ramp, not five distinct hues — which suits ordered
- * data exactly. Spread across it darkest-to-lightest so "more optimistic" reads as "brighter",
- * skipping chart-5 because it disappears against a dark background at a 2px stroke.
+ * data exactly. Spread across it darkest-to-lightest so "more optimistic" reads as "brighter";
+ * chart-5 is the app's "invested" reference, kept for the contributions.
  */
 const SCENARIO_COLORS: Record<ProjectionScenario['key'], string> = {
-  PESSIMISTIC: 'var(--chart-4)',
-  CAUTIOUS: 'var(--chart-3)',
+  PESSIMISTIC: 'var(--chart-3)',
+  CAUTIOUS: 'var(--chart-1)',
   REFERENCE: 'var(--chart-2)',
-  OPTIMISTIC: 'var(--chart-1)',
+  OPTIMISTIC: 'var(--chart-4)',
 }
 
 /** Contributions are drawn beneath every scenario, so they read as the floor the gain sits on. */
-const CONTRIBUTED_COLOR = 'var(--color-muted-foreground)'
+const CONTRIBUTED_COLOR = 'var(--chart-5)'
 
 /** The series the legend can toggle: contributions first, then the scenarios in payload order. */
 const CONTRIBUTED_KEY = 'contributed'
+
+/** Vertical room per end label: 11px text plus air. */
+const LABEL_GAP = 14
+
+interface ScenarioEnd {
+  key: string
+  date: string
+  value: number
+  text: string
+  color: string
+}
+
+/**
+ * The final value of each visible scenario, written at the right end of its line and spread so
+ * no two overlap. A dot marks the line's real end and a short leader joins it to a label that
+ * had to move. Rendered inside the chart, where Recharts' hooks give the scales.
+ */
+function ScenarioEndLabels({ ends }: { ends: ScenarioEnd[] }) {
+  const xScale = useXAxisScale()
+  const yScale = useYAxisScale()
+  const plot = usePlotArea()
+  if (!xScale || !yScale || !plot) return null
+  const anchored = ends.flatMap((end) => {
+    const x = xScale(end.date)
+    const y = yScale(end.value)
+    return x == null || y == null ? [] : [{ ...end, x, y }]
+  })
+  const placed = spreadLabels(anchored, LABEL_GAP, plot.y + LABEL_GAP / 2, plot.y + plot.height - LABEL_GAP / 2)
+  return (
+    <g aria-hidden="true">
+      {placed.map((end) => (
+        <g key={end.key}>
+          <circle cx={end.x} cy={end.y} r={2.5} fill={end.color} />
+          {Math.abs(end.labelY - end.y) > 1 && (
+            <line x1={end.x + 2} y1={end.y} x2={end.x + 6} y2={end.labelY} stroke={end.color} strokeWidth={1} />
+          )}
+          <text
+            x={end.x + 8}
+            y={end.labelY}
+            dominantBaseline="central"
+            className="fill-foreground text-[11px] font-semibold tabular-nums"
+          >
+            {end.text}
+          </text>
+        </g>
+      ))}
+    </g>
+  )
+}
 
 /**
  * The next round number at or above a value — 1, 2, 2.5 or 5 times a power of ten.
@@ -52,7 +103,7 @@ function niceCeiling(value: number): number {
   return step * magnitude
 }
 
-export function ProjectionSection() {
+export function ProjectionSection({ className }: { className?: string }) {
   const { t } = useTranslation()
   const dateLabel = useProjectionDateLabel()
   const [years, setYears] = useState<number>(20)
@@ -63,6 +114,8 @@ export function ProjectionSection() {
   // added later to the payload appears without anyone remembering to opt it in.
   const [hidden, setHidden] = useState<Set<string>>(() => new Set())
   const money = useMoney()
+  // A phone's chart has no room beside the lines; the legend and the tooltip still carry the values.
+  const showEndLabels = !useIsMobile()
   const projection = useProjection(years)
 
   const config = useMemo<ChartConfig>(() => {
@@ -131,6 +184,20 @@ export function ProjectionSection() {
     [projection.data, t],
   )
 
+  const ends = useMemo<ScenarioEnd[]>(() => {
+    const last = rows.at(-1)
+    if (!last) return []
+    return Object.keys(config)
+      .filter((key) => !hidden.has(key))
+      .map((key) => ({
+        key,
+        date: String(last.date),
+        value: Number(last[key] ?? 0),
+        text: money.compact(Number(last[key] ?? 0)),
+        color: SCENARIO_COLORS[key as ProjectionScenario['key']],
+      }))
+  }, [rows, config, hidden, money])
+
   const toggle = (key: string) =>
     setHidden((previous) => {
       const next = new Set(previous)
@@ -141,38 +208,49 @@ export function ProjectionSection() {
   const hasSomethingToProject =
     (projection.data?.baseValueEur ?? 0) > 0 || (projection.data?.monthlyInflowEur ?? 0) > 0
 
+  const viewOptions = (['wealth', 'allocation'] as const).map((key) => ({
+    value: key,
+    label: t(`analysis.projection.views.${key}`),
+  }))
+  const horizonOptions = HORIZONS.map((horizon) => ({
+    value: String(horizon),
+    label: t('analysis.projection.years', { count: horizon }),
+  }))
+
   return (
-    <Card>
-      <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-x-4 gap-y-2">
-        <CardTitle>{t('analysis.projection.title')}</CardTitle>
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex gap-1">
-            {(['wealth', 'allocation'] as const).map((key) => (
-              <Button
-                key={key}
-                variant={view === key ? 'default' : 'outline'}
-                size="sm"
-                className="px-4 sm:px-8"
-                aria-pressed={view === key}
-                onClick={() => setView(key)}
-              >
-                {t(`analysis.projection.views.${key}`)}
-              </Button>
-            ))}
-          </div>
-          <div className="flex gap-1">
-          {HORIZONS.map((horizon) => (
-            <Button
-              key={horizon}
-              variant={horizon === years ? 'default' : 'outline'}
-              size="sm"
-              className="px-4 sm:px-8"
-              onClick={() => setYears(horizon)}
-            >
-              {t('analysis.projection.years', { count: horizon })}
-            </Button>
-          ))}
-          </div>
+    <Card className={cn('min-w-0', className)}>
+      <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-x-4 gap-y-3">
+        <div className="flex min-w-0 flex-col gap-1">
+          <CardTitle>{t('analysis.projection.title')}</CardTitle>
+          {/* The base is stated because it is not the net worth on the dashboard: property,
+              loans and alternative assets are out, and a reader has to know that. */}
+          {projection.data && hasSomethingToProject && (
+            <CardDescription>
+              {t('analysis.projection.basis')}{' '}
+              <CurrencyDisplay value={projection.data.baseValueEur} className="text-foreground" />
+              {projection.data.monthlyInflowEur > 0 && (
+                <>
+                  {' · '}
+                  {t('analysis.projection.monthly')}{' '}
+                  <CurrencyDisplay value={projection.data.monthlyInflowEur} className="text-foreground" />
+                </>
+              )}
+            </CardDescription>
+          )}
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <SegmentedControl
+            options={viewOptions}
+            value={view}
+            onChange={setView}
+            ariaLabel={t('analysis.projection.viewLabel')}
+          />
+          <SegmentedControl
+            options={horizonOptions}
+            value={String(years)}
+            onChange={(value) => setYears(Number(value))}
+            ariaLabel={t('analysis.projection.horizonLabel')}
+          />
         </div>
       </CardHeader>
       <CardContent>
@@ -180,38 +258,24 @@ export function ProjectionSection() {
           <p className="text-sm text-muted-foreground">{t('analysis.projection.nothingToProject')}</p>
         ) : (
           <>
-            {/* The base is stated because it is not the net worth on the dashboard: property,
-                loans and alternative assets are out, and a reader has to know that. */}
-            <p className="mb-4 text-sm text-muted-foreground">
-              {t('analysis.projection.basis')}{' '}
-              <CurrencyDisplay value={projection.data.baseValueEur} className="text-foreground" />
-              {projection.data.monthlyInflowEur > 0 && (
-                <>
-                  {' · '}
-                  {t('analysis.projection.monthly')}{' '}
-                  <CurrencyDisplay
-                    value={projection.data.monthlyInflowEur}
-                    className="text-foreground"
-                  />
-                </>
-              )}
-            </p>
-
             {view === 'allocation' ? (
               <AllocationTrajectory allocation={projection.data.allocation} />
             ) : (
               <>
-            <ChartContainer config={config} className={cn('h-[320px] w-full')}>
-              <AreaChart data={rows} margin={{ left: 4, right: 8, top: 8, bottom: 0 }}>
-                <defs>
-                  {Object.keys(config).map((key) => (
-                    <linearGradient key={key} id={`fill-${key}`} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={`var(--color-${key})`} stopOpacity={0.25} />
-                      <stop offset="100%" stopColor={`var(--color-${key})`} stopOpacity={0.02} />
-                    </linearGradient>
-                  ))}
-                </defs>
-                <CartesianGrid vertical={false} strokeDasharray="3 3" />
+            <ChartContainer
+              config={config}
+              className="h-[300px] w-full"
+              role="img"
+              aria-label={t('analysis.projection.chartLabel', {
+                years,
+                values: ends.map((end) => `${config[end.key]?.label ?? end.key} ${end.text}`).join(', '),
+              })}
+            >
+              <LineChart
+                data={rows}
+                margin={{ left: 4, right: showEndLabels && ends.length > 0 ? labelGutter(ends.map((end) => end.text)) : 8, top: 8, bottom: 0 }}
+              >
+                <CartesianGrid vertical={false} />
                 <XAxis
                   dataKey="date"
                   {...AXIS_PROPS}
@@ -233,14 +297,12 @@ export function ProjectionSection() {
                   }
                 />
                 {!hidden.has(CONTRIBUTED_KEY) && (
-                  <Area
+                  <Line
                     type="monotone"
                     dataKey="contributed"
                     stroke={CONTRIBUTED_COLOR}
-                    fill={CONTRIBUTED_COLOR}
-                    fillOpacity={0.12}
-                    strokeWidth={1}
-                    strokeDasharray="4 3"
+                    strokeWidth={1.5}
+                    strokeDasharray="4 4"
                     dot={false}
                     name={t('analysis.projection.contributed')}
                   />
@@ -248,24 +310,25 @@ export function ProjectionSection() {
                 {Object.keys(config)
                   .filter((key) => !hidden.has(key))
                   .map((key) => (
-                    <Area
+                    <Line
                       key={key}
                       type="monotone"
                       dataKey={key}
                       stroke={`var(--color-${key})`}
-                      fill={`url(#fill-${key})`}
-                      strokeWidth={2}
+                      // The reference scenario is the one to read; the others frame it.
+                      strokeWidth={key === 'REFERENCE' ? 3 : 2}
                       dot={false}
                     />
                   ))}
-              </AreaChart>
+                {showEndLabels && <ScenarioEndLabels ends={ends} />}
+              </LineChart>
             </ChartContainer>
 
             {/* Rendered here rather than through Recharts' <Legend>, which sorts alphabetically
                 and so scrambles a series whose whole meaning is its order. Each entry is also the
                 control for its curve: four scenarios plus contributions is more than a 320px
                 chart can separate, and comparing two of them means removing the other three. */}
-            <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1">
+            <ul className="mt-2 flex flex-wrap gap-x-4">
               {legend.map((entry) => {
                 const shown = !hidden.has(entry.key)
                 return (
@@ -275,12 +338,14 @@ export function ProjectionSection() {
                       aria-pressed={shown}
                       onClick={() => toggle(entry.key)}
                       className={cn(
-                        'flex items-center gap-1.5 text-xs transition-opacity hover:opacity-100',
-                        shown ? 'text-muted-foreground' : 'text-muted-foreground/50 line-through',
+                        // The row is dense; the padding gives each toggle a finger-sized target.
+                        '-mx-1 flex min-h-8 items-center gap-1.5 rounded-md px-1 text-xs font-medium transition-[color] hover:text-foreground',
+                        shown ? 'text-foreground' : 'text-muted-foreground line-through',
                       )}
                     >
+                      {/* A stroke swatch, since the series are lines. */}
                       <span
-                        className={cn('size-2 shrink-0 rounded-full', !shown && 'opacity-40')}
+                        className={cn('h-0.5 w-3.5 shrink-0 rounded-full', !shown && 'opacity-40')}
                         style={{ backgroundColor: entry.color }}
                         aria-hidden="true"
                       />

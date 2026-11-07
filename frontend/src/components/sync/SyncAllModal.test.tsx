@@ -73,10 +73,14 @@ function mockStatusEndpoints() {
         return Promise.resolve({ data: { connected: false, connectionId: null, status: null, lastSyncedAt: null, maskedToken: null } })
       case '/simplefin/status':
         return Promise.resolve({ data: simplefinStatus })
+      case '/wise/status':
+        return Promise.resolve({ data: wiseStatus })
       case '/amex/status':
         return Promise.resolve({ data: amexStatus })
       case '/caisse-epargne/status':
         return Promise.resolve({ data: caisseEpargneStatus })
+      case '/banque-populaire/status':
+        return Promise.resolve({ data: banquePopulaireStatus })
       case '/corum/status':
         return Promise.resolve({ data: corumStatus })
       case '/cmes/status':
@@ -100,6 +104,7 @@ function mockStatusEndpoints() {
 /** Overridden per test to drive the session-provider rows. */
 let amundiStatus: Record<string, unknown>
 let simplefinStatus: Record<string, unknown>
+let wiseStatus: Record<string, unknown>
 let accountsFixture: unknown[]
 let revolutStatus: Record<string, unknown>
 let revolutProgress: Record<string, unknown>
@@ -124,6 +129,7 @@ const SIMPLEFIN_DISCONNECTED = {
 }
 let amexStatus: Record<string, unknown>
 let caisseEpargneStatus: Record<string, unknown>
+let banquePopulaireStatus: Record<string, unknown>
 let corumStatus: Record<string, unknown>
 let sofidyStatus: Record<string, unknown>
 let cmesStatus: Record<string, unknown>
@@ -160,6 +166,15 @@ const CAISSE_EPARGNE_ACCOUNT = {
   provider: "Caisse d'Epargne",
 }
 
+/** A current account created by the Banque Populaire sidecar: its provider is the regional bank's name. */
+const BANQUE_POPULAIRE_ACCOUNT = {
+  ...TR_ACCOUNT,
+  id: 8,
+  name: 'Compte courant',
+  type: 'CHECKING',
+  provider: 'Banque Populaire Rives de Paris',
+}
+
 /** An account created by the Crédit Mutuel / CIC Épargne Salariale sidecar (`CmesSyncService.PROVIDER`). */
 const CMES_ACCOUNT = {
   ...TR_ACCOUNT,
@@ -192,8 +207,10 @@ const SCPI_ACCOUNT = {
 function resetFixtures() {
   amundiStatus = AMUNDI_INACTIVE
   simplefinStatus = SIMPLEFIN_DISCONNECTED
+  wiseStatus = SIMPLEFIN_DISCONNECTED
   amexStatus = AMUNDI_INACTIVE
   caisseEpargneStatus = { ...AMUNDI_INACTIVE, unsupported: [], unsupportedCount: 0 }
+  banquePopulaireStatus = { ...AMUNDI_INACTIVE, unsupported: [], unsupportedCount: 0 }
   corumStatus = AMUNDI_INACTIVE
   sofidyStatus = AMUNDI_INACTIVE
   cmesStatus = AMUNDI_INACTIVE
@@ -229,7 +246,7 @@ function renderModal(onOpenChange: (open: boolean) => void = () => {}) {
 /** Opens the TR inline auth form and fills phone + PIN. */
 async function openTrFormAndFillCredentials() {
   // The TR row's sync button opens the inline auth form when no session is active.
-  const trRow = (await screen.findByText('Trade Republic')).closest('[data-slot="card"]') as HTMLElement
+  const trRow = (await screen.findByText('Trade Republic')).closest('li') as HTMLElement
   expect(trRow).not.toBeNull()
   const trSyncButton = within(trRow).getByRole('button')
   fireEvent.click(trSyncButton)
@@ -338,6 +355,7 @@ describe('SyncAllModal session providers', () => {
     expect(screen.queryByText('DEGIRO')).not.toBeInTheDocument()
     expect(screen.queryByText('Interactive Brokers')).not.toBeInTheDocument()
     expect(screen.queryByText('SimpleFIN')).not.toBeInTheDocument()
+    expect(screen.queryByText('Wise Jars')).not.toBeInTheDocument()
   })
 
   it('lists SimpleFIN when connected and syncs through its endpoint', async () => {
@@ -345,11 +363,34 @@ describe('SyncAllModal session providers', () => {
     apiPost.mockResolvedValue({ data: [] })
     renderModal()
 
-    const row = (await screen.findByText('SimpleFIN')).closest('[data-slot="card"]') as HTMLElement
+    const row = (await screen.findByText('SimpleFIN')).closest('li') as HTMLElement
     expect(row).not.toBeNull()
     fireEvent.click(within(row).getByRole('button'))
 
     await waitFor(() => expect(apiPost).toHaveBeenCalledWith('/simplefin/sync'))
+  })
+
+  it('lists Wise Jars when connected and syncs through its endpoint', async () => {
+    wiseStatus = { ...SIMPLEFIN_DISCONNECTED, connected: true, connectionId: 1, status: 'CONNECTED' }
+    apiPost.mockResolvedValue({ data: [] })
+    renderModal()
+
+    const row = (await screen.findByText('Wise Jars')).closest('li') as HTMLElement
+    expect(row).not.toBeNull()
+    fireEvent.click(within(row).getByRole('button'))
+
+    await waitFor(() => expect(apiPost).toHaveBeenCalledWith('/wise/sync'))
+  })
+
+  it('sends a Wise Jars row whose token Wise refused to its tab instead of retrying it', async () => {
+    wiseStatus = { ...SIMPLEFIN_DISCONNECTED, connected: true, connectionId: 1, status: 'REAUTH_REQUIRED' }
+    renderModal()
+
+    const row = (await screen.findByText('Wise Jars')).closest('li') as HTMLElement
+    fireEvent.click(within(row).getByRole('button'))
+
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith('/sync?tab=wise'))
+    expect(apiPost).not.toHaveBeenCalledWith('/wise/sync')
   })
 
   it('spins a row while its server-side sync job is queued or running', async () => {
@@ -359,13 +400,27 @@ describe('SyncAllModal session providers', () => {
     amundiStatus = { ...AMUNDI_INACTIVE, isActive: true, syncStatus: 'SUCCESS', lastSyncCompletedAt: '2026-08-10T08:00:00Z' }
     renderModal()
 
-    const corumRow = (await screen.findByText('CORUM')).closest('[data-slot="card"]') as HTMLElement
+    const corumRow = (await screen.findByText('CORUM')).closest('li') as HTMLElement
     const corumButton = within(corumRow).getByRole('button')
     expect(corumButton).toBeDisabled()
     expect(corumButton.querySelector('.animate-spin')).not.toBeNull()
 
-    const amundiRow = screen.getByText('Amundi').closest('[data-slot="card"]') as HTMLElement
+    const amundiRow = screen.getByText('Amundi').closest('li') as HTMLElement
     expect(within(amundiRow).getByRole('button').querySelector('.animate-spin')).toBeNull()
+  })
+
+  it('groups the rows to reconnect ahead of the connected ones', async () => {
+    simplefinStatus = { ...SIMPLEFIN_DISCONNECTED, connected: true, connectionId: 1, status: 'CONNECTED' }
+    accountsFixture = [TR_ACCOUNT, AMUNDI_ACCOUNT]
+    renderModal()
+
+    await screen.findByText('Amundi')
+    const toReconnect = screen.getByText('sync.all.groupReconnect').closest('section') as HTMLElement
+    const connected = screen.getByText('sync.all.groupConnected').closest('section') as HTMLElement
+    expect(within(toReconnect).getByText('Amundi')).toBeInTheDocument()
+    expect(within(toReconnect).getByText('Trade Republic')).toBeInTheDocument()
+    expect(within(connected).getByText('SimpleFIN')).toBeInTheDocument()
+    expect(toReconnect.compareDocumentPosition(connected) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
   it('lists a provider whose session is live', async () => {
@@ -384,7 +439,7 @@ describe('SyncAllModal session providers', () => {
     accountsFixture = [TR_ACCOUNT, AMUNDI_ACCOUNT]
     renderModal()
 
-    const amundiRow = (await screen.findByText('Amundi')).closest('[data-slot="card"]') as HTMLElement
+    const amundiRow = (await screen.findByText('Amundi')).closest('li') as HTMLElement
     expect(amundiRow).not.toBeNull()
     expect(within(amundiRow).getByText('sync.all.sessionExpired')).toBeInTheDocument()
   })
@@ -394,7 +449,7 @@ describe('SyncAllModal session providers', () => {
     apiPost.mockResolvedValue({ data: amundiStatus })
     renderModal()
 
-    const amundiRow = (await screen.findByText('Amundi')).closest('[data-slot="card"]') as HTMLElement
+    const amundiRow = (await screen.findByText('Amundi')).closest('li') as HTMLElement
     fireEvent.click(within(amundiRow).getByRole('button'))
 
     await waitFor(() => expect(apiPost).toHaveBeenCalledWith('/amundi/sync'))
@@ -409,7 +464,7 @@ describe('SyncAllModal session providers', () => {
     accountsFixture = [TR_ACCOUNT, AMUNDI_ACCOUNT]
     renderModal()
 
-    const amundiRow = (await screen.findByText('Amundi')).closest('[data-slot="card"]') as HTMLElement
+    const amundiRow = (await screen.findByText('Amundi')).closest('li') as HTMLElement
     fireEvent.click(within(amundiRow).getByRole('button'))
 
     await waitFor(() => expect(navigate).toHaveBeenCalledWith('/sync?tab=amundi'))
@@ -444,7 +499,7 @@ describe('SyncAllModal session providers', () => {
     amundiStatus = { ...AMUNDI_INACTIVE, isActive: true, syncStatus: 'FAILED', lastSyncError: 'INTERNAL_ERROR' }
     renderModal()
 
-    const row = (await screen.findByText('Amundi')).closest('[data-slot="card"]') as HTMLElement
+    const row = (await screen.findByText('Amundi')).closest('li') as HTMLElement
     expect(within(row).getByText('sync.connectionStatus.FAILED')).toBeInTheDocument()
     expect(within(row).queryByText('sync.connectionStatus.active')).not.toBeInTheDocument()
   })
@@ -455,7 +510,7 @@ describe('SyncAllModal session providers', () => {
     apiPost.mockResolvedValue({ data: amundiStatus })
     renderModal()
 
-    const row = (await screen.findByText('Amundi')).closest('[data-slot="card"]') as HTMLElement
+    const row = (await screen.findByText('Amundi')).closest('li') as HTMLElement
     fireEvent.click(within(row).getByRole('button'))
 
     await waitFor(() => expect(apiPost).toHaveBeenCalledWith('/amundi/sync'))
@@ -467,7 +522,7 @@ describe('SyncAllModal session providers', () => {
     apiPost.mockResolvedValue({ data: amexStatus })
     renderModal()
 
-    const row = (await screen.findByText('American Express')).closest('[data-slot="card"]') as HTMLElement
+    const row = (await screen.findByText('American Express')).closest('li') as HTMLElement
     fireEvent.click(within(row).getByRole('button'))
     await waitFor(() => expect(apiPost).toHaveBeenCalledWith('/amex/sync'))
     expect(navigate).not.toHaveBeenCalled()
@@ -477,7 +532,7 @@ describe('SyncAllModal session providers', () => {
     accountsFixture = [TR_ACCOUNT, AMEX_ACCOUNT]
     renderModal()
 
-    const row = (await screen.findByText('American Express')).closest('[data-slot="card"]') as HTMLElement
+    const row = (await screen.findByText('American Express')).closest('li') as HTMLElement
     expect(within(row).getByText('sync.all.sessionExpired')).toBeInTheDocument()
     fireEvent.click(within(row).getByRole('button'))
     await waitFor(() => expect(navigate).toHaveBeenCalledWith('/sync?tab=amex'))
@@ -489,7 +544,7 @@ describe('SyncAllModal session providers', () => {
     apiPost.mockResolvedValue({ data: caisseEpargneStatus })
     renderModal()
 
-    const row = (await screen.findByText("Caisse d'Epargne")).closest('[data-slot="card"]') as HTMLElement
+    const row = (await screen.findByText("Caisse d'Epargne")).closest('li') as HTMLElement
     fireEvent.click(within(row).getByRole('button'))
     await waitFor(() => expect(apiPost).toHaveBeenCalledWith('/caisse-epargne/sync'))
     expect(navigate).not.toHaveBeenCalled()
@@ -500,11 +555,77 @@ describe('SyncAllModal session providers', () => {
     accountsFixture = [TR_ACCOUNT, CAISSE_EPARGNE_ACCOUNT]
     renderModal()
 
-    const row = (await screen.findByText("Caisse d'Epargne")).closest('[data-slot="card"]') as HTMLElement
+    const row = (await screen.findByText("Caisse d'Epargne")).closest('li') as HTMLElement
     expect(within(row).getByText('sync.all.sessionExpired')).toBeInTheDocument()
     fireEvent.click(within(row).getByRole('button'))
     await waitFor(() => expect(navigate).toHaveBeenCalledWith('/sync?tab=caisse-epargne'))
     expect(apiPost).not.toHaveBeenCalledWith('/caisse-epargne/sync')
+  })
+
+  it('lists and syncs a live Banque Populaire session', async () => {
+    banquePopulaireStatus = { ...banquePopulaireStatus, isActive: true, syncStatus: 'SUCCESS' }
+    apiPost.mockResolvedValue({ data: banquePopulaireStatus })
+    renderModal()
+
+    const row = (await screen.findByText('Banque Populaire')).closest('li') as HTMLElement
+    fireEvent.click(within(row).getByRole('button'))
+    await waitFor(() => expect(apiPost).toHaveBeenCalledWith('/banque-populaire/sync'))
+    expect(apiPost).not.toHaveBeenCalledWith('/caisse-epargne/sync')
+    expect(navigate).not.toHaveBeenCalled()
+  })
+
+  /** Same BPCE keypad plus Sécur'Pass login as Caisse d'Epargne: only its tab can run it. */
+  it('keeps an expired Banque Populaire row with its accounts and routes to its tab', async () => {
+    accountsFixture = [TR_ACCOUNT, BANQUE_POPULAIRE_ACCOUNT]
+    renderModal()
+
+    const row = (await screen.findByText('Banque Populaire')).closest('li') as HTMLElement
+    expect(within(row).getByText('sync.all.sessionExpired')).toBeInTheDocument()
+    fireEvent.click(within(row).getByRole('button'))
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith('/sync?tab=banque-populaire'))
+    expect(apiPost).not.toHaveBeenCalledWith('/banque-populaire/sync')
+  })
+
+  /** One label per `BanquePopulaireRegion.institutionName()`. */
+  it.each([
+    'Banque Populaire Alsace Lorraine Champagne',
+    'Banque Populaire Aquitaine Centre Atlantique',
+    'Banque Populaire Auvergne Rhône Alpes',
+    'Banque Populaire Bourgogne Franche-Comté',
+    'BRED Banque Populaire',
+    'Banque Populaire Grand Ouest',
+    'Banque Populaire Méditerranée',
+    'Banque Populaire du Nord',
+    'Banque Populaire Occitane',
+    'Banque Populaire Rives de Paris',
+    'Banque Populaire du Sud',
+    'Banque Populaire Val de France',
+  ])('keeps an expired Banque Populaire row for an account labelled %s', async (provider) => {
+    accountsFixture = [TR_ACCOUNT, { ...BANQUE_POPULAIRE_ACCOUNT, provider }]
+    renderModal()
+
+    const row = (await screen.findByText('Banque Populaire')).closest('li') as HTMLElement
+    expect(within(row).getByText('sync.all.sessionExpired')).toBeInTheDocument()
+  })
+
+  it.each(['Banque Populaire Rives de Paris', 'Banque Populaire'])(
+    'lists no Banque Populaire row for a manual account labelled %s',
+    async (provider) => {
+      // Picked from the bank catalog or typed: nothing ever connected it.
+      accountsFixture = [TR_ACCOUNT, { ...BANQUE_POPULAIRE_ACCOUNT, provider, isManual: true }]
+      renderModal()
+
+      await screen.findByText('Trade Republic')
+      expect(screen.queryByText('Banque Populaire')).not.toBeInTheDocument()
+    },
+  )
+
+  it('lists no Banque Populaire row for an account of another bank whose name merely mentions it', async () => {
+    accountsFixture = [TR_ACCOUNT, { ...BANQUE_POPULAIRE_ACCOUNT, provider: 'Banque Populaire Imaginaire' }]
+    renderModal()
+
+    await screen.findByText('Trade Republic')
+    expect(screen.queryByText('Banque Populaire')).not.toBeInTheDocument()
   })
 
   /** The backend refuses a dead CE session (`SESSION_EXPIRED`), so the batch must skip the row. */
@@ -531,7 +652,7 @@ describe('SyncAllModal session providers', () => {
     apiPost.mockResolvedValue({ data: cmesStatus })
     renderModal()
 
-    const row = (await screen.findByText('Crédit Mutuel / CIC Épargne Salariale')).closest('[data-slot="card"]') as HTMLElement
+    const row = (await screen.findByText('Crédit Mutuel / CIC Épargne Salariale')).closest('li') as HTMLElement
     fireEvent.click(within(row).getByRole('button'))
     await waitFor(() => expect(apiPost).toHaveBeenCalledWith('/cmes/sync'))
     expect(navigate).not.toHaveBeenCalled()
@@ -557,7 +678,7 @@ describe('SyncAllModal session providers', () => {
     cmesStatus = { ...AMUNDI_INACTIVE, syncStatus: 'FAILED', lastSyncError: 'SESSION_EXPIRED' }
     renderModal()
 
-    const row = (await screen.findByText('Crédit Mutuel / CIC Épargne Salariale')).closest('[data-slot="card"]') as HTMLElement
+    const row = (await screen.findByText('Crédit Mutuel / CIC Épargne Salariale')).closest('li') as HTMLElement
     fireEvent.click(within(row).getByRole('button'))
     await waitFor(() => expect(navigate).toHaveBeenCalledWith('/sync?tab=cmes'))
     expect(apiPost).not.toHaveBeenCalledWith('/cmes/sync')
@@ -575,7 +696,7 @@ describe('SyncAllModal session providers', () => {
     accountsFixture = [TR_ACCOUNT, CMES_ACCOUNT]
     renderModal()
 
-    const row = (await screen.findByText('Crédit Mutuel / CIC Épargne Salariale')).closest('[data-slot="card"]') as HTMLElement
+    const row = (await screen.findByText('Crédit Mutuel / CIC Épargne Salariale')).closest('li') as HTMLElement
     expect(within(row).getByText('sync.all.sessionExpired')).toBeInTheDocument()
     fireEvent.click(within(row).getByRole('button'))
     await waitFor(() => expect(navigate).toHaveBeenCalledWith('/sync?tab=cmes'))
@@ -587,7 +708,7 @@ describe('SyncAllModal session providers', () => {
     apiPost.mockResolvedValue({ data: cicStatus })
     renderModal()
 
-    const row = (await screen.findByText('CIC (livrets)')).closest('[data-slot="card"]') as HTMLElement
+    const row = (await screen.findByText('CIC (livrets)')).closest('li') as HTMLElement
     fireEvent.click(within(row).getByRole('button'))
     await waitFor(() => expect(apiPost).toHaveBeenCalledWith('/cic/sync'))
     expect(navigate).not.toHaveBeenCalled()
@@ -598,7 +719,7 @@ describe('SyncAllModal session providers', () => {
     renderModal()
 
     const title = await screen.findByText('CIC (livrets)')
-    const row = title.closest('[data-slot="card"]')
+    const row = title.closest('li')
     if (!(row instanceof HTMLElement)) throw new Error('Missing CIC connection card')
     fireEvent.click(within(row).getByRole('button'))
 
@@ -618,7 +739,7 @@ describe('SyncAllModal session providers', () => {
     accountsFixture = [TR_ACCOUNT, CIC_ACCOUNT]
     renderModal()
 
-    const row = (await screen.findByText('CIC (livrets)')).closest('[data-slot="card"]') as HTMLElement
+    const row = (await screen.findByText('CIC (livrets)')).closest('li') as HTMLElement
     expect(within(row).getByText('sync.all.sessionExpired')).toBeInTheDocument()
     fireEvent.click(within(row).getByRole('button'))
     await waitFor(() => expect(navigate).toHaveBeenCalledWith('/sync?tab=cic'))
@@ -631,7 +752,7 @@ describe('SyncAllModal session providers', () => {
     accountsFixture = [TR_ACCOUNT, CIC_ACCOUNT]
     renderModal()
 
-    const row = (await screen.findByText('CIC (livrets)')).closest('[data-slot="card"]') as HTMLElement
+    const row = (await screen.findByText('CIC (livrets)')).closest('li') as HTMLElement
     fireEvent.click(within(row).getByRole('button'))
     await waitFor(() => expect(navigate).toHaveBeenCalledWith('/sync?tab=cic&reconnect=1'))
   })
@@ -640,7 +761,7 @@ describe('SyncAllModal session providers', () => {
     amexStatus = { ...AMUNDI_INACTIVE, isActive: true, syncStatus: 'FAILED', lastSyncError: 'INTERNAL_ERROR' }
     renderModal()
 
-    const row = (await screen.findByText('American Express')).closest('[data-slot="card"]') as HTMLElement
+    const row = (await screen.findByText('American Express')).closest('li') as HTMLElement
     expect(within(row).getByText('sync.connectionStatus.FAILED')).toBeInTheDocument()
   })
 
@@ -656,7 +777,7 @@ describe('SyncAllModal session providers', () => {
     apiPost.mockResolvedValue({ data: sofidyStatus })
     renderModal()
 
-    const row = (await screen.findByText('Sofidy')).closest('[data-slot="card"]') as HTMLElement
+    const row = (await screen.findByText('Sofidy')).closest('li') as HTMLElement
     fireEvent.click(within(row).getByRole('button'))
     await waitFor(() => expect(apiPost).toHaveBeenCalledWith('/sofidy/sync'))
   })
@@ -688,7 +809,7 @@ describe('SyncAllModal session providers', () => {
     accountsFixture = [TR_ACCOUNT, { ...SCPI_ACCOUNT, provider }]
     renderModal()
 
-    const row = (await screen.findByText(provider)).closest('[data-slot="card"]') as HTMLElement
+    const row = (await screen.findByText(provider)).closest('li') as HTMLElement
     expect(within(row).getByText('sync.all.sessionExpired')).toBeInTheDocument()
     fireEvent.click(within(row).getByRole('button'))
     await waitFor(() => expect(navigate).toHaveBeenCalledWith(`/sync?tab=${tab}`))
@@ -770,7 +891,7 @@ describe('SyncAllModal Revolut and "Sync all"', () => {
     const onOpenChange = vi.fn()
     renderModal(onOpenChange)
 
-    const row = (await screen.findByText('Revolut')).closest('[data-slot="card"]') as HTMLElement
+    const row = (await screen.findByText('Revolut')).closest('li') as HTMLElement
     fireEvent.click(within(row).getByRole('button'))
 
     await waitFor(() => expect(navigate).toHaveBeenCalledWith('/sync?tab=revolut'))
@@ -783,7 +904,7 @@ describe('SyncAllModal Revolut and "Sync all"', () => {
     const onOpenChange = vi.fn()
     renderModal(onOpenChange)
 
-    const row = (await screen.findByText('Revolut')).closest('[data-slot="card"]') as HTMLElement
+    const row = (await screen.findByText('Revolut')).closest('li') as HTMLElement
     fireEvent.click(within(row).getByRole('button'))
 
     await waitFor(() => expect(apiPost).toHaveBeenCalledWith('/revolut/sync', {}))
@@ -808,7 +929,7 @@ describe('SyncAllModal Revolut and "Sync all"', () => {
     })
     renderModal()
 
-    const row = (await screen.findByText('Revolut')).closest('[data-slot="card"]') as HTMLElement
+    const row = (await screen.findByText('Revolut')).closest('li') as HTMLElement
     fireEvent.click(within(row).getByRole('button'))
 
     await waitFor(() => expect(apiPost).toHaveBeenCalledWith('/revolut/sync/confirm', {
@@ -829,7 +950,7 @@ describe('SyncAllModal Revolut and "Sync all"', () => {
     })
     renderModal()
 
-    const row = (await screen.findByText('Revolut')).closest('[data-slot="card"]') as HTMLElement
+    const row = (await screen.findByText('Revolut')).closest('li') as HTMLElement
     fireEvent.click(within(row).getByRole('button'))
 
     expect(await within(row).findByText('REVOLUT_LOGIN_FAILED')).toBeInTheDocument()
@@ -846,7 +967,7 @@ describe('SyncAllModal Revolut and "Sync all"', () => {
     })
     renderModal()
 
-    const row = (await screen.findByText('Revolut')).closest('[data-slot="card"]') as HTMLElement
+    const row = (await screen.findByText('Revolut')).closest('li') as HTMLElement
     const button = within(row).getByRole('button')
     fireEvent.click(button)
 
@@ -866,7 +987,7 @@ describe('SyncAllModal Revolut and "Sync all"', () => {
     })
     renderModal()
 
-    const row = (await screen.findByText('Revolut')).closest('[data-slot="card"]') as HTMLElement
+    const row = (await screen.findByText('Revolut')).closest('li') as HTMLElement
     const button = within(row).getByRole('button')
     fireEvent.click(button)
 
@@ -882,7 +1003,7 @@ describe('SyncAllModal Revolut and "Sync all"', () => {
     }
     renderModal()
 
-    const row = (await screen.findByText('Revolut')).closest('[data-slot="card"]') as HTMLElement
+    const row = (await screen.findByText('Revolut')).closest('li') as HTMLElement
     fireEvent.click(within(row).getByRole('button'))
 
     expect(await within(row).findByText('sync.revolut.errors.humanVerificationRequired')).toBeInTheDocument()
@@ -896,7 +1017,7 @@ describe('SyncAllModal Revolut and "Sync all"', () => {
     revolutProgress = { ...REVOLUT_DONE, error: 'REVOLUT_LOGIN_FAILED', discovered: [] }
     renderModal()
 
-    const row = (await screen.findByText('Revolut')).closest('[data-slot="card"]') as HTMLElement
+    const row = (await screen.findByText('Revolut')).closest('li') as HTMLElement
     fireEvent.click(within(row).getByRole('button'))
 
     expect(await within(row).findByText('REVOLUT_LOGIN_FAILED')).toBeInTheDocument()

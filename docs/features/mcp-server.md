@@ -1,6 +1,6 @@
 # Feature: Embedded MCP server + scoped access-keys
 
-> Last updated: 2026-11-01
+> Last updated: 2026-11-03
 
 ## Context
 
@@ -84,7 +84,7 @@ Three security properties are guaranteed structurally (not by per-call checks):
 
 **Backend — MCP surface**
 - `backend/src/main/java/com/picsou/config/McpToolConfig.java` — the single `ToolCallbackProvider` bean; the one place tools are wired.
-- `backend/src/main/java/com/picsou/mcp/tools/{Account,Transaction,Goal,Insight,Sync,Analysis,Budget,OAuth2,AiCategorization}Tools.java` — the `@Tool` methods, each gated by `@RequiresScope`.
+- `backend/src/main/java/com/picsou/mcp/tools/{Account,Transaction,Goal,Insight,Sync,Analysis,Budget,OAuth2,AiCategorization,PeerLoan}Tools.java` — the `@Tool` methods, each gated by `@RequiresScope`.
 - `backend/src/main/java/com/picsou/mcp/RequiresScope.java` + `backend/src/main/java/com/picsou/mcp/ScopeEnforcementAspect.java` + `backend/src/main/java/com/picsou/exception/MissingScopeException.java` — scope enforcement (AOP) and its clean error.
 - `backend/src/main/java/com/picsou/controller/AccessKeyController.java` + `dto/AccessKey{CreateRequest,Response,CreatedResponse}.java` — self-service management REST API under `/api/access-keys`.
 - `backend/src/main/java/com/picsou/config/RateLimitConfig.java` — `mcpKeyBuckets`, `accessKeyCreateBuckets`, and the bucket factories.
@@ -92,7 +92,7 @@ Three security properties are guaranteed structurally (not by per-call checks):
 
 **Frontend**
 - `frontend/src/features/accessKeys/{api,hooks,scopes,status}.ts` — TanStack Query layer + scope/status helpers.
-- `frontend/src/pages/settings/sections/AccessKeysSection.tsx` — the Settings UI (list, create dialog, one-time secret reveal, connect-your-client block, revoke).
+- `frontend/src/pages/settings/sections/AccessKeysSection.tsx` — the Settings UI (list, create dialog, one-time secret reveal, connect-your-client block, revoke), shown with `ConnectedAppsSection.tsx` in the "Clés d'accès & MCP" section (`/settings?section=mcp`).
 - `i18n/locales/{en,fr}.json` — the `accessKeys.*` namespace.
 
 **Deployment — reverse proxy** (the public `https://<host>/mcp` path; see Gotchas)
@@ -104,9 +104,13 @@ primitive (`42rem` on desktop) because scope cards render in two columns. The
 dialog itself stays inside `100dvh - 2rem`; only the form body scrolls, while the
 title and action buttons remain visible.
 
-The "Connect your MCP client" block uses full-width code-copy rows: endpoint and
-snippet containers are `min-h-10`, rounded, and padded like app inputs, with copy
-buttons that become full-width on mobile and keep a stable desktop width.
+The section is three flat cards: "Clés d'accès" (the key rows, with "Nouvelle clé" in the card
+header; each row shows name, a status dot and word — active, expired, revoked — the key prefix,
+its scopes and last-use / expiry, with Revoke on the right, dropping under the text on a phone),
+"Connecter votre client MCP" (the endpoint and the Claude Desktop snippet on raised `bg-muted`
+blocks, each with a compact Copy button; the snippet scrolls sideways on a phone) and
+"Applications connectées" (the OAuth clients, same row layout). In the create dialog each scope
+card stacks its label, description and scope code under the check box.
 
 ### Flow
 
@@ -148,7 +152,7 @@ maintenance, **manual account creation**, **refresh-existing-sync** triggers, an
 
 With `accounts:write`, `delete_account` can soft-delete both manual and synced accounts. Deleting
 the last account on a connection also removes that connection: it can clear stored provider
-sessions/credentials, remove a wallet or exchange connection, delete an IBKR or SimpleFIN connection,
+sessions/credentials, remove a wallet or exchange connection, delete an IBKR, SimpleFIN or Wise connection,
 or delete an Enable Banking requisition. A connection still used by another live account is kept.
 The tool returns the `DeletionImpact` of what the deletion actually removed, in the same
 transaction: the removed connection's label, or `false` / `null` when the connection is kept or
@@ -160,7 +164,7 @@ by `delete_account`.
 
 | Scope | Tools |
 |-------|-------|
-| `accounts:read` | `list_accounts`, `get_account`, `get_account_holdings`, `get_account_balance_history`, `get_account_deletion_impact`, `get_savings_interest`, `get_property_valuations`, `get_loan_summary`, `get_realized_pnl`, `get_exchange_positions` |
+| `accounts:read` | `list_accounts`, `get_account`, `get_account_holdings`, `get_account_balance_history`, `get_account_deletion_impact`, `get_savings_interest`, `get_property_valuations`, `get_loan_summary`, `get_realized_pnl`, `get_exchange_positions`, `get_peer_loan`, `get_peer_loans_overview` |
 | `transactions:read` | `list_account_transactions` |
 | `goals:read` | `list_goals`, `get_goal`, `get_goal_monthly_entries` |
 | `dashboard:read` | `get_dashboard`, `get_net_worth_history`, `get_profit_and_loss` |
@@ -168,7 +172,7 @@ by `delete_account`.
 | `analysis:read` | `get_allocation`, `get_wealth_pyramid`, `get_portfolio_diversification`, `get_wealth_projection`, `get_allocation_targets`, `get_essential_expense_estimate`, `get_savings_suggestions`, `get_real_estate_summary` |
 | `sync:read` | `get_sync_status` |
 | `prices:read` | `get_price`, `get_security_insight` |
-| `accounts:write` | `create_manual_account`, `update_account`, `delete_account`, `add_balance_snapshot`, `upsert_holding`, `delete_holding`, `set_scpi_position` |
+| `accounts:write` | `create_manual_account`, `update_account`, `delete_account`, `add_balance_snapshot`, `upsert_holding`, `delete_holding`, `set_scpi_position`, `add_peer_loan_repayment`, `close_peer_loan` |
 | `transactions:write` | `add_transaction`, `update_transaction`, `delete_transaction` |
 | `goals:write` | `create_goal`, `update_goal`, `delete_goal`, `set_goal_month_contribution` |
 | `sync:trigger` | `trigger_full_sync`, `trigger_bank_sync`, `trigger_broker_sync`, `trigger_crypto_exchange_sync`, `trigger_crypto_wallet_sync` |
@@ -276,6 +280,9 @@ sessions/credentials as the documented side effect of deleting a connection's la
   it once, and `trigger_bank_sync` runs it with Enable Banking. A revoked access (HTTP 403) is
   `NEEDS_REAUTH` in the trigger summary. `get_sync_status` reads the stored connection: `ERROR`
   is `FAILED` with `reauth=false`, because the stored status does not keep the reason.
+- **Wise jars are a bank source too.** They run right after SimpleFIN. A refused token (HTTP 401
+  or 403) is `NEEDS_REAUTH` in the trigger summary and, because the connection stores
+  `REAUTH_REQUIRED`, in `get_sync_status` too (`reauth=true`).
 - **The sync summary distinguishes failures from missing connections and expired credentials.**
   An unconnected Finary source is `SKIPPED_NOT_CONNECTED`, and an IBKR connection in `ERROR`
   is `FAILED` in `get_sync_status`. A crypto-exchange batch keeps running after a session fails,
@@ -347,6 +354,7 @@ Backend (H2, `make test-backend`):
 - `mcp/tools/McpToolCatalogTest` — **curation guard**: pins the exact advertised tool set (no auth/credential/admin tool).
 - `mcp/tools/{Account,Transaction,Goal,Insight,Sync}ToolsTest` — delegation + member-scoping per tool; account deletion reports the cleanup decision even when the earlier read-only preview has become stale.
 - `mcp/tools/AnalysisToolsTest` — delegation per tool, another member's account surfaces the service's not-found, the scope each tool carries, and every tool rejected through the real `ScopeEnforcementAspect` proxy when its scope is missing.
+- `mcp/tools/PeerLoanToolsTest` — delegation to `PeerLoanService`, the request built from the arguments, bean validation of the amount/date/note, the refusal of a standalone write-off, the `accounts:*` scope each tool carries, and scope denial before any service call.
 - `mcp/tools/SyncToolsTest` — every trigger is a filter over `MemberSyncService`, failures stay visible, and the cooldown blocks a second call.
 - `service/BrokerSyncReportingTest` — all four browser brokers preserve inactive-session errors,
   queue active sessions, retain exception-bearing logs and hide database details.

@@ -1,15 +1,19 @@
 import { useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router'
+import { Link, useNavigate, useSearchParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
+import { REGEXP_ONLY_DIGITS } from 'input-otp'
 import { useVerifyMfa } from '@/features/mfa/hooks'
 import { safeRedirect, isOAuthAuthorizeRedirect } from '@/lib/utils'
 import { formatApiError, getErrorStatus } from '@/lib/errors'
 import { Button } from '@/components/ui/button'
 import { AlertBanner } from '@/components/shared/AlertBanner'
 import { Input } from '@/components/ui/input'
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Loader2 } from 'lucide-react'
+import { ArrowLeft, CircleAlert, Loader2, ShieldCheck } from 'lucide-react'
+import { AuthScreen, CheckboxRow } from './AuthScreen'
+
+const TOTP_LENGTH = 6
 
 /**
  * Second step of the MFA login flow. Reached only after `/auth/login`
@@ -63,87 +67,93 @@ export function MfaChallengePage() {
   }
 
   const codeInputId = 'mfa-code'
-  const codePattern = isRecoveryCode ? undefined : '\\d{6}'
-  const codeMaxLength = isRecoveryCode ? 16 : 6
-  const codeInputMode = isRecoveryCode ? 'text' : 'numeric'
+  const incomplete = isRecoveryCode ? code.length === 0 : code.length < TOTP_LENGTH
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-10">
-      <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
-        <Card className="py-8 sm:py-10">
-          <CardHeader className="items-center gap-2 px-6 text-center sm:px-10">
-            <CardTitle className="text-3xl font-semibold sm:text-4xl">{t('auth.mfaTitle')}</CardTitle>
-            <CardDescription className="mt-1 max-w-lg text-base leading-6">
-              {isRecoveryCode ? t('auth.mfaRecoveryLabel') : t('auth.mfaDesc')}
-            </CardDescription>
-          </CardHeader>
+    <AuthScreen
+      icon={<ShieldCheck />}
+      title={t('auth.mfaTitle')}
+      description={isRecoveryCode ? t('auth.mfaRecoveryDesc') : t('auth.mfaDesc')}
+      footer={
+        <Link to="/login" className="inline-flex min-h-10 items-center gap-1.5 font-medium text-foreground underline-offset-4 hover:underline">
+          <ArrowLeft className="size-4" aria-hidden="true" />
+          {t('auth.backToLogin')}
+        </Link>
+      }
+    >
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <div className="space-y-2">
+          <Label htmlFor={codeInputId}>
+            {isRecoveryCode ? t('auth.mfaRecoveryLabel') : t('auth.mfaCodeLabel')}
+          </Label>
+          {isRecoveryCode ? (
+            <Input
+              id={codeInputId}
+              type="text"
+              maxLength={16}
+              value={code}
+              onChange={e => setCode(e.target.value)}
+              autoComplete="one-time-code"
+              autoCapitalize="none"
+              spellCheck={false}
+              autoFocus
+              required
+              aria-invalid={error ? true : undefined}
+              className="font-mono tracking-wider"
+            />
+          ) : (
+            <InputOTP
+              id={codeInputId}
+              maxLength={TOTP_LENGTH}
+              pattern={REGEXP_ONLY_DIGITS}
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              value={code}
+              onChange={setCode}
+              autoFocus
+              required
+              aria-invalid={error ? true : undefined}
+              containerClassName="w-full"
+            >
+              <InputOTPGroup className="w-full">
+                {Array.from({ length: TOTP_LENGTH }, (_, i) => (
+                  <InputOTPSlot key={i} index={i} aria-invalid={error ? true : undefined} className="flex-1 text-base font-medium tabular-nums" />
+                ))}
+              </InputOTPGroup>
+            </InputOTP>
+          )}
+          <button
+            type="button"
+            onClick={() => {
+              setIsRecoveryCode(v => !v)
+              setCode('')
+              setError(null)
+            }}
+            className="inline-flex min-h-10 items-center text-sm font-medium text-primary underline-offset-4 hover:underline"
+          >
+            {isRecoveryCode ? t('auth.mfaUseTotp') : t('auth.mfaUseRecovery')}
+          </button>
+        </div>
 
-          <CardContent className="px-6 sm:px-10">
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div className="space-y-2">
-                <Label htmlFor={codeInputId} className="text-base font-semibold">
-                  {isRecoveryCode ? t('auth.mfaRecoveryLabel') : t('auth.mfaCodeLabel')}
-                </Label>
-                <Input
-                  id={codeInputId}
-                  type="text"
-                  inputMode={codeInputMode}
-                  pattern={codePattern}
-                  maxLength={codeMaxLength}
-                  value={code}
-                  onChange={e => setCode(e.target.value)}
-                  autoComplete="one-time-code"
-                  autoFocus
-                  required
-                  placeholder={isRecoveryCode ? '12345678' : '123456'}
-                  className="h-12 rounded-xl px-4 text-center font-mono text-lg md:text-lg"
-                />
-              </div>
+        <CheckboxRow
+          id="trustDevice"
+          checked={trustDevice}
+          onCheckedChange={setTrustDevice}
+          label={t('auth.mfaTrustDevice')}
+          description={t('auth.mfaTrustDeviceDesc')}
+        />
 
-              <button
-                type="button"
-                onClick={() => {
-                  setIsRecoveryCode(v => !v)
-                  setCode('')
-                  setError(null)
-                }}
-                className="text-sm font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-              >
-                {isRecoveryCode ? t('auth.mfaUseTotp') : t('auth.mfaUseRecovery')}
-              </button>
+        {error && (
+          <AlertBanner role="alert" icon={<CircleAlert className="size-4 shrink-0" aria-hidden="true" />}>
+            {error}
+          </AlertBanner>
+        )}
 
-              <div className="flex items-start gap-3 rounded-xl py-1">
-                <input
-                  id="trustDevice"
-                  type="checkbox"
-                  checked={trustDevice}
-                  onChange={e => setTrustDevice(e.target.checked)}
-                  className="mt-1 h-5 w-5 shrink-0 rounded-md accent-primary"
-                />
-                <div className="flex flex-col">
-                  <Label htmlFor="trustDevice" className="cursor-pointer text-base font-semibold">
-                    {t('auth.mfaTrustDevice')}
-                  </Label>
-                  <p className="text-sm text-muted-foreground">{t('auth.mfaTrustDeviceDesc')}</p>
-                </div>
-              </div>
-
-              {error && (
-                <AlertBanner variant="prominent" role="alert">{error}</AlertBanner>
-              )}
-
-              <Button
-                type="submit"
-                disabled={verify.isPending || code.length === 0}
-                className="mt-2 h-12 w-full rounded-full px-8 text-base transition-transform active:scale-[0.96]"
-              >
-                {verify.isPending && <Loader2 className="size-5 animate-spin" />}
-                {verify.isPending ? t('auth.mfaVerifying') : t('auth.mfaVerifyButton')}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+        <Button type="submit" disabled={verify.isPending || incomplete} className="w-full">
+          {verify.isPending && <Loader2 className="animate-spin" aria-hidden="true" />}
+          {verify.isPending ? t('auth.mfaVerifying') : t('auth.mfaVerifyButton')}
+        </Button>
+      </form>
+    </AuthScreen>
   )
 }

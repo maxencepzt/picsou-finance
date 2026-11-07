@@ -8,9 +8,9 @@ test.beforeEach(async ({ page }) => {
   await setupLocale(page)
 })
 
-test('connects then disconnects from the Sync page SimpleFIN tab', async ({ page }) => {
+test('connects then disconnects from the Sync page SimpleFIN view', async ({ page }) => {
   await page.goto('/sync')
-  await page.getByRole('tab', { name: 'SimpleFIN', exact: true }).click()
+  await page.getByRole('region', { name: 'Ajouter une connexion' }).getByRole('button', { name: /^SimpleFIN/ }).click()
 
   await page.locator('#simplefin-token').fill('demo-setup-token')
   await page.getByRole('button', { name: 'Connecter', exact: true }).click()

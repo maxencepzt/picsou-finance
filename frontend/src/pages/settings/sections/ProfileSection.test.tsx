@@ -116,3 +116,23 @@ describe.each([
     })
   })
 })
+
+describe('ProfileSection save state', () => {
+  it('flags an edit as unsaved, and stays quiet on a pristine form', () => {
+    document.documentElement.lang = 'fr'
+    state.profile = filled
+    render(<ProfileSection />)
+    expect(screen.queryByText('settings.profile.unsaved')).not.toBeInTheDocument()
+
+    fireEvent.change(screen.getByLabelText('settings.profile.dependents'), { target: { value: '2' } })
+    expect(screen.getByText('settings.profile.unsaved')).toBeInTheDocument()
+  })
+
+  it('clears an answered choice when it is clicked again', () => {
+    expect(saveIn('fr', filled).riskProfile).toBe('BALANCED')
+    state.mutate.mockReset()
+    fireEvent.click(screen.getByRole('button', { name: 'settings.profile.risk.BALANCED' }))
+    fireEvent.click(screen.getByRole('button', { name: 'common.save' }))
+    expect(state.mutate.mock.calls[0][0].riskProfile).toBeNull()
+  })
+})

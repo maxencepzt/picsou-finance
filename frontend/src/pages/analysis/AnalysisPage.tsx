@@ -6,20 +6,41 @@ import { EmptyState } from '@/components/shared/EmptyState'
 import { ErrorState } from '@/components/shared/ErrorState'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { useAllocationTargets, useDiversification, useWealthPyramid } from '@/features/analysis/hooks'
+import { useAllocationTargets, useWealthPyramid } from '@/features/analysis/hooks'
+import { useDashboard } from '@/features/dashboard/hooks'
+import { useMemberProfile } from '@/features/profile/hooks'
+import { useCashflow } from '@/features/budget/hooks'
 import { PyramidSection } from './PyramidSection'
-import { DiversificationSection } from './DiversificationSection'
 import { ProjectionSection } from './ProjectionSection'
 import { AllocationTargetsModal } from './AllocationTargetsModal'
+import { FinancialIndependenceCard, FinancialIndependenceSimulator } from './FinancialIndependence'
+import { DEFAULT_EXPENSES, currentPace, financialAssets, type FiBaseline } from './fi-math'
 
 export function AnalysisPage() {
   const { t } = useTranslation()
   const pyramid = useWealthPyramid()
   const targets = useAllocationTargets()
-  const diversification = useDiversification()
+  const dashboard = useDashboard()
+  const profile = useMemberProfile()
+  const cashflow = useCashflow('CYCLE')
   const [editing, setEditing] = useState(false)
 
   const hasWealth = (pyramid.data?.totalAssetsEur ?? 0) !== 0
+
+  // Waits for every input: a simulation drawn from a half-loaded profile would print a duration,
+  // then switch to an age a moment later.
+  const statedExpenses = targets.data?.monthlyEssentialExpenses
+  const baseline: FiBaseline | null =
+    dashboard.data && !profile.isLoading && !cashflow.isLoading && !targets.isLoading
+      ? {
+          start: financialAssets(dashboard.data.distribution),
+          pace: currentPace(profile.data?.monthlySavingsCapacity, cashflow.data?.net),
+          expenses: statedExpenses != null && statedExpenses > 0 ? statedExpenses : DEFAULT_EXPENSES,
+          expensesStated: statedExpenses != null && statedExpenses > 0,
+          age: profile.data?.age ?? null,
+          retirementAge: profile.data?.targetRetirementAge ?? null,
+        }
+      : null
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -34,7 +55,7 @@ export function AnalysisPage() {
       />
 
       {pyramid.isLoading && (
-        <div className="grid gap-4 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
           <Skeleton className="h-64 lg:col-span-1" />
           <Skeleton className="h-64 lg:col-span-2" />
         </div>
@@ -57,10 +78,13 @@ export function AnalysisPage() {
       )}
 
       {pyramid.data && hasWealth && (
-        <div className="space-y-4">
+        <div className="flex flex-col gap-4">
           <PyramidSection pyramid={pyramid.data} />
-          {diversification.data && <DiversificationSection data={diversification.data} />}
-          <ProjectionSection />
+          <div className="flex flex-wrap gap-4">
+            <ProjectionSection className="flex-[8_1_34rem]" />
+            {baseline && <FinancialIndependenceCard baseline={baseline} className="flex-[4_1_18rem]" />}
+          </div>
+          {baseline && <FinancialIndependenceSimulator baseline={baseline} />}
         </div>
       )}
 

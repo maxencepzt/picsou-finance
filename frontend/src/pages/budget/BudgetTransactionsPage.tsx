@@ -1,17 +1,30 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router'
 import { useQueryClient } from '@tanstack/react-query'
 import { Receipt } from 'lucide-react'
+import { toast } from 'sonner'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { TransactionsList } from '@/components/shared/TransactionsList'
+import { CreatePeerLoanDialog } from '@/components/peer-loan/CreatePeerLoanDialog'
+import { AssignRepaymentDialog } from '@/components/peer-loan/AssignRepaymentDialog'
+import {
+  useAssignPeerLoanRepayment,
+  useCreatePeerLoanFromTransaction,
+  useOpenPeerLoans,
+} from '@/features/peer-loans/hooks'
+import { extractErrorMessage } from '@/lib/errors'
 import { useMerchantLogoUrl } from '@/features/budget/hooks'
 import { useTransactions } from '@/features/budget/hooks'
 import { useCategories, useCategorize } from '@/features/budget/hooks'
 import { useAccounts } from '@/features/accounts/hooks'
+import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ErrorState } from '@/components/shared/ErrorState'
 import { DateInput } from '@/components/shared/DateInput'
 import { NativeSelect } from '@/components/shared/NativeSelect'
+import { CASH_ACCOUNT_TYPES } from '@/lib/constants'
+import type { Transaction } from '@/types/api'
 
 function startOfMonth(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`
@@ -27,16 +40,22 @@ const now = new Date()
 export function BudgetTransactionsPage() {
   const { t } = useTranslation()
   const qc = useQueryClient()
+  const navigate = useNavigate()
 
   const [from, setFrom] = useState(startOfMonth(now))
   const [to, setTo] = useState(endOfMonth(now))
   const [accountId, setAccountId] = useState<number | undefined>()
   const [categoryId, setCategoryId] = useState<number | undefined>()
+  const [peerLoanTx, setPeerLoanTx] = useState<Transaction | null>(null)
+  const [repaymentTx, setRepaymentTx] = useState<Transaction | null>(null)
 
   const { data: accounts } = useAccounts()
   const { data: categories } = useCategories()
   const { data: transactions, isLoading, isError, refetch } = useTransactions({ from, to, accountId, categoryId })
   const categorizeMutation = useCategorize()
+  const createPeerLoan = useCreatePeerLoanFromTransaction()
+  const assignRepayment = useAssignPeerLoanRepayment()
+  const openLoans = useOpenPeerLoans()
   const logoUrlFor = useMerchantLogoUrl()
 
   function handleCategorize(txId: number, catId: number) {
@@ -53,21 +72,21 @@ export function BudgetTransactionsPage() {
 
   return (
     <div className="space-y-4">
-      {/* Filters */}
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="flex items-center gap-1.5">
-          <label htmlFor="tx-filter-from" className="text-xs text-muted-foreground shrink-0">{t('transactions.filterFrom')}</label>
-          <DateInput id="tx-filter-from" value={from} onChange={setFrom} className="w-36" />
+      {/* Filters — one row above the list on a desktop, two pairs on a phone. */}
+      <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
+        <div className="flex min-w-0 items-center gap-2">
+          <label htmlFor="tx-filter-from" className="shrink-0 text-[13px] font-medium text-muted-foreground">{t('transactions.filterFrom')}</label>
+          <DateInput id="tx-filter-from" value={from} onChange={setFrom} className="min-w-0 sm:w-36" />
         </div>
-        <div className="flex items-center gap-1.5">
-          <label htmlFor="tx-filter-to" className="text-xs text-muted-foreground shrink-0">{t('transactions.filterTo')}</label>
-          <DateInput id="tx-filter-to" value={to} onChange={setTo} className="w-36" />
+        <div className="flex min-w-0 items-center gap-2">
+          <label htmlFor="tx-filter-to" className="shrink-0 text-[13px] font-medium text-muted-foreground">{t('transactions.filterTo')}</label>
+          <DateInput id="tx-filter-to" value={to} onChange={setTo} className="min-w-0 sm:w-36" />
         </div>
         <NativeSelect
           aria-label={t('transactions.account')}
           value={accountId ?? ''}
           onChange={(e) => setAccountId(e.target.value ? Number(e.target.value) : undefined)}
-          className="w-auto"
+          className="sm:w-auto sm:max-w-56"
         >
           <option value="">{t('transactions.allAccounts')}</option>
           {(accounts ?? []).map(a => (
@@ -78,7 +97,7 @@ export function BudgetTransactionsPage() {
           aria-label={t('common.category')}
           value={categoryId ?? ''}
           onChange={(e) => setCategoryId(e.target.value ? Number(e.target.value) : undefined)}
-          className="w-auto"
+          className="sm:w-auto sm:max-w-56"
         >
           <option value="">{t('transactions.allCategories')}</option>
           {(categories ?? []).filter(c => !c.archived).map(c => (
@@ -90,11 +109,15 @@ export function BudgetTransactionsPage() {
       {isError && <ErrorState message={t('transactions.error')} onRetry={() => refetch()} />}
 
       {isLoading && !isError && (
-        <Skeleton className="h-64 w-full rounded-xl" />
+        <Skeleton className="h-64 w-full rounded-2xl" />
       )}
 
       {!isLoading && !isError && transactions && transactions.length === 0 && (
-        <EmptyState icon={<Receipt className="size-10" />} title={t('transactions.empty')} />
+        <Card>
+          <CardContent>
+            <EmptyState className="py-8" icon={<Receipt className="size-8" />} title={t('transactions.empty')} />
+          </CardContent>
+        </Card>
       )}
 
       {!isLoading && !isError && transactions && transactions.length > 0 && (
@@ -103,8 +126,51 @@ export function BudgetTransactionsPage() {
           logoUrlFor={logoUrlFor}
           categories={categories}
           onCategorize={handleCategorize}
+          onCreatePeerLoan={setPeerLoanTx}
+          canCreatePeerLoan={(tx) => tx.amount < 0
+            && !!accounts?.find(a => a.id === tx.accountId && CASH_ACCOUNT_TYPES.includes(a.type))}
+          onAssignRepayment={setRepaymentTx}
+          canAssignRepayment={(tx) => tx.amount > 0
+            && !!accounts?.find(a => a.id === tx.accountId && CASH_ACCOUNT_TYPES.includes(a.type))}
         />
       )}
+
+      <CreatePeerLoanDialog
+        open={!!peerLoanTx}
+        onOpenChange={(open) => { if (!open) setPeerLoanTx(null) }}
+        transaction={peerLoanTx}
+        loading={createPeerLoan.isPending}
+        onSubmit={async (data) => {
+          try {
+            const created = await createPeerLoan.mutateAsync(data)
+            toast.success(t('peerLoan.fromTransaction.created'))
+            setPeerLoanTx(null)
+            navigate(`/accounts/${created.accountId}`)
+          } catch (err) {
+            toast.error(extractErrorMessage(err, t('common.error')))
+            throw err
+          }
+        }}
+      />
+
+      <AssignRepaymentDialog
+        open={!!repaymentTx}
+        onOpenChange={(open) => { if (!open) setRepaymentTx(null) }}
+        transaction={repaymentTx}
+        loans={openLoans.data ?? []}
+        loading={assignRepayment.isPending}
+        onSubmit={async (loanAccountId, data) => {
+          try {
+            await assignRepayment.mutateAsync({ accountId: loanAccountId, data })
+            toast.success(t('peerLoan.assignRepayment.created'))
+            setRepaymentTx(null)
+            navigate(`/accounts/${loanAccountId}`)
+          } catch (err) {
+            toast.error(extractErrorMessage(err, t('common.error')))
+            throw err
+          }
+        }}
+      />
     </div>
   )
 }

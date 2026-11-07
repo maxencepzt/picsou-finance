@@ -1,5 +1,6 @@
 package com.picsou.config;
 
+import com.picsou.dto.BenchmarkKey;
 import com.picsou.model.AccountType;
 import com.picsou.repository.AccountHoldingRepository;
 import com.picsou.service.PriceService;
@@ -16,7 +17,8 @@ import java.util.Set;
 import java.util.TreeSet;
 
 /**
- * Automatically backfills historical prices on startup if holding tickers have no price history.
+ * Automatically backfills historical prices on startup if holding tickers have no price history,
+ * plus, once anything is held, five years of the benchmark ETFs ({@link BenchmarkKey}).
  * Idempotent — only fills gaps, skips dates that already have a snapshot.
  *
  * <p>Split by account type, like {@code SchedulerService.refreshPrices}: a coin held in a CRYPTO
@@ -29,6 +31,9 @@ import java.util.TreeSet;
 public class PriceBackfillRunner implements ApplicationRunner {
 
     private static final Logger log = LoggerFactory.getLogger(PriceBackfillRunner.class);
+
+    /** The Yahoo adapter's longest daily range ({@code 5y}); asking further back fetches nothing more. */
+    static final int BENCHMARK_MONTHS = 60;
 
     private final PriceService priceService;
     private final AccountHoldingRepository holdingRepository;
@@ -48,6 +53,8 @@ public class PriceBackfillRunner implements ApplicationRunner {
         Set<String> otherTickers = upperCased(holdingRepository.findDistinctTickers());
         otherTickers.removeAll(cryptoTickers);
 
+        // The benchmarks below skip too: an empty instance has no performance to compare them
+        // with, and a booting test context must not reach Yahoo.
         if (cryptoTickers.isEmpty() && otherTickers.isEmpty()) {
             log.debug("No holding tickers found — skipping price backfill");
             return;
@@ -61,7 +68,12 @@ public class PriceBackfillRunner implements ApplicationRunner {
         if (!otherTickers.isEmpty()) {
             saved += priceService.backfillHistoricalPrices(otherTickers, from, false);
         }
-        log.info("Price backfill complete: {} snapshots saved for {} tickers ({} crypto)",
+        // Held or not, and deeper than a holding: the ETFs GET /api/analysis/benchmark reads, which
+        // never fetches itself. Already-covered ones skip the provider; the daily row after this
+        // comes from SchedulerService.refreshPrices.
+        saved += priceService.backfillHistoricalPrices(
+            BenchmarkKey.tickers(), LocalDate.now().minusMonths(BENCHMARK_MONTHS), false);
+        log.info("Price backfill complete: {} snapshots saved for {} held tickers ({} crypto) and the benchmarks",
             saved, cryptoTickers.size() + otherTickers.size(), cryptoTickers.size());
     }
 

@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { ChevronDown, Eye, Settings, Users } from 'lucide-react'
+import { ChevronDown, type LucideIcon } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -10,51 +10,40 @@ import {
 import { useAppStore, type SidebarStyle } from '@/stores/app-store'
 import { cn } from '@/lib/utils'
 import picsouLogo from '@/assets/horizontal-white-picsou.svg'
-import { NAV_ITEMS, CLASSIC_SETTINGS_NAV_ITEM } from './sidebar-nav-items'
+import { NAV_ITEMS, CLASSIC_SETTINGS_NAV_ITEM, SYNC_NAV_ITEM } from './sidebar-nav-items'
 
 const OPTIONS: { value: SidebarStyle; labelKey: string }[] = [
   { value: 'current', labelKey: 'settings.sidebarStyleCurrent' },
   { value: 'classic', labelKey: 'settings.sidebarStyleClassic' },
 ]
 
-// A sketch of AppSidebar for each style: same nav list (derived from NAV_ITEMS,
-// plus the Family item AppSidebar renders by hand), same card height (full vs
-// h-fit) and same member row placement, so the choice shows what it changes.
+// A sketch of AppSidebar for each style: the same single-line rows (derived from NAV_ITEMS),
+// with the profile row either right under the routes (classic, Settings among them) or pinned
+// to the bottom under Sync and Settings (current), so the choice shows what it changes.
 function SidebarPreview({ variant }: { variant: SidebarStyle }) {
   const isClassic = variant === 'classic'
-  const navIcons = [...(isClassic ? [...NAV_ITEMS, CLASSIC_SETTINGS_NAV_ITEM] : NAV_ITEMS).map((item) => item.icon), Users]
+  const navIcons = (isClassic ? [...NAV_ITEMS, CLASSIC_SETTINGS_NAV_ITEM] : NAV_ITEMS).map((item) => item.icon)
+  const row = (Icon: LucideIcon, i: number, highlight = false) => (
+    <div key={i} className={cn('flex items-center gap-1 rounded-sm px-0.5 py-px', highlight && 'bg-primary/15')}>
+      <Icon className="size-2 shrink-0 text-muted-foreground" />
+      <div className="h-1 w-3/5 rounded-full bg-foreground/20" />
+    </div>
+  )
 
   return (
     <div className="flex h-48 w-full gap-1.5 rounded-lg bg-muted/40 p-2" aria-hidden="true">
-      <div
-        data-slot="preview-sidebar"
-        className={cn('flex w-1/2 flex-col rounded-md bg-background p-1.5', isClassic ? 'h-fit' : 'h-full')}
-      >
-        <div className={cn('flex items-center justify-between', isClassic ? 'mb-3' : 'mb-2')}>
+      <div data-slot="preview-sidebar" className="flex h-full w-1/2 flex-col rounded-md bg-background p-1.5">
+        <div className="mb-2 flex items-center">
           <img src={picsouLogo} alt="" className="h-2 w-auto opacity-70 brightness-0 dark:invert" />
-          <Eye className="size-2 shrink-0 text-muted-foreground" />
         </div>
-        <div className="flex flex-col gap-0.5">
-          {navIcons.map((Icon, i) => (
-            <div
-              key={i}
-              className={cn('flex items-center gap-1 rounded-sm px-0.5 py-px', i === 0 && 'bg-muted ring-1 ring-border')}
-            >
-              <div className="flex size-3 shrink-0 items-center justify-center rounded-[3px] bg-muted">
-                <Icon className="size-2 text-muted-foreground" />
-              </div>
-              <div className="flex flex-1 flex-col gap-0.5">
-                <div className="h-1 w-3/5 rounded-full bg-foreground/20" />
-                <div className="h-0.5 w-full rounded-full bg-foreground/10" />
-              </div>
-            </div>
-          ))}
-        </div>
-        <div className={cn('flex items-center gap-0.5 px-0.5', isClassic ? 'mt-1.5' : 'mt-auto')}>
-          <div className="size-3 shrink-0 rounded-full bg-foreground/15" />
-          <div className="ml-0.5 h-1 min-w-3 flex-1 rounded-full bg-foreground/20" />
-          <ChevronDown className="size-2 shrink-0 text-muted-foreground" />
-          {!isClassic && <Settings className="size-2.5 shrink-0 text-muted-foreground" />}
+        <div className="flex flex-col gap-0.5">{navIcons.map((Icon, i) => row(Icon, i, i === 0))}</div>
+        <div className={cn('flex flex-col gap-0.5', isClassic ? 'mt-1.5' : 'mt-auto')}>
+          {!isClassic && [SYNC_NAV_ITEM.icon, CLASSIC_SETTINGS_NAV_ITEM.icon].map((Icon, i) => row(Icon, i))}
+          <div className="mt-0.5 flex items-center gap-0.5 border-t border-border px-0.5 pt-1">
+            <div className="size-3 shrink-0 rounded-full bg-foreground/15" />
+            <div className="ml-0.5 h-1 min-w-3 flex-1 rounded-full bg-foreground/20" />
+            <ChevronDown className="size-2 shrink-0 text-muted-foreground" />
+          </div>
         </div>
       </div>
       <div className="flex-1 space-y-1.5 rounded-md bg-background p-1.5">
