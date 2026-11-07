@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query'
 import { useInvalidatingMutation } from '@/hooks/use-invalidating-mutation'
 import { analysisApi } from './api'
 import { useMemberProfile } from '@/features/profile/hooks'
@@ -65,16 +65,18 @@ export function useProjection(years: number) {
     queryKey: ['analysis', 'projection', years],
     queryFn: () => analysisApi.projection(years),
     staleTime: QUERY_STALE_TIMES.analysis,
+    // A new horizon keeps the previous curves on screen until the new ones arrive.
+    placeholderData: keepPreviousData,
   })
 }
 
-/** Monte-Carlo fan of the same projection; fetched only once the risk view is opened. */
-export function useProjectionRisk(years: number, enabled = true) {
+/** Monte-Carlo fan of the same projection; fetched when the risk view mounts. */
+export function useProjectionRisk(years: number) {
   return useQuery({
     queryKey: ['analysis', 'projection', 'risk', years],
     queryFn: () => analysisApi.projectionRisk(years),
     staleTime: QUERY_STALE_TIMES.analysis,
-    enabled,
+    placeholderData: keepPreviousData,
   })
 }
 

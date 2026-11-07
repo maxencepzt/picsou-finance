@@ -57,6 +57,14 @@ describe('RiskOutlook', () => {
     expect(container.querySelector('[aria-busy="true"]')).toBeInTheDocument()
   })
 
+  it('offers a retry when the simulation fails', () => {
+    const refetch = vi.fn()
+    useProjectionRisk.mockReturnValue({ data: undefined, isError: true, refetch })
+    render(<RiskOutlook years={20} />)
+    screen.getByRole('button').click()
+    expect(refetch).toHaveBeenCalled()
+  })
+
   it('renders nothing until the simulation has answered', () => {
     useProjectionRisk.mockReturnValue({ data: undefined })
     const { container } = render(<RiskOutlook years={20} />)

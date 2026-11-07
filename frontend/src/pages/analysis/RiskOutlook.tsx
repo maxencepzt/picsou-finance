@@ -7,7 +7,8 @@ import { useProjectionDateLabel, useProjectionRisk } from '@/features/analysis/h
 import { useMoney } from '@/hooks/use-money'
 import { MONEY_AXIS_WIDTH } from '@/lib/money'
 import { AXIS_PROPS, AXIS_PROPS_FLUSH } from '@/lib/chart-axis'
-import { formatPercent } from '@/lib/utils'
+import { formatNumber, formatPercent } from '@/lib/utils'
+import { ErrorState } from '@/components/shared/ErrorState'
 import type { RiskBand } from '@/types/api'
 
 const BAND_COLOR = 'var(--chart-1)'
@@ -90,6 +91,9 @@ export function RiskOutlook({ years }: { years: number }) {
         </div>
       </div>
     )
+  }
+  if (risk.isError && !risk.data) {
+    return <ErrorState messageOnly message={t('common.error')} onRetry={() => void risk.refetch()} />
   }
   if (!risk.data) return null
   const last = risk.data.points.at(-1)
@@ -185,7 +189,7 @@ export function RiskOutlook({ years }: { years: number }) {
       </dl>
 
       <p className="text-xs text-muted-foreground">
-        {t('analysis.projection.risk.method', { paths: risk.data.paths.toLocaleString() })} {volatility}
+        {t('analysis.projection.risk.method', { paths: formatNumber(risk.data.paths) })} {volatility}
       </p>
     </div>
   )
