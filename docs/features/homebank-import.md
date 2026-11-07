@@ -1,6 +1,6 @@
 # Feature: HomeBank iOS and desktop history import
 
-> Last updated: 2026-10-31
+> Last updated: 2026-11-03
 
 ## Context
 
@@ -28,7 +28,9 @@ The password is used only to decode the upload. It is not put in the preview cac
 - `backend/src/main/java/com/picsou/controller/HomeBankImportController.java` — member-scoped, IP-throttled multipart preview and JSON confirmation endpoints.
 - `backend/src/main/java/com/picsou/dto/HomeBankImportDtos.java` — typed preview, mappings and result counters.
 - `frontend/src/features/homebank/` — API calls, mutations and frontend contract.
-- `frontend/src/pages/sync/HomeBankTab.tsx` — upload, mapping, confirmation and result UI.
+- `frontend/src/pages/sync/HomeBankTab.tsx` — upload, mapping, confirmation and result UI: the shared
+  drop zone with the file password (or the QIF currency) under it, then the same summary bar,
+  `PanelSection` previews and `PanelStat` outcome as the Actual Budget import.
 
 ### Flow
 

@@ -1,64 +1,37 @@
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Loader2, Trash2, Smartphone, Monitor, ShieldCheck } from 'lucide-react'
-import {
-  useSessions,
-  useRevokeSession,
-  useRevokeAllSessionsExceptCurrent,
-} from '@/features/mfa/hooks'
+import { useSessions, useRevokeSession } from '@/features/mfa/hooks'
 import type { SessionItem } from '@/features/mfa/api'
 import { resolveLocale } from '@/i18n/locales'
+import { ROW_BUTTON } from '../SettingRow'
 
+/** The "Remember me" devices, one row each. Closing all the others lives in the sensitive zone. */
 export function SessionsList() {
   const { t, i18n } = useTranslation()
   const { data: sessions, isLoading } = useSessions()
   const revoke = useRevokeSession()
-  const revokeOthers = useRevokeAllSessionsExceptCurrent()
 
-  if (isLoading) {
-    return (
-      <div className="flex justify-center py-4">
-        <Loader2 size={20} className="animate-spin text-muted-foreground" />
-      </div>
-    )
-  }
+  if (isLoading) return <Skeleton className="h-12 w-full" />
 
   if (!Array.isArray(sessions) || sessions.length === 0) {
-    return (
-      <p className="text-sm text-muted-foreground py-2">{t('settings.sessionsEmpty')}</p>
-    )
+    return <p className="text-sm text-muted-foreground">{t('settings.sessionsEmpty')}</p>
   }
 
-  const otherCount = sessions.filter(s => !s.current).length
-
   return (
-    <div className="space-y-3">
-      <ul className="divide-y rounded-lg border">
-        {sessions.map(s => (
-          <SessionRow
-            key={s.id}
-            session={s}
-            locale={resolveLocale(i18n.language).intlLocale}
-            onRevoke={() => revoke.mutate(s.id)}
-            disabled={revoke.isPending && revoke.variables === s.id}
-          />
-        ))}
-      </ul>
-
-      {otherCount > 0 && (
-        <div className="flex justify-end">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => revokeOthers.mutate()}
-            disabled={revokeOthers.isPending}
-          >
-            {revokeOthers.isPending && <Loader2 size={14} className="mr-1.5 animate-spin" />}
-            {t('settings.sessionsRevokeAllOthers')}
-          </Button>
-        </div>
-      )}
-    </div>
+    <ul className="divide-y divide-border">
+      {sessions.map(s => (
+        <SessionRow
+          key={s.id}
+          session={s}
+          locale={resolveLocale(i18n.language).intlLocale}
+          onRevoke={() => revoke.mutate(s.id)}
+          disabled={revoke.isPending && revoke.variables === s.id}
+        />
+      ))}
+    </ul>
   )
 }
 
@@ -74,25 +47,22 @@ function SessionRow({
   disabled: boolean
 }) {
   const { t } = useTranslation()
-  const isMobile = isProbablyMobile(session.userAgent)
-  const Icon = isMobile ? Smartphone : Monitor
+  const Icon = isProbablyMobile(session.userAgent) ? Smartphone : Monitor
 
   return (
-    <li className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-3">
-      <Icon className="size-5 text-muted-foreground shrink-0 hidden sm:block" />
-      <div className="flex-1 min-w-0 space-y-0.5">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-sm font-medium truncate">
+    <li className="flex flex-wrap items-center gap-x-3 gap-y-2 py-3 first:pt-0 last:pb-0">
+      <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground">
+        <Icon className="size-4" aria-hidden="true" />
+      </span>
+      <div className="min-w-48 flex-1 space-y-0.5">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <span className="truncate text-sm font-medium text-foreground">
             {prettyUserAgent(session.userAgent, t('settings.sessionsBrowser')) || t('settings.sessionsUnknownDevice')}
           </span>
-          {session.current && (
-            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-              {t('settings.sessionsCurrent')}
-            </span>
-          )}
+          {session.current && <Badge variant="secondary">{t('settings.sessionsCurrent')}</Badge>}
           {session.trustedFor2fa && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:text-emerald-400">
-              <ShieldCheck className="size-3" />
+            <span className="inline-flex items-center gap-1 text-xs font-medium text-gain">
+              <ShieldCheck className="size-3.5" aria-hidden="true" />
               {t('settings.sessionsTrusted')}
             </span>
           )}
@@ -100,22 +70,19 @@ function SessionRow({
         <p className="text-xs text-muted-foreground">
           {session.ipPrefix && <span className="font-mono">{session.ipPrefix}*</span>}
           {session.ipPrefix && ' · '}
-          {t('common.labelColon', { label: t('settings.sessionsLastUsed') })} {formatDate(session.lastUsedAt, locale)}
+          {t('common.labelColon', { label: t('settings.sessionsLastUsed') })}{' '}
+          <span className="tabular-nums">{formatDate(session.lastUsedAt, locale)}</span>
         </p>
       </div>
       {!session.current && (
         <Button
           variant="ghost"
-          size="sm"
+          size="xs"
           onClick={onRevoke}
           disabled={disabled}
-          className="self-end sm:self-auto"
+          className={`${ROW_BUTTON} ml-auto shrink-0 text-destructive hover:text-destructive`}
         >
-          {disabled ? (
-            <Loader2 size={14} className="mr-1.5 animate-spin" />
-          ) : (
-            <Trash2 size={14} className="mr-1.5" />
-          )}
+          {disabled ? <Loader2 className="animate-spin" aria-hidden="true" /> : <Trash2 aria-hidden="true" />}
           {t('settings.sessionsRevoke')}
         </Button>
       )}
@@ -145,9 +112,10 @@ function prettyUserAgent(ua: string | null, unknownBrowser: string): string {
     unknownBrowser
   const os =
     /Windows/.test(ua) ? 'Windows' :
+    // Before macOS: an iPhone's UA says "like Mac OS X".
+    /iPhone|iPad|iOS/.test(ua) ? 'iOS' :
     /Mac OS X|Macintosh/.test(ua) ? 'macOS' :
     /Android/.test(ua) ? 'Android' :
-    /iPhone|iPad|iOS/.test(ua) ? 'iOS' :
     /Linux/.test(ua) ? 'Linux' :
     ''
   return os ? `${browser} · ${os}` : browser

@@ -35,3 +35,12 @@ export function useUpcomingDividends(horizonDaysOrOptions: number | UpcomingDivi
     staleTime: QUERY_STALE_TIMES.budget,
   })
 }
+
+/** Dividends already credited over the last `days` days. */
+export function useReceivedDividends(days = 365) {
+  return useQuery({
+    queryKey: ['dividends', 'received', days],
+    queryFn: () => dividendsApi.received(days),
+    staleTime: QUERY_STALE_TIMES.budget,
+  })
+}

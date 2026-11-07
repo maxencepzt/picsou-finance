@@ -43,6 +43,14 @@ vi.mock('@/features/sso/start', () => ({ submitSsoStart }))
 const { activate } = vi.hoisted(() => ({ activate: vi.fn() }))
 vi.mock('@/features/auth/api', () => ({ authApi: { activate } }))
 
+// The redesigned form's Radix checkbox measures itself; jsdom has no ResizeObserver.
+class NoopResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+vi.stubGlobal('ResizeObserver', NoopResizeObserver)
+
 const { ActivationPage } = await import('./ActivationPage')
 const { ssoKeys } = await import('@/features/sso/hooks')
 
@@ -92,8 +100,8 @@ describe('ActivationPage', () => {
     getInfo.mockResolvedValue(SSO_ON)
     renderPage()
 
-    expect(await screen.findByText(en.activation.noticeTitle)).toBeInTheDocument()
-    expect(screen.getByText(en.activation.noticeBody)).toBeInTheDocument()
+    expect(await screen.findByText(en.auth.activation.noticeTitle)).toBeInTheDocument()
+    expect(screen.getByText(en.auth.activation.noticeBody)).toBeInTheDocument()
   })
 
   it('says when the sign-in options fail to load and retries on request', async () => {
@@ -124,7 +132,7 @@ describe('ActivationPage', () => {
     getInfo.mockResolvedValue(SSO_ON)
     renderPage()
     const ssoButton = await screen.findByRole('button', { name: 'Activate with Zitadel' })
-    fireEvent.click(screen.getByLabelText(en.activation.acknowledge))
+    fireEvent.click(screen.getByLabelText(en.auth.activation.acknowledge))
 
     fireEvent.click(ssoButton)
 
@@ -136,7 +144,7 @@ describe('ActivationPage', () => {
     getInfo.mockResolvedValue(SSO_ON)
     renderPage()
     const ssoButton = await screen.findByRole('button', { name: 'Activate with Zitadel' })
-    const acknowledgement = screen.getByLabelText(en.activation.acknowledge)
+    const acknowledgement = screen.getByLabelText(en.auth.activation.acknowledge)
     fireEvent.click(acknowledgement)
     expect(ssoButton).toBeEnabled()
 
@@ -151,7 +159,7 @@ describe('ActivationPage', () => {
 
     await waitFor(() => expect(queryClient.getQueryState(ssoKeys.info)?.status).toBe('success'))
     expect(screen.queryByRole('button', { name: /^Activate with/ })).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: en.activation.submit })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: en.auth.activation.submit })).toBeInTheDocument()
   })
 
   it.each([
@@ -174,13 +182,13 @@ describe('ActivationPage', () => {
       }),
     )
     renderPage()
-    fireEvent.click(screen.getByLabelText(en.activation.acknowledge))
-    fireEvent.change(screen.getByLabelText(en.activation.password), { target: { value: 'correct-horse-1' } })
-    fireEvent.change(screen.getByLabelText(en.activation.confirmPassword), { target: { value: 'correct-horse-1' } })
+    fireEvent.click(screen.getByLabelText(en.auth.activation.acknowledge))
+    fireEvent.change(screen.getByLabelText(en.auth.password), { target: { value: 'correct-horse-1' } })
+    fireEvent.change(screen.getByLabelText(en.auth.activation.confirmPassword), { target: { value: 'correct-horse-1' } })
 
-    fireEvent.click(screen.getByRole('button', { name: en.activation.submit }))
+    fireEvent.click(screen.getByRole('button', { name: en.auth.activation.submit }))
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(en.activation.errors.failed)
+    expect(await screen.findByRole('alert')).toHaveTextContent(en.auth.activation.errorFailed)
     expect(activate).toHaveBeenCalledWith('tok-123', 'correct-horse-1', true)
   })
 

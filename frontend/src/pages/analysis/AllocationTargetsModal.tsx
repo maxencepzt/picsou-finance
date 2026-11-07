@@ -17,6 +17,7 @@ import { useEssentialExpenseEstimate, useSaveAllocationTargets } from '@/feature
 import { formatPercent, parseAmount } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 import type { AllocationTargets, AllocationTargetsRequest, WealthTier } from '@/types/api'
+import { TIER_COLORS } from './tier-colors'
 
 /** The four tiers that carry a percentage target; the safety net is an absolute amount. */
 const TARGET_TIERS = ['REAL_ESTATE', 'EQUITY', 'CRYPTO', 'ALTERNATIVE'] as const
@@ -111,7 +112,7 @@ function TargetsForm({
               <Button
                 type="button"
                 variant="outline"
-                size="sm"
+                size="xs"
                 onClick={() => setExpenses(String(suggestion))}
               >
                 {t('analysis.targets.useSuggestion')}
@@ -126,6 +127,7 @@ function TargetsForm({
           <NumericInput
             id="safety-net-months"
             value={months}
+            className="sm:w-32"
             onChange={(e) => setMonths(e.target.value)}
           />
         </div>
@@ -146,15 +148,20 @@ function TargetsForm({
             </span>
           </div>
           {TARGET_TIERS.map((tier) => (
-            <div key={tier} className="flex items-center gap-3">
-              <Label htmlFor={`pct-${tier}`} className="w-40 shrink-0 font-normal">
+            <div key={tier} className="grid grid-cols-[minmax(0,1fr)_8rem] items-center gap-3">
+              <Label htmlFor={`pct-${tier}`} className="min-w-0 gap-2 font-normal">
+                <span className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: TIER_COLORS[tier] }} aria-hidden="true" />
                 {t(`analysis.tiers.${tier satisfies WealthTier}`)}
               </Label>
-              <NumericInput
-                id={`pct-${tier}`}
-                value={pcts[tier]}
-                onChange={(e) => setPcts({ ...pcts, [tier]: e.target.value })}
-              />
+              <div className="relative">
+                <NumericInput
+                  id={`pct-${tier}`}
+                  value={pcts[tier]}
+                  className="pr-8 text-right tabular-nums"
+                  onChange={(e) => setPcts({ ...pcts, [tier]: e.target.value })}
+                />
+                <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-sm text-muted-foreground" aria-hidden="true">%</span>
+              </div>
             </div>
           ))}
           <p className="text-sm text-muted-foreground">{t('analysis.targets.allocationHint')}</p>

@@ -2,7 +2,6 @@ import { useTranslation } from 'react-i18next'
 import { NavLink, Outlet, useLocation } from 'react-router'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { ScrollStrip } from '@/components/shared/ScrollStrip'
-import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import { useUncategorized } from '@/features/budget/hooks'
 import { BUDGET_NAV } from './budget-nav'
@@ -27,8 +26,10 @@ export function BudgetLayout() {
     <div>
       <PageHeader surtitle={t('budget.surtitle')} title={t('budget.title')} />
 
+      {/* The page-level switch: the SegmentedControl look (muted track, selected on the card
+          surface with a hairline) at the 40px page rhythm. */}
       <ScrollStrip activeKey={location.pathname}>
-        <nav className="flex w-max gap-1 rounded-lg bg-muted p-1 text-muted-foreground">
+        <nav aria-label={t('budget.title')} className="flex w-max gap-0.5 rounded-lg bg-muted p-1 text-muted-foreground">
           {BUDGET_NAV.map(({ section, to, end, labelKey, icon: Icon, badge }) => (
             <NavLink
               key={section}
@@ -36,17 +37,19 @@ export function BudgetLayout() {
               end={end}
               className={({ isActive }) =>
                 cn(
-                  'inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+                  'inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-md px-3 text-sm font-medium transition-[background-color,color]',
                   isActive
-                    ? 'bg-background text-foreground shadow-sm'
+                    ? 'bg-card text-foreground ring-1 ring-border'
                     : 'hover:text-foreground',
                 )
               }
             >
-              <Icon className="size-4" />
+              <Icon className="size-4" aria-hidden="true" />
               <span>{t(labelKey)}</span>
               {badge && toReview > 0 && (
-                <Badge variant="outline" className="tabular-nums">{toReview}</Badge>
+                <span className="min-w-5 rounded-full bg-warning/15 px-1.5 text-center text-xs font-semibold tabular-nums text-warning">
+                  {toReview}
+                </span>
               )}
             </NavLink>
           ))}

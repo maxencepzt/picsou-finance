@@ -6,13 +6,14 @@ import { toast } from 'sonner'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { SegmentedControl } from '@/components/shared/SegmentedControl'
 import { CurrencyDisplay } from '@/components/shared/CurrencyDisplay'
 import { OTHERS_SLICE_COLOR, SLICE_PALETTE } from '@/lib/chart-palette'
 import { cn, formatDecimal, formatPercent } from '@/lib/utils'
 import { useRefreshSecurityProfiles } from '@/features/analysis/hooks'
 import { HoldingClassificationModal } from './HoldingClassificationModal'
 import { SliceContributors } from './SliceContributors'
-import { BreakdownDonut, BreakdownTreemap, type BreakdownView } from './BreakdownChart'
+import { BreakdownDonut, BreakdownTreemap, type BreakdownView } from '@/components/shared/BreakdownChart'
 import type {
   Diversification,
   DiversificationBreakdown,
@@ -46,9 +47,9 @@ function storedView(): BreakdownView {
 const MIN_VISIBLE_PERCENT = 0.5
 
 function scoreTone(score: number): string {
-  if (score >= 75) return 'text-green-600 dark:text-green-500'
-  if (score >= 50) return 'text-amber-600 dark:text-amber-500'
-  return 'text-red-600 dark:text-red-500'
+  if (score >= 75) return 'text-gain'
+  if (score >= 50) return 'text-warning'
+  return 'text-loss'
 }
 
 /**
@@ -218,7 +219,7 @@ function UnclassifiedList({
           <Button
             type="button"
             variant="outline"
-            size="sm"
+            size="xs"
             disabled={refresh.isPending}
             onClick={() =>
               refresh.mutate(undefined, {
@@ -271,7 +272,7 @@ function UnclassifiedList({
                 <Button
                   type="button"
                   variant="ghost"
-                  size="sm"
+                  size="icon-sm"
                   onClick={() => onEdit(line)}
                   aria-label={t('analysis.classification.editAria', { ticker: line.ticker })}
                 >
@@ -311,22 +312,12 @@ export function DiversificationSection({ data }: { data: Diversification }) {
       <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-x-4 gap-y-2">
         <CardTitle>{t('analysis.diversification.title')}</CardTitle>
         {hasHoldings && (
-          <div className="flex gap-1">
-            {VIEWS.map(({ value, icon: Icon, labelKey }) => (
-              <Button
-                key={value}
-                type="button"
-                variant={view === value ? 'default' : 'outline'}
-                size="sm"
-                aria-pressed={view === value}
-                title={t(labelKey)}
-                aria-label={t(labelKey)}
-                onClick={() => chooseView(value)}
-              >
-                <Icon className="size-4" aria-hidden="true" />
-              </Button>
-            ))}
-          </div>
+          <SegmentedControl
+            ariaLabel={t('breakdown.view')}
+            value={view}
+            onChange={chooseView}
+            options={VIEWS.map(({ value, icon, labelKey }) => ({ value, icon, label: t(labelKey) }))}
+          />
         )}
       </CardHeader>
       <CardContent>

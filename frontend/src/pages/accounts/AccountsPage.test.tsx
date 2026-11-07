@@ -1,6 +1,7 @@
 import '@testing-library/jest-dom'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { fireEvent, render, screen } from '@testing-library/react'
+import { MemoryRouter, useLocation } from 'react-router'
 import type { Account, PeerLoansOverview, RealEstateMetadata } from '@/types/api'
 import type { NetWorthPoint } from '@/features/history/api'
 
@@ -38,7 +39,14 @@ vi.mock('@/features/peer-loans/hooks', () => ({
 
 // The form and the two add-account modals drag in zod and the whole connector catalog. They
 // are never opened here, so stubbing them keeps this suite about the summary card.
-vi.mock('@/components/shared/AccountForm', () => ({ AccountForm: () => null }))
+vi.mock('@/components/shared/AccountForm', () => ({
+  AccountForm: ({ open, defaultValues, onOpenChange }: { open: boolean; defaultValues?: { name?: string }; onOpenChange: (open: boolean) => void }) =>
+    open ? <div data-testid="edit-form">{defaultValues?.name}<button onClick={() => onOpenChange(false)}>close-form</button></div> : null,
+}))
+// The panel reads the detail page's queries; its own content is not what these cases are about.
+vi.mock('./AccountPanel', () => ({
+  AccountPanel: ({ account }: { account: Account | null }) => (account ? <div data-testid="panel">{account.name}</div> : null),
+}))
 vi.mock('@/components/shared/AddAccountModal', () => ({ AddAccountModal: () => null }))
 vi.mock('@/components/property/AddPropertyModal', () => ({ AddPropertyModal: () => null }))
 vi.mock('@/components/shared/AccountsStackedChart', () => ({
@@ -47,7 +55,10 @@ vi.mock('@/components/shared/AccountsStackedChart', () => ({
   ),
 }))
 
-vi.mock('react-router', () => ({ useNavigate: () => vi.fn() }))
+vi.mock('react-router', async (importActual) => ({
+  ...(await importActual<typeof import('react-router')>()),
+  useNavigate: () => vi.fn(),
+}))
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -63,6 +74,14 @@ vi.stubGlobal('ResizeObserver', class {
 })
 
 const { AccountsPage } = await import('./AccountsPage')
+
+function Search() {
+  return <output data-testid="search">{useLocation().search}</output>
+}
+
+function renderPage(path = '/accounts') {
+  return render(<MemoryRouter initialEntries={[path]}><AccountsPage /><Search /></MemoryRouter>)
+}
 
 function property(id: number, balanceEur: number, costBasis?: number): Account {
   return {
@@ -130,7 +149,7 @@ describe('AccountsPage - Immobilier gain / loss', () => {
     useAccounts.mockReturnValue({ data: accounts, isLoading: false })
     useHistory.mockReturnValue({ data: history(accounts), isLoading: false })
 
-    render(<AccountsPage />)
+    renderPage()
     selectRealEstate()
 
     // 300 000 - 250 000 = +50 000, i.e. +20.0 %
@@ -143,7 +162,7 @@ describe('AccountsPage - Immobilier gain / loss', () => {
     useAccounts.mockReturnValue({ data: accounts, isLoading: false })
     useHistory.mockReturnValue({ data: history(accounts), isLoading: false })
 
-    render(<AccountsPage />)
+    renderPage()
     selectRealEstate()
 
     expect(screen.getByTestId('pnl-chart')).toBeInTheDocument()
@@ -155,7 +174,7 @@ describe('AccountsPage - Immobilier gain / loss', () => {
     useAccounts.mockReturnValue({ data: accounts, isLoading: false })
     useHistory.mockReturnValue({ data: history(accounts), isLoading: false })
 
-    render(<AccountsPage />)
+    renderPage()
     selectRealEstate()
 
     expect(screen.queryByText('dashboard.portfolioPerformance')).not.toBeInTheDocument()
@@ -167,7 +186,7 @@ describe('AccountsPage - Immobilier gain / loss', () => {
     useAccounts.mockReturnValue({ data: accounts, isLoading: false })
     useHistory.mockReturnValue({ data: history(accounts), isLoading: false })
 
-    render(<AccountsPage />)
+    renderPage()
     selectRealEstate()
 
     // Gain stays +50 000 over a 450 000 basis (250 000 + the second property's own value),
@@ -192,7 +211,7 @@ describe('AccountsPage - Immobilier gain / loss', () => {
       isLoading: false,
     })
 
-    render(<AccountsPage />)
+    renderPage()
 
     expect(screen.queryByText('dashboard.portfolioPerformance')).not.toBeInTheDocument()
     const chartData = JSON.parse(screen.getByTestId('pnl-chart').getAttribute('data-chart') ?? '[]') as Array<Record<string, string | number>>
@@ -213,7 +232,7 @@ describe('AccountsPage - Immobilier gain / loss', () => {
       isLoading: false,
     })
 
-    render(<AccountsPage />)
+    renderPage()
     fireEvent.click(screen.getByRole('button', { name: 'accounts.filters.STOCKS' }))
 
     const chartData = JSON.parse(screen.getByTestId('pnl-chart').getAttribute('data-chart') ?? '[]') as Array<Record<string, string | number>>
@@ -234,7 +253,7 @@ describe('AccountsPage - card actions on touch screens', () => {
     useAccounts.mockReturnValue({ data: accounts, isLoading: false })
     useHistory.mockReturnValue({ data: history(accounts), isLoading: false })
 
-    render(<AccountsPage />)
+    renderPage()
 
     for (const name of ['common.edit', 'common.delete']) {
       const actions = screen.getByRole('button', { name }).parentElement
@@ -290,7 +309,7 @@ describe('AccountsPage - closed peer loans', () => {
       },
     })
 
-    render(<AccountsPage />)
+    renderPage()
 
     // Not an active card, and the Créances overview is not on screen yet.
     expect(screen.queryByText('Camille')).not.toBeInTheDocument()
@@ -319,7 +338,7 @@ describe('AccountsPage — Métaux and Autre filters', () => {
   })
 
   it('lists a PRECIOUS_METALS account under Métaux and no longer an OTHER one', () => {
-    render(<AccountsPage />)
+    renderPage()
     fireEvent.click(screen.getByRole('button', { name: 'accounts.filters.METALS' }))
 
     expect(screen.getByText('Compte 1')).toBeInTheDocument()
@@ -327,10 +346,58 @@ describe('AccountsPage — Métaux and Autre filters', () => {
   })
 
   it('keeps an OTHER account reachable under its own filter', () => {
-    render(<AccountsPage />)
+    renderPage()
     fireEvent.click(screen.getByRole('button', { name: 'accounts.filters.OTHER' }))
 
     expect(screen.getByText('Compte 2')).toBeInTheDocument()
     expect(screen.queryByText('Compte 1')).not.toBeInTheDocument()
+  })
+})
+
+describe('AccountsPage — grouping, panel and edit deep link', () => {
+  beforeEach(() => {
+    useAccounts.mockReset()
+    useHistory.mockReset()
+  })
+
+  function setup(accounts: Account[]) {
+    useAccounts.mockReturnValue({ data: accounts, isLoading: false })
+    useHistory.mockReturnValue({ data: history(accounts), isLoading: false })
+  }
+
+  it('switches the list from asset classes to institutions', () => {
+    setup([investmentAccount(1, 'PEA', 1000), property(2, 300000)])
+    renderPage()
+    // The group headers name their section; the breakdown's legend repeats the class names.
+    expect(screen.getByRole('region', { name: 'assetClasses.equity' })).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'accounts.groupBy.institution' }))
+    expect(screen.getByRole('region', { name: 'Example' })).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'accounts.groupBy.property' })).toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: 'assetClasses.equity' })).not.toBeInTheDocument()
+  })
+
+  it('opens the side panel when a row is clicked', () => {
+    setup([investmentAccount(1, 'PEA', 1000)])
+    renderPage()
+    expect(screen.queryByTestId('panel')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: /Compte 1/ }))
+    expect(screen.getByTestId('panel')).toHaveTextContent('Compte 1')
+  })
+
+  it('opens the edit form from ?edit=<id> and drops the parameter on close', () => {
+    setup([investmentAccount(1, 'PEA', 1000), investmentAccount(2, 'PER', 500)])
+    renderPage('/accounts?edit=2')
+    expect(screen.getByTestId('edit-form')).toHaveTextContent('Compte 2')
+
+    fireEvent.click(screen.getByText('close-form'))
+    expect(screen.queryByTestId('edit-form')).not.toBeInTheDocument()
+    expect(screen.getByTestId('search')).toHaveTextContent(/^$/)
+  })
+
+  it('ignores an unknown id', () => {
+    setup([investmentAccount(1, 'PEA', 1000)])
+    renderPage('/accounts?edit=99')
+    expect(screen.queryByTestId('edit-form')).not.toBeInTheDocument()
   })
 })

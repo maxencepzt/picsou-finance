@@ -1,14 +1,14 @@
 import { Outlet, useLocation } from 'react-router'
 import { useTranslation } from 'react-i18next'
-import { useEffect, useMemo } from 'react'
-import { Progress } from '@/components/ui/progress'
+import { Fragment, useEffect, useMemo } from 'react'
+import { Check } from 'lucide-react'
+import picsouLogo from '@/assets/horizontal-white-picsou.svg'
 import { cn } from '@/lib/utils'
 import { SUPPORTED_LOCALES, resolveLocale } from '@/i18n/locales'
 
 /**
- * Shell for every setup route. Intentionally minimal — Apple's setup
- * assistants let the content breathe: one top progress strip, a compact
- * language switcher, one "Step N of M" pill, and negative space.
+ * Shell for every setup route: the logo and a compact language switch, a five-step
+ * indicator, then the step itself (a card, except the welcome moment).
  *
  * The step counter comes from URL path, not a nav state, so a browser
  * refresh keeps the right index visible.
@@ -51,25 +51,27 @@ export function SetupLayout() {
     document.head.appendChild(link)
   }, [])
 
-  const progressPct = Math.round((index / total) * 100)
   const activeLanguage = resolveLocale(i18n.language).code
   const switchLang = (lng: string) => {
     i18n.changeLanguage(lng)
   }
 
   return (
-    <div className="relative min-h-dvh bg-background setup-gradient">
-      <Progress
-        value={progressPct}
-        aria-label={t('setup.progress.bar', { current: index, total })}
-        className="fixed inset-x-0 top-0 z-50 h-1 rounded-none"
-      />
+    // overflow-x-clip: the confetti of the last step flies past the screen edges.
+    <div className="relative flex min-h-dvh flex-col overflow-x-clip bg-background">
+      <a
+        href="#setup-main"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:inline-flex focus:h-10 focus:items-center focus:rounded-md focus:bg-primary focus:px-6 focus:text-sm focus:font-medium focus:text-primary-foreground"
+      >
+        {t('setup.a11y.skipToContent')}
+      </a>
 
-      <header className="fixed left-4 right-4 top-4 z-40 flex items-center justify-between gap-3 sm:left-6 sm:right-6 sm:top-6">
+      <header className="mx-auto flex w-full max-w-2xl items-center justify-between gap-3 px-4 pt-5 sm:px-6 sm:pt-8">
+        <img src={picsouLogo} alt="Picsou" className="h-6 w-auto brightness-0 dark:invert" />
         <div
           role="radiogroup"
           aria-label={t('setup.intro.language')}
-          className="inline-flex min-h-12 shrink-0 items-center rounded-2xl border border-border/60 bg-background/80 p-1 backdrop-blur-md"
+          className="inline-flex gap-0.5 rounded-lg bg-muted p-0.5"
         >
           {SUPPORTED_LOCALES.map((locale) => (
             <button
@@ -79,9 +81,9 @@ export function SetupLayout() {
               aria-checked={activeLanguage === locale.code}
               onClick={() => switchLang(locale.code)}
               className={cn(
-                'inline-flex h-10 min-w-12 items-center justify-center rounded-xl px-4 text-sm font-medium transition-[background-color,color] sm:min-w-14 sm:px-5',
+                'inline-flex h-8 min-w-9 items-center justify-center rounded-md px-2.5 text-xs font-semibold transition-[background-color,color]',
                 activeLanguage === locale.code
-                  ? 'bg-primary text-primary-foreground'
+                  ? 'bg-card text-foreground ring-1 ring-border'
                   : 'text-muted-foreground hover:text-foreground'
               )}
             >
@@ -89,32 +91,50 @@ export function SetupLayout() {
             </button>
           ))}
         </div>
-
-        <span
-          className={cn(
-            'inline-flex h-10 min-w-0 items-center rounded-full border border-border/60',
-            'bg-background/80 px-4 text-xs font-medium text-muted-foreground',
-            'backdrop-blur-md'
-          )}
-          aria-live="polite"
-        >
-          <span className="truncate">
-            {t('setup.progress.label', { current: index, total })} — {label}
-          </span>
-        </span>
       </header>
+
+      <nav aria-label={t('setup.progress.bar', { current: index, total })} className="mx-auto mt-8 w-full max-w-2xl px-4 sm:px-6">
+        <ol className="flex items-center gap-2">
+          {MAIN_STEPS.map((step, i) => {
+            const state = i + 1 < index ? 'done' : i + 1 === index ? 'current' : 'upcoming'
+            return (
+              <Fragment key={step.path}>
+                {i > 0 && (
+                  <li aria-hidden="true" className={cn('h-px min-w-3 flex-1', i < index ? 'bg-primary' : 'bg-border')} />
+                )}
+                <li aria-current={state === 'current' ? 'step' : undefined} className="flex shrink-0 items-center gap-2">
+                  <span
+                    className={cn(
+                      'grid size-6 place-items-center rounded-full text-xs font-semibold tabular-nums',
+                      state === 'done' && 'bg-primary text-primary-foreground',
+                      state === 'current' && 'bg-card text-foreground ring-2 ring-primary',
+                      state === 'upcoming' && 'bg-muted text-muted-foreground'
+                    )}
+                  >
+                    {state === 'done' ? <Check className="size-3.5" aria-hidden="true" /> : i + 1}
+                  </span>
+                  <span
+                    className={cn(
+                      'hidden text-[13px] font-medium md:inline',
+                      state === 'upcoming' ? 'text-muted-foreground' : 'text-foreground'
+                    )}
+                  >
+                    {t(step.i18nKey)}
+                  </span>
+                </li>
+              </Fragment>
+            )
+          })}
+        </ol>
+        <p className="mt-3 text-[13px] font-medium text-muted-foreground md:sr-only" aria-live="polite">
+          {t('setup.progress.label', { current: index, total })} · <span className="text-foreground">{label}</span>
+        </p>
+      </nav>
 
       <main
         id="setup-main"
-        className="mx-auto flex min-h-dvh w-full max-w-xl flex-col justify-center px-5 py-20 sm:max-w-2xl sm:px-8 sm:py-24"
+        className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center px-4 py-8 sm:px-6 sm:py-12"
       >
-        <a
-          href="#setup-main"
-          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-20 focus:z-[60] focus:inline-flex focus:h-10 focus:items-center focus:rounded-full focus:bg-primary focus:px-6 focus:text-sm focus:font-medium focus:text-primary-foreground"
-        >
-          {t('setup.a11y.skipToContent')}
-        </a>
-
         <div
           key={location.pathname}
           className="w-full animate-setup-slide-in"

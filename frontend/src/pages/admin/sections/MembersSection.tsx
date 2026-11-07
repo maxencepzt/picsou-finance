@@ -1,17 +1,17 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Users, Link as LinkIcon, KeyRound, Trash2, Copy, Check, ShieldOff, Unlink, UserPlus } from 'lucide-react'
+import { Link as LinkIcon, KeyRound, Trash2, Copy, Check, ShieldOff, Unlink, UserPlus, MoreHorizontal, Loader2 } from 'lucide-react'
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { formatApiError } from '@/lib/errors'
+import { SettingsCard } from '../components/SettingsBlocks'
 import { useAuthStore } from '@/stores/auth-store'
 import type { FamilyMemberItem } from '@/features/family/api'
 import {
@@ -89,145 +89,140 @@ export function MembersSection() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Users className="size-5" />
-          {t('admin.members.title')}
-        </CardTitle>
-        <CardDescription>{t('admin.members.description')}</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <Input
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') handleCreateUser() }}
-            placeholder={t('admin.members.createUserPlaceholder')}
-            disabled={createUser.isPending}
-          />
-          <Button
-            onClick={handleCreateUser}
-            disabled={!newName.trim() || createUser.isPending}
-            className="shrink-0"
-          >
-            <UserPlus className="size-4" />
-            {t('admin.members.createUser')}
-          </Button>
-        </div>
+    <SettingsCard title={t('admin.members.title')} description={t('admin.members.description')}>
+      <form
+        className="flex gap-2 py-4"
+        onSubmit={(e) => { e.preventDefault(); handleCreateUser() }}
+      >
+        <Input
+          value={newName}
+          onChange={(e) => setNewName(e.target.value)}
+          placeholder={t('admin.members.createUserPlaceholder')}
+          aria-label={t('admin.members.createUserPlaceholder')}
+          disabled={createUser.isPending}
+          className="h-9"
+        />
+        <Button type="submit" size="xs" disabled={!newName.trim() || createUser.isPending} className="shrink-0">
+          {createUser.isPending ? <Loader2 className="animate-spin" aria-hidden="true" /> : <UserPlus aria-hidden="true" />}
+          <span className="max-sm:sr-only">{t('admin.members.createUser')}</span>
+        </Button>
+      </form>
 
-        {isLoading ? (
-          <p className="text-sm text-muted-foreground">{t('admin.members.loading')}</p>
-        ) : !members || members.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{t('admin.members.noMembers')}</p>
-        ) : (
-          <ul className="@container divide-y rounded-lg border">
-            {members.map((m) => {
-              const isSelf = m.id === currentUser?.memberId
+      {createUser.isError && (
+        <p role="alert" className="py-3 text-[13px] text-destructive">{formatApiError(createUser.error, t)}</p>
+      )}
 
-              return (
-                <li
-                  key={m.id}
-                  className="flex flex-col gap-3 p-3 @xl:flex-row @xl:items-center @xl:justify-between"
-                >
-                  <MemberSummary member={m} isSelf={isSelf} />
-
-                  <div className="flex flex-wrap gap-2 @xl:justify-end">
-                    {/* Create login OR regenerate activation link (non-activated) */}
-                    {m.managed && !m.activated && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={generateActivation.isPending}
-                        onClick={() => {
-                          generateActivation.mutate(m.id, {
-                            onSuccess: (d) => showLink(m.id, d.activationLink),
-                          })
-                        }}
-                      >
-                        <LinkIcon className="size-3.5" />
-                        {m.hasLogin
-                          ? t('admin.members.regenerateLink')
-                          : t('admin.members.createLogin')}
-                      </Button>
-                    )}
-
-                    {/* Reset password (only for active accounts that the admin doesn't own) */}
-                    {m.activated && !isSelf && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={resetPassword.isPending}
-                        onClick={() => {
-                          resetPassword.mutate(m.id, {
-                            onSuccess: (d) => showLink(m.id, d.resetLink),
-                          })
-                        }}
-                      >
-                        <KeyRound className="size-3.5" />
-                        {t('admin.members.resetPassword')}
-                      </Button>
-                    )}
-
-                    {/* Reset 2FA — locked-out account recovery */}
-                    {m.mfaEnabled && !isSelf && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-destructive hover:text-destructive"
-                        onClick={() => setResetMfaId(m.id)}
-                      >
-                        <ShieldOff className="size-3.5" />
-                        {t('admin.members.resetMfa')}
-                      </Button>
-                    )}
-
-                    {m.ssoLinked && !isSelf && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-destructive hover:text-destructive"
-                        onClick={() => setUnlinkSsoMember(m)}
-                      >
-                        <Unlink className="size-3.5" />
-                        {t('admin.members.unlinkSso')}
-                      </Button>
-                    )}
-
-                    {/* Delete (anyone but self and the seed admin) */}
-                    {!isSelf && m.managed && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-destructive hover:text-destructive"
-                        onClick={() => setDeletingId(m.id)}
-                      >
-                        <Trash2 className="size-3.5" />
-                        {t('admin.members.delete')}
-                      </Button>
-                    )}
-                  </div>
-                </li>
-              )
-            })}
-          </ul>
-        )}
-
-        {link && (
-          <div className="rounded-lg border bg-muted p-3 space-y-2">
-            <p className="text-sm font-medium">{t('admin.members.linkLabel')}</p>
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-              <code className="flex-1 break-all rounded-xl bg-background px-3 py-2 text-sm">
-                {link.url}
-              </code>
-              <Button size="sm" variant="outline" onClick={handleCopy}>
-                {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
-                {copied ? t('admin.members.copied') : t('admin.members.copyLink')}
-              </Button>
-            </div>
+      {link && (
+        <div className="space-y-2 py-4">
+          <p className="text-sm font-medium text-foreground">{t('admin.members.linkLabel')}</p>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
+            <code className="flex min-h-10 flex-1 items-center rounded-xl bg-muted px-4 py-2 font-mono text-[13px] break-all text-foreground">
+              {link.url}
+            </code>
+            <Button variant="outline" onClick={handleCopy} className="w-full sm:w-auto sm:min-w-36">
+              {copied ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
+              {copied ? t('admin.members.copied') : t('admin.members.copyLink')}
+            </Button>
           </div>
-        )}
-      </CardContent>
+        </div>
+      )}
+
+      {isLoading ? (
+        <p className="py-4 text-sm text-muted-foreground">{t('admin.members.loading')}</p>
+      ) : !members || members.length === 0 ? (
+        <p className="py-4 text-sm text-muted-foreground">{t('admin.members.noMembers')}</p>
+      ) : (
+        <ul className="divide-y divide-border">
+          {members.map((m) => {
+            const isSelf = m.id === currentUser?.memberId
+            const canResetMfa = m.mfaEnabled && !isSelf
+            const canDelete = !isSelf && m.managed
+
+            return (
+              <li key={m.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 py-3">
+                <MemberSummary member={m} isSelf={isSelf} />
+
+                <div className="flex shrink-0 items-center gap-1.5 max-sm:w-full max-sm:justify-end">
+                  {/* Create login OR regenerate activation link (non-activated) */}
+                  {m.managed && !m.activated && (
+                    <Button
+                      variant="outline"
+                      size="xs"
+                      disabled={generateActivation.isPending}
+                      onClick={() => {
+                        generateActivation.mutate(m.id, {
+                          onSuccess: (d) => showLink(m.id, d.activationLink),
+                        })
+                      }}
+                    >
+                      <LinkIcon aria-hidden="true" />
+                      {m.hasLogin
+                        ? t('admin.members.regenerateLink')
+                        : t('admin.members.createLogin')}
+                    </Button>
+                  )}
+
+                  {/* Reset password (only for active accounts that the admin doesn't own) */}
+                  {m.activated && !isSelf && (
+                    <Button
+                      variant="outline"
+                      size="xs"
+                      disabled={resetPassword.isPending}
+                      onClick={() => {
+                        resetPassword.mutate(m.id, {
+                          onSuccess: (d) => showLink(m.id, d.resetLink),
+                        })
+                      }}
+                    >
+                      <KeyRound aria-hidden="true" />
+                      {t('admin.members.resetPassword')}
+                    </Button>
+                  )}
+
+                  {m.ssoLinked && !isSelf && (
+                    <Button
+                      variant="outline"
+                      size="xs"
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => setUnlinkSsoMember(m)}
+                    >
+                      <Unlink aria-hidden="true" />
+                      {t('admin.members.unlinkSso')}
+                    </Button>
+                  )}
+
+                  {/* Destructive actions, grouped behind one menu */}
+                  {(canResetMfa || canDelete) && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon-sm" aria-label={t('admin.members.moreActions', { name: m.displayName })}>
+                          <MoreHorizontal aria-hidden="true" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-auto">
+                        {/* Reset 2FA — locked-out account recovery */}
+                        {canResetMfa && (
+                          <DropdownMenuItem variant="destructive" onSelect={() => setResetMfaId(m.id)}>
+                            <ShieldOff aria-hidden="true" />
+                            {t('admin.members.resetMfa')}
+                          </DropdownMenuItem>
+                        )}
+                        {/* Delete (anyone but self and the seed admin) */}
+                        {canDelete && (
+                          <DropdownMenuItem variant="destructive" onSelect={() => setDeletingId(m.id)}>
+                            <Trash2 aria-hidden="true" />
+                            {t('admin.members.delete')}
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
+                </div>
+              </li>
+            )
+          })}
+        </ul>
+      )}
 
       <ConfirmDialog
         open={deletingId !== null}
@@ -257,6 +252,6 @@ export function MembersSection() {
       />
 
       <UnlinkSsoDialog member={unlinkSsoMember} onClose={() => setUnlinkSsoMember(null)} />
-    </Card>
+    </SettingsCard>
   )
 }

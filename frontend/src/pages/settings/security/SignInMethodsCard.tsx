@@ -12,10 +12,9 @@ import { useMounted } from '@/hooks/use-mounted'
 import { getErrorCode } from '@/lib/errors'
 import { restartSsoRevalidation } from '@/lib/sso-revalidate'
 import { formatDateTime } from '@/lib/utils'
+import { ROW_BUTTON, SettingRow, SettingsCard } from '../SettingRow'
 import { ReauthPanel, type ReauthAction } from './ReauthPanel'
 
-const ROW = 'flex flex-col gap-3 p-3 @xl:flex-row @xl:items-center @xl:justify-between'
-const ROW_ACTION = 'w-full @xl:w-auto'
 
 export function SignInMethodsCard({ onAction }: { onAction: (action: ReauthAction) => void }) {
   const { t } = useTranslation()
@@ -42,96 +41,90 @@ export function SignInMethodsCard({ onAction }: { onAction: (action: ReauthActio
   const passwordHintId = `${hintId}-password`
 
   return (
-    <div className="space-y-3">
-      <p className="text-sm font-medium">{t('settings.signInMethods.title')}</p>
-      <ul className="divide-y rounded-lg border">
-        <li className={ROW}>
-          <div className="min-w-0 space-y-0.5">
-            <p className="text-sm font-medium">{t('settings.signInMethods.password')}</p>
-            <p className="text-xs text-muted-foreground">
-              {methods.hasPassword
-                ? t('settings.signInMethods.passwordOn')
-                : t('settings.signInMethods.passwordOff', { provider })}
-            </p>
+    <SettingsCard title={t('settings.signInMethods.title')}>
+      <SettingRow
+        label={t('settings.signInMethods.password')}
+        description={
+          <>
+            {methods.hasPassword
+              ? t('settings.signInMethods.passwordOn')
+              : t('settings.signInMethods.passwordOff', { provider })}
             {methods.hasPassword && !canTurnOff && (
-              <p id={passwordHintId} className="text-xs text-muted-foreground">
+              <span id={passwordHintId} className="block">
                 {t('settings.signInMethods.turnOffHint', { provider })}
-              </p>
+              </span>
             )}
-          </div>
-          {methods.hasPassword ? (
-            <Button
-              variant="outline"
-              size="sm"
-              className={ROW_ACTION}
-              disabled={!canTurnOff}
-              aria-describedby={canTurnOff ? undefined : passwordHintId}
-              onClick={() => onAction('remove-password')}
-            >
-              {t('settings.signInMethods.turnOff')}
-            </Button>
-          ) : (
-            <Button variant="outline" size="sm" className={ROW_ACTION} onClick={() => onAction('set-password')}>
-              {t('settings.signInMethods.setPassword')}
-            </Button>
-          )}
-        </li>
-        {methods.identities.map(identity => {
-          const locked = isLastMethod(identity)
-          const lockedHintId = `${hintId}-${identity.id}`
-          return (
-            <li key={identity.id} className={ROW}>
-              <div className="min-w-0 space-y-0.5">
-                <p className="break-words text-sm font-medium">
-                  <IdentityLabel identity={identity} providerName={provider} />
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {identity.lastLoginAt
-                    ? `${t('common.labelColon', { label: t('settings.signInMethods.lastSignIn') })} ${formatDateTime(identity.lastLoginAt)}`
-                    : t('settings.signInMethods.neverUsed')}
-                </p>
+          </>
+        }
+      >
+        {methods.hasPassword ? (
+          <Button
+            variant="outline"
+            size="xs"
+            className={ROW_BUTTON}
+            disabled={!canTurnOff}
+            aria-describedby={canTurnOff ? undefined : passwordHintId}
+            onClick={() => onAction('remove-password')}
+          >
+            {t('settings.signInMethods.turnOff')}
+          </Button>
+        ) : (
+          <Button variant="outline" size="xs" className={ROW_BUTTON} onClick={() => onAction('set-password')}>
+            {t('settings.signInMethods.setPassword')}
+          </Button>
+        )}
+      </SettingRow>
+      {methods.identities.map(identity => {
+        const locked = isLastMethod(identity)
+        const lockedHintId = `${hintId}-${identity.id}`
+        return (
+          <SettingRow
+            key={identity.id}
+            label={<span className="break-words"><IdentityLabel identity={identity} providerName={provider} /></span>}
+            description={
+              <>
+                {identity.lastLoginAt
+                  ? `${t('common.labelColon', { label: t('settings.signInMethods.lastSignIn') })} ${formatDateTime(identity.lastLoginAt)}`
+                  : t('settings.signInMethods.neverUsed')}
                 {locked && (
-                  <p id={lockedHintId} className="text-xs text-muted-foreground">
+                  <span id={lockedHintId} className="block">
                     {t('settings.signInMethods.unlinkHint')}
-                  </p>
+                  </span>
                 )}
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                className={ROW_ACTION}
-                disabled={locked}
-                aria-describedby={locked ? lockedHintId : undefined}
-                onClick={() => onAction(`unlink-${identity.id}`)}
-              >
-                <Unlink />
-                {t('settings.signInMethods.unlink')}
-              </Button>
-            </li>
-          )
-        })}
-      </ul>
-      {(methods.adminGroupManaged || methods.ssoEnabled) && (
-        <div className="flex flex-col gap-3 @xl:flex-row @xl:items-center @xl:justify-between">
-          {methods.adminGroupManaged && (
-            <p className="text-xs text-muted-foreground">
-              {t('settings.signInMethods.adminGroupNote', { provider })}
-            </p>
-          )}
-          {methods.ssoEnabled && (
+              </>
+            }
+          >
             <Button
               variant="outline"
-              size="sm"
-              className={`${ROW_ACTION} @xl:ml-auto`}
-              onClick={() => onAction('link')}
+              size="xs"
+              className={ROW_BUTTON}
+              disabled={locked}
+              aria-describedby={locked ? lockedHintId : undefined}
+              onClick={() => onAction(`unlink-${identity.id}`)}
             >
+              <Unlink />
+              {t('settings.signInMethods.unlink')}
+            </Button>
+          </SettingRow>
+        )
+      })}
+      {(methods.adminGroupManaged || methods.ssoEnabled) && (
+        <SettingRow
+          label={
+            methods.adminGroupManaged
+              ? <span className="text-[13px] font-normal text-muted-foreground">{t('settings.signInMethods.adminGroupNote', { provider })}</span>
+              : null
+          }
+        >
+          {methods.ssoEnabled && (
+            <Button variant="outline" size="xs" className={ROW_BUTTON} onClick={() => onAction('link')}>
               <Link2 />
               {t('settings.signInMethods.link', { provider })}
             </Button>
           )}
-        </div>
+        </SettingRow>
       )}
-    </div>
+    </SettingsCard>
   )
 }
 

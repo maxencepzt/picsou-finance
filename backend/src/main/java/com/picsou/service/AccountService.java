@@ -383,8 +383,16 @@ public class AccountService {
     }
 
     public List<HoldingResponse> getHoldings(Long accountId, Long memberId) {
-        Account account = getOrThrow(accountId, memberId); // validate account exists
-        List<AccountHolding> holdings = holdingRepository.findByAccountIdOrderByCurrentPriceDesc(accountId);
+        return getHoldings(getOrThrow(accountId, memberId)); // validate account exists
+    }
+
+    /**
+     * Holdings of an account the caller already resolved through
+     * {@link AccountAccessResolver#readableAccounts}. The id-based form above only admits the
+     * owner, so a co-owner's analysis goes through this one.
+     */
+    public List<HoldingResponse> getHoldings(Account account) {
+        List<AccountHolding> holdings = holdingRepository.findByAccountIdOrderByCurrentPriceDesc(account.getId());
         Map<String, PriceService.Quote> quotes = quotesFor(account, holdings);
         // Both lookups are batched outside the stream: calling either inside it would issue one
         // provider request per holding instead of one per page.

@@ -170,6 +170,30 @@ exists to prevent.
 
 The figure is offered, never stored: accepting it is a `PUT`.
 
+### On screen
+
+`PyramidSection.tsx` renders two cards side by side at the top of `/analysis`:
+
+- **Composition score**: a score ring (`ScoreRing`, only when `score.global` is not null, else
+  "not rated yet"), then the sub-scores — allocation, safety net, the crypto penalty and the
+  leverage bonus only once they are above zero, and the misplaced share — then the alerts and,
+  when the expenses are unknown, a hint to state them.
+- **Pyramide patrimoniale**: the four investment tiers from riskiest to safest (crypto,
+  alternatives, equity, property). Each row has its value and its target in euros, a bar of its
+  actual share with the target as a marker on it, and the gap in points only when it is at least
+  `NOTABLE_GAP` (5) — `warning` when over target, ink when under (blue is kept for controls). The safety net is the
+  base box under the tiers: euros against its target, a coverage bar, a short / excess / covered
+  badge, and the current-account cash (`dailyCashEur`) when there is some.
+
+The targets dialog (`AllocationTargetsModal`) lists the four tiers with their colour dot and a
+right-aligned field with a `%` suffix; the expense suggestion's "Use" button is the compact size.
+
+Tier colours come from `pages/analysis/tier-colors.ts` (`TIER_COLORS`), one asset-class token per
+tier, so the same money keeps the same colour across the app. Below the two cards the page shows
+the projection ([goal-recurring-investment.md](./goal-recurring-investment.md)) and financial
+independence ([financial-independence.md](./financial-independence.md)); the diversification
+section moved to `/investments` ([investments-page.md](./investments-page.md)).
+
 ### Key files
 
 Backend:
@@ -185,7 +209,7 @@ Backend:
 - `backend/src/main/resources/db/migration/V83__wealth_allocation.sql`
 
 Frontend:
-- `frontend/src/pages/analysis/AnalysisPage.tsx`, `PyramidSection.tsx`, `AllocationTargetsModal.tsx`
+- `frontend/src/pages/analysis/AnalysisPage.tsx`, `PyramidSection.tsx`, `tier-colors.ts`, `AllocationTargetsModal.tsx`
 - `frontend/src/features/analysis/{api,hooks}.ts`
 - `frontend/src/components/layout/sidebar-nav-items.ts`, `MobileBottomNav.tsx`
 - `frontend/src/lib/constants.ts` — `HOLDING_ACCOUNT_TYPES`, `analysis` stale time
@@ -259,9 +283,8 @@ GET /api/analysis/pyramid
 - **`HOLDING_ACCOUNT_TYPES` was triplicated** across `AccountsPage`, `AccountDetailPage` and
   `features/accounts/hooks.ts`. It now lives in `lib/constants.ts`; adding a position-bearing type
   means one edit, not three.
-- **The mobile bottom bar lost its centre logo.** Five routes left no honest way to keep the
-  2-logo-2 symmetry. Its height is unchanged (`size-10` + `py-3` + `bottom-4` = 80 px), so
-  `AppLayout`'s `pb-20` still matches. `frontend/src/assets/picsou_logo_white.svg` is now unused.
+- **The mobile bar is documented in [sidebar-navigation.md](./sidebar-navigation.md)** since the
+  redesign (five labelled entries and "More").
 
 ## Tests
 
@@ -278,7 +301,10 @@ GET /api/analysis/pyramid
 - `AllocationTargetServiceTest` — defaults without an insert, create, update, clearing expenses
 - `AllocationTargetsRequestTest` — pins that `@AssertTrue` on a *record* is picked up at all
 - `AnalysisControllerTest` — the member id comes from `UserContext`
-- `AnalysisPage.test.tsx`, `PyramidSection.test.tsx`, `e2e/analysis.spec.ts`
+- `AnalysisPage.test.tsx`, `PyramidSection.test.tsx` (one row per tier, unrated safety net, the
+  gap flagged only past 5 points, excess cushion, modifiers hidden at zero)
+- `e2e/analysis.spec.ts` — the tier check is scoped to the "Pyramide patrimoniale" card, because
+  the score card's alerts can name a tier too; the safety net is the base box, not a tier row
 
 ## Links
 

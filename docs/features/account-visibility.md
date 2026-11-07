@@ -1,6 +1,6 @@
 # Feature: Account Visibility (hidden accounts)
 
-> Last updated: 2026-07-15
+> Last updated: 2026-11-03
 
 ## Context
 
@@ -63,10 +63,9 @@ filtering):
   saves, and returns the updated `AccountResponse`. Same small-dedicated-endpoint pattern as
   `/real-estate` and `/debt` on `AccountController`.
 
-### Frontend — `/sync` "Comptes" tab
+### Frontend — `/sync?tab=visibility` "Comptes visibles" view
 
-`AccountsVisibilityTab.tsx`, wired into `SyncPage.tsx` as a new `TabsTrigger`/`TabsContent` pair
-(`value="visibility"`, label `sync.visibility.title`). It:
+`AccountsVisibilityTab.tsx`, rendered by `ProviderView.tsx` for `?tab=visibility` and reached from the "Comptes visibles" button of the `/sync` header (it is not a provider tile; see [sync-page.md](./sync-page.md)); label `sync.visibility.title`. It:
 
 1. Fetches every account via `useAllAccounts()` (`GET /accounts?includeHidden=true`).
 2. Groups them with `useAccountTree()` (`features/accounts/hooks.ts`) into wallet/pocket pairs
@@ -101,7 +100,7 @@ success, since a visibility change can affect all three.
   `backend/src/main/java/com/picsou/service/FamilyViewService.java` — hidden-excluding call sites
 - `frontend/src/features/accounts/hooks.ts` — `useAccountTree`, `useAllAccounts`, `useToggleAccountVisibility`
 - `frontend/src/pages/sync/AccountsVisibilityTab.tsx` — the "Comptes" tab UI
-- `frontend/src/pages/sync/SyncPage.tsx` — tab wiring
+- `frontend/src/pages/sync/ProviderView.tsx` / `SyncPage.tsx` — view wiring and header entry
 
 ## Technical choices
 

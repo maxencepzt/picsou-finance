@@ -1,6 +1,6 @@
 # Feature: Crypto Tracking
 
-> Last updated: 2026-08-07
+> Last updated: 2026-11-03
 
 ## Context
 
@@ -114,6 +114,7 @@ The on-chain adapters (EVM, Solana) validate the JSON-RPC envelope through `Json
 - `backend/src/main/java/com/picsou/adapter/MeriaAdapter.java` -- Meria REST API, single `API-KEY` header, wallets + stakings + lendings
 - `backend/src/main/java/com/picsou/model/CryptoExchangePosition.java` -- per-product breakdown behind an exchange account's holdings
 - `frontend/src/components/shared/PositionsByProduct.tsx` -- Spot / Staking / Lending sections on the account page
+- `frontend/src/pages/sync/CryptoExchangeTab.tsx`, `CryptoWalletTab.tsx` -- one card of rows (logo or monogram, state dot + word, last sync, labelled sync / remove icon buttons) with *Add* in its header; `CryptoExchangeForm` / `CryptoWalletForm` pick the exchange or chain in a `SegmentedControl`
 - `backend/src/main/java/com/picsou/adapter/BitcoinWalletAdapter.java` -- Blockstream Esplora, BIP32 key derivation
 - `backend/src/main/java/com/picsou/adapter/EvmWalletAdapter.java` -- EVM multichain fan-out (native + curated ERC-20 across all enabled networks), keyless PublicNode RPCs
 - `backend/src/main/java/com/picsou/adapter/SolanaWalletAdapter.java` -- Solana mainnet RPC
@@ -246,6 +247,6 @@ Upsert Account (type=CRYPTO, no ticker)
 - Related ADR: [EVM multichain wallets](../decisions/2026-07-17-evm-multichain-wallets.md)
 - Related ADR: [AES-256-GCM for crypto secrets](../decisions/2026-03-01-aes-gcm-crypto-secrets.md)
 - Related ADR: [Ports and adapters](../decisions/2026-01-01-ports-and-adapters.md)
-- Related feature: [Logos on account cards](./bank-logos.md) — Meria's mark ships in `frontend/public/exchanges/`, mapped on `Account.provider`; a wallet's account instead carries a `logoKey` (`blockchain` by default, `ledger` if the user picks it)
+- Related feature: [Logos on account rows](./bank-logos.md) — Meria's mark ships in `frontend/public/exchanges/`, mapped on `Account.provider`; a wallet's account instead carries a `logoKey` (`blockchain` by default, `ledger` if the user picks it)
 - Related feature: [Encryption at rest](./encryption-at-rest.md)
 - Related feature: [Price service](./price-service.md)

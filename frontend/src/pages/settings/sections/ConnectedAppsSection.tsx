@@ -7,6 +7,7 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { formatApiError } from '@/lib/errors'
 import { formatDate, formatTimeAgo } from '@/lib/utils'
 import { useConnectedApps, useRevokeConnectedApp } from '@/features/connectedApps/hooks'
+import { ROW_BUTTON, SettingsCard } from '../SettingRow'
 
 export function ConnectedAppsSection() {
   const { t } = useTranslation()
@@ -21,20 +22,17 @@ export function ConnectedAppsSection() {
   }
 
   return (
-    <div className="space-y-4">
+    <SettingsCard title={t('connectedApps.sectionTitle')} description={t('connectedApps.sectionDescription')}>
       {isLoading ? (
         <p className="text-sm text-muted-foreground">{t('connectedApps.loading')}</p>
       ) : !Array.isArray(apps) || apps.length === 0 ? (
         <p className="text-sm text-muted-foreground">{t('connectedApps.empty')}</p>
       ) : (
-        <ul className="divide-y rounded-lg border">
+        <ul className="divide-y divide-border">
           {apps.map((a) => (
-            <li
-              key={a.id}
-              className="flex flex-col gap-3 p-3 sm:flex-row sm:items-start sm:justify-between"
-            >
-              <div className="min-w-0 space-y-1.5">
-                <span className="font-medium truncate">{a.clientName}</span>
+            <li key={a.id} className="flex flex-wrap items-start gap-x-3 gap-y-2 py-3 first:pt-0 last:pb-0">
+              <div className="min-w-56 flex-1 space-y-1.5">
+                <span className="block truncate text-sm font-medium text-foreground">{a.clientName}</span>
                 <div className="flex flex-wrap gap-1">
                   {a.scopes.map((s) => (
                     <Badge key={s} variant="secondary" className="font-mono text-[10px]">
@@ -44,7 +42,7 @@ export function ConnectedAppsSection() {
                 </div>
                 <p className="text-xs text-muted-foreground">
                   {t('connectedApps.issued', { value: formatDate(a.issuedAt) })}
-                  <span className="mx-2">·</span>
+                  <span className="mx-1.5" aria-hidden="true">·</span>
                   {a.lastUsedAt
                     ? t('connectedApps.lastUsed', { value: formatTimeAgo(a.lastUsedAt) })
                     : t('connectedApps.lastUsedNever')}
@@ -52,11 +50,11 @@ export function ConnectedAppsSection() {
               </div>
               <Button
                 variant="ghost"
-                size="sm"
-                className="shrink-0 text-destructive hover:text-destructive"
+                size="xs"
+                className={`${ROW_BUTTON} ml-auto shrink-0 text-destructive hover:text-destructive`}
                 onClick={() => setRevokingId(a.id)}
               >
-                <Trash2 className="size-3.5" />
+                <Trash2 aria-hidden="true" />
                 {t('connectedApps.revoke')}
               </Button>
             </li>
@@ -75,6 +73,6 @@ export function ConnectedAppsSection() {
         error={revokeApp.isError ? formatApiError(revokeApp.error, t) : undefined}
         variant="destructive"
       />
-    </div>
+    </SettingsCard>
   )
 }

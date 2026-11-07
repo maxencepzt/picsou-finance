@@ -1,6 +1,6 @@
 # Feature: Bank Sync
 
-> Last updated: 2026-10-31 (merged account attribution, provider scope, and currency-aware matching)
+> Last updated: 2026-11-03
 
 > **Status (1.0.0).** Enable Banking is the only enabled provider. The Powens
 > adapter ships in the codebase but is **experimental and untested** —
@@ -302,7 +302,7 @@ preference instead of degrading to a bare name match.
 1. **CREATED** -- `SyncService.initiateConnection()` calls the port and stores a `Requisition` with `authLink`.
 2. **LINKED** -- `SyncService.completeConnection()` exchanges the OAuth callback code, fetches balances, upserts at least one account, and marks the requisition as LINKED. Immediately after a successful exchange, `RequisitionLifecycleWriter` commits the `session_id` and clears the spent OAuth nonce in an independent `REQUIRES_NEW` transaction. A later fetch or account-upsert rollback therefore cannot restore the stale authorization id.
 3. **FAILED** -- If the code exchange, balance fetch, or account upsert fails, or if Enable Banking returns zero accounts after polling, `RequisitionLifecycleWriter` marks the requisition FAILED in an independent transaction. Account and snapshot writes are explicitly flushed inside the guarded block so deferred constraints surface before method return; they still roll back atomically, while the session id remains available to `retrySync()`.
-4. **Reconnect** -- `POST /api/sync/{id}/reconnect` (`SyncService.reconnect()`) re-initiates the OAuth flow **on the existing requisition** for the cases a retry can never fix: a failed code exchange (the stored id is an authorization id, not a session) or an expired/revoked PSD2 consent (~90 days). Status returns to CREATED with a fresh `authLink`; accounts survive because `upsertAccount` matches on `externalAccountId`. **Refused for LINKED requisitions** — overwriting a working session id with an unconsumed authorization id would break scheduled syncs if the user abandons the new OAuth flow. Exposed in the UI as a "Reconnect to bank" button next to retry on FAILED connections (BankSyncTab and SyncAllModal). Rate-limited like `/initiate` (it triggers an outbound EB `/auth` call), on its own `ip + endpoint` bucket — as is `/complete`, whose `exchangeCode` + `fetchBalances` also hit the provider.
+4. **Reconnect** -- `POST /api/sync/{id}/reconnect` (`SyncService.reconnect()`) re-initiates the OAuth flow **on the existing requisition** for the cases a retry can never fix: a failed code exchange (the stored id is an authorization id, not a session) or an expired/revoked PSD2 consent (~90 days). Status returns to CREATED with a fresh `authLink`; accounts survive because `upsertAccount` matches on `externalAccountId`. **Refused for LINKED requisitions** — overwriting a working session id with an unconsumed authorization id would break scheduled syncs if the user abandons the new OAuth flow. Exposed in the UI as a "Reconnect to bank" button next to retry on FAILED connections in BankSyncTab, and as the **Reconnecter** action of a FAILED or EXPIRED bank row in the Sync overview and SyncAllModal (both list it under "to reconnect"; see [sync-page.md](./sync-page.md)). Rate-limited like `/initiate` (it triggers an outbound EB `/auth` call), on its own `ip + endpoint` bucket — as is `/complete`, whose `exchangeCode` + `fetchBalances` also hit the provider.
 
 Every public method of `EnableBankingBankConnector` maps **all** provider failures (HTTP errors, timeouts, connection errors) to `SyncException`, keeping the external-error contract stable. `completeConnection()` additionally catches arbitrary runtime failures from account persistence, marks the requisition retryable through the independent lifecycle writer, and lets its main transaction roll back partial account/snapshot work.
 
@@ -340,6 +340,7 @@ SyncController.initiate() --> SyncService --> BankConnectorPort.initiateConnecti
         |
         v
 User authorizes in browser --> redirect to /sync/callback?code=xxx&state=yyy
+        |                      (SyncPage renders the banks view for a callback URL with no ?tab=)
         |                      (frontend POSTs code + state to /api/sync/complete;
         |                       the requisition is resolved by its stored state nonce)
         |
@@ -444,7 +445,7 @@ Because the text fields (Application ID + Redirect URI) live in Postgres while t
 - **`IntegrationsHealthService` queries `/aspsps` unfiltered too**, deliberately:
   it is a JWT/connectivity probe (`toBodilessEntity()`), and leaving a lone
   `psu_type=personal` there would read as an oversight.
-- **Bank logos**: `InstitutionData.logoUrl` (Enable Banking only — Powens hardcodes `null`) is captured at connection time and copied onto each `Account`. See [bank-logos.md](./bank-logos.md) for the capture/backfill flow and the account card fallback to `color`.
+- **Bank logos**: `InstitutionData.logoUrl` (Enable Banking only — Powens hardcodes `null`) is captured at connection time and copied onto each `Account`. See [bank-logos.md](./bank-logos.md) for the capture/backfill flow and the account row's monogram fallback.
 - **Deleting the last account on a requisition deletes the requisition** (see [the account-deletion ADR](../decisions/2026-08-11-account-deletion-removes-its-connection.md)). `upsertAccount` refuses to resurrect a soft-deleted account, so a requisition whose accounts are all deleted can never produce one again — it would sync forever, cost an outbound call per run, and still appear in "Sync accounts" offering to sync something the user removed. `AccountConnectionService` removes it once no live account is left; a requisition backing several accounts survives until the last one goes. The confirmation dialog names the bank first (`GET /accounts/{id}/deletion-impact`), because getting it back means a full OAuth round trip through the bank — unlike a wallet, which is re-added by pasting an address.
 - **`account.requisition_id` is what makes that possible, and it is nullable on purpose**: every other connector is recognisable from `external_account_id` (`wallet_`, `amundi_`, `tr_`, `bd_`, `ibkr_`, `sfin_`, `wise_jar_`, `degiro-portfolio`), but an Enable Banking account holds the bank's own opaque id and carries no namespace. V76 adds the column and `upsertAccount` sets it on **both** the create and the update path, so rows that predate it link themselves on their next sync. The V76 backfill matches `provider` against `institution_name` and deliberately skips members holding several requisitions for one institution — a name cannot say which one, and those rows keep their connection rather than risk removing the wrong one. Do not read `NULL` as "not a bank account".
 
@@ -467,4 +468,4 @@ Because the text fields (Application ID + Redirect URI) live in Postgres while t
 - Related ADR: [Dual bank providers](../decisions/2026-03-01-dual-bank-providers.md)
 - Related ADR: [Ports and adapters](../decisions/2026-01-01-ports-and-adapters.md)
 - Downstream feature: [Budget & Cashflow](./budget.md) (consumes ingested transactions)
-- Related: [bank-logos.md](./bank-logos.md) — logo capture/backfill and account card rendering
+- Related: [bank-logos.md](./bank-logos.md) — logo capture/backfill and account row rendering

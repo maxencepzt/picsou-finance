@@ -1,6 +1,6 @@
 # Feature: Account spreadsheet export (xlsx)
 
-> Last updated: 2026-08-19
+> Last updated: 2026-11-03
 
 ## Context
 
@@ -219,8 +219,8 @@ trade-offs that come with it.
 - **Balances are the account's full value, not the viewer's share.** `sharePercent` is written
   beside them so a reader can weight a co-owned account themselves; nothing in the workbook
   pre-multiplies. Consistent with the account list (see
-  [account-ownership-shares.md](account-ownership-shares.md)), and different from the dashboard's
-  `RealEstateSummaryCard`, which is weighted server-side.
+  [account-ownership-shares.md](account-ownership-shares.md)), and different from the dashboard figures,
+  which are weighted server-side.
 - **A `LOAN` account can have no `Debt` row.** It is typed in and never detailed; the sheet then
   shows whatever `DebtResponse` carried and no schedule, instead of failing the whole export.
 - **The service is `@Transactional(readOnly = true)`** so the lazy associations behind the property

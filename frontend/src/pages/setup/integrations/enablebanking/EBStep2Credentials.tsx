@@ -5,6 +5,9 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Loader2 } from 'lucide-react'
+import { SetupNote } from '../../components/SetupCard'
 import { EBSubstepShell } from './EBSubstepShell'
 import {
   enableBankingConfigSchema,
@@ -87,18 +90,29 @@ export function EBStep2Credentials({ onNext, onBack }: Props) {
   })
 
   return (
-    <EBSubstepShell current={3} total={5}>
-      <form onSubmit={onSubmit} noValidate className="space-y-6">
-        <div className="text-center space-y-2">
-          <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">
-            {t('setup.enablebanking.creds.title')}
-          </h2>
-          <p className="mx-auto max-w-md text-sm text-muted-foreground">
-            {t('setup.enablebanking.creds.body')}
-          </p>
-        </div>
-
-        <div className="space-y-1.5">
+    <form onSubmit={onSubmit} noValidate>
+      <EBSubstepShell
+        current={3}
+        total={5}
+        title={t('setup.enablebanking.creds.title')}
+        description={t('setup.enablebanking.creds.body')}
+        footer={
+          <>
+            <Button type="button" variant="ghost" onClick={onBack} className="w-full sm:mr-auto sm:w-auto">
+              {t('setup.enablebanking.back')}
+            </Button>
+            <Button
+              type="submit"
+              disabled={writeConfig.isPending || !formState.isValid || !prodAcknowledged}
+              className="w-full sm:w-auto"
+            >
+              {writeConfig.isPending && <Loader2 className="animate-spin" aria-hidden="true" />}
+              {t('setup.enablebanking.continue')}
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-2">
           <Label htmlFor="eb-app-id">{t('setup.enablebanking.creds.applicationId')}</Label>
           <Input
             id="eb-app-id"
@@ -106,61 +120,40 @@ export function EBStep2Credentials({ onNext, onBack }: Props) {
             spellCheck={false}
             placeholder="00000000-0000-0000-0000-000000000000"
             aria-invalid={!!formState.errors.applicationId}
+            aria-describedby="eb-app-id-hint"
             onPaste={handlePasteApplicationId}
+            className="font-mono"
             {...register('applicationId')}
           />
-          {formState.errors.applicationId ? (
-            <p className="text-xs text-destructive">
-              {t(formState.errors.applicationId.message ?? 'setup.enablebanking.appIdFormat')}
-            </p>
-          ) : (
-            <p className="text-xs text-muted-foreground">
-              {t('setup.enablebanking.creds.applicationIdHint')}
-            </p>
-          )}
+          <p id="eb-app-id-hint" className={formState.errors.applicationId ? 'text-[13px] text-destructive' : 'text-[13px] text-muted-foreground'}>
+            {formState.errors.applicationId
+              ? t(formState.errors.applicationId.message ?? 'setup.enablebanking.appIdFormat')
+              : t('setup.enablebanking.creds.applicationIdHint')}
+          </p>
         </div>
 
         {/* Hidden redirectUri — validated but not user-editable here; the
             prior substep displays it for the user to register in EB. */}
         <input type="hidden" {...register('redirectUri')} />
 
-        <label className="flex items-start gap-3 rounded-xl border border-border/60 bg-muted/30 p-3 text-left cursor-pointer">
-          <input
-            type="checkbox"
+        <div className="flex items-start gap-3 rounded-xl bg-warning/10 px-4 py-3">
+          <Checkbox
+            id="eb-prod-ack"
             checked={prodAcknowledged}
-            onChange={(e) => setProdAcknowledged(e.target.checked)}
-            className="mt-0.5 h-4 w-4 flex-shrink-0 cursor-pointer rounded border-border accent-primary"
-            aria-describedby="eb-prod-ack-desc"
+            onCheckedChange={(value) => setProdAcknowledged(value === true)}
+            className="mt-0.5 bg-card"
           />
-          <span id="eb-prod-ack-desc" className="text-xs sm:text-sm">
+          <Label htmlFor="eb-prod-ack" className="cursor-pointer leading-5 font-normal">
             {t('setup.enablebanking.creds.prodAcknowledge')}
-          </span>
-        </label>
+          </Label>
+        </div>
 
         {serverError && (
-          <p role="alert" className="text-sm text-destructive">
+          <SetupNote tone="error" role="alert">
             {serverError}
-          </p>
+          </SetupNote>
         )}
-
-        <div className="flex flex-col gap-2 sm:flex-row sm:justify-between">
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={onBack}
-            className="w-full sm:w-auto"
-          >
-            {t('setup.enablebanking.back')}
-          </Button>
-          <Button
-            type="submit"
-            disabled={writeConfig.isPending || !formState.isValid || !prodAcknowledged}
-            className="w-full rounded-full sm:w-auto"
-          >
-            {t('setup.enablebanking.continue')}
-          </Button>
-        </div>
-      </form>
-    </EBSubstepShell>
+      </EBSubstepShell>
+    </form>
   )
 }

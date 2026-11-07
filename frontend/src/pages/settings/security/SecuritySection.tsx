@@ -2,10 +2,13 @@ import { useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
-import { Loader2, ShieldCheck, ShieldOff, KeyRound, Download } from 'lucide-react'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Download, KeyRound } from 'lucide-react'
 import { useMfaStatus } from '@/features/mfa/hooks'
 import { ssoErrorMessage } from '@/features/sso/errors'
 import { useSignInMethods } from '@/features/sso/hooks'
+import { cn } from '@/lib/utils'
+import { ROW_BUTTON, SettingRow, SettingsCard } from '../SettingRow'
 import { MfaEnrollDialog } from './MfaEnrollDialog'
 import { MfaDisableDialog } from './MfaDisableDialog'
 import { RecoveryCodesDialog } from './RecoveryCodesDialog'
@@ -54,10 +57,10 @@ interface OpenDialog {
 }
 
 /**
- * Top-level "Security" panel rendered as the contents of the SectionCard in
- * SettingsPage: sign-in methods, 2FA (password accounts only), the data
- * export and the persistent session list (Remember Me devices). Rows key
- * their layout to the card's width (container query) and stack when narrow.
+ * The Security section of Settings: the sign-in methods (password, linked SSO identities), two-factor
+ * authentication (password accounts only: Picsou's TOTP only protects the password), the "Remember me"
+ * devices, and the GDPR data export. Closing every other session lives in the account section's
+ * sensitive zone. Back from an IdP round trip, it shows the outcome and resumes the confirmed action.
  */
 export function SecuritySection() {
   const { t } = useTranslation()
@@ -97,109 +100,71 @@ export function SecuritySection() {
   const unlinkTarget = methods?.identities.find(identity => dialog?.action === `unlink-${identity.id}`) ?? null
 
   return (
-    <div ref={sectionRef} className="@container space-y-6">
+    <div ref={sectionRef} className="space-y-4">
       {arrival.kind === 'ssoError' && (
-        <p role="alert" className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+        <p role="alert" className="rounded-xl bg-destructive/10 px-4 py-3 text-sm text-destructive">
           {ssoErrorMessage(t, arrival.code)}
         </p>
       )}
       {arrival.kind === 'linked' && (
-        <p role="status" className="rounded-md bg-muted px-3 py-2 text-sm">
+        <p role="status" className="rounded-xl bg-muted px-4 py-3 text-sm text-foreground">
           {t('settings.signInMethods.linked')}
         </p>
       )}
 
-      {/* ── Sign-in methods ──────────────────────────────────────────── */}
       <SignInMethodsCard onAction={openDialog} />
 
-      {/* ── 2FA block: Picsou's TOTP only protects the password ──────── */}
       {methods?.hasPassword && (
-        <div className="space-y-3 border-t pt-4 first:border-t-0 first:pt-0">
-          <div className="flex flex-col gap-3 @xl:flex-row @xl:items-center @xl:justify-between">
-            <div className="flex items-center gap-2">
-              {status?.enabled ? (
-                <ShieldCheck className="size-5 text-emerald-600 dark:text-emerald-400" />
-              ) : (
-                <ShieldOff className="size-5 text-muted-foreground" />
-              )}
-              <div>
-                <p className="text-sm font-medium">{t('settings.mfaStatus')}</p>
-                <p className="text-xs text-muted-foreground">
-                  {isLoading
-                    ? '...'
-                    : status?.enabled
-                      ? t('settings.mfaEnabled')
-                      : t('settings.mfaDisabled')}
-                  {status?.enabled && (
-                    <>
-                      {' · '}
-                      {t('settings.mfaRecoveryCodesRemaining', {
-                        count: status.remainingRecoveryCodes,
-                      })}
-                    </>
-                  )}
-                </p>
-              </div>
-            </div>
-
-            {isLoading ? (
-              <Loader2 size={16} className="animate-spin text-muted-foreground" />
-            ) : status?.enabled ? (
-              <Button variant="destructive" size="sm" onClick={() => setDisableOpen(true)}>
-                {t('settings.mfaDisable')}
-              </Button>
-            ) : (
-              <Button size="sm" onClick={() => setEnrollOpen(true)}>
-                {t('settings.mfaEnable')}
-              </Button>
-            )}
-          </div>
-
-          {status?.enabled && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setRegenerateOpen(true)}
-              className="w-full @xl:w-auto"
+        <SettingsCard title={t('settings.mfaStatus')}>
+          {isLoading ? (
+            <Skeleton className="h-10 w-full" />
+          ) : (
+            <SettingRow
+              label={
+                <span className="inline-flex items-center gap-2">
+                  <span className={cn('size-2 rounded-full', status?.enabled ? 'bg-gain' : 'bg-muted-foreground')} aria-hidden="true" />
+                  {status?.enabled ? t('settings.mfaEnabled') : t('settings.mfaDisabled')}
+                </span>
+              }
+              description={status?.enabled ? t('settings.mfaEnabledHint') : t('settings.mfaDisabledHint')}
             >
-              <KeyRound size={14} className="mr-1.5" />
-              {t('settings.mfaRegenerate')}
-            </Button>
+              {status?.enabled ? (
+                <Button variant="destructive" size="xs" className={ROW_BUTTON} onClick={() => setDisableOpen(true)}>
+                  {t('settings.mfaDisable')}
+                </Button>
+              ) : (
+                <Button size="xs" className={ROW_BUTTON} onClick={() => setEnrollOpen(true)}>
+                  {t('settings.mfaEnable')}
+                </Button>
+              )}
+            </SettingRow>
           )}
-        </div>
+          {status?.enabled && (
+            <SettingRow
+              label={t('settings.mfaRecoveryCodes')}
+              description={t('settings.mfaRecoveryCodesRemaining', { count: status.remainingRecoveryCodes })}
+            >
+              <Button variant="outline" size="xs" className={ROW_BUTTON} onClick={() => setRegenerateOpen(true)}>
+                <KeyRound aria-hidden="true" />
+                {t('settings.mfaRegenerate')}
+              </Button>
+            </SettingRow>
+          )}
+        </SettingsCard>
       )}
 
-      {/* ── GDPR data export block ───────────────────────────────────── */}
-      <div className="space-y-2 pt-4 border-t">
-        <div className="flex flex-col gap-3 @xl:flex-row @xl:items-center @xl:justify-between">
-          <div>
-            <p className="text-sm font-medium">{t('settings.exportTitle')}</p>
-            <p className="text-xs text-muted-foreground">
-              {t('settings.exportShortDesc')}
-            </p>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => openDialog('export')}
-            className="w-full @xl:w-auto"
-          >
-            <Download size={14} className="mr-1.5" />
-            {t('settings.exportButton')}
-          </Button>
-        </div>
-      </div>
-
-      {/* ── Persistent sessions block ────────────────────────────────── */}
-      <div className="space-y-2 pt-4 border-t">
-        <div>
-          <p className="text-sm font-medium">{t('settings.sessions')}</p>
-          <p className="text-xs text-muted-foreground">
-            {t('settings.sessionsDescription')}
-          </p>
-        </div>
+      <SettingsCard title={t('settings.sessions')} description={t('settings.sessionsDescription')}>
         <SessionsList />
-      </div>
+      </SettingsCard>
+
+      <SettingsCard title={t('settings.dataTitle')}>
+        <SettingRow label={t('settings.exportTitle')} description={t('settings.exportShortDesc')}>
+          <Button variant="outline" size="xs" className={ROW_BUTTON} onClick={() => openDialog('export')}>
+            <Download aria-hidden="true" />
+            {t('settings.exportAction')}
+          </Button>
+        </SettingRow>
+      </SettingsCard>
 
       <MfaEnrollDialog open={enrollOpen} onOpenChange={setEnrollOpen} />
       <MfaDisableDialog open={disableOpen} onOpenChange={setDisableOpen} />

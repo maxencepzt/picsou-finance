@@ -70,6 +70,32 @@ describe.each([':root', '.dark'])('%s primary tokens meet WCAG AA', (selector) =
   })
 })
 
+describe.each([':root', '.dark'])('%s text tokens meet WCAG AA', (selector) => {
+  const t = themeTokens(selector)
+
+  it.each(['foreground', 'muted-foreground', 'gain', 'loss', 'warning'])('%s reads on the canvas, a card and a muted surface', (token) => {
+    for (const surface of ['background', 'card', 'muted']) {
+      expect(contrast(t[token]!, t[surface]!)).toBeGreaterThanOrEqual(4.5)
+    }
+  })
+
+  it.each(['gain', 'loss'])('%s reads on its own 10%% badge tint', (token) => {
+    expect(contrast(t[token]!, tint(t[token]!, t.card!, 0.1))).toBeGreaterThanOrEqual(4.5)
+  })
+})
+
+describe('.dark asset-class fills', () => {
+  const t = themeTokens('.dark')
+
+  it.each(['class-cash', 'class-savings', 'class-equity', 'class-crypto', 'class-funds', 'class-scpi', 'class-realestate'])(
+    '%s stands out from a card and carries an on-class label',
+    (token) => {
+      expect(contrast(t[token]!, t.card!)).toBeGreaterThanOrEqual(3)
+      expect(contrast(t['on-class']!, t[token]!)).toBeGreaterThanOrEqual(4.5)
+    },
+  )
+})
+
 // Scoped to dark: light mode's white label on blue/80 over white measures 4.2:1 and predates
 // the dark tokens.
 describe('.dark primary button', () => {
@@ -89,5 +115,19 @@ describe('.dark chart series', () => {
   it.each(['chart-1', 'chart-2', 'chart-3', 'chart-4', 'chart-5'])('%s stroke stands out from a card and from the net-worth area', (token) => {
     expect(contrast(t[token]!, t.card!)).toBeGreaterThanOrEqual(3)
     expect(contrast(t[token]!, netWorthArea)).toBeGreaterThanOrEqual(3)
+  })
+})
+
+describe.each([':root', '.dark'])('%s range input', (selector) => {
+  const t = themeTokens(selector)
+  // The unfilled track is `color-mix(… var(--muted-foreground) N%, transparent)` over the card.
+  const trackAlpha = Number(/\.range-input::-webkit-slider-runnable-track \{[\s\S]*?var\(--muted-foreground\) (\d+)%/.exec(css)?.[1]) / 100
+
+  it('track, fill and thumb stand out from a card (3:1)', () => {
+    expect(trackAlpha).toBeGreaterThan(0)
+    expect(contrast(tint(t['muted-foreground']!, t.card!, trackAlpha), t.card!)).toBeGreaterThanOrEqual(3)
+    expect(contrast(t.primary!, t.card!)).toBeGreaterThanOrEqual(3)
+    // The simulator's ink thumb, ringed with the card colour, so the card is what it sits on.
+    expect(contrast(t.foreground!, t.card!)).toBeGreaterThanOrEqual(3)
   })
 })

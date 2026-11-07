@@ -1,113 +1,79 @@
-# Feature: Navigation (Sidebar + Mobile Bottom Nav)
+# Feature: Navigation (sidebar, top bar, mobile bar)
 
-> Last updated: 2026-10-31
+> Last updated: 2026-11-03
 
 ## Context
 
-Navigation adapts to screen size: a vertical sidebar on desktop (>=768px) and a horizontal bottom navbar on mobile (<768px). Desktop shows the primary app navigation, including Family, and exposes settings through the bottom account area. Admin users also get a visible profile switcher there so a managed-member override can never stay hidden. Mobile keeps the compact bottom bar, with the same routes as the sidebar plus Settings, and the same active state logic.
+Navigation adapts to screen size: a sidebar plus a top bar on desktop (≥ 768px), a floating bottom bar on mobile. Since the "Coffre Nocturne" redesign (ADR `2026-11-03-coffre-nocturne-dark-first-redesign.md`) the sidebar has eight destinations in compact rows, the top bar carries the search, the Me/Household scope, the sync status, the privacy eye and the Sync button on every page, and the mobile bar has five labelled entries.
 
 ## How it works
 
-### Desktop: `AppSidebar` (hidden on mobile via `hidden md:flex`)
+### Destinations: `sidebar-nav-items.ts`
 
-The sidebar lives in `AppSidebar.tsx` with two visual sections:
+One registry for both bars: `NAV_ITEMS` (Overview `/`, Accounts, Investments, Passive income, Budget, Property & loans, Goals, Analysis), `FAMILY_NAV_ITEM`, `SYNC_NAV_ITEM`, `CLASSIC_SETTINGS_NAV_ITEM`, and `isNavActive(pathname, path)` (the root matches only itself, others match themselves and their sub-paths). The search palette lists the same entries.
 
-1. **Primary nav items** — rendered by the `NavItem` internal component, one per route. Uses `react-router`'s `NavLink` with `useLocation` for active detection. Desktop intentionally does not render a separate Settings item because the bottom account link already targets `/settings`.
-2. **Bottom account area** — a `DropdownMenu` trigger showing the currently scoped profile. For admins the menu also switches back to their own account or into managed profiles from `selectSwitchableMembers()`. Every session gets the shared `AccountMenuFooterItems`: **Sync** (`/sync`, `RefreshCw` icon, `nav.sync` label, `bg-muted` plus `aria-current="page"` while on that route), **Administration** (admins only), and **Sign out**. The default style keeps a separate icon `NavLink` to `/settings` next to the trigger; the classic style lists Settings among its nav items instead.
+### Desktop sidebar: `AppSidebar` (`hidden md:flex`)
 
-The menu opens **above** the trigger in the default style (`side="top"`), because the profile is pinned to the bottom of a full-height sidebar. The classic sidebar is `h-fit`, so its profile row can have free space underneath and the menu asks to open **below** it (`side="bottom"`). Radix collision handling flips either one when the viewport is too short. In the classic style that flip is common: the trigger ends about 770 px from the top and the demo menu is about 170 px tall, so the menu only opens below on viewports roughly 945 px tall or more (measured with Playwright at 1440×900, where it flips up, and 1440×1080, where it opens below).
+A full-height 232px column (`bg-sidebar`, hairline right border): the horizontal logo, then one 40px row per destination (icon + label; the active row is `bg-primary/12` with a blue icon and `aria-current="page"`). Two styles remain (Settings → sidebar style):
+- **current** (default): Sync and Settings rows, then the profile row, pinned to the bottom. The profile menu opens above (`side="top"`).
+- **classic**: Settings is the last route and the profile row sits right under the list; its menu opens below (`side="bottom"`) and starts with the member's name.
 
-`/sync` has no other permanent entry point. The dashboard `SyncAllModal` links to `/sync?tab=…` only for providers whose flow lives in the dedicated tab: a provider that needs re-authentication, Revolut, and Finary. Those links are contextual, not a general entry point. Mobile has no profile menu, so on mobile `/sync` stays effectively unreachable unless the user syncs one of those providers or types the URL.
+The profile dropdown keeps the admin profile switcher (`useFamilyMembers({ enabled: canSwitchProfile })`, admins only, never in demo), Sync (`/sync`, `aria-current` on that route), Administration (admins) and Sign out (`AccountMenuFooterItems`).
 
-Desktop navigation opens with the horizontal Picsou brand logo (`horizontal-white-picsou.svg`, `brightness-0 dark:invert` so the single white SVG renders black in light theme and white in dark), then the route list. The logo sits at the top of the `<nav>`, aligned on the items' `px-4` gutter with `self-start` so it doesn't stretch in the flex column.
+`SidebarStylePromptModal` still asks once which style to use; its miniatures sketch single-line rows and the two profile-row placements.
 
-Nav item subtitles (`ItemDescription`) use `line-clamp-2`. The classic card is `w-60`, too narrow for "Répartition & diversification" (fr) or "Aufteilung & Diversifikation" (de) on one line, so those wrap to a second line instead of ending in an ellipsis. At 1440×900 the classic card grows from 767 px to 777 px and still fits its `max-h`.
+### Top bar: `AppTopBar`
 
-### Sidebar style prompt
+- **Logo** (mobile only): the horizontal wordmark at 24px, as in the sidebar (the square mark shrank it to an unreadable 28px box).
+- **Search field** (desktop) / search icon (mobile): opens the search palette (see `search-palette.md`). The field shows the platform shortcut, ⌘ K on Apple platforms and Ctrl K elsewhere (`lib/platform.ts`).
+- **Me / Household**: two links, `/` and `/family`; Household is current on the family view.
+- **Sync status** (≥ 1024px): time since the latest automatic sync, or "sync needs attention" when a bank connection failed.
+- **Privacy eye** (`PrivacyToggle`): blanks every amount (see `privacy-mode.md`). It moved here from the sidebar.
+- **Sync**: opens `SyncAllModal`, now reachable from every page. `AppLayout` mounts the modal only while it is open, because it reads the status of every connector.
 
-`SidebarStylePromptModal` asks once which style to use and draws one miniature per style (`SidebarPreview`). Each miniature sketches its `AppSidebar` variant. Both show the logo on the left with the privacy eye on the right, and two-line nav rows built from `NAV_ITEMS` plus Family. The current sketch is a full-height column (`h-full`) whose member row (avatar, name, chevron, settings gear) is pinned to the bottom with `mt-auto`. The classic sketch is an `h-fit` card. It lists Settings between the routes and Family, and it ends on the member row (avatar, name, chevron, no gear) right under the list. When you change either variant in `AppSidebar`, update the sketch too. `SidebarStylePromptModal.test.tsx` pins this structure.
+### Mobile bar: `MobileBottomNav` (`md:hidden`)
 
-### Admin profile switching
+A floating bar (`fixed bottom-4 inset-x-4`) with five entries of at least 44px, icon over label: Overview, Accounts, Invest (`nav.investShort`), Budget, and **More**, which opens a bottom sheet with Passive income, Property & loans, Goals, Analysis, Family, Sync and Settings. More is marked current when the page is one of those.
 
-The admin switcher is backed by `profile-store.activeMemberId`. Selecting a managed profile calls `setActiveMember(member.id)` and invalidates TanStack Query so the current page refetches under the new `?memberId=` scope. Selecting the admin's own account clears the override with `setActiveMember(null)`.
-
-The switcher loads family members through `useFamilyMembers({ enabled: canSwitchProfile })`, where `canSwitchProfile = !demoMode && user?.role === 'ADMIN'`. It must stay disabled for non-admin and demo sessions because `/family/members` is admin-only and a regular member would otherwise be redirected to the global 403 page.
-
-### Mobile: `MobileBottomNav` (hidden on desktop via `md:hidden`)
-
-A fixed bottom bar with seven evenly spaced nav items:
-
-```text
-[Dashboard] [Accounts] [Analysis] [Goals] [Budget] [Family] [Settings]
-```
-
-It used to centre the Picsou logo between two pairs of items and keep its **own** hardcoded copy
-of the route list. Adding Analysis (2026-08-13) left no honest way to keep that symmetry, and a
-private copy was one more place to forget a route, so both went: the bar now maps
-`[...NAV_ITEMS, FAMILY_NAV_ITEM, CLASSIC_SETTINGS_NAV_ITEM]` from the shared registry. Settings
-stays in the list because mobile has no other way to reach it — the desktop sidebar uses its
-bottom account row. `FAMILY_NAV_ITEM` is the same entry the sidebar renders after its nav items.
-
-The FR/EN `LanguageToggle` left the bar when Family joined (2026-10-31, #272). Seven 40 px items
-plus the 79 px toggle need 383 px, more than the 358 px a 390 px screen leaves inside the bar, so
-flexbox squeezed every icon to 36 px (32 px at 360 px wide). Settings already offers all four
-languages, and the setup wizard has its own picker, so the component was deleted.
-
-`AppLayout` reserves the bar's footprint on `<main>`: `pb-[calc(5rem+env(safe-area-inset-bottom))]`
-(`size-10` items + `py-3` + `bottom-4` = 80 px, plus the same safe-area inset as the bar's spacer),
-reset by `md:pb-0`. The scroll container inside it has `p-4` on mobile, so page content lines up
-with the bar's `inset-x-4` and the last card ends 16 px above it; desktop keeps `md:px-1 md:pt-0
-md:pb-1`. `frontend/e2e/mobile-layout.spec.ts` checks both at 390×844, once without a safe
-area and once with a 34 px bottom inset set through Chromium's `Emulation.setSafeAreaInsetsOverride`
-(Playwright's viewport cannot set one).
-
-- Same icon styling as the sidebar: `size-10 rounded-lg bg-muted text-muted-foreground`
-- Active state: `ring-1 ring-border` + foreground icon color
-- Safe area padding for iOS notch: `env(safe-area-inset-bottom)`
-
-### Active state (shared pattern)
-
-Active nav items keep Lucide icons stroke-only. The item gets `ring-1 ring-border` when active, and the icon box switches from `text-muted-foreground` to `text-foreground`. Do not use SVG fill for active nav states.
+`AppLayout` still reserves `pb-[calc(5rem+env(safe-area-inset-bottom))]` on `<main>`; `frontend/e2e/mobile-layout.spec.ts` checks the content clears the bar, including with a 34px safe area.
 
 ### Key files
 
-- `frontend/src/components/layout/AppSidebar.tsx` — desktop sidebar with `NavItem`, admin profile switcher, and bottom-pinned account/settings access
-- `frontend/src/components/layout/MobileBottomNav.tsx` — mobile bottom navbar
-- `frontend/src/components/layout/AppLayout.tsx` — renders sidebar (desktop) + bottom nav (mobile)
-- `frontend/src/components/ui/item.tsx` — `Item` / `ItemMedia` / `ItemContent` primitives (do not edit)
-- `frontend/src/i18n/locales/{fr,en,de,es}.json` — `nav.*` keys for labels
-- `frontend/src/assets/horizontal-white-picsou.svg` — horizontal wordmark logo used at the top of the desktop sidebar
-- `frontend/src/assets/picsou_logo_white.svg` — icon-only logo, **no longer used** since the mobile bar went to five items
+- `frontend/src/components/layout/sidebar-nav-items.ts` — destinations and `isNavActive`
+- `frontend/src/components/layout/AppSidebar.tsx` — desktop sidebar and profile menu
+- `frontend/src/components/layout/AppTopBar.tsx` — top bar, `PrivacyToggle`
+- `frontend/src/components/layout/MobileBottomNav.tsx` — mobile bar and More sheet
+- `frontend/src/components/layout/AppLayout.tsx` — shell, ⌘K/Ctrl K listener, palette and sync modal
+- `frontend/src/lib/platform.ts` — platform detection and the search shortcut
 
 ## Technical choices
 
 | Choice | Why | Rejected alternative |
 |--------|-----|----------------------|
-| Stroke-only Lucide icons for active state | Preserves the intended outline glyphs across Dashboard, Accounts, Goals, Settings, and Family | Filled Lucide icons (`fill="currentColor"`) — fills internal shapes and creates blob-like active icons |
-| Standalone `Avatar` instead of `ItemMedia` wrapper | Avoids nested box-in-box (avatar inside icon container) | Wrapping avatar in `ItemMedia` adds redundant sizing layer |
-| Separate `MobileBottomNav` component | Keeps mobile/desktop nav logic isolated; each can evolve independently | One component with responsive internals — harder to read and maintain |
-| 768px breakpoint (`md:`) | Consistent with existing `useIsMobile` hook and shadcn UI sidebar pattern | Custom breakpoint — would diverge from the rest of the codebase |
+| One registry for sidebar, mobile bar and palette | A route added once appears everywhere | A private list per surface (the mobile bar used to have one) |
+| Family in the top bar (Me/Household) | It is a scope of the same pages, not a ninth destination | A sidebar row |
+| Five mobile entries + More | Labels fit and every target is ≥ 44px | Seven icon-only buttons |
+| Keep both sidebar styles | The setting existed; the styles now differ only by the Settings and profile placement | Dropping the setting |
 
 ## Gotchas / Pitfalls
 
-- **Babel spread in JSX props**: `{...(condition && { prop: value })}` causes a Vite/Babel parse error (500) in this project's config. Use a ternary `prop={condition ? value : fallback}` instead.
-- **Lucide icons are stroke icons**: do not pass `fill="currentColor"` to sidebar or bottom-nav icons. It fills the internal SVG geometry and makes active icons look like broken blobs.
-- **File encoding**: Editing `AppSidebar.tsx` with the Edit tool introduced invisible characters that broke Babel parsing. If the file breaks after edits, rewrite it entirely with the Write tool.
-- **`ItemMedia` import**: The component is imported even though the user dropdown no longer uses it — it's still used by `NavItem`. Don't remove the import.
-- **Mobile bottom nav padding**: `AppLayout`'s `<main>` reserves `5rem` plus the safe-area inset on mobile so content never sits behind the fixed bottom nav. If the bottom nav height changes, update this value; `e2e/mobile-layout.spec.ts` fails when they drift, including when the
-  safe-area term is dropped from `<main>` or from the bar's spacer.
-- **Account menu scope**: the sidebar dropdown carries profile scope (admins), Sync, Administration (admins), and Sign out. Language and account controls stay in Settings. Add new entries to `AccountMenuFooterItems` so both sidebar styles get them.
-- **Admin-only members query**: keep `useFamilyMembers({ enabled: isAdmin })` on the sidebar. Calling `/family/members` for non-admins causes a 403 redirect.
-- **No duplicate desktop Settings item**: desktop settings access is the bottom-pinned account row. Do not add `/settings` back to `NAV_ITEMS`, or the sidebar will show two entries for the same page.
-- **`hidden md:flex` on sidebar**: The sidebar nav element uses `hidden md:flex` — not `md:block` — because it needs flexbox for its internal layout. Changing to `md:block` will break the sidebar layout.
-- **Brand logo regression history**: commit `716228e` (PR #29) silently dropped the sidebar logo while restructuring the `<nav>` (the asset `horizontal-white-picsou.svg` was never deleted — only its usage). Restored on 2026-07-12. If you refactor the sidebar container, keep the logo `<img>` as the first child of `<nav>`.
+- **Admin-only members query:** keep `useFamilyMembers({ enabled: canSwitchProfile })`; `/family/members` is admin-only and a 403 redirects the whole app.
+- **Babel spread in JSX props:** `{...(condition && { prop: value })}` breaks the build in this project; use a ternary.
+- **Lucide icons are stroke icons:** never `fill="currentColor"` on nav icons.
+- **`hidden md:flex` on the sidebar:** it needs flex for its column layout.
+- **Bottom bar height:** if it changes, update `<main>`'s padding; the e2e spec fails when they drift.
+- **The `nav.fixed` selector** in e2e specs targets the mobile bar; the sidebar nav has no `fixed` class.
 
 ## Tests
 
-- `frontend/src/components/layout/AppSidebar.test.tsx` covers the admin switcher, query disabling for non-admins, managed-profile filtering, Query invalidation on profile switch, and, for both sidebar styles, the Sync entry (navigates to `/sync`, `aria-current` on that route) and the menu's opening side.
-- `frontend/src/components/layout/SidebarStylePromptModal.test.tsx` pins each style miniature to its variant: card height, member row placement, gear, Settings position, logo and privacy toggle, two-line rows.
-- Sidebar is also covered by E2E via Playwright (`make test-e2e`). `navigation.spec.ts` checks at 1440×900 that no nav subtitle is clipped in either style, in fr, en, de and es.
+- `AppSidebar.test.tsx` — admin switcher, members query disabled for non-admins, managed-profile filtering, profile invalidation, Sync entry and menu side for both styles.
+- `AppTopBar.test.tsx` — search and sync callbacks, Me/Household current state, privacy toggle (state, label, persistence).
+- `MobileBottomNav.test.tsx` — five entries, the More sheet (Family, Settings, Sync), More marked current.
+- `SidebarStylePromptModal.test.tsx` — each style miniature pinned to its variant: card height, member row placement, gear, Settings position, logo and privacy toggle, two-line rows.
+- `lib/platform.test.ts` — Apple detection and the shortcut.
+- E2E: `navigation.spec.ts` (routes, labels not clipped at 1440×900 in fr, en, de and es for both styles, ⌘K/Ctrl K), `mobile-layout.spec.ts`.
 
 ## Links
 
-- Related: `docs/features/demo-mode.md` — the dropdown shows "Demo" in demo mode
+- Related ADR: [2026-11-03-coffre-nocturne-dark-first-redesign.md](../decisions/2026-11-03-coffre-nocturne-dark-first-redesign.md)
+- Related: `search-palette.md`, `privacy-mode.md`, `demo-mode.md`

@@ -97,24 +97,27 @@ export function PeriodNavigator({
           return { key: String(y), label: String(y), anchor: yearAnchor(y, currentYear, todayIso) }
         })
 
+  // One muted track like SegmentedControl, so it lines up with the Cycle / Year switch beside it.
+  const step = 'size-8 rounded-md text-muted-foreground hover:bg-card hover:text-foreground'
   return (
-    <div className="flex items-center gap-1">
+    <div className="inline-flex items-center gap-0.5 rounded-lg bg-muted p-0.5">
       {/* Prev */}
       <Button
         variant="ghost"
-        size="icon-lg"
+        size="icon-xs"
+        className={step}
         aria-label={t('budget.period.prev')}
         onClick={handlePrev}
       >
-        <ChevronLeft />
+        <ChevronLeft className="size-4" />
       </Button>
 
       {/* Jump dropdown — the label doubles as the trigger */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="h-8 gap-1 px-2 text-sm font-medium">
+          <Button variant="ghost" className="h-8 min-w-32 gap-1 rounded-md px-2.5 text-xs font-semibold hover:bg-card">
             {label}
-            <ChevronDown className="size-3.5" />
+            <ChevronDown className="size-3.5 text-muted-foreground" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="max-h-72 overflow-y-auto">
@@ -129,12 +132,13 @@ export function PeriodNavigator({
       {/* Next */}
       <Button
         variant="ghost"
-        size="icon-lg"
+        size="icon-xs"
+        className={step}
         aria-label={t('budget.period.next')}
         onClick={handleNext}
         disabled={nextDisabled}
       >
-        <ChevronRight />
+        <ChevronRight className="size-4" />
       </Button>
     </div>
   )

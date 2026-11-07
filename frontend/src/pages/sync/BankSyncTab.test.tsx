@@ -70,12 +70,12 @@ function renderTab(props: { onOpenWiseJars?: () => void } = {}) {
 }
 
 function retryButton(bankName: string) {
-  const row = screen.getByText(bankName).closest('[data-slot="card"]') as HTMLElement
+  const row = screen.getByText(bankName).closest('[data-testid="bank-connection"]') as HTMLElement
   return within(row).getByTitle('sync.banks.retry')
 }
 
 function reconnectButton(bankName: string) {
-  const row = screen.getByText(bankName).closest('[data-slot="card"]') as HTMLElement
+  const row = screen.getByText(bankName).closest('[data-testid="bank-connection"]') as HTMLElement
   return within(row).getByTitle('sync.banks.reconnect')
 }
 

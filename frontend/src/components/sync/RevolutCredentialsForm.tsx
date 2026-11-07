@@ -1,11 +1,11 @@
 import { useTranslation } from 'react-i18next'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
 import { InputOTP, InputOTPGroup } from '@/components/ui/input-otp'
 import { MaskedOTPSlot } from '@/components/sync/MaskedOTPSlot'
+import { PanelField, PanelForm } from '@/components/sync/ProviderPanel'
+import { PANEL_ACTION, PANEL_INPUT } from '@/components/sync/panel-styles'
 import { Loader2, Lock, Smartphone } from 'lucide-react'
 
 export interface RevolutCredentials {
@@ -19,7 +19,7 @@ interface RevolutCredentialsFormProps {
   onChange: (value: RevolutCredentials) => void
   onSubmit: (e: React.FormEvent) => void
   busy: boolean
-  /** `page`: Sync tab (card, plain passcode input). `modal`: add-account wizard (masked OTP passcode). */
+  /** `page`: Sync page (a card, plain passcode input). `modal`: add-account wizard (no card, masked OTP passcode). */
   variant: 'page' | 'modal'
 }
 
@@ -27,16 +27,23 @@ export function RevolutCredentialsForm({ value, onChange, onSubmit, busy, varian
   const { t } = useTranslation()
   const modal = variant === 'modal'
 
-  const fields = (
-    <>
-      <div className="space-y-2">
-        <Label htmlFor="revolut-phone">
-          <Smartphone className="size-4 inline-block mr-1" />
-          {t('sync.revolut.phone')}
-        </Label>
+  return (
+    <PanelForm
+      bare={modal}
+      onSubmit={onSubmit}
+      actions={
+        <Button type="submit" size="xs" disabled={busy} className={PANEL_ACTION}>
+          {busy && <Loader2 className="animate-spin" />}
+          {busy ? t('sync.revolut.syncing') : t('sync.revolut.sync')}
+        </Button>
+      }
+    >
+      <PanelField id="revolut-phone" label={t('sync.revolut.phone')} icon={Smartphone}>
         <Input
           id="revolut-phone"
+          className={PANEL_INPUT}
           type="tel"
+          autoComplete="tel"
           value={value.phoneNumber}
           onChange={(e) => onChange({ ...value, phoneNumber: e.target.value })}
           required
@@ -44,15 +51,12 @@ export function RevolutCredentialsForm({ value, onChange, onSubmit, busy, varian
           placeholder="+33..."
           autoFocus={modal}
         />
-      </div>
+      </PanelField>
 
-      <div className="space-y-2">
-        <Label htmlFor="revolut-passcode">
-          <Lock className="size-4 inline-block mr-1" />
-          {t('sync.revolut.passcode')}
-        </Label>
+      <PanelField id="revolut-passcode" label={t('sync.revolut.passcode')} icon={Lock}>
         {modal ? (
           <InputOTP
+            id="revolut-passcode"
             maxLength={6}
             value={value.passcode}
             onChange={(passcode) => onChange({ ...value, passcode })}
@@ -67,6 +71,7 @@ export function RevolutCredentialsForm({ value, onChange, onSubmit, busy, varian
         ) : (
           <Input
             id="revolut-passcode"
+            className={PANEL_INPUT}
             type="password"
             inputMode="numeric"
             maxLength={6}
@@ -76,31 +81,16 @@ export function RevolutCredentialsForm({ value, onChange, onSubmit, busy, varian
             disabled={busy}
           />
         )}
-      </div>
+      </PanelField>
 
-      <label className="flex items-center gap-2 cursor-pointer">
+      <label className="flex cursor-pointer items-center gap-2 text-sm text-muted-foreground">
         <Checkbox
           checked={value.remember}
           onCheckedChange={(checked) => onChange({ ...value, remember: checked === true })}
           disabled={busy}
         />
-        <span className="text-sm text-muted-foreground">{t('sync.revolut.remember')}</span>
+        {t('sync.revolut.remember')}
       </label>
-
-      <Button type="submit" disabled={busy} className="w-full">
-        {busy && <Loader2 className="size-4 animate-spin" />}
-        {busy ? t('sync.revolut.syncing') : t('sync.revolut.sync')}
-      </Button>
-    </>
-  )
-
-  return (
-    <form onSubmit={onSubmit} className="space-y-4">
-      {modal ? fields : (
-        <Card size="sm">
-          <CardContent className="space-y-4 py-4">{fields}</CardContent>
-        </Card>
-      )}
-    </form>
+    </PanelForm>
   )
 }

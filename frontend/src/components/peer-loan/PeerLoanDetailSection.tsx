@@ -35,8 +35,8 @@ interface PeerLoanDetailSectionProps {
   accountId: number
 }
 
-const KIND_VARIANT: Record<PeerLoanRepaymentKind, 'default' | 'secondary' | 'destructive'> = {
-  PRINCIPAL: 'default',
+const KIND_VARIANT: Record<PeerLoanRepaymentKind, 'outline' | 'secondary' | 'destructive'> = {
+  PRINCIPAL: 'outline',
   INTEREST: 'secondary',
   WRITE_OFF: 'destructive',
 }
@@ -136,7 +136,7 @@ export function PeerLoanDetailSection({ accountId }: PeerLoanDetailSectionProps)
         <CardHeader className="pb-3">
           <CardTitle className="flex flex-wrap items-center gap-2 text-base">
             <span>{data.accountName}</span>
-            <Badge variant={data.closedAt ? 'secondary' : 'default'}>
+            <Badge variant={data.closedAt ? 'secondary' : 'outline'}>
               {data.closedAt ? t('peerLoan.summary.closed') : t('peerLoan.summary.open')}
             </Badge>
             {data.lentAt && (
@@ -171,7 +171,7 @@ export function PeerLoanDetailSection({ accountId }: PeerLoanDetailSectionProps)
               <div className="space-y-2">
                 <Progress value={pct} className="h-2" />
                 <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                  <span className="text-emerald-500">
+                  <span className="text-gain">
                     {t('peerLoan.summary.principalRepaid')} <CurrencyDisplay value={data.principalRepaid} />
                   </span>
                   {!data.closedAt && data.interestAccrued > 0 && (
@@ -180,7 +180,7 @@ export function PeerLoanDetailSection({ accountId }: PeerLoanDetailSectionProps)
                     </span>
                   )}
                   {data.writtenOff > 0 && (
-                    <span className="text-red-500">
+                    <span className="text-loss">
                       {t('peerLoan.summary.writtenOff')} <CurrencyDisplay value={data.writtenOff} />
                     </span>
                   )}
@@ -313,7 +313,7 @@ export function PeerLoanDetailSection({ accountId }: PeerLoanDetailSectionProps)
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className={repayment.kind === 'WRITE_OFF' ? 'text-red-500' : 'text-emerald-500'}>
+                  <span className={repayment.kind === 'WRITE_OFF' ? 'text-loss' : 'text-gain'}>
                     {repayment.kind === 'WRITE_OFF' ? '−' : '+'}
                     <CurrencyDisplay value={repayment.amount} className="text-sm font-semibold" />
                   </span>

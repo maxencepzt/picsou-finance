@@ -6,12 +6,15 @@ import com.picsou.dto.GoalMonthEntryResponse;
 import com.picsou.dto.GoalMonthOverrideRequest;
 import com.picsou.dto.GoalProgressResponse;
 import com.picsou.dto.GoalRequest;
+import com.picsou.dto.RecurringStatsResponse;
 import com.picsou.service.GoalService;
+import com.picsou.service.RecurringPlanStatsService;
 import com.picsou.service.UserContext;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -19,10 +22,13 @@ import java.util.List;
 public class GoalController {
 
     private final GoalService goalService;
+    private final RecurringPlanStatsService recurringStatsService;
     private final UserContext userContext;
 
-    public GoalController(GoalService goalService, UserContext userContext) {
+    public GoalController(GoalService goalService, RecurringPlanStatsService recurringStatsService,
+                          UserContext userContext) {
         this.goalService = goalService;
+        this.recurringStatsService = recurringStatsService;
         this.userContext = userContext;
     }
 
@@ -39,6 +45,12 @@ public class GoalController {
     @GetMapping("/{id}/history")
     public List<DashboardResponse.NetWorthPoint> getHistory(@PathVariable Long id) {
         return goalService.getGoalHistory(id, userContext.currentMemberId());
+    }
+
+    /** A recurring plan's purchases over the last 12 months: 400 for a savings target, 404 when not the member's. */
+    @GetMapping("/{id}/recurring-stats")
+    public RecurringStatsResponse recurringStats(@PathVariable Long id) {
+        return recurringStatsService.stats(id, userContext.currentMemberId(), LocalDate.now());
     }
 
     @PostMapping

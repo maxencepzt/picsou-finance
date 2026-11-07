@@ -1,8 +1,10 @@
-import type { ComponentType } from 'react'
+import type { ReactNode } from 'react'
+import { Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface IntegrationCardProps {
-  icon: ComponentType<{ className?: string }>
+  /** The integration's logo or monogram (`IntegrationMark`). */
+  mark: ReactNode
   title: string
   description: string
   checked: boolean
@@ -11,16 +13,12 @@ interface IntegrationCardProps {
 }
 
 /**
- * Selection card used on the integration picker step. Designed to
- * double as a read-only "status card" in the post-install Settings →
- * Integrations page — pass {@code disabled} to lock the toggle there.
- *
- * The whole card is the hit target (not just the checkbox) so fat
- * fingers on mobile work. We still render a semantic {@code button}
- * with {@code role="switch"} for keyboard + screen-reader users.
+ * One row of the integration picker. The whole row is the hit target (not just the
+ * checkbox) so fat fingers on mobile work; it is still a semantic {@code button} with
+ * {@code role="switch"} for keyboard and screen-reader users. Rows sit in a divided list.
  */
 export function IntegrationCard({
-  icon: Icon,
+  mark,
   title,
   description,
   checked,
@@ -36,41 +34,24 @@ export function IntegrationCard({
       disabled={disabled}
       onClick={onToggle}
       className={cn(
-        'w-full rounded-2xl border-2 p-4 text-left transition-[border-color,background-color,color,opacity] sm:p-5',
-        'flex items-start gap-4',
-        checked
-          ? 'border-primary bg-primary/5'
-          : 'border-border bg-card hover:border-primary/40',
-        disabled && 'opacity-60 cursor-not-allowed'
+        'flex w-full items-center gap-3 px-4 py-3 text-left transition-[background-color]',
+        checked ? 'bg-primary/12' : 'hover:bg-muted/60',
+        disabled && 'cursor-not-allowed opacity-60'
       )}
     >
-      <span
-        className={cn(
-          'shrink-0 rounded-xl p-2 transition-colors',
-          checked ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
-        )}
-        aria-hidden="true"
-      >
-        <Icon className="h-6 w-6" />
+      {mark}
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm font-semibold text-foreground">{title}</span>
+        <span className="mt-0.5 block text-[13px] leading-5 text-muted-foreground">{description}</span>
       </span>
-      <div className="min-w-0 flex-1">
-        <p className="font-medium text-sm sm:text-base leading-tight">{title}</p>
-        <p className="mt-1 text-xs sm:text-sm text-muted-foreground">{description}</p>
-      </div>
       <span
         className={cn(
-          'mt-0.5 h-5 w-5 shrink-0 rounded-md border-2 flex items-center justify-center transition-colors',
-          checked
-            ? 'bg-primary border-primary text-primary-foreground'
-            : 'border-muted-foreground/40'
+          'grid size-5 shrink-0 place-items-center rounded-md border transition-colors',
+          checked ? 'border-primary bg-primary text-primary-foreground' : 'border-input'
         )}
         aria-hidden="true"
       >
-        {checked && (
-          <svg className="h-3 w-3" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M2 6l3 3 5-6" />
-          </svg>
-        )}
+        {checked && <Check className="size-3.5 stroke-[3]" />}
       </span>
     </button>
   )

@@ -34,32 +34,32 @@
     "category": "Category"
   },
   "nav": {
-    "dashboard": "Dashboard",
-    "dashboard.desc": "Überblick & Vermögen",
+    "dashboard": "Übersicht",
     "accounts": "Konten",
-    "accounts.desc": "Salden & Transaktionen",
     "goals": "Ziele",
-    "goals.desc": "Verfolge deine Sparziele",
     "sync": "Sync",
     "settings": "Einstellungen",
-    "settings.desc": "Präferenzen & Konto",
     "family": "Familie",
-    "family.desc": "Geteilte Ansicht",
     "account": "Mein Konto",
     "managedProfile": "Verwaltetes Profil",
     "switchProfile": "Profil wechseln",
     "unknownProfile": "Unbekanntes Profil",
     "admin": "Administration",
     "analysis": "Analyse",
-    "analysis.desc": "Aufteilung & Diversifikation",
     "hideAmounts": "Beträge ausblenden",
     "showAmounts": "Beträge einblenden",
     "budget": "Budget",
-    "budget.desc": "Spending & cashflow"
+    "investments": "Investments",
+    "investShort": "Anlegen",
+    "income": "Passives Einkommen",
+    "realEstate": "Immobilien & Kredite",
+    "more": "Mehr",
+    "moreDescription": "Die übrigen Picsou-Seiten",
+    "main": "Hauptnavigation"
   },
   "auth": {
     "login": "Anmelden",
-    "loginTagline": "Picsou",
+    "loginTagline": "Melden Sie sich bei Ihrer Picsou-Instanz an.",
     "username": "Benutzername",
     "password": "Passwort",
     "loginButton": "Anmelden",
@@ -100,11 +100,30 @@
       "usernameFormat": "Nur Buchstaben, Zahlen, Punkte, Unterstriche oder Bindestriche verwenden.",
       "passwordTooShort": "Das Passwort muss mindestens 8 Zeichen enthalten.",
       "passwordTooLong": "Das Passwort darf höchstens 128 Zeichen enthalten."
+    },
+    "mfaRecoveryDesc": "Geben Sie einen der Wiederherstellungscodes ein, die Sie beim Aktivieren der 2FA gespeichert haben.",
+    "backToLogin": "Zurück zur Anmeldung",
+    "activation": {
+      "title": "Aktivieren Sie Ihr Konto",
+      "subtitle": "Wählen Sie ein Passwort, um die Einrichtung Ihres Kontos abzuschließen.",
+      "noticeTitle": "Hinweis zum Datenzugriff",
+      "noticeBody": "Der Administrator dieser Picsou-Instanz hat technischen Zugriff auf alle hier gespeicherten Daten, einschließlich Bankverbindungen und API-Zugangsdaten. Mit der Aktivierung Ihres Kontos nehmen Sie dies zur Kenntnis.",
+      "acknowledge": "Ich verstehe, dass der Administrator Zugriff auf alle Daten dieser Instanz hat.",
+      "passwordHint": "Mindestens 8 Zeichen.",
+      "confirmPassword": "Passwort bestätigen",
+      "errorAcknowledge": "Bestätigen Sie den Hinweis zum Datenzugriff, um fortzufahren.",
+      "errorMismatch": "Die Passwörter stimmen nicht überein.",
+      "errorInvalidLink": "Dieser Aktivierungslink ist ungültig.",
+      "errorFailed": "Die Aktivierung ist fehlgeschlagen. Der Link ist möglicherweise abgelaufen: Bitten Sie den Administrator um einen neuen.",
+      "submit": "Mein Konto aktivieren",
+      "submitting": "Wird aktiviert…",
+      "successTitle": "Konto aktiviert",
+      "successBody": "Weiterleitung zur Anmeldung…"
     }
   },
   "dashboard": {
-    "title": "Dashboard",
-    "netWorth": "Gesamtvermögen",
+    "title": "Übersicht",
+    "netWorth": "Nettovermögen",
     "grossWorth": "Bruttovermögen",
     "financialWorth": "Finanzvermögen",
     "syncAccounts": "Konten synchronisieren",
@@ -152,7 +171,112 @@
     "perMonthSuffix": "/Monat",
     "loanParamsUnconfigured": "Parameter nicht konfiguriert",
     "amountDue": "Fälliger Betrag",
-    "dueOn": "Fällig am {{date}}"
+    "dueOn": "Fällig am {{date}}",
+    "rangeLabel": "Zeitraum",
+    "overRange": {
+      "24H": "in 24 Std.",
+      "7D": "in 7 Tagen",
+      "1M": "in 1 Monat",
+      "3M": "in 3 Monaten",
+      "YTD": "seit 1. Januar",
+      "1Y": "in 1 Jahr",
+      "ALL": "seit Beginn"
+    },
+    "assetsMinusDebts": "Vermögen abzüglich Schulden:",
+    "kpi": {
+      "grossAssets": "Bruttovermögen",
+      "accountCount": "{{count}} Konto",
+      "accountCount_other": "{{count}} Konten",
+      "debts": "Schulden",
+      "noLoan": "Kein laufender Kredit",
+      "monthChange": "Veränderung in 1 Monat",
+      "noHistory": "Zu wenig Verlauf",
+      "passiveIncome": "Passives Einkommen / Jahr",
+      "savingsRate": "Sparquote",
+      "savingsRateHint": "Laufender Budgetzyklus",
+      "available": "Verfügbare Mittel",
+      "availableHint": "Giro- und Sparkonten"
+    },
+    "allocationGroupBy": "Gruppieren nach",
+    "byClass": "Klasse",
+    "byAccount": "Konto",
+    "noAssets": "Noch keine Vermögenswerte.",
+    "grossAssets": "Bruttovermögen",
+    "liquidity": {
+      "title": "Liquidität",
+      "description": "Wie schnell Ihr Vermögen wieder verfügbares Geld wird.",
+      "available": "Verfügbar",
+      "availableHint": "Giro- und Sparkonten",
+      "market": "Markt",
+      "marketHint": "Depot, Krypto",
+      "locked": "Gebunden",
+      "lockedHint": "PEA, Lebensversicherung, Altersvorsorge",
+      "illiquid": "Illiquide",
+      "illiquidHint": "Immobilien, SCPI"
+    },
+    "upcoming": {
+      "title": "Nächste 30 Tage",
+      "calendar": "Kalender",
+      "empty": "In den nächsten 30 Tagen ist nichts geplant.",
+      "dividend": "Dividende",
+      "scpi": "SCPI-Ausschüttung",
+      "recurring": "Wiederkehrende Zahlung",
+      "cardStatement": "Kartenabrechnung"
+    },
+    "attention": {
+      "title": "Zu erledigen",
+      "none": "Derzeit nichts zu erledigen.",
+      "overBudget": "{{name}}: Budget überschritten.",
+      "overBudget_other": "{{count}} Budgets überschritten, darunter {{name}}.",
+      "uncategorized": "{{count}} Buchung zu kategorisieren.",
+      "uncategorized_other": "{{count}} Buchungen zu kategorisieren.",
+      "stalePrices": "Der Kurs von {{name}} ist nicht aktuell.",
+      "stalePrices_other": "{{count}} Kurse sind nicht aktuell, darunter {{name}}."
+    },
+    "health": {
+      "title": "Vermögensgesundheit",
+      "outOf": "/ 100",
+      "misplaced": "Umzuschichten bis zu Ihren Zielen",
+      "loanToValue": "Beleihungsquote",
+      "excess": "Über dem Ziel:"
+    },
+    "goalOnTrack": "Im Plan",
+    "goalBehind": "Im Rückstand",
+    "movers": {
+      "title": "Größte Bewegungen",
+      "versus": "{{date}} gegenüber dem {{previous}}",
+      "side": "Richtung der Bewegung",
+      "gainers": "Gewinner",
+      "losers": "Verlierer",
+      "error": "Die Tagesbewegungen konnten nicht geladen werden.",
+      "empty": "Die Bewegungen erscheinen, sobald Ihre Wertpapiere Kurse von zwei Tagen haben.",
+      "none": {
+        "gainers": "Kein Wertpapier im Plus.",
+        "losers": "Kein Wertpapier im Minus."
+      }
+    },
+    "peers": {
+      "title": "Sie und Haushalte Ihres Alters",
+      "bracket": {
+        "under30": "Haushalte unter 30 Jahren",
+        "30to39": "Haushalte von 30 bis 39 Jahren",
+        "40to49": "Haushalte von 40 bis 49 Jahren",
+        "50to59": "Haushalte von 50 bis 59 Jahren",
+        "60to69": "Haushalte von 60 bis 69 Jahren",
+        "70plus": "Haushalte ab 70 Jahren",
+        "all": "Alle Haushalte"
+      },
+      "ofMedian": "Median dieser Haushalte",
+      "yours": "Bruttovermögen dieser Ansicht",
+      "median": "Medianes Bruttovermögen",
+      "gap": "Abstand",
+      "noAge": "Ohne Geburtsdatum wird mit allen Haushalten verglichen.",
+      "fillProfile": "Profil vervollständigen",
+      "caveat": "Grober Anhaltspunkt: Der INSEE-Median ist das Bruttovermögen eines ganzen Haushalts nach Alter seiner Bezugsperson, Anfang 2024; verglichen wird er mit dem Bruttovermögen dieser Ansicht.",
+      "sourceLabel": "Quelle",
+      "source": "Insee Focus Nr. 371, Erhebung Histoire de vie et Patrimoine 2023-2024",
+      "error": "Ihr Profil konnte nicht geladen werden."
+    }
   },
   "accounts": {
     "corumLifeOperation": {
@@ -313,6 +437,34 @@
       "amountDue": "Zu zahlender Betrag",
       "dueDate": "Lastschriftdatum",
       "miles": "In diesem Zeitraum gesammelte Meilen"
+    },
+    "kpi": {
+      "tracked": "Erfasste Konten",
+      "manual": "davon {{count}} manuell",
+      "manual_other": "davon {{count}} manuell",
+      "upToDate": "Aktuell",
+      "upToDateHint": "In den letzten 24 h synchronisiert",
+      "noSynced": "Kein synchronisiertes Konto"
+    },
+    "groupBy": {
+      "label": "Konten gruppieren nach",
+      "class": "Anlageklasse",
+      "institution": "Institut",
+      "manual": "Manuell",
+      "property": "Immobilien"
+    },
+    "breakdown": {
+      "title": "Aufteilung nach Anlageklasse"
+    },
+    "panel": {
+      "latestTransactions": "Letzte Umsätze",
+      "viewDetail": "Details anzeigen"
+    },
+    "detail": {
+      "rate": "Jahreszins",
+      "ceiling": "Obergrenze",
+      "ceilingUsed": "{{pct}} der Obergrenze",
+      "share": "Ihr Anteil"
     }
   },
   "analysis": {
@@ -409,7 +561,10 @@
       "tier": "Stufe",
       "today": "Heute",
       "atHorizon": "In {{count}} Jahren",
-      "atAge": "{{age}} Jahre"
+      "atAge": "{{age}} Jahre",
+      "viewLabel": "Ansicht",
+      "horizonLabel": "Horizont",
+      "chartLabel": "Prognostiziertes Vermögen in {{years}} Jahren: {{values}}"
     },
     "classification": {
       "title": "Wertpapier einordnen",
@@ -440,6 +595,60 @@
       "SINGLE_ASSET_CONCENTRATION": "{{label}} macht {{percent}} Ihres Vermögens aus — ein einzelner Wert trägt das meiste Risiko.",
       "EMPTY_TIER": "Nichts in {{label}}: diese Stufe ist leer, nicht bloß unter dem Ziel.",
       "CUSHION_OVERFUNDED": "{{value}} über Ihrem Polsterziel — Geld, das anderswo arbeiten könnte."
+    },
+    "pyramid": {
+      "title": "Vermögenspyramide",
+      "description": "Oben das riskanteste, unten das sicherste · der Strich markiert das Ziel"
+    },
+    "fi": {
+      "title": "Finanzielle Unabhängigkeit",
+      "rule": "{{value}}-Regel",
+      "target": "Zielkapital",
+      "formula": "{{expenses}} wesentliche Ausgaben × 12 ÷ {{rate}}",
+      "expensesDefault": "Wesentliche Ausgaben nicht angegeben: Standardwert. Tragen Sie sie unter Meine Ziele ein.",
+      "assets": "Finanzvermögen heute",
+      "progress": "{{value}} des Weges, ohne Immobilien und SCPI.",
+      "estimatedAge": "Geschätztes Alter",
+      "estimatedWhen": "Geschätzter Zeitpunkt",
+      "paceYear": "{{year}}, im aktuellen Tempo",
+      "pace": "im aktuellen Tempo",
+      "retirement": "Geplanter Ruhestand",
+      "notSet": "Nicht angegeben",
+      "fillProfile": "Tragen Sie Ihr Geburtsdatum im Profil ein, um ein Alter statt einer Dauer zu sehen.",
+      "goToProfile": "Profil ergänzen",
+      "reached": "Bereits erreicht",
+      "beyondYears": "Mehr als {{count}} Jahr",
+      "beyondYears_other": "Mehr als {{count}} Jahre",
+      "beyondAge": "Nach {{age}} Jahren",
+      "inYears": "In {{count}} Jahr",
+      "inYears_other": "In {{count}} Jahren",
+      "inYear": "{{year}}",
+      "sim": {
+        "title": "Simulator für finanzielle Unabhängigkeit",
+        "description": "Ändern Sie eine Annahme: Alter und Kapital werden sofort neu berechnet.",
+        "reset": "Zurücksetzen",
+        "savings": "Monatliche Sparrate",
+        "savingsHint": "Heute: {{value}} pro Monat",
+        "return": "Jährliche Rendite",
+        "returnHint": "Nach Kosten, vor Inflation",
+        "expenses": "Wesentliche Ausgaben",
+        "expensesHint": "In Ihren Zielen angegeben: {{value}} pro Monat",
+        "expensesDefault": "Nicht angegeben: Standardwert",
+        "withdrawal": "Entnahmerate",
+        "withdrawalHint": "Jährlich entnommener Anteil des Kapitals",
+        "perMonth": "{{value}} / Monat",
+        "presets": "Schnellbeträge",
+        "todayPreset": "{{value}} · heute",
+        "earlier": "{{count}} Jahr früher als im aktuellen Tempo",
+        "earlier_other": "{{count}} Jahre früher als im aktuellen Tempo",
+        "later": "{{count}} Jahr später als im aktuellen Tempo",
+        "later_other": "{{count}} Jahre später als im aktuellen Tempo",
+        "same": "Gleicher Zeitpunkt wie im aktuellen Tempo",
+        "withHypotheses": "Mit diesen Annahmen",
+        "currentPace": "Im aktuellen Tempo · {{value}} pro Monat",
+        "capitalAt": "Kapital mit {{age}} Jahren",
+        "extraEffort": "Zusätzlicher Aufwand"
+      }
     }
   },
   "accountTypes": {
@@ -648,12 +857,7 @@
     "edit": "Bearbeiten",
     "save": "Speichern",
     "summary": {
-      "title": "Papierimmobilie",
-      "gross": "Wert zum Rücknahmepreis",
-      "debt": "Verknüpfter Kredit",
-      "net": "Netto",
-      "hint": "Nicht in der Quadratmeter-Schätzung. Der Ausgabepreis steht nicht in dieser Summe.",
-      "incomplete": "Ein Anteil nutzt noch den letzten bekannten Saldo: der Rücknahmepreis fehlt."
+      "title": "Papierimmobilie"
     },
     "sync": {
       "found_one": "1 Fonds gefunden",
@@ -890,19 +1094,68 @@
       "benchmark": "Die durchschnittliche Sparquote der Haushalte in Frankreich liegt bei rund {{rate}} ihres verfügbaren Bruttoeinkommens",
       "needsIncome": "Trage dein monatliches Netto vor Steuern und deinen Quellensteuersatz ein, um deine Sparquote zu sehen.",
       "goToSettings": "Zu den Einstellungen"
-    }
+    },
+    "card": {
+      "active": "Aktiv",
+      "upcoming": "Geplant",
+      "perMonth": "{{value}} / Monat",
+      "into": "auf {{account}}",
+      "required": "Erforderlicher Betrag",
+      "average": "Durchschnittlich eingezahlt",
+      "accounts": "Verknüpftes Konto",
+      "accounts_other": "Verknüpfte Konten"
+    },
+    "kpi": {
+      "saved": "Gesamt gespart",
+      "ofTarget": "von {{target}} · {{percent}}",
+      "onTrack": "Auf Kurs",
+      "behind": "{{count}} im Rückstand",
+      "behind_other": "{{count}} im Rückstand",
+      "noneBehind": "Keines im Rückstand",
+      "required": "Nötig pro Monat",
+      "averaged": "Schnitt: {{value}}",
+      "noAverage": "Noch kein Verlauf",
+      "plans": "Monatlich investiert",
+      "running": "{{count}} aktiver Plan",
+      "running_other": "{{count}} aktive Pläne"
+    },
+    "trajectory": {
+      "saved": "Gespart",
+      "ideal": "Kurs zum Ziel",
+      "chartLabel": "Ersparnis der verknüpften Konten gegenüber dem Kurs auf {{target}}",
+      "empty": "Noch nicht genug Verlauf, um den Kurs zu zeichnen.",
+      "error": "Verlauf nicht verfügbar.",
+      "onTime": "Erreicht im {{month}} bei durchschnittlich {{pace}}",
+      "late": "{{count}} Monat im Verzug: erreicht im {{month}} bei durchschnittlich {{pace}}",
+      "late_other": "{{count}} Monate im Verzug: erreicht im {{month}} bei durchschnittlich {{pace}}",
+      "never": "Bei durchschnittlich {{pace}} nicht erreichbar",
+      "shrinking": "Nicht erreicht: Die verknüpften Ersparnisse sinken im Schnitt um {{pace}}"
+    },
+    "planStats": {
+      "title": "Käufe seit dem {{date}}",
+      "invested": "Investiert",
+      "months": "Monate mit Kauf",
+      "value": "Aktueller Wert",
+      "gain": "Gewinn",
+      "noPrice": "Wert nicht verfügbar: Für eine gekaufte Position fehlt der Kurs.",
+      "noPurchase": "Keine Käufe für diesen Plan im Zeitraum.",
+      "needsSplit": "Teilen Sie den Plan auf Positionen auf, um seine Käufe zu verfolgen.",
+      "error": "Kaufverfolgung nicht verfügbar."
+    },
+    "objectiveShort": "Ziel {{value}}",
+    "nameLabel": "Name des Ziels"
   },
   "addAccount": {
     "title": "Konto hinzufügen",
-    "manual": "Manuell",
+    "manual": "Manuelles Konto",
     "exchangeConnected": "Exchange verbunden!",
     "walletConnected": "Wallet wird verfolgt!",
     "trConnected": "Trade Republic verbunden!",
     "desc": {
-      "banks": "Verbinde deine Banken per OAuth",
+      "banks": "Ihre Bank suchen: Girokonten über PSD2",
       "exchanges": "Binance, Meria...",
       "wallets": "Bitcoin, Ethereum, BNB, Solana...",
-      "tr": "Trade Republic",
+      "tr": "Aktien, ETFs und Verrechnungskonto",
       "bourso": "Girokonten, Sparkonten, PEA und Wertpapierdepots bei BoursoBank",
       "bourseDirect": "PEA- und Wertpapierkonten synchronisieren",
       "degiro": "DEGIRO-Wertpapierkonto synchronisieren",
@@ -915,12 +1168,18 @@
       "amex": "American Express Kreditkarte: Kontostand und Transaktionen",
       "corum": "CORUM-SCPI und CORUM-Life-Lebensversicherung: Anteile, Bewertung und Umsätze",
       "sofidy": "Sofidy-SCPI-Anteile zum Rücknahmepreis",
+      "actual": "Konten, Kategorien und Buchungen eines Actual-Budgets",
+      "homebank": "HomeBank-Sicherung oder QIF-Export",
       "property": "Haus, Wohnung, Grundstück…",
       "revolut": "Phone + passcode, on-demand sync",
       "fortuneo": "Fortuneo-Konten synchronisieren",
       "caisseEpargne": "Girokonto, Livret A, LDDS, PER, Kredite und Karten bei der Caisse d'Epargne",
+      "cmes": "PEE, PEG, PERCOL bei Crédit Mutuel oder CIC",
+      "cic": "CIC-Giro- und Sparkonten (Livret A, LDDS, PEL…)",
       "banquePopulaire": "Girokonto, Livret A, Livret Jeune und LDDS bei der Banque Populaire"
-    }
+    },
+    "subtitle": "Erfassen Sie ein Konto selbst oder verbinden Sie ein Institut, um es zu synchronisieren.",
+    "connectHeading": "oder ein Institut verbinden"
   },
   "sync": {
     "title": "Synchronisierung",
@@ -935,7 +1194,7 @@
       "TOTP_REQUIRED": "2FA-Code erforderlich"
     },
     "banks": {
-      "title": "Banken",
+      "title": "Europäische Banken",
       "search": "Bank suchen",
       "country": "Land",
       "countriesLoadError": "Nicht alle Länder konnten geladen werden — nur Frankreich verfügbar.",
@@ -986,7 +1245,8 @@
         "pinRequired": "PIN ist erforderlich.",
         "validationFailed": "Ungültige Daten.",
         "unknownError": "Ein unerwarteter Fehler ist aufgetreten."
-      }
+      },
+      "tanPrompt": "Geben Sie den {{length}}-stelligen Code ein, den Trade Republic Ihnen per SMS oder in der App geschickt hat."
     },
     "ibkr": {
       "title": "Interactive Brokers",
@@ -1002,7 +1262,6 @@
       "disconnectConfirm": "Gespeicherte Interactive-Brokers-Verbindung entfernen?",
       "connected": "Verbunden",
       "statusError": "Letzte Synchronisierung fehlgeschlagen",
-      "lastSync": "Letzte Sync",
       "neverSynced": "Nie synchronisiert",
       "syncedToast": "Interactive Brokers synchronisiert: {{count}} Konto/Konten",
       "errors": {
@@ -1024,7 +1283,6 @@
       "disconnectConfirm": "Gespeicherte SimpleFIN-Verbindung entfernen? Importierte Konten bleiben und werden nicht mehr aktualisiert.",
       "connected": "Verbunden",
       "statusError": "Letzte Synchronisierung fehlgeschlagen",
-      "lastSync": "Letzte Sync",
       "neverSynced": "Nie synchronisiert",
       "syncedToast": "SimpleFIN synchronisiert: {{count}} Konto/Konten",
       "errors": {
@@ -1078,8 +1336,7 @@
       "connectErrorKeyOnly": "Exchange konnte nicht verbunden werden. Prüfe deinen API-Key.",
       "remove": "Entfernen",
       "removeConfirm": "Diesen Exchange entfernen?",
-      "noExchanges": "Keine Exchanges verbunden",
-      "lastSync": "Letzte Synchronisierung"
+      "noExchanges": "Keine Exchanges verbunden"
     },
     "wallets": {
       "title": "Wallets",
@@ -1094,11 +1351,10 @@
       "remove": "Entfernen",
       "removeConfirm": "Dieses Wallet entfernen?",
       "noWallets": "Keine Wallets im Blick",
-      "lastSync": "Letzte Synchronisierung",
       "evmHint": "Eine Adresse, alle EVM-Chains — Ethereum, BNB Chain, Polygon, Arbitrum, Optimism, Base und Avalanche."
     },
     "visibility": {
-      "title": "Konten",
+      "title": "Sichtbare Konten",
       "description": "Wähle, welche Konten in der App angezeigt werden. Ein ausgeblendetes Konto wird weiterhin normal synchronisiert — es wird nur aus der Anzeige entfernt.",
       "manualGroup": "Manuell"
     },
@@ -1189,7 +1445,6 @@
       "login": "Mit Finary verbinden",
       "connected": "Verbunden",
       "notConnected": "Nicht verbunden",
-      "lastSync": "Letzte Synchronisierung",
       "neverSynced": "Nie",
       "sync": "Jetzt synchronisieren",
       "syncing": "Wird synchronisiert...",
@@ -1255,17 +1510,26 @@
     },
     "all": {
       "title": "Konten synchronisieren",
-      "syncAll": "Alle synchronisieren",
       "syncing": "Wird synchronisiert...",
       "noConnections": "Keine aktiven Sync-Verbindungen",
-      "lastSync": "Letzte Synchronisierung",
       "openFinary": "Finary-Seite zum Synchronisieren öffnen",
       "sessionExpired": "Sitzung abgelaufen",
       "reconnect": "Im Tab des Anbieters neu verbinden",
       "trManualInfo": "Trade Republic ist die einzige Bank, die eine manuelle erneute Authentifizierung erfordert. Du musst bei jeder Synchronisierung deine Telefonnummer und PIN neu eingeben.",
       "trSlowWarning": "Die Verbindung kann einen Moment dauern, das ist normal.",
-      "openRevolut": "Open the Revolut page to connect",
-      "revolutManualInfo": "Revolut requires approval on your phone. Click the icon to enter your credentials."
+      "revolutManualInfo": "Revolut requires approval on your phone. Click the icon to enter your credentials.",
+      "neverSynced": "Nie synchronisiert",
+      "lastSyncAgo": "Synchronisiert {{time}}",
+      "synced": "Synchronisiert",
+      "connectionCount_one": "{{count}} Verbindung",
+      "connectionCount_other": "{{count}} Verbindungen",
+      "emptyHint": "Noch keine Verbindung. Fügen Sie Ihre Bank, Ihren Broker oder eine Krypto-Wallet hinzu.",
+      "groupReconnect": "Neu zu verbinden",
+      "groupConnected": "Verbunden",
+      "reconnectAction": "Neu verbinden",
+      "syncOne": "{{name}} synchronisieren",
+      "syncingProgress": "Synchronisierung… {{done}}/{{total}}",
+      "syncAllCount": "Alle synchronisieren ({{count}})"
     },
     "bourso": {
       "title": "BoursoBank",
@@ -1412,7 +1676,6 @@
       "noSession": "Keine aktive Sitzung",
       "sessionActive": "Aktive Sitzung",
       "reauthRequired": "Erneute Anmeldung erforderlich",
-      "lastSyncedAt": "Zuletzt synchronisiert am",
       "totpPrompt": "Gib den 6-stelligen Code aus deiner Authenticator-App ein",
       "errors": {
         "tooManyAttempts": "Zu viele Versuche. Bitte warte einen Moment.",
@@ -1604,7 +1867,6 @@
       "syncing": "Syncing...",
       "connected": "Connected",
       "forget": "Forget credentials",
-      "lastSync": "Last sync",
       "notConnected": "Not connected",
       "syncSuccess": "Your accounts are up to date.",
       "phase": {
@@ -1734,6 +1996,47 @@
         "invalidData": "Fortuneo hat widersprüchliche Portfoliodaten geliefert. Deine vorhandenen Daten wurden nicht verändert.",
         "serverError": "Fortuneo konnte nicht erreicht werden. Bitte erneut versuchen."
       }
+    },
+    "catalog": {
+      "title": "Verbindung hinzufügen",
+      "description": "Banken, Broker, Krypto, Mitarbeitersparen, SCPI oder ein Dateiimport.",
+      "search": "Institut suchen",
+      "searchPlaceholder": "Institut suchen…",
+      "categoriesLabel": "Kategorie",
+      "noMatch": "Kein Institut entspricht dieser Suche.",
+      "categories": {
+        "all": "Alle",
+        "banks": "Banken",
+        "brokers": "Börse",
+        "crypto": "Krypto",
+        "savings": "Mitarbeitersparen",
+        "scpi": "SCPI",
+        "files": "Importe"
+      },
+      "kind": {
+        "banks": "Bank",
+        "brokers": "Broker",
+        "crypto": "Krypto",
+        "savings": "Mitarbeitersparen",
+        "scpi": "SCPI",
+        "files": "Import"
+      }
+    },
+    "overview": {
+      "title": "Ihre Verbindungen",
+      "empty": "Noch keine Verbindung: Wählen Sie unten ein Institut.",
+      "syncNow": "Synchronisieren"
+    },
+    "view": {
+      "notConnected": "Nicht verbunden",
+      "toReconnect_one": "{{count}} neu zu verbinden",
+      "toReconnect_other": "{{count}} neu zu verbinden"
+    },
+    "panel": {
+      "lastSync": "Zuletzt synchronisiert {{time}}",
+      "disconnectTitle": "{{name}} trennen?",
+      "disconnectDescription": "Picsou löscht die gespeicherte Sitzung. Bereits importierte Konten bleiben erhalten; melden Sie sich erneut an, um sie zu synchronisieren.",
+      "or": "oder"
     }
   },
   "settings": {
@@ -1768,9 +2071,8 @@
     "adminButton": "Administration öffnen",
     "family": "Familie",
     "familyDescription": "Mitglieder und Freigabeeinstellungen verwalten",
-    "familyManage": "Familienmitglieder und Freigaben verwalten",
     "security": "Sicherheit",
-    "securityDescription": "Zwei-Faktor-Authentifizierung und vertrauenswürdige Geräte",
+    "securityDescription": "Zwei-Faktor-Authentifizierung, verbundene Geräte und Datenexport",
     "mfaStatus": "Zwei-Faktor-Authentifizierung",
     "mfaEnabled": "Aktiviert",
     "mfaDisabled": "Deaktiviert",
@@ -1804,7 +2106,6 @@
     "exportTitle": "Meine Daten exportieren",
     "exportShortDesc": "Lade ein vollständiges Archiv (JSON + CSV) mit allem herunter, was wir zu deinem Konto gespeichert haben.",
     "exportDesc": "Authentifiziere dich erneut, um ein ZIP-Archiv mit deinen vollständigen Daten herunterzuladen. Sensible Zugangsdaten (Passwort-Hash, 2FA-Geheimnis, Bank-Tokens) sind ausgeschlossen.",
-    "exportButton": "Daten exportieren",
     "exportDownload": "Herunterladen",
     "exportIncludeSnapshots": "Täglichen Saldoverlauf einschließen",
     "exportIncludeSnapshotsHint": "Standardmäßig aus. Fügt die täglichen Stände pro Konto hinzu, die für die Diagramme verwendet werden — bei lange bestehenden Konten sehr groß.",
@@ -1820,9 +2121,6 @@
     "sessionsLastUsed": "Zuletzt verwendet",
     "sessionsRevoke": "Widerrufen",
     "sessionsRevokeAllOthers": "Andere Geräte abmelden",
-    "amounts": "Beträge",
-    "amountsVisible": "Sichtbar",
-    "amountsHidden": "Ausgeblendet",
     "profile": {
       "title": "Profil",
       "description": "Dein persönlicher und steuerlicher Kontext",
@@ -1838,14 +2136,14 @@
       },
       "taxHouseholdParts": "Steuerliche Anteile",
       "dependents": "Unterhaltsberechtigte",
-      "annualGrossIncome": "Jährliches Bruttoeinkommen (€)",
+      "annualGrossIncome": "Jährliches Bruttoeinkommen",
       "incomeHint": "Der Bruttobetrag deiner Gehaltsabrechnung. Steuerlicher Kontext — die Sparquote wird auf den Nettobetrag unten berechnet.",
       "netPay": "Was tatsächlich auf dem Konto ankommt",
       "netPayHint": "Beide Angaben stehen auf deiner Gehaltsabrechnung. Brutto allein genügt nicht: zuerst gehen die Sozialabgaben ab, zu einem Satz, der von deinem Status abhängt.",
-      "monthlyNetBeforeTax": "Monatliches Netto vor Steuern (€)",
-      "withholdingTaxRate": "Quellensteuersatz (%)",
+      "monthlyNetBeforeTax": "Monatliches Netto vor Steuern",
+      "withholdingTaxRate": "Quellensteuersatz",
       "netIncomeDerived": "Monatliches Netto:",
-      "savingsCapacity": "Monatliche Sparfähigkeit (€)",
+      "savingsCapacity": "Monatliche Sparfähigkeit",
       "riskProfile": "Risikoprofil",
       "risk": {
         "PRUDENT": "Vorsichtig",
@@ -1853,8 +2151,32 @@
         "DYNAMIC": "Dynamisch",
         "AGGRESSIVE": "Offensiv"
       },
-      "saved": "Profil gespeichert"
+      "saved": "Profil gespeichert",
+      "groupHousehold": "Haushalt und Steuern",
+      "groupIncome": "Einkommen",
+      "groupPlan": "Sparen und Anlagehorizont",
+      "unitEur": "€",
+      "unitYears": "Jahre",
+      "saving": "Wird gespeichert…",
+      "unsaved": "Ungespeicherte Änderungen"
     },
+    "sectionsNav": "Einstellungsbereiche",
+    "themeHint": "Standardmäßig dunkel; „System“ folgt deinem Gerät.",
+    "languageHint": "Sprache der Oberfläche.",
+    "dateFormatHint": "Wie Daten überall in Picsou angezeigt werden.",
+    "amountsHint": "Blendet alle Beträge aus, praktisch unterwegs.",
+    "sidebarStyleHint": "Darstellung des Navigationsmenüs am Computer.",
+    "usernameHint": "Dein Anmeldename.",
+    "dangerZone": "Sensibler Bereich",
+    "otherDevices": "Andere Geräte",
+    "otherDevicesHint": "Beendet die anderswo offenen „Angemeldet bleiben“-Sitzungen.",
+    "otherDevicesNone": "Kein anderes Gerät ist angemeldet.",
+    "logoutHint": "Beendet deine Sitzung auf diesem Gerät.",
+    "mfaEnabledHint": "Bei jeder Anmeldung wird ein Code aus deiner Authenticator-App verlangt.",
+    "mfaDisabledHint": "Nur dein Passwort schützt dieses Konto.",
+    "mfaRecoveryCodes": "Wiederherstellungscodes",
+    "dataTitle": "Deine Daten",
+    "exportAction": "Exportieren",
     "signInMethods": {
       "title": "Anmeldemethoden",
       "password": "Passwort",
@@ -2027,7 +2349,8 @@
         "label": "KI-Kategorisierung",
         "desc": "KI-Kategorisierung nicht kategorisierter Transaktionen starten und Fortschritt abrufen"
       }
-    }
+    },
+    "keysTitle": "Zugriffsschlüssel"
   },
   "telemetry": {
     "consent": {
@@ -2084,7 +2407,6 @@
       "save": "Speichern",
       "saving": "Wird gespeichert...",
       "saved": "Gespeichert",
-      "ready": "Enable Banking ist bereit.",
       "incomplete": "Enable Banking ist nicht vollständig konfiguriert. Es fehlt: {{fields}}. Banksuche und Synchronisierung schlagen fehl, bis das behoben ist.",
       "keypair": {
         "title": "Privater Schlüssel",
@@ -2105,7 +2427,28 @@
         "uploadInstruction": "In deinem Enable-Banking-Dashboard → deine App → Public key → füge diesen Block ein.",
         "copy": "Öffentlichen Schlüssel kopieren",
         "copied": "Kopiert!",
-        "download": "public.pem herunterladen"
+        "download": "public.pem herunterladen",
+        "present": "Vorhanden",
+        "missing": "Fehlt"
+      },
+      "statusReady": "Bereit",
+      "statusIncomplete": "Unvollständig",
+      "debug": {
+        "title": "API-Aufrufprotokoll",
+        "description": "Die rohen HTTP-Aufrufe (Endpunkt, Anfrage, Antwort) an Enable Banking, um eine Synchronisierung zu untersuchen.",
+        "view": "Aufrufe anzeigen",
+        "dialogTitle": "Enable Banking — rohe API-Aufrufe",
+        "count": "{{count}} Aufruf im Speicher",
+        "count_other": "{{count}} Aufrufe im Speicher",
+        "refresh": "Aktualisieren",
+        "export": "Als .txt exportieren",
+        "clear": "Leeren",
+        "error": "Das Aufrufprotokoll konnte nicht geladen werden.",
+        "empty": "Noch kein Aufruf erfasst. Starten Sie eine Synchronisierung über Enable Banking, um welche aufzuzeichnen.",
+        "colMethod": "Methode",
+        "colEndpoint": "Endpunkt",
+        "requestBody": "Anfrage-Body",
+        "responseBody": "Antwort-Body"
       }
     },
     "integrations": {
@@ -2125,7 +2468,7 @@
     "members": {
       "title": "Mitglieder",
       "description": "Verwalte die Konten der Familienmitglieder",
-      "createUser": "Benutzer erstellen",
+      "createUser": "Mitglied hinzufügen",
       "createUserPlaceholder": "Name des Mitglieds",
       "displayName": "Anzeigename",
       "noLogin": "—",
@@ -2154,7 +2497,8 @@
       "copyLink": "Kopieren",
       "copied": "Kopiert!",
       "noMembers": "Keine Mitglieder",
-      "loading": "Wird geladen..."
+      "loading": "Wird geladen...",
+      "moreActions": "Weitere Aktionen für {{name}}"
     },
     "ai": {
       "title": "AI categorization",
@@ -2206,6 +2550,11 @@
       "updateTitle": "Update verfügbar",
       "releaseNotes": "Versionshinweise",
       "later": "Später"
+    },
+    "nav": {
+      "label": "Bereiche der Verwaltung",
+      "ai": "KI",
+      "telemetry": "Telemetrie"
     }
   },
   "error": {
@@ -2213,13 +2562,17 @@
     "noConnection": "Keine Verbindung zum Server möglich",
     "noConnectionDesc": "Stelle sicher, dass der Server läuft, und versuche es erneut.",
     "degradedMode": "Keine Verbindung zum Server. Einige Funktionen sind eventuell nicht verfügbar.",
-    "notFound": "Die gesuchte Seite existiert nicht.",
+    "notFound": "Diese Adresse führt zu keiner Seite. Prüfen Sie den Link oder kehren Sie zum Dashboard zurück.",
     "backToDashboard": "Zurück zum Dashboard",
-    "forbidden": "Du hast keine Berechtigung, auf diese Seite zuzugreifen.",
+    "forbidden": "Ihr Konto hat keinen Zugriff auf diese Seite. Wenn Sie ihn benötigen, wenden Sie sich an den Administrator dieser Instanz.",
     "serverError": "Auf dem Server ist ein unerwarteter Fehler aufgetreten.",
     "crashTitle": "Etwas ist schiefgelaufen",
     "crashDesc": "Ein unerwarteter Fehler ist aufgetreten. Bitte lade die Seite neu.",
-    "reload": "Seite neu laden"
+    "reload": "Seite neu laden",
+    "code": "Fehler {{code}}",
+    "notFoundTitle": "Seite nicht gefunden",
+    "forbiddenTitle": "Zugriff verweigert",
+    "serverErrorTitle": "Serverfehler"
   },
   "family": {
     "dashboard": {
@@ -2232,7 +2585,6 @@
       "contributions": "Beiträge"
     },
     "settings": {
-      "title": "Familie",
       "members": "Familienmitglieder",
       "membersDesc": "Füge Mitglieder und verwaltete Profile hinzu und verwalte sie.",
       "you": "du",
@@ -2250,7 +2602,9 @@
       "shareGoals": "Ziele teilen",
       "shareNone": "Privat",
       "shareAll": "Alles teilen",
-      "shareManual": "Auswählen"
+      "shareManual": "Auswählen",
+      "sharing": "Mit der Familie teilen",
+      "sharingDesc": "Was die anderen Mitglieder von deinen Konten und Zielen sehen."
     }
   },
   "setup": {
@@ -2452,7 +2806,6 @@
         "running": "Wird getestet...",
         "success": "Enable Banking ist konfiguriert",
         "retry": "Test wiederholen",
-        "backToPrevious": "Zurück zum vorherigen Schritt",
         "activationNotice": "Verwende vor dem Test „Activate by linking accounts“ im Enable Banking Control Panel und autorisiere deine eigenen Konten. Der eingeschränkte Modus erlaubt nur diese verknüpften Konten. „Request activation“ ist der kommerzielle Weg.",
         "hints": {
           "invalid_application_id": "Die Application ID stimmt nicht mit den Daten bei Enable Banking überein. Überprüfe sie im Zugangsdaten-Schritt.",
@@ -2520,7 +2873,6 @@
       "loggingIn": "Du wirst angemeldet..."
     },
     "revolut": {
-      "surtitle": "REVOLUT",
       "title": "Revolut is ready to go.",
       "body": "Nothing to configure here — you'll connect Revolut with your phone number and passcode, then an approval from your mobile app, when you add the account.",
       "tip": "Head to Accounts → Add account → Revolut once setup is done.",
@@ -2692,15 +3044,6 @@
       "debt": "Restschuld",
       "net": "Nettowert",
       "equityShare": "{{pct}} des Objekts gehören Ihnen tatsächlich"
-    },
-    "summary": {
-      "title": "Immobilienvermögen",
-      "gross": "Brutto",
-      "debt": "Schulden",
-      "net": "Netto",
-      "gain": "Wertzuwachs",
-      "loanToValue": "Beleihungsquote: {{pct}} des Objektwerts",
-      "rentalIncome": "Monatliche Mieteinnahmen:"
     },
     "ownership": {
       "title": "Eigentumsanteile",
@@ -2938,7 +3281,8 @@
       "cycle": "Cycle",
       "ytd": "Year",
       "prev": "Previous period",
-      "next": "Next period"
+      "next": "Next period",
+      "label": "Zeitraum"
     },
     "asset": {
       "current": "Checking",
@@ -2948,16 +3292,10 @@
     },
     "overview": {
       "netThisCycle": "Net this cycle",
-      "incomeVsExpense": "{{income}} € in · {{expense}} € out",
-      "envelopes": "Envelopes",
       "onTrack": "Everything on track",
       "overBudget": "{{count}} envelope over budget",
       "overBudget_other": "{{count}} envelopes over budget",
-      "upcoming30": "Upcoming (30 d)",
-      "upcomingCount": "{{count}} payment due",
-      "upcomingCount_other": "{{count}} payments due",
       "investable": "Savings & invest.",
-      "contributedThisCycle": "{{amount}} € contributed this cycle",
       "toCategorize": "{{count}} transaction to categorize",
       "toCategorize_other": "{{count}} transactions to categorize",
       "topEnvelopes": "Most-used envelopes",
@@ -2968,7 +3306,33 @@
       "capitalIncomeEmpty": "Keine Kapitaleinkünfte in den nächsten 60 Tagen erwartet.",
       "reinvested": "Reinvestiert",
       "staysInEnvelope": "Bleibt im Mantel",
-      "capitalizedOutside": "thesauriert, außerhalb des Budgets"
+      "capitalizedOutside": "thesauriert, außerhalb des Budgets",
+      "cashflowTitle": "Einnahmen und Ausgaben je Zyklus",
+      "savingsRateHint": "(Einnahmen − Ausgaben) ÷ Einnahmen, Zyklus für Zyklus seit Januar.",
+      "savingsRateAverage": "Durchschnitt im Zeitraum: {{rate}}, gestrichelt",
+      "vsPreviousCycle": "ggü. Vorzyklus",
+      "saved": "Gespart und angelegt",
+      "toPay": "In diesem Zyklus noch zu zahlen",
+      "toPayCount": "{{count}} Abbuchung erwartet",
+      "toPayCount_other": "{{count}} Abbuchungen erwartet",
+      "subscriptions": {
+        "title": "Abos und Lastschriften",
+        "count": "{{count}} bestätigte wiederkehrende Abbuchung",
+        "count_other": "{{count}} bestätigte wiederkehrende Abbuchungen",
+        "perMonth": "pro Monat",
+        "perYear": "Pro Jahr",
+        "nextDue": "Nächste Fälligkeiten",
+        "empty": "Noch keine bestätigte wiederkehrende Abbuchung."
+      },
+      "merchants": {
+        "title": "Top-Händler",
+        "total": "Ausgaben im Zyklus",
+        "count": "{{count}} Einkauf",
+        "count_other": "{{count}} Einkäufe",
+        "others": "Weitere Händler",
+        "empty": "Keine Ausgaben in diesem Zyklus.",
+        "error": "Die Ausgaben nach Händler konnten nicht geladen werden."
+      }
     },
     "cashflow": {
       "income": "Income",
@@ -3077,7 +3441,10 @@
         "autoConfirmedDesc": "Detected and confirmed automatically",
         "priceChangeDesc": "Price went from {{from}} to {{to}}",
         "acknowledge": "Got it"
-      }
+      },
+      "seriesCount": "{{count}} verfolgte Serie",
+      "seriesCount_other": "{{count}} verfolgte Serien",
+      "addTitle": "Neue wiederkehrende Zahlung"
     },
     "categorize": {
       "subtitle": "Assign a category to unclassified transactions.",
@@ -3191,10 +3558,6 @@
     "revokeTitle": "Revoke access for this app?",
     "revokeDescription": "This app immediately loses access to your data. You can reconnect it later from the app."
   },
-  "pockets": {
-    "subAccountsCount": "{{count}} Unterkonto",
-    "subAccountsCount_other": "{{count}} Unterkonten"
-  },
   "savings": {
     "configSection": "Savings configuration",
     "product": "Product",
@@ -3225,29 +3588,290 @@
     "suggestionsBanner_other": "{{count}} savings accounts to configure",
     "configureSavings": "Configure"
   },
-  "activation": {
-    "title": "Aktiviere dein Konto",
-    "subtitle": "Wähle ein Passwort, um die Einrichtung deines Kontos abzuschließen.",
-    "subtitleSso": "Aktiviere es mit {{provider}} oder wähle ein Passwort, um die Einrichtung deines Kontos abzuschließen.",
-    "noticeTitle": "Hinweis zum Datenzugriff",
-    "noticeBody": "Der Administrator dieser Picsou-Instanz hat technischen Zugriff auf alle hier gespeicherten Daten, einschließlich Bankverbindungen und API-Zugangsdaten. Mit der Aktivierung deines Kontos bestätigst du dies.",
-    "acknowledge": "Ich verstehe und bestätige, dass der Administrator Zugriff auf alle Daten dieser Instanz hat.",
-    "ssoButton": "Mit {{provider}} aktivieren",
-    "password": "Passwort",
-    "passwordPlaceholder": "Mindestens 8 Zeichen",
-    "confirmPassword": "Passwort bestätigen",
-    "confirmPlaceholder": "Passwort wiederholen",
-    "submit": "Konto aktivieren",
-    "submitting": "Wird aktiviert...",
-    "successTitle": "Konto aktiviert!",
-    "successRedirect": "Weiterleitung zur Anmeldung...",
-    "errors": {
-      "acknowledgeRequired": "Du musst den Hinweis zum Datenzugriff bestätigen.",
-      "passwordTooShort": "Das Passwort muss mindestens 8 Zeichen lang sein.",
-      "passwordMismatch": "Die Passwörter stimmen nicht überein.",
-      "invalidLink": "Ungültiger Aktivierungslink.",
-      "failed": "Die Aktivierung ist fehlgeschlagen. Der Link ist möglicherweise abgelaufen."
+  "topbar": {
+    "search": "Konto, Wertpapier, Seite suchen…",
+    "scope": "Ansicht",
+    "scopeMe": "Ich",
+    "scopeHousehold": "Haushalt",
+    "synced": "Synchronisiert {{time}}",
+    "syncAttention": "Synchronisierung prüfen"
+  },
+  "palette": {
+    "title": "Suche",
+    "description": "Konto, Wertpapier, Seite oder Aktion finden.",
+    "placeholder": "Konto, Wertpapier, Seite, Aktion…",
+    "esc": "Esc",
+    "navigate": "navigieren",
+    "open": "öffnen",
+    "anywhere": "von jeder Seite aus",
+    "syncAll": "Alle Konten synchronisieren",
+    "groups": {
+      "pages": "Gehe zu",
+      "accounts": "Konten",
+      "holdings": "Wertpapiere",
+      "actions": "Schnellaktionen"
     }
+  },
+  "assetClasses": {
+    "cash": "Liquidität",
+    "savings": "Regulierte Sparkonten",
+    "equity": "Aktien & ETFs",
+    "crypto": "Krypto",
+    "funds": "Fonds (Versicherung, Vorsorge)",
+    "scpi": "SCPI",
+    "realestate": "Immobilien",
+    "other": "Sonstiges"
+  },
+  "breakdown": {
+    "view": "Diagrammtyp",
+    "bar": "Gestapelter Balken",
+    "donut": "Ringdiagramm",
+    "treemap": "Treemap"
+  },
+  "income": {
+    "error": "Passive Einkünfte konnten nicht geladen werden.",
+    "empty": {
+      "title": "Noch keine passiven Einkünfte",
+      "description": "Dividenden, SCPI-Ausschüttungen, Mieten und Sparzinsen erscheinen hier, sobald eines Ihrer Konten welche abwirft."
+    },
+    "hero": {
+      "projected": "Erwartete passive Einkünfte über 12 Monate",
+      "perMonth": "≈ {{amount}} pro Monat",
+      "received": "{{amount}} Dividenden in den letzten 12 Monaten erhalten",
+      "sources": "Woher sie kommen",
+      "coverage": "Deckung der Grundausgaben",
+      "coverageDetail": "{{income}} pro Monat gegenüber {{expenses}} Grundausgaben.",
+      "coverageUnknown": "Geben Sie Ihre monatlichen Grundausgaben an, um zu sehen, welchen Anteil sie decken:"
+    },
+    "source": {
+      "dividends": "Dividenden",
+      "scpi": "SCPI",
+      "rent": "Mieten",
+      "interest": "Sparzinsen"
+    },
+    "type": {
+      "dividends": "Aktie / ETF",
+      "scpi": "SCPI",
+      "rent": "Immobilie",
+      "interest": "Sparkonto"
+    },
+    "payment": {
+      "dividends": "Dividende",
+      "scpi": "SCPI-Ausschüttung",
+      "interest": "Jahreszinsen"
+    },
+    "months": {
+      "title": "Monat für Monat",
+      "description": "Prognose für die nächsten 12 Monate",
+      "period": "Zeitraum",
+      "periods": {
+        "past": "Erhalten",
+        "next": "Prognose",
+        "both": "Beides"
+      },
+      "descriptions": {
+        "past": "In den letzten 12 Monaten erhaltene Dividenden",
+        "both": "Erhaltene Dividenden der letzten 12 Monate, Prognose für die nächsten 12"
+      },
+      "received": "Erhaltene Dividenden",
+      "forecastOf": "{{source}} (Prognose)",
+      "empty": "Nichts in diesem Zeitraum.",
+      "receivedError": "Die erhaltenen Dividenden konnten nicht geladen werden.",
+      "unconverted": "{{count}} erhaltene Dividende ohne Wechselkurs wird nicht mitgezählt.",
+      "unconverted_other": "{{count}} erhaltene Dividenden ohne Wechselkurs werden nicht mitgezählt."
+    },
+    "upcoming": {
+      "title": "Nächste Zahlungen",
+      "empty": "Keine Zahlung erwartet.",
+      "exDate": "Ex-Tag"
+    },
+    "table": {
+      "title": "Einkünfte nach Quelle",
+      "description": "Erwartete Einkünfte über 12 Monate",
+      "source": "Quelle",
+      "type": "Art",
+      "amount": "Jahreseinkünfte",
+      "rate": "Zinssatz",
+      "cadence": "Häufigkeit",
+      "next": "Nächste"
+    }
+  },
+  "realEstatePage": {
+    "perYearSuffix": "/Jahr",
+    "kpi": {
+      "gross": "Bruttowert",
+      "debt": "Immobilienschulden",
+      "net": "Nettowert",
+      "gain": "Nicht realisierter Gewinn",
+      "loanToValue": "Beleihungsquote",
+      "rent": "Monatliche Miete",
+      "propertyCount": "{{count}} Immobilie",
+      "propertyCount_other": "{{count}} Immobilien",
+      "scpiCount": "{{count}} SCPI",
+      "scpiCount_other": "{{count}} SCPI",
+      "loanCount": "{{count}} verknüpfter Kredit",
+      "loanCount_other": "{{count}} verknüpfte Kredite",
+      "netWorthShare": "{{pct}} des Nettovermögens",
+      "sincePurchase": "seit dem Kauf",
+      "loanToValueHint": "Schulden im Verhältnis zum Bruttowert",
+      "rentHint": "Für Ihre Immobilien angegebene Miete"
+    },
+    "property": {
+      "boughtIn": "gekauft im {{date}}",
+      "range": "Spanne",
+      "updated": "Aktualisiert"
+    },
+    "scpi": {
+      "subscriptionValue": "Wert zum Zeichnungspreis",
+      "distribution": "Ausschüttung"
+    },
+    "loan": {
+      "totalInterest": "Gesamte Zinskosten",
+      "remainingInterest": "Noch zu zahlende Zinsen"
+    },
+    "dti": {
+      "title": "Schuldenquote",
+      "over": "Über {{pct}}",
+      "under": "Unter der Schwelle von {{pct}}",
+      "ofIncome": "des Nettolohns vor Steuern",
+      "threshold": "Schwelle {{pct}}",
+      "detail": "{{payments}} Kreditraten für {{income}} monatlichen Nettolohn vor Steuern laut Ihrem Profil.",
+      "needsIncome": "Geben Sie in den Einstellungen Ihren monatlichen Nettolohn vor Steuern an, um Ihre Schuldenquote zu berechnen."
+    },
+    "cards": {
+      "title": "Anstehende Kartenabrechnungen"
+    },
+    "empty": {
+      "properties": "Noch keine Immobilie",
+      "propertiesHint": "Fügen Sie eine Immobilie hinzu, um ihren Schätzwert und den finanzierenden Kredit zu verfolgen.",
+      "loansHint": "Fügen Sie ein Kreditkonto hinzu, um seine Tilgung zu verfolgen."
+    }
+  },
+  "investments": {
+    "value": "Depotwert",
+    "unrealisedGain": "nicht realisierter Gewinn",
+    "unrealisedLoss": "nicht realisierter Verlust",
+    "dividends12m": "Dividenden der letzten 12 Monate",
+    "lines": "Positionen",
+    "wrapperCount": "{{count}} Konto",
+    "wrapperCount_other": "{{count}} Konten",
+    "chartTitle": "Entwicklung des Depots",
+    "empty": "Noch keine Anlagen erfasst.",
+    "emptyHint": "Fügen Sie einen PEA, ein Wertpapierdepot, eine Krypto-Wallet oder eine Lebensversicherung hinzu, um Ihre Positionen hier zu verfolgen.",
+    "positions": {
+      "title": "Positionen",
+      "count": "{{count}} Position",
+      "count_other": "{{count}} Positionen",
+      "filter": "Kontoart",
+      "other": "Sonstige",
+      "position": "Position",
+      "wrapper": "Kontoart",
+      "avgCost": "Ø-Kosten",
+      "price": "Kurs",
+      "pnl": "Nicht realisiert +/−",
+      "weight": "Anteil"
+    },
+    "concentration": {
+      "title": "Konzentration und Währungen",
+      "top": "Größte {{count}} Position",
+      "top_other": "Größte {{count}} Positionen",
+      "largest": "{{name}} macht {{share}} des Depots aus."
+    },
+    "realized": {
+      "description": "Woher sie stammen · gewichteter Durchschnittspreis, inkl. Gebühren",
+      "year": "Jahr",
+      "net": "Netto realisiert {{year}}",
+      "summary": "{{gains}} Gewinne, {{losses}} Verluste, aus {{count}} Verkauf",
+      "summary_other": "{{gains}} Gewinne, {{losses}} Verluste, aus {{count}} Verkäufen",
+      "gains": "Realisierte Gewinne",
+      "noGains": "In diesem Jahr kein Gewinn realisiert.",
+      "losses": "Verluste"
+    },
+    "tax": {
+      "title": "Steuerliche Hüllen",
+      "years": "{{count}} Jahr",
+      "years_other": "{{count}} Jahre",
+      "months": "{{count}} Monat",
+      "months_other": "{{count}} Monate",
+      "ageOf": "Alter von {{name}}",
+      "pea": {
+        "pending": "Gewinne ab dem {{date}} einkommensteuerfrei.",
+        "reached": "Gewinne seit dem {{date}} einkommensteuerfrei."
+      },
+      "av": {
+        "pending": "Jährlicher Freibetrag auf entnommene Gewinne ab dem {{date}}.",
+        "reached": "Jährlicher Freibetrag auf entnommene Gewinne seit dem {{date}}."
+      },
+      "missing": "Eröffnungsdatum nicht angegeben: Das Alter lässt sich nicht berechnen.",
+      "setDate": "Unter Konten eintragen"
+    },
+    "dividendsSkipped": "Ohne {{count}} Gutschrift ohne Wechselkurs",
+    "dividendsSkipped_other": "Ohne {{count}} Gutschriften ohne Wechselkurs",
+    "perf": {
+      "title": "Performance",
+      "window": "Vom {{from}} bis {{to}}",
+      "period": "Zeitraum",
+      "periods": {
+        "3": "3M",
+        "6": "6M",
+        "12": "1J",
+        "36": "3J",
+        "60": "5J",
+        "0": "Alle"
+      },
+      "twr": "Performance (TWR)",
+      "twrNote": "Ohne Effekt Ihrer Einzahlungen",
+      "annualized": "Annualisierte Performance",
+      "annualizedNote": "Durchschnitt pro Jahr",
+      "xirr": "Rendite (XIRR)",
+      "xirrNote": "Pro Jahr, nach Ihren Einzahlungen",
+      "volatility": "Volatilität",
+      "volatilityNote": "Schwankungsbreite pro Jahr",
+      "drawdown": "Größter Rückgang",
+      "drawdownDates": "Vom {{from}} bis {{to}}",
+      "noDrawdown": "Kein Rückgang im Zeitraum",
+      "missing": {
+        "history": "Noch nicht genug Verlauf",
+        "year": "Weniger als ein Jahr Verlauf",
+        "xirr": "Verlauf zu kurz oder unvollständig",
+        "returns": "Weniger als 20 Tage Daten"
+      },
+      "explain": "Die TWR misst Ihre Anlagen ohne den Effekt Ihrer Einzahlungen und lässt sich so mit einem Index vergleichen; die XIRR misst, was Ihr Geld eingebracht hat, je nachdem, wann und wie viel Sie eingezahlt haben.",
+      "empty": "Noch kein Performanceverlauf",
+      "emptyHint": "Picsou speichert jeden Tag den Wert Ihrer Anlagen: Die Performance erscheint in wenigen Tagen."
+    },
+    "benchmark": {
+      "compareTo": "Mit einem Index vergleichen",
+      "none": "Kein Index",
+      "portfolio": "Ihr Portfolio",
+      "base": "Basis 100 am {{date}}, ohne Einzahlungen",
+      "gap": "Abstand",
+      "points": "{{value}} Pkt.",
+      "summary": "Im Zeitraum: Ihr Portfolio {{portfolio}}, {{name}} {{benchmark}}, also ein Abstand von {{gap}}.",
+      "empty": "Die Kurse von {{name}} liegen noch nicht vor: Picsou lädt sie mit der Kursaktualisierung. Bis dahin wird Ihr Portfolio allein angezeigt."
+    },
+    "fees": {
+      "title": "Gebühren",
+      "description": "Laufende Kosten der gehaltenen Fonds und Ordergebühren über 12 Monate",
+      "ter": "Durchschnittliche laufende Kosten (TER)",
+      "perYear": "{{value}} pro Jahr",
+      "annualCost": "Also etwa {{amount}} pro Jahr auf Ihren Bestand",
+      "unknown": "Die laufenden Kosten dieser Anlagen sind nicht bekannt: Aktien und Krypto haben keine, und für Ihre Fonds wurde keine TER gefunden.",
+      "coverage": "TER bekannt für {{share}} des Werts",
+      "costliest": "Teuerste Positionen",
+      "lineTer": "TER {{value}}",
+      "costPerYear": "{{amount}} / Jahr",
+      "rest": "{{count}} weitere Position: {{amount}} pro Jahr",
+      "rest_other": "{{count}} weitere Positionen: {{amount}} pro Jahr",
+      "broker": "Ordergebühren über 12 Monate",
+      "brokerCount": "{{count}} Transaktion mit Gebühren",
+      "brokerCount_other": "{{count}} Transaktionen mit Gebühren",
+      "empty": "Noch keine Gebühren anzuzeigen."
+    }
+  },
+  "activation": {
+    "subtitleSso": "Aktiviere es mit {{provider}} oder wähle ein Passwort, um die Einrichtung deines Kontos abzuschließen.",
+    "ssoButton": "Mit {{provider}} aktivieren"
   },
   "reauth": {
     "confirm": "Bestätigen",

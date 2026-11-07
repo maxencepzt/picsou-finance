@@ -6,7 +6,9 @@ import type { GoalMonthEntry, GoalProgress } from '@/types/api'
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string) => key,
+    // Keys stay readable, except the objective caption, whose amount format is what is under test.
+    t: (key: string, opts?: { value?: string }) =>
+      key === 'goals.objectiveShort' ? `obj.\u00a0${opts?.value}` : key,
     i18n: { resolvedLanguage: 'fr', language: 'fr' },
   }),
 }))

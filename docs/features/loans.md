@@ -1,6 +1,6 @@
 # Feature: Loan accounts (LOAN type)
 
-> Last updated: 2026-10-31
+> Last updated: 2026-11-03
 
 ## Sign convention
 
@@ -59,8 +59,11 @@ remaining capital from the formula. As a result, the historical balance chart sh
   - `getLoanSummary(id, memberId)` — loads the Debt, validates type, delegates to amortization service
 - `backend/src/main/java/com/picsou/controller/AccountController.java` — `GET /accounts/{id}/loan-summary`
 - `backend/src/main/resources/db/migration/V27__loan_extra_fields.sql` — adds `insurance_monthly`, `file_fees`
-- `frontend/src/components/loan/LoanDetailSection.tsx` — orchestrator
-  (monthly breakdown, progress, cost summary, amortization chart)
+- `frontend/src/components/loan/LoanDetailSection.tsx` — orchestrator: the amortisation curve
+  beside `LoanProgressCard` (capital repaid, installments, and one monthly payment split into
+  capital / interest / insurance on the chart ramp), then the cost summary as three tiles. The
+  remaining capital, borrowed amount, monthly payment, rate and end date sit in the detail page's
+  hero, with the month change of the remaining capital as an inverted `Delta`
 - `frontend/src/components/shared/AccountForm.tsx` — extended form for LOAN
 - `frontend/src/pages/accounts/AccountDetailPage.tsx` — replaces holdings/transactions with the loan section
 
@@ -82,7 +85,7 @@ useLoanSummary(id)  ─▶  GET /api/accounts/{id}/loan-summary
               { summary, schedule[]: 60 monthly entries }
                               │
                               ▼
-   LoanDetailSection ─▶ MonthlyBreakdown · Progress · Summary · AmortizationChart
+   LoanDetailSection ─▶ AmortizationChart + Progress (with the monthly split) · Summary
 
 
 Daily 08:05 cron

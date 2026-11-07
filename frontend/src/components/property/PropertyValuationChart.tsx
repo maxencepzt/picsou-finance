@@ -1,7 +1,9 @@
+import type { ReactNode } from 'react'
 import { Area, AreaChart, CartesianGrid, ReferenceLine, XAxis, YAxis } from 'recharts'
 import { useTranslation } from 'react-i18next'
 import { type ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
 import { localeFromLanguage } from '@/lib/utils'
 import { useMoney } from '@/hooks/use-money'
 import { MONEY_AXIS_WIDTH } from '@/lib/money'
@@ -12,6 +14,9 @@ interface PropertyValuationChartProps {
   accountId: number
   /** Purchase price plus fees, drawn as the break-even line. */
   costBasis: number
+  className?: string
+  /** Shown instead of nothing when there are fewer than two estimates (the detail page's balance chart). */
+  fallback?: ReactNode
 }
 
 const chartConfig = {
@@ -27,13 +32,15 @@ const chartConfig = {
  * <p>Needs at least two estimates to say anything — with a single point there is no trend,
  * only a dot, so the chart stays hidden until the monthly job has run more than once.
  */
-export function PropertyValuationChart({ accountId, costBasis }: PropertyValuationChartProps) {
+export function PropertyValuationChart({ accountId, costBasis, className, fallback = null }: PropertyValuationChartProps) {
   const money = useMoney()
   const { t, i18n } = useTranslation()
   const locale = localeFromLanguage(i18n.resolvedLanguage ?? i18n.language)
-  const { data = [] } = usePropertyValuations(accountId)
+  const { data = [], isLoading } = usePropertyValuations(accountId)
 
-  if (data.length < 2) return null
+  // A placeholder while loading keeps a fallback chart from flashing in first.
+  if (isLoading && fallback) return <Skeleton className={`h-72 rounded-2xl ${className ?? ''}`} />
+  if (data.length < 2) return fallback
 
   // The API returns newest first; a chart reads left to right.
   const points = [...data]
@@ -41,23 +48,26 @@ export function PropertyValuationChart({ accountId, costBasis }: PropertyValuati
     .map(v => ({ date: v.valuedAt, value: v.estimatedValue }))
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base">{t('property.chart.title')}</CardTitle>
+    <Card className={className}>
+      <CardHeader>
+        <CardTitle>{t('property.chart.title')}</CardTitle>
       </CardHeader>
       <CardContent>
         <ChartContainer config={chartConfig} className="h-[220px] w-full">
           <AreaChart data={points} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
             <defs>
               <linearGradient id="fillPropertyValue" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="var(--color-value)" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="var(--color-value)" stopOpacity={0.05} />
+                <stop offset="5%" stopColor="var(--color-value)" style={{ stopOpacity: 'var(--chart-area-opacity)' }} />
+                <stop offset="95%" stopColor="var(--color-value)" stopOpacity={0.04} />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
             <XAxis
               dataKey="date"
               {...AXIS_PROPS}
+              // Recharts drops the ticks that would overlap, so a phone gets fewer months.
+              interval="preserveStartEnd"
+              minTickGap={16}
               tickFormatter={(value) =>
                 new Date(value).toLocaleDateString(locale, { month: 'short', year: '2-digit' })}
             />
@@ -69,7 +79,7 @@ export function PropertyValuationChart({ accountId, costBasis }: PropertyValuati
               width={MONEY_AXIS_WIDTH}
             />
             <ChartTooltip
-              content={<ChartTooltipContent formatter={(value) => money.amount(value as number)} />}
+              content={<ChartTooltipContent formatter={(value) => <span className="font-medium tabular-nums text-foreground">{money.amount(value as number)}</span>} />}
             />
             <Area
               dataKey="value"
@@ -83,7 +93,7 @@ export function PropertyValuationChart({ accountId, costBasis }: PropertyValuati
                 y={costBasis}
                 strokeDasharray="4 4"
                 stroke="var(--muted-foreground)"
-                label={{ value: t('property.chart.costBasis'), position: 'insideTopLeft', fontSize: 11 }}
+                label={{ value: t('property.chart.costBasis'), position: 'insideTopLeft', fontSize: 11, fill: 'var(--muted-foreground)' }}
               />
             )}
           </AreaChart>

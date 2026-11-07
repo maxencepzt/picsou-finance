@@ -1,6 +1,6 @@
 # Feature: Finary Import
 
-> Last updated: 2026-10-31
+> Last updated: 2026-11-03
 
 ## Context
 
@@ -78,7 +78,7 @@ Possible status values: `OK`, `NEEDS_MAPPING`, `TOTP_REQUIRED`, `NOT_CONNECTED`.
 
 **Scheduler:** `SchedulerService.dailyBankSync()` calls `autoSync()` for each family member at 08:00 UTC. If it returns `NEEDS_MAPPING`, a warning is logged and the user must sync manually. If `TOTP_REQUIRED`, the session is flagged and the user must re-authenticate.
 
-**Frontend:** The "Sync Finary" button in `FinaryTab` calls `POST /api/finary/api-sync/auto`. On `OK` it shows a success toast. On `NEEDS_MAPPING` it falls through to the full preview+mapping wizard. On `TOTP_REQUIRED` it shows the TOTP input and the user retries via the preview endpoint.
+**Frontend:** Connected, `FinaryTab` shows a status card (connection, masked e-mail, last sync; *Disconnect* behind a confirmation, *Sync*), the 2FA code as its own step when Finary asks for it, then the shared `.xlsx` drop zone (`FileDropZone`). The mapping step is one card of rows with a skip / map / create `SegmentedControl` each; the result shows four `PanelStat` tiles and the imported accounts. The "Sync Finary" button in `FinaryTab` calls `POST /api/finary/api-sync/auto`. On `OK` it shows a success toast. On `NEEDS_MAPPING` it falls through to the full preview+mapping wizard. On `TOTP_REQUIRED` it shows the TOTP input and the user retries via the preview endpoint.
 
 ### Key files
 

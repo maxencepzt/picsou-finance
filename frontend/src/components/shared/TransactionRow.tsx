@@ -9,8 +9,6 @@ interface TransactionRowProps {
   transaction: Transaction
   logoUrlFor?: (brandId: number | null | undefined) => string | null
   onClick?: (tx: Transaction) => void
-  /** Alternating background index — pass the row index from the parent list. */
-  index?: number
   /** The provider of the account every row belongs to, when the list shows one account only. */
   accountProvider?: string | null
 }
@@ -19,7 +17,7 @@ interface TransactionRowProps {
  * One ledger row. A CORUM Life operation shows its own label even when a merchant label exists;
  * a budget-neutral row carries an "in contract" badge to say it stays out of the budget.
  */
-export function TransactionRow({ transaction: tx, logoUrlFor, onClick, index = 0, accountProvider }: TransactionRowProps) {
+export function TransactionRow({ transaction: tx, logoUrlFor, onClick, accountProvider }: TransactionRowProps) {
   const { t } = useTranslation()
   const label = isCorumLifeOperation(tx, accountProvider)
     ? transactionDescription(tx, t, accountProvider)
@@ -33,7 +31,6 @@ export function TransactionRow({ transaction: tx, logoUrlFor, onClick, index = 0
       className={cn(
         'flex items-center justify-between rounded-xl px-4 py-3 transition-colors',
         onClick ? 'cursor-pointer hover:bg-muted/60' : 'hover:bg-muted/60',
-        index % 2 === 0 ? 'bg-muted/20' : 'bg-transparent',
       )}
     >
       <div className="min-w-0 flex-1 flex items-center gap-3">
@@ -73,8 +70,7 @@ export function TransactionRow({ transaction: tx, logoUrlFor, onClick, index = 0
         currency={tx.nativeCurrency}
         showSign={tx.amount !== 0}
         className={cn(
-          'ml-4 text-base font-semibold tabular-nums shrink-0',
-          tx.amount >= 0 ? 'text-emerald-500' : 'text-foreground',
+          'ml-4 shrink-0 text-sm font-semibold tabular-nums text-foreground',
         )}
       />
     </div>

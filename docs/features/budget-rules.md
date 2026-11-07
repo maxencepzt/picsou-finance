@@ -1,6 +1,6 @@
 # Feature: Budget categorization rules — authoring UX
 
-> Last updated: 2026-06-28
+> Last updated: 2026-11-03
 > Status: **Phase 1 implemented.** Phases 2 & 3 are roadmap (vision only, not detailed design).
 
 ## Context
@@ -39,8 +39,9 @@ Picsou already has a categorization rules engine, but the only way to "teach" it
 - In `CategorizeTab.tsx` `InboxRow`, replace the plain truncated `<p>` label with a tokenized, click-to-select word picker, and turn the "Remember a rule" `Switch` into a **"Create rule"** button.
 - New `<RuleWordPicker>` component:
   - Tokenizes the displayed label (`merchantLabel || counterparty || description`) on whitespace + punctuation, preserving original casing. UUID-heavy tokens (e.g. `To EUR MB:<uuid>` in Revolut pocket labels) are kept as independent, skippable tokens.
-  - Tracks a `Set<tokenIndex>` of selected words; selected tokens render highlighted, reusing the `ColorPicker` interaction pattern (`border-2`, accent bg, `hover:scale-110`).
-  - **AND/OR toggle** switches between `KEYWORDS_ALL` and `KEYWORDS_ANY` match semantics live.
+  - Tracks a `Set<tokenIndex>` of selected words; each word is a 32px chip with `aria-pressed`, the selected ones tinted blue (`bg-primary/12`, hairline ring), the others on `bg-muted`.
+  - **AND/OR toggle** (`SegmentedControl`) switches between `KEYWORDS_ALL` and `KEYWORDS_ANY` match semantics live.
+  - The preview list tolerates a response without `transactions` (demo mode answers unmocked endpoints with `{}`), which used to crash the picker.
   - Assembles selected words into the chosen pattern and shows a **live preview list** (debounced from the dry-run endpoint) with **per-row checkboxes** for cherry-picking which transactions receive the rule on confirm. Live counter: *"Concerns N transactions."*
 - **Surface:** a polished `Dialog` on desktop, **bottom-sheet** on mobile (responsive is mandatory). The roomy surface hosts the word picker, category select, the live preview/count, and a confirm button.
 - API/hooks: extend `budgetApi`/`features/budget/hooks.ts` with `previewRule()` and reuse `createRule()`/`categorize()`.
@@ -64,7 +65,7 @@ RuleWordPicker (Dialog / bottom-sheet)
 | Add `merchantLabel` to match fields | Words shown == words matched; removes silent non-firing rules | Map clicks back to raw field (fragile, surprising) |
 | Retro-apply with manual-guard + preview count | Instant, "magic" payoff without clobbering manual choices | Apply blindly (mass mis-tag risk) / never retro-apply (feels inert) |
 | Dialog (desktop) / bottom-sheet (mobile) | Room for preview + count; meets mobile-responsive requirement | Inline-in-row (cramped, no room for preview) |
-| Reuse `ColorPicker` toggle pattern for tokens | Existing, polished, accessible interaction precedent | Bespoke selection styling |
+| Token chips with `aria-pressed` and the selected tint | Same selection language as the rest of the app (blue for what is chosen) | Scaled swatches (clipped in dialogs) |
 
 ## Gotchas / Pitfalls
 

@@ -2,16 +2,17 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router'
 import { useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, ChevronRight } from 'lucide-react'
+import { ArrowLeft, ChevronRight, Receipt } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { CurrencyDisplay } from '@/components/shared/CurrencyDisplay'
+import { EmptyState } from '@/components/shared/EmptyState'
 import { ErrorState } from '@/components/shared/ErrorState'
 import { TransactionsList } from '@/components/shared/TransactionsList'
 import { useCategoryDetail, useCategories, useCategorize, useMerchantLogoUrl } from '@/features/budget/hooks'
+import { formatPercent } from '@/lib/utils'
 import type { CashflowPeriod, ChildSpend } from '@/types/api'
-import { FALLBACK_COLOR } from './budget-meta'
-import { PeriodToggle } from './budget-utils'
+import { BudgetToolbar, ColorDot, PeriodToggle } from './budget-utils'
 import { PeriodNavigator } from './PeriodNavigator'
 import { useBudgetPeriod } from './BudgetPeriodContext'
 
@@ -23,25 +24,29 @@ import { useBudgetPeriod } from './BudgetPeriodContext'
  */
 
 /** A tappable per-sub-category rollup row shown when drilling a parent category. */
-function SubcategoryRow({ child }: { child: ChildSpend }) {
+function SubcategoryRow({ child, total }: { child: ChildSpend; total: number }) {
   const { t } = useTranslation()
+  const share = total > 0 ? (Math.abs(child.total) / total) * 100 : 0
   return (
     <Link
       to={`/budget/spending/${child.categoryId}`}
       className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-muted/60"
     >
-      <span
-        className="inline-block size-2.5 shrink-0 rounded-full"
-        style={{ backgroundColor: child.color || FALLBACK_COLOR }}
-      />
+      <ColorDot color={child.color} />
       <div className="flex min-w-0 flex-1 items-center justify-between gap-3">
         <span className="flex min-w-0 items-center gap-2">
-          <span className="truncate text-sm font-medium">{child.name}</span>
-          <span className="shrink-0 text-xs text-muted-foreground">
+          <span className="truncate text-[13px] font-semibold">{child.name}</span>
+          <span className="hidden shrink-0 text-xs text-muted-foreground sm:inline">
             {t('budget.flow.transactionsCount', { count: child.count })}
           </span>
         </span>
-        <CurrencyDisplay value={child.total} className="shrink-0 text-sm font-semibold tabular-nums" />
+        <span className="flex shrink-0 items-baseline gap-2">
+          <CurrencyDisplay value={child.total} className="text-[13px] font-semibold tabular-nums text-foreground" />
+          {/* A share, so it stays legible in privacy mode. */}
+          <span className="w-9 text-right text-xs text-muted-foreground tabular-nums">
+            {formatPercent(share, { fractionDigits: 0 })}
+          </span>
+        </span>
       </div>
       <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
     </Link>
@@ -69,9 +74,9 @@ export function CategoryDetailPage() {
   const backLink = (
     <Link
       to="/budget/spending"
-      className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+      className="inline-flex h-8 items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
     >
-      <ArrowLeft className="size-4" />
+      <ArrowLeft className="size-4" aria-hidden="true" />
       {t('budget.detail.back')}
     </Link>
   )
@@ -87,18 +92,15 @@ export function CategoryDetailPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        {backLink}
-        <div className="flex flex-wrap items-center gap-2">
-          <PeriodNavigator
-            period={period}
-            from={data?.from}
-            to={data?.to}
-            onAnchorChange={setAnchor}
-          />
-          <PeriodToggle value={period} onChange={(p) => { setPeriod(p); setAnchor(undefined) }} />
-        </div>
-      </div>
+      <BudgetToolbar lead={backLink}>
+        <PeriodNavigator
+          period={period}
+          from={data?.from}
+          to={data?.to}
+          onAnchorChange={setAnchor}
+        />
+        <PeriodToggle value={period} onChange={(p) => { setPeriod(p); setAnchor(undefined) }} />
+      </BudgetToolbar>
 
       {isError && (
         <ErrorState message={t('budget.detail.error')} onRetry={() => refetch()} />
@@ -106,32 +108,30 @@ export function CategoryDetailPage() {
 
       {isLoading && !isError && (
         <>
-          <Skeleton className="h-20 w-full rounded-xl" />
-          <Skeleton className="h-64 w-full rounded-xl" />
+          <Skeleton className="h-20 w-full rounded-2xl" />
+          <Skeleton className="h-64 w-full rounded-2xl" />
         </>
       )}
 
       {!isLoading && !isError && data && (
         <>
+          {/* The category as a headline figure: name and count on the left, the period's total in ink. */}
           <Card>
-            <CardContent className="flex items-center justify-between gap-4 pt-6">
+            <CardContent className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
               <div className="flex min-w-0 items-center gap-3">
-                <span
-                  className="inline-block size-3 shrink-0 rounded-full"
-                  style={{ backgroundColor: data.color || FALLBACK_COLOR }}
-                />
+                <ColorDot color={data.color} className="size-3 shrink-0 rounded-full" />
                 <div className="min-w-0">
-                  <p className="truncate text-lg font-semibold">{data.name}</p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="line-clamp-2 text-lg leading-tight font-bold break-words">{data.name}</p>
+                  <p className="text-[13px] text-muted-foreground">
                     {t('budget.flow.transactionsCount', { count: data.count })}
                   </p>
                 </div>
               </div>
-              <div className="text-right">
-                <p className="text-xs text-muted-foreground">{t('budget.detail.total')}</p>
+              <div className="flex flex-col sm:items-end">
+                <span className="text-[13px] font-medium text-muted-foreground">{t('budget.detail.total')}</span>
                 <CurrencyDisplay
                   value={data.total}
-                  className="text-xl font-bold tabular-nums text-foreground"
+                  className="text-[22px] leading-tight font-semibold tracking-tight tabular-nums text-foreground"
                 />
               </div>
             </CardContent>
@@ -140,20 +140,22 @@ export function CategoryDetailPage() {
           {data.children.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">{t('budget.detail.subcategories')}</CardTitle>
+                <CardTitle>{t('budget.detail.subcategories')}</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-0.5">
+              <CardContent className="-mx-3 space-y-0.5">
                 {data.children.map((child) => (
-                  <SubcategoryRow key={child.categoryId} child={child} />
+                  <SubcategoryRow key={child.categoryId} child={child} total={Math.abs(data.total)} />
                 ))}
               </CardContent>
             </Card>
           )}
 
           {data.count === 0 ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">
-              {t('budget.detail.empty')}
-            </p>
+            <Card>
+              <CardContent>
+                <EmptyState className="py-8" icon={<Receipt className="size-8" />} title={t('budget.detail.empty')} />
+              </CardContent>
+            </Card>
           ) : (
             <TransactionsList
               transactions={data.transactions}

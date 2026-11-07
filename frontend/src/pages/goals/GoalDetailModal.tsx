@@ -4,16 +4,17 @@ import { useGoal } from '@/features/goals/hooks'
 import { useHistory } from '@/features/history/hooks'
 import { NetWorthChart } from '@/components/shared/NetWorthChart'
 import { CurrencyDisplay } from '@/components/shared/CurrencyDisplay'
-import { Badge } from '@/components/ui/badge'
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { TrendingUp, TrendingDown, Loader2 } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import { type TimeRange } from '@/components/shared/TimeRangeSelector'
 import { formatPercent } from '@/lib/utils'
+import { goalStatus } from './goal-stats'
+import { Stat, StatusDot } from './Stat'
 
 interface GoalDetailModalProps {
   goalId: number | null
@@ -68,36 +69,19 @@ export function GoalDetailModal({ goalId, onClose }: GoalDetailModalProps) {
     }
   }, [goal, t, todayMs])
 
-  const statusBadge = goal
-    ? (() => {
-        if ((goal.monthlyNeeded ?? 0) <= 0) {
-          return (
-            <Badge className="gap-1">
-              <TrendingUp className="size-3" />
-              {t('goals.achieved')}
-            </Badge>
-          )
-        }
-        if (goal.isOnTrack) {
-          return (
-            <Badge className="gap-1">
-              <TrendingUp className="size-3" />
-              {t('goals.onTrack')}
-            </Badge>
-          )
-        }
-        return (
-          <Badge variant="destructive" className="gap-1">
-            <TrendingDown className="size-3" />
-            {t('goals.behind')}
-          </Badge>
-        )
-      })()
+  // The same verdict as the goal's card, so the two never disagree.
+  const status = goal
+    ? ({
+        achieved: { label: t('goals.achieved'), tone: 'gain' },
+        waiting: { label: t('goals.waiting'), tone: 'muted' },
+        onTrack: { label: t('goals.onTrack'), tone: 'gain' },
+        behind: { label: t('goals.behind'), tone: 'warning' },
+      } as const)[goalStatus(goal)]
     : null
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) onClose() }}>
-      <DialogContent className="sm:max-w-[95vw] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-4xl">
         {isLoading || !goal ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="size-6 animate-spin text-muted-foreground" />
@@ -105,26 +89,26 @@ export function GoalDetailModal({ goalId, onClose }: GoalDetailModalProps) {
         ) : (
           <>
             <DialogHeader>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pr-8">
                 <DialogTitle className="text-lg">{goal.name}</DialogTitle>
-                {statusBadge}
+                {status && <StatusDot tone={status.tone}>{status.label}</StatusDot>}
               </div>
             </DialogHeader>
 
             <div className="space-y-6 mt-2">
               {/* Progress summary */}
-              <div className="flex items-end justify-between">
+              <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
                 <div>
-                  <p className="text-xs text-muted-foreground mb-1">{t('goals.currentTotal')}</p>
-                  <CurrencyDisplay value={goal.currentTotal} className="text-4xl font-semibold tabular-nums" />
+                  <p className="mb-1 text-[13px] font-medium text-muted-foreground">{t('goals.currentTotal')}</p>
+                  <CurrencyDisplay value={goal.currentTotal} className="text-3xl font-bold tracking-tight tabular-nums sm:text-4xl" />
                 </div>
-                <div className="text-right">
-                  <p className="text-xs text-muted-foreground mb-1">
+                <div className="sm:text-right">
+                  <p className="mb-1 text-[13px] font-medium text-muted-foreground">
                     {goal.targetAmount == null ? t('goals.monthlyAmount') : t('goals.targetAmount')}
                   </p>
                   <CurrencyDisplay
                     value={goal.targetAmount ?? goal.monthlyAmount ?? 0}
-                    className="text-xl font-medium tabular-nums text-muted-foreground"
+                    className="text-xl font-semibold tabular-nums text-foreground"
                   />
                 </div>
               </div>
@@ -154,51 +138,34 @@ export function GoalDetailModal({ goalId, onClose }: GoalDetailModalProps) {
               )}
 
               {/* Stats grid */}
-              <div className="grid grid-cols-4 gap-4 pt-4 border-t">
-                <div>
-                  <p className="text-xs text-muted-foreground mb-0.5">{t('goals.progress')}</p>
-                  <p className="text-sm font-semibold">{formatPercent(goal.percentComplete ?? 0, { fractionDigits: 0 })}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground mb-0.5">{t('goals.monthsLeft')}</p>
-                  <p className="text-sm font-semibold">{goal.monthsLeft}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground mb-0.5">{t('goals.monthlyNeeded')}</p>
-                  <p className="text-sm font-semibold"><CurrencyDisplay value={goal.monthlyNeeded ?? 0} /></p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground mb-0.5">{t('goals.avgContribution')}</p>
-                  <p className="text-sm font-semibold">
-                    {goal.avgMonthlyContribution != null ? (
-                      <CurrencyDisplay value={goal.avgMonthlyContribution} />
-                    ) : (
-                      '\u2013'
-                    )}
-                  </p>
-                </div>
-              </div>
+              <dl className="grid grid-cols-2 gap-4 border-t pt-4 text-sm sm:grid-cols-4">
+                <Stat label={t('goals.progress')}>{formatPercent(goal.percentComplete ?? 0, { fractionDigits: 0 })}</Stat>
+                <Stat label={t('goals.monthsLeft')}>{goal.monthsLeft}</Stat>
+                <Stat label={t('goals.monthlyNeeded')}><CurrencyDisplay value={goal.monthlyNeeded ?? 0} /></Stat>
+                <Stat label={t('goals.avgContribution')}>
+                  {goal.avgMonthlyContribution != null ? <CurrencyDisplay value={goal.avgMonthlyContribution} /> : '\u2013'}
+                </Stat>
+              </dl>
 
               {/* Linked accounts */}
               {goal.accounts.length > 0 && (
                 <div className="pt-4 border-t">
-                  <p className="mb-2 text-sm font-medium text-muted-foreground">
+                  <p className="mb-2 text-sm font-semibold">
                     {t('goals.linkedAccounts')}
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {goal.accounts.map((a) => (
                       <div
                         key={a.id}
-                        className="flex items-center gap-2 rounded-full bg-muted/50 px-3 py-1.5"
+                        className="flex items-center gap-2 rounded-lg bg-muted px-3 py-1.5"
                       >
                         <span
-                          className="size-2 rounded-full shrink-0"
+                          className="size-2 shrink-0 rounded-full"
                           style={{ background: a.color }}
+                          aria-hidden="true"
                         />
                         <span className="text-sm">{a.name}</span>
-                        <span className="text-xs text-muted-foreground font-medium tabular-nums">
-                          <CurrencyDisplay value={a.currentBalanceEur} />
-                        </span>
+                        <CurrencyDisplay value={a.currentBalanceEur} className="text-[13px] font-semibold tabular-nums text-foreground" />
                       </div>
                     ))}
                   </div>

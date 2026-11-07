@@ -1,6 +1,6 @@
 # Feature: Goal Calendar — Grid View (donuts)
 
-> Last updated: 2026-10-31 (wrapping grid, whole-euro labels, legend, title — #282)
+> Last updated: 2026-11-03 (theme tokens for the rings and dots, translated captions, view tabs named on phones)
 
 ## Context
 
@@ -22,27 +22,27 @@ The "Grid" view of `GoalCalendarPage` displays past months as interactive donut 
 **`ProgressRing`** — 80px SVG, stroke 9px, rotated -90° so the arc starts at the top:
 - Background track: `var(--muted)`, stroke 9px
 - Base arc: `min(pct, 1) × circumference`, `stroke-linecap="butt"` on overflow, `"round"` otherwise
-- Bonus arc (overflow > 100%): color `#818cf8` (`COLORS.overshoot`, light indigo), same stroke width as the track so it never spills over the ring, `min(pct−1, 1) × circumference`, `stroke-linecap="round"` except when full circle → `"butt"` (avoids bump at junction)
+- Bonus arc (overflow > 100%): color `var(--gain)` (`COLORS.overshoot`), same stroke width as the track so it never spills over the ring, `min(pct−1, 1) × circumference`, `stroke-linecap="round"` except when full circle → `"butt"` (avoids bump at junction)
 
 **`getProgressColor`** — returns `color` (arc), `textColor` (inner text), `pct` (raw ratio):
 
-| Condition | Arc color |
-|-----------|-----------|
-| No data | `--muted` |
-| ratio < 60% | `oklch(from var(--destructive) calc(l + 0.15) c h)` |
-| 60% ≤ ratio < 100% | `#f59e0b` (amber) |
-| ratio ≥ 100% | `oklch(from var(--primary) calc(l + 0.2) c h)` |
+| Condition | Arc color | Percent text |
+|-----------|-----------|--------------|
+| No data | `--muted` | muted |
+| ratio < 60% | `var(--loss)` | loss |
+| 60% ≤ ratio < 100% | `var(--warning)` | warning |
+| ratio ≥ 100% | `var(--primary)` (the app's progress blue) | `var(--gain)`, signed (`+8 %`) |
 
 **Amounts** — every ring amount and objective goes through `money.amount(value, 'EUR', { maximumFractionDigits: 0 })`: whole euros (`985 €`, `1 373 €`), masked in privacy mode. One unit for the whole grid, so a row never mixes `984,72 €` with `1 k €`, and the objective matches the header's `1 373,33 €` to the euro. Measured in Geist at 12px bold, `123 456 €` is 62px wide, exactly the clear inside of the ring; a seven-figure month (`1 234 567 €`, 72px) runs 5px into the 9px stroke on each side. Accepted: a single month of a million euros is outside what this calendar is for, and neither fix is worth it (a compact `M` unit would mix units within a row, and dropping to the 11px floor only buys 8px, still 2px too wide).
 
 **`YearGridView`** — one `<Card>` per year, a wrapping `grid grid-cols-[repeat(auto-fill,minmax(6rem,1fr))] gap-3`: six months per row in the desktop column (≈ 680px), three on a 390px phone. No horizontal scroll. Each month is a `<button>` with:
 1. Month label (11px uppercase)
 2. `ProgressRing` + absolute text overlay: amount 12px bold in `text-foreground` (Ledger Ink), percent 11px in the status color
-3. `obj. XXX` (11px muted)
+3. `goals.objectiveShort` (`obj. XXX`, 11px muted; it was a hard-coded French abbreviation)
 
 The current month carries `aria-current="date"` and is scrolled into view once on mount (`scrollIntoView({ block: 'nearest' })`). Its `scroll-mb-28` keeps the year card's bottom edge and the legend above the mobile bottom nav.
 
-A legend below the cards shows two 16px `ProgressRing`s: `goals.legendProgress` (share of the month's objective reached, `94%`) and `goals.legendOvershoot` (above the objective, `+8%`, lavender arc).
+A legend below the cards shows two 16px `ProgressRing`s: `goals.legendProgress` (share of the month's objective reached, `94%`) and `goals.legendOvershoot` (above the objective, `+8%`, gain arc), then the two indicator dots (`goals.declared`, `goals.modified`).
 
 ### Inner text — cases
 
@@ -54,8 +54,9 @@ A legend below the cards shows two 16px `ProgressRing`s: `goals.legendProgress` 
 
 ### Indicator dots
 
-- Violet dot (`bg-violet-600`) at `top-[3px] right-[3px]`: monthly objective manually overridden (`entry.override != null`)
-- Blue dot (`bg-blue-500`): manually declared contribution (`entry.manualActual != null`). Takes priority over violet when both are set.
+- Warning dot (`bg-warning`) at `top-[3px] right-[3px]`: monthly objective manually overridden (`entry.override != null`)
+- Ink dot (`bg-foreground`): manually declared contribution (`entry.manualActual != null`). Takes priority over the warning dot when both are set.
+- The timeline view shows the same two dots (with a `title`), the calendar view and the month panel a `StatusDot` word; the former `manu.` / `modif.` badges were untranslated.
 
 ### Selection state
 
@@ -68,7 +69,11 @@ The selected month's `MonthDetailPanel` is shown *beside* the calendar, not stac
 
 - **Desktop (`≥ lg`)**: a 2-column grid `grid lg:grid-cols-[1fr_360px] items-start` — active view on the left (`min-w-0`), a `lg:sticky lg:top-4` right column on the right. The right column always renders (panel when a month is selected, a hint card otherwise) so the grid never collapses → no layout shift.
 - **Mobile/tablet (`< lg`)**: the panel renders in a `Sheet side="bottom"` (shadcn). A local `matchMedia('(min-width: 1024px)')` flag (`isDesktop`) gates `open={!!selectedEntry && !isDesktop}` so the sheet never opens on desktop (where the overlay would otherwise darken the screen behind the visible side panel). An `sr-only` `SheetTitle`/`SheetDescription` satisfies Radix Dialog a11y.
-- `MonthDetailPanel` takes an optional `className` (the sheet passes `border-0 bg-transparent shadow-none` to avoid a nested-card look) and uses a single-column inner grid — Tailwind media queries are viewport-based, so `md:grid-cols-2` would have split inside the narrow 360px panel.
+- `MonthDetailPanel` takes an optional `className` (the sheet passes `bg-transparent py-0 ring-0` to avoid a nested-card look; the card's edge is a ring, so `border-0` alone left a frame) and uses a single-column inner grid — Tailwind media queries are viewport-based, so `md:grid-cols-2` would have split inside the narrow 360px panel.
+
+### View switch and summary
+
+The monthly objective (in ink) and the `n/m reached` count (a `StatusDot`, gain when every past month is met) sit on the left of one row, the Grid / Timeline / Calendar tabs on its right. On a phone the tabs show their icons only; their labels stay as `sr-only` text so each tab keeps its accessible name (they used to be `hidden`, which left three nameless tabs).
 
 ### History backfill card
 
@@ -81,7 +86,7 @@ Additionally, a dashed **"+ previous month"** card (`goals.addPreviousMonth`) is
 | Choice | Why | Rejected alternative |
 |--------|-----|----------------------|
 | Custom SVG (two `<circle>`) | Full control over the bonus arc, no dependency | `recharts` (no access to `stroke-dasharray` for overflow) |
-| `oklch(from var(--primary) calc(l + 0.2) c h)` | `var(--primary)` in dark mode is too dark (lightness 0.42); CSS relative color syntax adds 0.2 lightness while staying theme-consistent | Hardcoded `#6366f1` (doesn't follow the theme) |
+| Theme tokens (`--primary`, `--warning`, `--loss`, `--gain`) | Follow both themes and the movement colours used everywhere else; the "Coffre Nocturne" primary is bright enough in dark mode | Lightened `oklch(from …)` variants and hex amber / indigo (off-palette) |
 | Wrapping `auto-fill` grid, 6rem minimum cell | Every month visible at any width; the 80px ring keeps its 12px amount readable | `overflow-x-auto` single row (hid the recent months behind a scroller with no affordance, #282); four columns on a phone (rings too small for ≥ 11px labels) |
 | Whole euros via `money.amount` | One unit per row, objective matches the header | `money.compact` (precision follows each value's magnitude, so `984,72 €` sat beside `1 k €`) |
 | Bonus arc capped at 100% bonus | Beyond 200% total, the visual doesn't change; the real % stays readable in the text | Multi-turn arc (complex and unreadable) |
@@ -91,7 +96,7 @@ Additionally, a dashed **"+ previous month"** card (`goals.addPreviousMonth`) is
 - **Tailwind v4 + CSS vars**: `hsl(var(--primary))` is invalid in Tailwind v4 (vars are in `oklch`). Use `var(--primary)` directly in SVG `stroke` attributes or inline styles. `color-mix(in oklch, ...)` works; wrapping oklch vars in `hsl()` renders as transparent.
 - **`stroke-linecap="butt"` at 100% bonus**: if the bonus arc reaches exactly the circumference with `"round"`, the rounded endpoints overlap and create a visible bump at the top. Detect `bonusFilled >= circ - 0.1` to switch to `"butt"`.
 - **`var(--border)` in dark mode** = `oklch(1 0 0 / 10%)` (white at 10% opacity) — nearly invisible as a background track. Use `var(--muted)` instead.
-- **`textColor` === `color`**: the percent line uses the arc color. The amount above it is `text-foreground`, since amber text fails contrast on a light background.
+- **`textColor`**: the percent line uses the arc colour below 100 % and `--gain` above it (it is then a signed surplus). The amount above it is `text-foreground`.
 - **`TimelineView` / `CalendarGridView` are independent** — they do not share `ProgressRing`; edit the donut grid without affecting them.
 - **`MonthDetailPanel` is now rendered in two places** (sticky desktop column *and* mobile bottom sheet) from the same `selectedEntry`. Its inner grid must stay single-column (viewport-based media queries break inside the narrow panel) and all amount inputs use the shared `NumericInput` (comma/point tolerant).
 

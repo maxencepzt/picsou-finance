@@ -4,8 +4,9 @@ import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { CurrencyDisplay } from '@/components/shared/CurrencyDisplay'
+import { SegmentedControl } from '@/components/shared/SegmentedControl'
 import { usePreviewRule } from '@/features/budget/hooks'
-import { formatDate, getLocale } from '@/lib/utils'
+import { cn, formatDate, getLocale } from '@/lib/utils'
 import type { RuleMatchType } from '@/types/api'
 
 /**
@@ -98,7 +99,8 @@ export function RuleWordPicker({
       { matchType, pattern: debouncedPattern },
       {
         onSuccess: (data) => {
-          setCheckedPreviewIds(new Set(data.transactions.map((tx) => tx.id)))
+          // Guarded: demo mode answers an endpoint it does not mock with {}.
+          setCheckedPreviewIds(new Set((data.transactions ?? []).map((tx) => tx.id)))
         },
       }
     )
@@ -129,6 +131,7 @@ export function RuleWordPicker({
   }
 
   const totalCount = previewMutation.data?.matchCount ?? 0
+  const previewRows = previewMutation.data?.transactions ?? []
   const isPending = previewMutation.isPending
 
   return (
@@ -143,7 +146,7 @@ export function RuleWordPicker({
               return (
                 <span
                   key={i}
-                  className="rounded px-2 py-0.5 text-xs bg-muted text-muted-foreground font-mono"
+                  className="inline-flex h-8 items-center rounded-md bg-muted px-2.5 font-mono text-xs text-muted-foreground"
                 >
                   {tok.slice(0, 8)}…
                 </span>
@@ -154,12 +157,14 @@ export function RuleWordPicker({
               <button
                 key={i}
                 type="button"
+                aria-pressed={isSel}
                 onClick={() => toggleToken(i)}
-                className={`rounded px-2 py-0.5 text-sm font-medium transition-colors ${
+                className={cn(
+                  'inline-flex h-8 items-center rounded-md px-2.5 text-sm font-medium transition-[background-color,color]',
                   isSel
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                }`}
+                    ? 'bg-primary/12 text-primary ring-1 ring-primary/40'
+                    : 'bg-muted text-muted-foreground hover:text-foreground',
+                )}
               >
                 {tok}
               </button>
@@ -171,44 +176,29 @@ export function RuleWordPicker({
       {/* AND/OR toggle */}
       <div>
         <p className="mb-2 text-sm font-medium">{t('budget.rule.matchMode')}</p>
-        <div className="inline-flex rounded-md border overflow-hidden">
-          <button
-            type="button"
-            onClick={() => setMatchType('KEYWORDS_ALL')}
-            className={`px-3 py-1.5 text-sm transition-colors ${
-              matchType === 'KEYWORDS_ALL'
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-background text-foreground hover:bg-muted'
-            }`}
-          >
-            {t('budget.rule.matchAll')}
-          </button>
-          <button
-            type="button"
-            onClick={() => setMatchType('KEYWORDS_ANY')}
-            className={`px-3 py-1.5 text-sm transition-colors ${
-              matchType === 'KEYWORDS_ANY'
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-background text-foreground hover:bg-muted'
-            }`}
-          >
-            {t('budget.rule.matchAny')}
-          </button>
-        </div>
+        <SegmentedControl
+          ariaLabel={t('budget.rule.matchMode')}
+          value={matchType}
+          onChange={setMatchType}
+          options={[
+            { value: 'KEYWORDS_ALL', label: t('budget.rule.matchAll') },
+            { value: 'KEYWORDS_ANY', label: t('budget.rule.matchAny') },
+          ]}
+        />
       </div>
 
       {/* Pattern preview */}
       {pattern && (
         <p className="text-xs text-muted-foreground">
           {t('common.labelColon', { label: t('budget.rule.pattern') })}{' '}
-          <code className="font-mono">{pattern}</code>
+          <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-foreground">{pattern}</code>
         </p>
       )}
 
       {/* Preview list */}
       {pattern && (
         <div>
-          <div className="flex items-center gap-2 mb-2">
+          <div className="mb-2 flex items-center gap-2">
             <p className="text-sm font-medium">
               {isPending
                 ? t('budget.rule.previewLoading')
@@ -216,28 +206,26 @@ export function RuleWordPicker({
             </p>
             {isPending && <Loader2 className="size-3.5 animate-spin text-muted-foreground" />}
           </div>
-          {!isPending && previewMutation.data && previewMutation.data.transactions.length > 0 && (
-            <div className="max-h-48 overflow-y-auto rounded-md border divide-y text-sm">
-              {previewMutation.data.transactions.map((tx) => (
+          {!isPending && previewRows.length > 0 && (
+            <div className="max-h-48 divide-y divide-border overflow-y-auto rounded-xl text-sm ring-1 ring-border">
+              {previewRows.map((tx) => (
                 <label
                   key={tx.id}
-                  className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-muted/50"
+                  className="flex cursor-pointer items-center gap-3 px-3 py-2 hover:bg-muted/50"
                 >
                   <Checkbox
                     checked={checkedPreviewIds.has(tx.id)}
                     onCheckedChange={() => togglePreviewRow(tx.id)}
                   />
-                  <span className="flex-1 min-w-0 truncate text-foreground">{tx.label}</span>
-                  <span className="shrink-0 text-xs text-muted-foreground">
+                  <span className="min-w-0 flex-1 truncate text-foreground">{tx.label}</span>
+                  <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
                     {formatDate(tx.date, getLocale())}
                   </span>
-                  <span
-                    className={`shrink-0 tabular-nums font-medium ${
-                      tx.amount >= 0 ? 'text-emerald-600 dark:text-emerald-400' : ''
-                    }`}
-                  >
-                    <CurrencyDisplay value={tx.amount} showSign />
-                  </span>
+                  <CurrencyDisplay
+                    value={tx.amount}
+                    showSign
+                    className={cn('w-20 shrink-0 text-right font-semibold tabular-nums', tx.amount >= 0 ? 'text-gain' : 'text-foreground')}
+                  />
                 </label>
               ))}
             </div>
@@ -251,13 +239,12 @@ export function RuleWordPicker({
       )}
 
       {/* Actions */}
-      <div className="flex justify-end gap-2 pt-2">
-        <Button type="button" variant="outline" size="sm" onClick={onClose}>
+      <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
+        <Button type="button" variant="outline" onClick={onClose}>
           {t('common.cancel')}
         </Button>
         <Button
           type="button"
-          size="sm"
           disabled={pattern.trim().length === 0}
           onClick={handleConfirm}
         >

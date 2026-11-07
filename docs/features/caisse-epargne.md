@@ -80,6 +80,8 @@ On the current account the loan is debited from, two kinds of rows are categoriz
 
 ## Authentication
 
+In the panel, a live session is a status card (last sync, *Disconnect* behind a dialog that says the bank session itself stays open, *Sync*, then the contracts left out by family code). The login card carries the three warnings above the customer id; the keypad keys sit on white tiles whatever the theme, since the bank draws its digits for a light page.
+
 Login is three backend calls that drive the sidecar's browser login (`POST /initiate`, `POST /keypad`, `POST /complete`). The bank's password page is a virtual keypad whose ten key images are shuffled at every connection. The sidecar does not read them: it sends the images to the UI, the user clicks his own digits in a pop-up (`CaisseEpargnePanel`), and only the clicked positions come back. The human then approves the sign-in in the Sécur'Pass app: nothing automates that step. The completion request stays open while they do; when the approval happens in the bank's app on the same iPhone, iOS drops Safari's pending request (nginx logs a 499) while the backend carries on and stores the session. The panel then keeps the Sécur'Pass card and polls the session status every 3 s for up to 180 s: as soon as it is live it queues the first sync, as a direct answer would have. The bank's session lives a few minutes only, so a sync started by hand much later finds it expired.
 
 | Endpoint | Body | Answer |

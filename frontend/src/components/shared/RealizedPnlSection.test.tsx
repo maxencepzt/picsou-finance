@@ -41,8 +41,8 @@ describe('RealizedPnlSection', () => {
     })
     const { container } = render(<RealizedPnlSection accountId={2} />)
     expect(screen.getByText('AAPL')).toBeInTheDocument()
-    expect(container.querySelector('.text-emerald-500')).toBeTruthy()
-    expect(container.querySelector('.text-red-500')).toBeFalsy()
+    expect(container.querySelector('.text-gain')).toBeTruthy()
+    expect(container.querySelector('.text-loss')).toBeFalsy()
   })
 
   it('shows a red total when realized P&L is negative', () => {
@@ -51,6 +51,6 @@ describe('RealizedPnlSection', () => {
       lots: [{ ticker: 'TSLA', name: 'Tesla', date: '2024-09-02', quantity: 3, avgCost: 250, proceeds: 660, realized: -90 }],
     })
     const { container } = render(<RealizedPnlSection accountId={2} />)
-    expect(container.querySelector('.text-red-500')).toBeTruthy()
+    expect(container.querySelector('.text-loss')).toBeTruthy()
   })
 })

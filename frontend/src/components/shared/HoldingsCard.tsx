@@ -99,7 +99,7 @@ function HoldingsItem({ line, onClick }: { line: PortfolioLine; onClick?: () => 
             <span
               className={cn(
                 'inline-flex items-center gap-1 text-xs font-medium tabular-nums',
-                line.pnlPercent >= 0 ? 'text-emerald-500' : 'text-red-500',
+                line.pnlPercent >= 0 ? 'text-gain' : 'text-loss',
               )}
             >
               {line.pnlPercent >= 0

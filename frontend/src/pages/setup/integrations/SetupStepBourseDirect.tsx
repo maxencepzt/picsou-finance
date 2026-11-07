@@ -1,10 +1,12 @@
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
-import { BriefcaseBusiness } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAcknowledgeIntegration } from '@/features/setup/hooks'
 import { useSetupFlowStore } from '@/stores/setup-flow-store'
 import { nextIntegrationRoute } from './navigation'
+import { IntegrationMark } from '../components/IntegrationMark'
+import { SetupCard, SetupNote } from '../components/SetupCard'
 
 export function SetupStepBourseDirect() {
   const { t } = useTranslation()
@@ -26,40 +28,24 @@ export function SetupStepBourseDirect() {
   const skip = () => navigate(nextIntegrationRoute('boursedirect', selected))
 
   return (
-    <div className="space-y-8">
-      <div className="text-center space-y-2">
-        <div className="flex justify-center">
-          <span className="rounded-xl bg-primary/10 p-3 text-primary">
-            <BriefcaseBusiness className="h-6 w-6" />
-          </span>
-        </div>
-        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
-          {t('setup.bourseDirect.title')}
-        </h1>
-        <p className="mx-auto max-w-md text-sm text-muted-foreground">
-          {t('setup.bourseDirect.body')}
-        </p>
-      </div>
-      <div className="rounded-2xl border border-border/60 bg-muted/30 p-4 text-center text-xs text-muted-foreground">
-        {t('setup.bourseDirect.tip')}
-      </div>
-      <div className="mx-auto flex w-full max-w-lg flex-col gap-3">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={skip}
-          className="w-full rounded-full"
-        >
-          {t('setup.bourseDirect.skip')}
-        </Button>
-        <Button
-          onClick={proceed}
-          disabled={ack.isPending}
-          className="w-full rounded-full"
-        >
-          {t('setup.bourseDirect.cta')}
-        </Button>
-      </div>
-    </div>
+    <SetupCard
+      icon={<IntegrationMark integration="boursedirect" label={t('setup.integrations.cards.boursedirect.title')} className="size-10 rounded-xl after:rounded-xl" />}
+      eyebrow={t('setup.steps.integrations')}
+      title={t('setup.bourseDirect.title')}
+      description={t('setup.bourseDirect.body')}
+      footer={
+        <>
+          <Button type="button" variant="ghost" onClick={skip} disabled={ack.isPending} className="w-full sm:mr-auto sm:w-auto">
+            {t('setup.bourseDirect.skip')}
+          </Button>
+          <Button onClick={proceed} disabled={ack.isPending} className="w-full sm:w-auto">
+            {ack.isPending && <Loader2 className="animate-spin" aria-hidden="true" />}
+            {t('setup.bourseDirect.cta')}
+          </Button>
+        </>
+      }
+    >
+      <SetupNote>{t('setup.bourseDirect.tip')}</SetupNote>
+    </SetupCard>
   )
 }

@@ -3,11 +3,9 @@ import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent } from '@/components/ui/card'
-import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
-import { RefreshCw, LogOut, KeyRound, AlertTriangle, Loader2 } from 'lucide-react'
+import { RefreshCw, KeyRound, Loader2 } from 'lucide-react'
+import { PanelDisconnect, PanelError, PanelField, PanelForm, PanelIntro, PanelLoading, PanelStatus } from '@/components/sync/ProviderPanel'
+import { PANEL_ACTION, PANEL_INPUT } from '@/components/sync/panel-styles'
 import {
   useWiseStatus,
   useConnectWise,
@@ -37,7 +35,6 @@ export function WisePanel({ onConnected }: WisePanelProps = {}) {
 
   const [token, setToken] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const [showDisconnectConfirm, setShowDisconnectConfirm] = useState(false)
 
   const { data: status, isLoading: statusLoading } = useWiseStatus()
 
@@ -68,147 +65,107 @@ export function WisePanel({ onConnected }: WisePanelProps = {}) {
     }
   }
 
-  if (statusLoading) {
-    return <p className="text-sm text-muted-foreground">{t('common.loading')}</p>
-  }
+  if (statusLoading) return <PanelLoading />
 
-  const tokenForm = (
-    <form onSubmit={handleConnect} className="mx-auto max-w-lg space-y-4">
-      <p className="text-sm text-muted-foreground">
-        {t(tokenRefused ? 'sync.wise.replaceTokenHint' : 'sync.wise.setupHint')}{' '}
-        <a href={CREATE_TOKEN_URL} target="_blank" rel="noreferrer" className="underline">
-          {t('sync.wise.createToken')}
-        </a>
-      </p>
-      <Card size="sm">
-        <CardContent className="space-y-4 py-4">
-          <div className="space-y-2">
-            <Label htmlFor="wise-token">
-              <KeyRound className="mr-1 inline-block size-4" />
-              {t('sync.wise.token')}
-            </Label>
-            <Input
-              id="wise-token"
-              type="password"
-              value={token}
-              onChange={(e) => setToken(e.target.value)}
-              placeholder={t('sync.wise.tokenPlaceholder')}
-              autoComplete="off"
-              required
-            />
-          </div>
-          <Button type="submit" disabled={connectMutation.isPending || !token.trim()} className="w-full">
-            {connectMutation.isPending && <Loader2 className="size-4 animate-spin" />}
-            {t(tokenRefused ? 'sync.wise.replaceToken' : 'sync.wise.connect')}
-          </Button>
-        </CardContent>
-      </Card>
-    </form>
-  )
-
-  const disconnectButton = (
-    <Button
-      variant="destructive"
-      onClick={() => setShowDisconnectConfirm(true)}
-      disabled={disconnectMutation.isPending}
-    >
-      <LogOut className="size-4" />
-      {t('sync.wise.disconnect')}
-    </Button>
+  const disconnect = (
+    <PanelDisconnect
+      label={t('sync.wise.disconnect')}
+      provider={t('sync.wise.title')}
+      description={t('sync.wise.disconnectConfirm')}
+      confirmLabel={t('common.delete')}
+      pending={disconnectMutation.isPending}
+      onConfirm={() => disconnectMutation.mutate(undefined, {
+        onSuccess: () => setError(null),
+        onError: (err: unknown) => setError(extractErrorMessage(err, t('sync.wise.errors.disconnectFailed'))),
+      })}
+    />
   )
 
   return (
-    <div className="space-y-6">
-      <p className="mx-auto max-w-lg text-sm text-muted-foreground">{t('sync.wise.intro')}</p>
+    <div className="space-y-4">
+      <PanelIntro>{t('sync.wise.intro')}</PanelIntro>
 
       {isConnected && status && (
-        <Card size="sm">
-          <CardContent className="flex items-center justify-between py-4">
-            <div className="flex flex-wrap items-center gap-3">
-              {tokenRefused ? (
-                <Badge className="bg-destructive/10 text-destructive">{t('sync.wise.statusTokenRefused')}</Badge>
-              ) : lastSyncFailed ? (
-                <Badge className="bg-destructive/10 text-destructive">{t('sync.wise.statusError')}</Badge>
-              ) : (
-                <Badge className="bg-green-500/10 text-green-600 dark:text-green-400">
-                  {t('sync.wise.connected')}
-                </Badge>
+        <PanelStatus
+          tone={tokenRefused || lastSyncFailed ? 'error' : syncMutation.isPending ? 'busy' : 'ok'}
+          label={t(tokenRefused ? 'sync.wise.statusTokenRefused' : lastSyncFailed ? 'sync.wise.statusError' : 'sync.wise.connected')}
+          meta={[
+            status.maskedToken,
+            status.lastSyncedAt
+              ? `${t('common.labelColon', { label: t('sync.wise.lastSync') })} ${formatDateTime(status.lastSyncedAt)}`
+              : t('sync.wise.neverSynced'),
+          ]}
+          actions={
+            <>
+              {disconnect}
+              {!tokenRefused && (
+                <Button
+                  size="xs"
+                  className={PANEL_ACTION}
+                  onClick={() => syncMutation.mutate(undefined, {
+                    onSuccess: (jars) => {
+                      setError(null)
+                      toast.success(t('sync.wise.syncedToast', { count: jars.length }))
+                    },
+                    onError: (err: unknown) => setError(errorMessage(err, 'sync.wise.errors.syncFailed')),
+                  })}
+                  disabled={syncMutation.isPending}
+                >
+                  {syncMutation.isPending ? <Loader2 className="animate-spin" /> : <RefreshCw />}
+                  {syncMutation.isPending ? t('sync.wise.syncing') : t('sync.wise.sync')}
+                </Button>
               )}
-              {status.maskedToken && (
-                <span className="text-sm text-muted-foreground">{status.maskedToken}</span>
-              )}
-              {status.lastSyncedAt ? (
-                <span className="text-xs text-muted-foreground">
-                  {t('common.labelColon', { label: t('sync.wise.lastSync') })} {formatDateTime(status.lastSyncedAt)}
-                </span>
-              ) : (
-                <span className="text-xs text-muted-foreground">{t('sync.wise.neverSynced')}</span>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+            </>
+          }
+        />
       )}
 
-      {error && (
-        <Card size="sm" className="border-destructive/30">
-          <CardContent className="flex items-center gap-3 py-4">
-            <AlertTriangle className="size-5 shrink-0 text-destructive" />
-            <p className="flex-1 text-sm text-destructive">{error}</p>
-          </CardContent>
-        </Card>
-      )}
+      {error && <PanelError>{error}</PanelError>}
 
-      {isConnected && !tokenRefused && (
-        <div className="flex flex-wrap gap-3">
-          <Button
-            onClick={() => syncMutation.mutate(undefined, {
-              onSuccess: (jars) => {
-                setError(null)
-                toast.success(t('sync.wise.syncedToast', { count: jars.length }))
-              },
-              onError: (err: unknown) => setError(errorMessage(err, 'sync.wise.errors.syncFailed')),
-            })}
-            disabled={syncMutation.isPending}
+      {(!isConnected || tokenRefused) && (
+        <>
+          <PanelIntro>
+            {t(tokenRefused ? 'sync.wise.replaceTokenHint' : 'sync.wise.setupHint')}{' '}
+            <a
+              href={CREATE_TOKEN_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="font-medium text-primary underline-offset-4 hover:underline"
+            >
+              {t('sync.wise.createToken')}
+            </a>
+          </PanelIntro>
+          <PanelForm
+            onSubmit={handleConnect}
+            actions={
+              <Button
+                type="submit"
+                size="xs"
+                disabled={connectMutation.isPending || !token.trim()}
+                className={PANEL_ACTION}
+              >
+                {connectMutation.isPending && <Loader2 className="animate-spin" />}
+                {t(tokenRefused ? 'sync.wise.replaceToken' : 'sync.wise.connect')}
+              </Button>
+            }
           >
-            {syncMutation.isPending ? (
-              <>
-                <Loader2 className="size-4 animate-spin" />
-                {t('sync.wise.syncing')}
-              </>
-            ) : (
-              <>
-                <RefreshCw className="size-4" />
-                {t('sync.wise.sync')}
-              </>
-            )}
-          </Button>
-          {disconnectButton}
-        </div>
+            <PanelField id="wise-token" label={t('sync.wise.token')} icon={KeyRound}>
+              <Input
+                id="wise-token"
+                className={PANEL_INPUT}
+                type="password"
+                value={token}
+                onChange={(e) => setToken(e.target.value)}
+                placeholder={t('sync.wise.tokenPlaceholder')}
+                autoComplete="off"
+                required
+              />
+            </PanelField>
+          </PanelForm>
+        </>
       )}
 
-      {(!isConnected || tokenRefused) && tokenForm}
-
-      {isConnected && tokenRefused && <div className="mx-auto flex max-w-lg">{disconnectButton}</div>}
-
-      <p className="mx-auto max-w-lg text-xs text-muted-foreground">{t('sync.wise.scopeNote')}</p>
-
-      <ConfirmDialog
-        open={showDisconnectConfirm}
-        onOpenChange={setShowDisconnectConfirm}
-        title={t('sync.wise.disconnect')}
-        description={t('sync.wise.disconnectConfirm')}
-        onConfirm={() => disconnectMutation.mutate(undefined, {
-          onSuccess: () => {
-            setShowDisconnectConfirm(false)
-            setError(null)
-          },
-          onError: (err: unknown) => {
-            setShowDisconnectConfirm(false)
-            setError(extractErrorMessage(err, t('sync.wise.errors.disconnectFailed')))
-          },
-        })}
-        loading={disconnectMutation.isPending}
-      />
+      <p className="text-xs text-pretty text-muted-foreground">{t('sync.wise.scopeNote')}</p>
     </div>
   )
 }

@@ -8,9 +8,9 @@ test.beforeEach(async ({ page }) => {
   await setupLocale(page)
 })
 
-test('connects then disconnects from the Sync page Wise Jars tab', async ({ page }) => {
+test('connects then disconnects from the Sync page Wise Jars view', async ({ page }) => {
   await page.goto('/sync')
-  await page.getByRole('tab', { name: 'Wise Jars', exact: true }).click()
+  await page.getByRole('region', { name: 'Ajouter une connexion' }).getByRole('button', { name: /^Wise Jars/ }).click()
 
   await expect(page.getByText(/Ce connecteur sert uniquement à vos Jars Wise/)).toBeVisible()
   await page.locator('#wise-token').fill('demo-wise-token')

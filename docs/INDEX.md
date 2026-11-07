@@ -89,6 +89,7 @@
 | 2026-11-04 | [SSO login through an external OIDC provider, alongside passwords](./decisions/2026-11-04-sso-login-alongside-passwords.md) | Active |
 | 2026-11-05 | [CORUM Life contracts sync as one assurance-vie account each](./decisions/2026-11-05-corum-life-sync.md) | Active |
 | 2026-11-05 | [Banque Populaire shares the Caisse d'Epargne code through a BPCE package and sync engine](./decisions/2026-11-05-bpce-shared-sidecar-and-engine.md) | Active |
+| 2026-11-03 | ["Coffre Nocturne" — a dark-first redesign of the web front](./decisions/2026-11-03-coffre-nocturne-dark-first-redesign.md) | Active |
 
 ## Feature notes
 
@@ -101,12 +102,12 @@
 | German and Spanish strings awaiting translation | 2026-11-03 | [i18n-untranslated.md](./features/i18n-untranslated.md) |
 | Frontend utilities (lib/utils.ts) | 2026-11-01 | [frontend-utils.md](./features/frontend-utils.md) |
 | Demo mode | 2026-10-31 | [demo-mode.md](./features/demo-mode.md) |
-| Theme (dark / light / system) + theme-adaptive rendering | 2026-10-31 | [theme-persistence.md](./features/theme-persistence.md) |
+| Theme (dark / light / system) + theme-adaptive rendering | 2026-11-03 | [theme-persistence.md](./features/theme-persistence.md) |
 | Dashboard — Time range isolation | 2026-04-13 | [dashboard-time-range-isolation.md](./features/dashboard-time-range-isolation.md) |
-| Bank sync | 2026-10-31 | [bank-sync.md](./features/bank-sync.md) |
+| Bank sync | 2026-11-03 | [bank-sync.md](./features/bank-sync.md) |
 | SimpleFIN sync | 2026-10-04 | [simplefin-sync.md](./features/simplefin-sync.md) |
 | Wise jars | 2026-11-03 | [wise-jars.md](./features/wise-jars.md) |
-| Budget & Cashflow | 2026-11-05 | [budget.md](./features/budget.md) |
+| Budget & Cashflow (overview: KPI row, cash flow and savings rate by cycle) | 2026-11-05 | [budget.md](./features/budget.md) |
 | Budget categorization rules (word-picker authoring UX) | 2026-06-28 | [budget-rules.md](./features/budget-rules.md) |
 | Optional AI transaction categorization | 2026-06-26 | [ai-categorization.md](./features/ai-categorization.md) |
 | Dashboard — Liabilities separated from performance | 2026-07-12 | [dashboard-liabilities-separation.md](./features/dashboard-liabilities-separation.md) |
@@ -123,12 +124,13 @@
 | Trade Republic — Holdings deduplication | 2026-05-18 | [trade-republic-holding-deduplication.md](./features/trade-republic-holding-deduplication.md) |
 | ISIN → Ticker conversion | 2026-08-10 | [ISIN_TO_TICKER_CONVERSION.md](./features/ISIN_TO_TICKER_CONVERSION.md) |
 | Encryption at rest | 2026-04-08 | [encryption-at-rest.md](./features/encryption-at-rest.md) |
-| Crypto tracking | 2026-08-11 | [crypto-tracking.md](./features/crypto-tracking.md) |
+| Crypto tracking | 2026-11-03 | [crypto-tracking.md](./features/crypto-tracking.md) |
 | Wealth pyramid (Analysis) | 2026-11-05 | [wealth-pyramid.md](./features/wealth-pyramid.md) |
-| Portfolio diversification (sector + geography) | 2026-11-05 | [portfolio-diversification.md](./features/portfolio-diversification.md) |
-| Recurring investment plans + wealth projection | 2026-08-19 | [goal-recurring-investment.md](./features/goal-recurring-investment.md) |
+| Financial independence (Analysis: target, card, simulator) | 2026-11-03 | [financial-independence.md](./features/financial-independence.md) |
+| Portfolio diversification (sector + geography, on Investments) | 2026-11-05 | [portfolio-diversification.md](./features/portfolio-diversification.md) |
+| Recurring investment plans + wealth projection | 2026-11-03 | [goal-recurring-investment.md](./features/goal-recurring-investment.md) |
 | Member profile (age, TMI, income) | 2026-08-19 | [member-profile.md](./features/member-profile.md) |
-| Savings goals | 2026-06-02 | [goals.md](./features/goals.md) |
+| Savings goals | 2026-11-03 | [goals.md](./features/goals.md) |
 | Goals — Grid view (donuts) | 2026-06-02 | [goal-calendar-donut.md](./features/goal-calendar-donut.md) |
 | Price service | 2026-08-07 | [price-service.md](./features/price-service.md) |
 | Live prices (holdings) | 2026-10-31 | [live-prices-holdings.md](./features/live-prices-holdings.md) |
@@ -143,16 +145,26 @@
 | BoursoBank sync | 2026-09-28 | [bourso-bank.md](./features/bourso-bank.md) |
 | Caisse d'Epargne sync (browser-assisted login, on-demand sync) | 2026-11-05 | [caisse-epargne.md](./features/caisse-epargne.md) |
 | Banque Populaire sync (shared BPCE code, region + keypad + Sécur'Pass login, on demand) | 2026-11-05 | [banque-populaire.md](./features/banque-populaire.md) |
-| Accounts overview (PnL chart + summary card + filters + card anatomy + sortable positions) | 2026-11-05 | [accounts-overview.md](./features/accounts-overview.md) |
+| Accounts overview (KPI row + grouped account rows + PnL chart + filters + sortable positions) | 2026-11-05 | [accounts-overview.md](./features/accounts-overview.md) |
 | Savings livrets (classification + projected interest) | 2026-06-28 | [savings-livrets.md](./features/savings-livrets.md) |
-| Logos on account cards (catalog-resolved, bundled, wallet picker, property kind) | 2026-11-05 | [bank-logos.md](./features/bank-logos.md) |
+| Logos on account rows (catalog-resolved, bundled, wallet picker, property kind, monogram fallback) | 2026-11-05 | [bank-logos.md](./features/bank-logos.md) |
 | Logos beside holding tickers (crypto: batched CoinGecko lookup; shares/ETFs: Yahoo quote page, stored in PostgreSQL) | 2026-11-05 | [holding-logos.md](./features/holding-logos.md) |
 | Add Account modal (unified sync + manual) | 2026-08-13 | [add-account-modal.md](./features/add-account-modal.md) |
 | Account visibility (hidden accounts, `/sync` Comptes tab) | 2026-07-15 | [account-visibility.md](./features/account-visibility.md) |
 | Docker deployment and migration-safe releases | 2026-10-31 | [docker-deployment.md](./features/docker-deployment.md) |
 | Production release backup, preflight, migration and rollback | 2026-10-08 | [release-deployment.md](./features/release-deployment.md) |
 | Kubernetes deployment (Helm chart) | 2026-11-01 | [helm-chart.md](./features/helm-chart.md) |
-| Navigation (sidebar + mobile bottom nav) | 2026-07-12 | [sidebar-navigation.md](./features/sidebar-navigation.md) |
+| Navigation (sidebar, top bar, mobile bar) | 2026-11-03 | [sidebar-navigation.md](./features/sidebar-navigation.md) |
+| Search palette (⌘K / Ctrl K) | 2026-11-03 | [search-palette.md](./features/search-palette.md) |
+| Sync page (connections, provider catalog, provider views, sync-all modal) | 2026-11-03 | [sync-page.md](./features/sync-page.md) |
+| Overview dashboard (Synthèse) | 2026-11-03 | [overview-dashboard.md](./features/overview-dashboard.md) |
+| Investments page (Investissements) | 2026-11-03 | [investments-page.md](./features/investments-page.md) |
+| Passive income page (Revenus passifs) | 2026-11-03 | [passive-income-page.md](./features/passive-income-page.md) |
+| Property & loans page (Immobilier & prêts) | 2026-11-03 | [real-estate-page.md](./features/real-estate-page.md) |
+| Investment performance, index comparison and fund fees (TWR, XIRR, drawdown, TER) | 2026-11-03 | [investment-performance.md](./features/investment-performance.md) |
+| Dashboard movers (day-over-day moves of held securities) | 2026-11-03 | [dashboard-movers.md](./features/dashboard-movers.md) |
+| Spending by merchant (budget overview) | 2026-11-03 | [spending-by-merchant.md](./features/spending-by-merchant.md) |
+| Recurring plan stats (purchases over the last twelve months) | 2026-11-03 | [recurring-plan-stats.md](./features/recurring-plan-stats.md) |
 | UI control shape (shadcn theme radius) | 2026-08-10 | [ui-control-shape-system.md](./features/ui-control-shape-system.md) |
 | Privacy mode (hiding amounts for demos) | 2026-10-31 | [privacy-mode.md](./features/privacy-mode.md) |
 | Multi-account family system | 2026-11-04 | [multi-account-family.md](./features/multi-account-family.md) |
@@ -165,7 +177,7 @@
 | Frontend error display (`extractErrorMessage`) | 2026-05-31 | [frontend-error-display.md](./features/frontend-error-display.md) |
 | Loan accounts (LOAN type, amortization view) | 2026-04-26 | [loans.md](./features/loans.md) |
 | Peer loans (receivables between individuals) | 2026-11-05 | [peer-loans.md](./features/peer-loans.md) |
-| Real estate valuation | 2026-08-11 | [real-estate-valuation.md](./features/real-estate-valuation.md) |
+| Real estate valuation | 2026-11-03 | [real-estate-valuation.md](./features/real-estate-valuation.md) |
 | SCPI shares | 2026-11-05 | [scpi.md](./features/scpi.md) |
 | CORUM Life (assurance-vie) sync | 2026-11-05 | [corum-life.md](./features/corum-life.md) |
 | Precious metals (gold bullion and coins) | 2026-11-06 | [precious-metals.md](./features/precious-metals.md) |
@@ -175,7 +187,7 @@
 | Login timing equalization (username-enumeration defense, GHSA-ww5m-pxgq-8qq6) | 2026-06-27 | [login-timing-attack.md](./features/login-timing-attack.md) |
 | GDPR data export (JSON + CSV) | 2026-11-04 | [data-export.md](./features/data-export.md) |
 | Opt-in anonymous telemetry & privacy (GlitchTip) | 2026-10-05 | [telemetry.md](./features/telemetry.md) |
-| Account spreadsheet export (xlsx) | 2026-08-18 | [account-xlsx-export.md](./features/account-xlsx-export.md) |
+| Account spreadsheet export (xlsx) | 2026-11-03 | [account-xlsx-export.md](./features/account-xlsx-export.md) |
 | Revolut pockets (reconstruction from PSD2 internal-transfer rows) (removed, 2026-07-14) | 2026-06-28 | [revolut-pockets.md](./features/revolut-pockets.md) |
 | Revolut sidecar (assisted-enrolment login connector) | 2026-10-31 | [revolut-sidecar.md](./features/revolut-sidecar.md) |
 | Dividend forecast (shares, ETFs, SCPI) as upcoming capital income | 2026-11-05 | [dividend-forecast.md](./features/dividend-forecast.md) |

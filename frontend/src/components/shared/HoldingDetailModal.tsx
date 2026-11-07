@@ -107,13 +107,13 @@ export function HoldingDetailModal({ line, onClose }: HoldingDetailModalProps) {
                 )}
                 <DialogTitle className="text-lg">{line.name}</DialogTitle>
                 {line.ticker && line.accountId !== null && (
-                  <Badge variant="outline" className="font-mono text-xs">
+                  <Badge variant="outline" className="text-xs">
                     {line.ticker}
                   </Badge>
                 )}
                 {line.pnlPercent != null && (
                   <Badge
-                    className={line.pnlPercent >= 0 ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 gap-1' : 'bg-red-500/10 text-red-600 dark:text-red-400 gap-1'}
+                    className={line.pnlPercent >= 0 ? 'bg-gain/10 text-gain gap-1' : 'bg-loss/10 text-loss gap-1'}
                   >
                     {line.pnlPercent >= 0 ? <TrendingUp className="size-3" /> : <TrendingDown className="size-3" />}
                     {formatPercent(line.pnlPercent, { signed: true })}
@@ -137,14 +137,14 @@ export function HoldingDetailModal({ line, onClose }: HoldingDetailModalProps) {
                 {mode === 'holding' && line.pnlEur != null ? (
                   <div className="text-right">
                     <p className="text-xs text-muted-foreground mb-1">{t('holdings.pnl')}</p>
-                    <span className={`text-xl font-medium tabular-nums ${pnlPositive ? 'text-emerald-500' : 'text-red-500'}`}>
+                    <span className={`text-xl font-medium tabular-nums ${pnlPositive ? 'text-gain' : 'text-loss'}`}>
                       {pnlPositive ? '+' : ''}<CurrencyDisplay value={line.pnlEur} />
                     </span>
                   </div>
                 ) : mode === 'price' && priceChange && (is24H ? intraday.length > 0 : history.length > 0) ? (
                   <div className="text-right">
                     <p className="text-xs text-muted-foreground mb-1">{t('holdings.evolution')}</p>
-                    <span className={`text-xl font-medium tabular-nums ${priceChange.positive ? 'text-emerald-500' : 'text-red-500'}`}>
+                    <span className={`text-xl font-medium tabular-nums ${priceChange.positive ? 'text-gain' : 'text-loss'}`}>
                       {formatPercent(priceChange.pct, { signed: true })}
                     </span>
                   </div>

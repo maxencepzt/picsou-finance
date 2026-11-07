@@ -309,31 +309,35 @@ CREATE INDEX idx_persistent_session_series ON persistent_session(series_id);
 
 ### Frontend UX
 
-**Settings → Security section:**
+**Settings → Security section** (`/settings?section=security`), three flat cards of setting rows:
 
 ```
-┌─ Sécurité ─────────────────────────────────────┐
-│ Authentification à deux facteurs                │
-│   ○ Désactivée  [ Activer la 2FA ]              │
-│   ● Activée depuis le 26 avril 2026             │
-│      • 8 codes de secours restants              │
-│      [ Régénérer les codes ]                    │
-│      [ Désactiver la 2FA ]                      │
-│                                                  │
-│ Appareils connectés                             │
-│ ┌──────────────────────────────────────────┐   │
-│ │ 💻 Firefox · macOS · 192.168.1.•         │   │
-│ │ 🔒 De confiance · vu il y a 2 min        │   │
-│ │                            [ Révoquer ]   │   │
-│ ├──────────────────────────────────────────┤   │
-│ │ 📱 Safari · iOS · 192.168.1.•            │   │
-│ │ vu il y a 3 jours                         │   │
-│ │                            [ Révoquer ]   │   │
-│ └──────────────────────────────────────────┘   │
-│                                                  │
-│ [ Révoquer toutes les autres sessions ]         │
-└──────────────────────────────────────────────────┘
+┌─ Authentification à deux facteurs ──────────────────────────────┐
+│ ● Activée                                   [ Désactiver la 2FA ] │
+│   Un code … est demandé à chaque connexion.                       │
+│ ───────────────────────────────────────────────────────────────── │
+│ Codes de récupération                     [ Régénérer les codes ] │
+│   8 codes de récupération restants                                │
+└───────────────────────────────────────────────────────────────────┘
+┌─ Appareils connectés ───────────────────────────────────────────┐
+│ [▭] Chrome · macOS  (Cet appareil)  ✓ 2FA approuvée               │
+│     192.168.1.* · Dernière utilisation : 3 nov. 2026, 20:16       │
+│ ───────────────────────────────────────────────────────────────── │
+│ [▯] Safari · iOS                                     [ Révoquer ] │
+│     86.245.12.* · Dernière utilisation : 2 nov. 2026, 20:16       │
+└───────────────────────────────────────────────────────────────────┘
+┌─ Vos données ───────────────────────────────────────────────────┐
+│ Exporter mes données                                [ Exporter ] │
+└───────────────────────────────────────────────────────────────────┘
 ```
+
+Status is a dot and a word (gain when on, slate when off), never a coloured badge. "Disconnect the
+other devices" is not in this section: it sits with the logout in the **Zone sensible** card at the
+end of the Account section (`/settings?section=account`), disabled with "no other device is
+signed in" when the session list has only the current one. The dialogs (enroll, disable,
+regenerate, export) share the same footer — outline Cancel, then the action — and show their
+error as an `role="alert"` line. The device label checks iOS before macOS, since an iPhone's
+user agent says "like Mac OS X".
 
 **Login page:**
 - Add a checkbox `☐ Se souvenir de moi sur cet appareil` below password field.
@@ -376,7 +380,8 @@ All UIs are mobile-responsive (per repo convention).
 - `frontend/src/features/mfa/api.ts`, `frontend/src/features/mfa/hooks.ts`
 - `frontend/src/pages/settings/security/MfaEnrollDialog.tsx`, `frontend/src/pages/settings/security/MfaDisableDialog.tsx`, `frontend/src/pages/settings/security/RecoveryCodesDialog.tsx`
 - `frontend/src/pages/settings/security/SessionsList.tsx`
-- `frontend/src/pages/login/MfaChallengePage.tsx`
+- `frontend/src/pages/login/MfaChallengePage.tsx` — six-slot `InputOTP` for the app code (Verify enabled once six digits are in), a plain field for a recovery code, trust-device checkbox, "Back to sign-in" link under the card.
+- `frontend/src/pages/login/AuthScreen.tsx` — the centred card (logo, icon tile, title, footer links) and `CheckboxRow` shared by sign-in, 2FA, activation and OAuth consent.
 
 **Frontend (modified):**
 - `frontend/src/pages/login/LoginPage.tsx` — add Remember Me checkbox; on `requires2fa=true` redirect to `/login/mfa`.

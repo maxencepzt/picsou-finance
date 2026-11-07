@@ -102,9 +102,7 @@ function renderTab() {
 async function submitTotp() {
   const totpInput = await screen.findByLabelText('sync.finary.totp')
   fireEvent.change(totpInput, { target: { value: '123456' } })
-  const submit = totpInput.parentElement?.parentElement?.querySelector('button')
-  if (!submit) throw new Error('TOTP submit button not found')
-  fireEvent.click(submit)
+  fireEvent.click(screen.getByRole('button', { name: 'common.confirm' }))
 }
 
 function servePreview(preview: FinaryPreviewResponse) {

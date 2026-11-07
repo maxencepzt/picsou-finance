@@ -204,6 +204,137 @@ export interface UpcomingDividend {
   countsInBudget: boolean
 }
 
+/** A dividend that landed on an account (`GET /dividends/received`). `amount` is the credit as booked. */
+export interface ReceivedDividend {
+  id: string
+  transactionId: number | null
+  accountId: number
+  accountName: string
+  accountType: AccountType
+  ticker: string | null
+  name: string | null
+  receivedDate: string
+  amount: number
+  currency: string
+  exDate: string | null
+  amountPerShare: number | null
+  countsInBudget: boolean
+  /** The credit in euros at the latest known rate (the provider keeps no FX history); null without a rate. */
+  amountEur: number | null
+}
+
+/** One day of `GET /analysis/performance`. `investedEur` is null where a cost basis is incomplete. */
+export interface PerformancePoint {
+  date: string
+  valueEur: number
+  investedEur: number | null
+  /** Time-weighted index, 100 on the first point. */
+  index: number
+}
+
+/** Time-weighted and money-weighted performance of the investment accounts over a window. */
+export interface Performance {
+  from: string
+  to: string
+  valueEur: number
+  investedEur: number | null
+  /** Null with fewer than two points. */
+  twrPercent: number | null
+  /** Null under a year of history. */
+  annualizedPercent: number | null
+  xirrPercent: number | null
+  /** Null with fewer than 20 returns. */
+  volatilityPercent: number | null
+  /** ≤ 0; 0 with null dates when the index never fell; null without points. */
+  maxDrawdownPercent: number | null
+  maxDrawdownFrom: string | null
+  maxDrawdownTo: string | null
+  points: PerformancePoint[]
+}
+
+export type BenchmarkKey = 'MSCI_WORLD' | 'SP500' | 'CAC40'
+
+/** Daily EUR closes of a reference index fund (`GET /analysis/benchmark`); empty until the price job has run. */
+export interface Benchmark {
+  key: BenchmarkKey
+  ticker: string
+  label: string
+  points: { date: string; priceEur: number }[]
+}
+
+export interface FeeLine {
+  ticker: string
+  name: string | null
+  valueEur: number
+  /** Ongoing charges, % per year; null for shares, crypto and funds without a known TER. */
+  terPercent: number | null
+}
+
+/** `GET /analysis/fees`: fund charges on what is held, and broker fees paid over the window. */
+export interface FeesSummary {
+  from: string
+  to: string
+  weightedTerPercent: number | null
+  annualCostEur: number | null
+  coveredValueEur: number
+  totalValueEur: number
+  lines: FeeLine[]
+  brokerFeesEur: number
+  brokerFeesCount: number
+}
+
+export interface Mover {
+  ticker: string
+  name: string
+  logoUrl: string | null
+  priceEur: number
+  previousPriceEur: number
+  changePercent: number
+  valueEur: number
+  valueChangeEur: number
+}
+
+/** `GET /dashboard/movers`: day-over-day moves of held securities, from their two latest price days. */
+export interface Movers {
+  date: string | null
+  previousDate: string | null
+  gainers: Mover[]
+  losers: Mover[]
+}
+
+export interface MerchantSpend {
+  /** `brand:<id>` or `label:<normalised name>`. */
+  key: string
+  label: string
+  logoUrl: string | null
+  amount: number
+  count: number
+  /** Percent of the window's total spend (0–100), unlike by-category's 0–1 share. */
+  share: number
+}
+
+/** `GET /spending/by-merchant`: spend per merchant over a budget window, largest first. */
+export interface MerchantSpending {
+  from: string
+  to: string
+  total: number
+  merchants: MerchantSpend[]
+}
+
+/** `GET /goals/{id}/recurring-stats`: what a recurring plan really bought over the last twelve calendar months. */
+export interface RecurringStats {
+  from: string
+  to: string
+  investedEur: number
+  purchases: number
+  monthsWithPurchase: number
+  monthsElapsed: number
+  /** Null when a bought ticker has no price; 0 without purchases. */
+  currentValueEur: number | null
+  gainEur: number | null
+  gainPercent: number | null
+}
+
 export interface ScpiPosition {
   isin: string | null
   managementCompany: string | null

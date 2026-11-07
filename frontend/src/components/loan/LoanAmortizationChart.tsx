@@ -11,6 +11,7 @@ import { AXIS_PROPS } from '@/lib/chart-axis'
 
 interface LoanAmortizationChartProps {
   schedule: LoanInstallment[]
+  className?: string
 }
 
 interface ChartPoint {
@@ -51,7 +52,7 @@ function AmortizationTooltip({ active, payload, labels }: {
       <div className="flex items-center gap-2 py-0.5">
         <div className="h-0.5 w-4 shrink-0 rounded-full" style={{ backgroundColor: 'var(--color-remaining)' }} />
         <span className="text-muted-foreground">{labels.remaining}</span>
-        <span className="ml-auto font-mono font-medium tabular-nums">
+        <span className="ml-auto font-medium tabular-nums text-foreground">
           {money.amount(item.value, labels.currency)}
         </span>
       </div>
@@ -59,18 +60,12 @@ function AmortizationTooltip({ active, payload, labels }: {
   )
 }
 
-export function LoanAmortizationChart({ schedule }: LoanAmortizationChartProps) {
+export function LoanAmortizationChart({ schedule, className }: LoanAmortizationChartProps) {
   const money = useMoney()
   const { t, i18n } = useTranslation()
 
   const points = useMemo(() => buildPoints(schedule), [schedule])
   const todayMarker = useMemo(() => findTodayMarker(points), [points])
-
-  const xInterval = useMemo(() => {
-    const len = points.length
-    if (len <= 8) return 0
-    return Math.floor(len / 6)
-  }, [points.length])
 
   const chartConfig = useMemo(() => ({
     remaining: {
@@ -91,17 +86,18 @@ export function LoanAmortizationChart({ schedule }: LoanAmortizationChartProps) 
   if (points.length === 0) return null
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base">{t('debt.amortizationChart')}</CardTitle>
+    <Card className={className}>
+      <CardHeader>
+        <CardTitle>{t('debt.amortizationChart')}</CardTitle>
       </CardHeader>
-      <CardContent>
-        <ChartContainer config={chartConfig} className="h-[250px] w-full [&>div>div]:!w-full [&>div>div>svg]:!w-full">
-          <AreaChart data={points} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+      <CardContent className="flex-1">
+        <ChartContainer config={chartConfig} className="h-[260px] w-full [&>div>div]:!w-full [&>div>div>svg]:!w-full">
+          {/* Top margin leaves room for the "today" label above the plot. */}
+          <AreaChart data={points} margin={{ top: 22, right: 10, left: 0, bottom: 0 }}>
             <defs>
               <linearGradient id="fillRemaining" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="var(--color-remaining)" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="var(--color-remaining)" stopOpacity={0.05} />
+                <stop offset="5%" stopColor="var(--color-remaining)" style={{ stopOpacity: 'var(--chart-area-opacity)' }} />
+                <stop offset="95%" stopColor="var(--color-remaining)" stopOpacity={0.04} />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -109,7 +105,9 @@ export function LoanAmortizationChart({ schedule }: LoanAmortizationChartProps) 
               dataKey="date"
               {...AXIS_PROPS}
               tickFormatter={xAxisFormatter}
-              interval={xInterval}
+              // Evenly spaced ticks, fewer when they would overlap (a phone gets fewer dates).
+              interval="equidistantPreserveStart"
+              minTickGap={12}
             />
             <YAxis
               {...AXIS_PROPS}

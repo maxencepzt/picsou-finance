@@ -166,7 +166,7 @@ describe('SecuritySection', () => {
     api.refresh.mockResolvedValue({ username: 'alice' })
     renderSection('/settings')
 
-    fireEvent.click(await screen.findByRole('button', { name: en.settings.exportButton }))
+    fireEvent.click(await screen.findByRole('button', { name: en.settings.exportAction }))
     const dialog = await screen.findByRole('dialog')
     fireEvent.click(await within(dialog).findByRole('button', { name: 'Confirm with Zitadel' }))
 
@@ -180,7 +180,7 @@ describe('SecuritySection', () => {
   it('keeps the inline password for an export by a password user', async () => {
     renderSection('/settings', WITH_PASSWORD)
 
-    fireEvent.click(await screen.findByRole('button', { name: en.settings.exportButton }))
+    fireEvent.click(await screen.findByRole('button', { name: en.settings.exportAction }))
     const dialog = await screen.findByRole('dialog')
     fireEvent.change(await within(dialog).findByLabelText(en.settings.currentPassword), { target: { value: 's3cret' } })
     fireEvent.click(within(dialog).getByRole('button', { name: en.settings.exportDownload }))
@@ -196,7 +196,7 @@ describe('SecuritySection', () => {
     api.getSignInMethods.mockRejectedValue(apiError(409, 'SSO_DISABLED'))
     mountSection('/settings')
 
-    fireEvent.click(await screen.findByRole('button', { name: en.settings.exportButton }))
+    fireEvent.click(await screen.findByRole('button', { name: en.settings.exportAction }))
     const dialog = await screen.findByRole('dialog')
 
     expect(await within(dialog).findByRole('alert')).toHaveTextContent(en.ssoErrors.SSO_DISABLED)

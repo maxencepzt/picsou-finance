@@ -5,6 +5,8 @@ import com.picsou.dto.CashflowFlowResponse.FlowLink;
 import com.picsou.dto.CashflowFlowResponse.FlowNode;
 import com.picsou.dto.CashflowFlowResponse.NodeType;
 import com.picsou.dto.CashflowPeriod;
+import com.picsou.dto.MerchantSpendingResponse;
+import com.picsou.dto.MerchantSpendingResponse.MerchantSpend;
 import com.picsou.dto.SpendingByCategoryResponse;
 import com.picsou.dto.SpendingDetailResponse;
 import com.picsou.exception.ResourceNotFoundException;
@@ -41,6 +43,7 @@ class CashflowFlowServiceTest {
     @Mock TransactionRepository transactionRepository;
     @Mock BudgetSettingsService budgetSettingsService;
     @Mock CategoryRepository categoryRepository;
+    @Mock MerchantKnowledgeBase knowledgeBase;
 
     private CashflowFlowService service;
 
@@ -49,7 +52,7 @@ class CashflowFlowServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new CashflowFlowService(transactionRepository, budgetSettingsService, categoryRepository);
+        service = new CashflowFlowService(transactionRepository, budgetSettingsService, categoryRepository, knowledgeBase);
     }
 
     private static BigDecimal bd(String v) {
@@ -609,6 +612,129 @@ class CashflowFlowServiceTest {
 
         assertThat(resp.categories().get(0).parentId()).isNull(); // root category
         assertThat(resp.categories().get(1).parentId()).isNull(); // uncategorized bucket
+    }
+
+    // ─── Ranked merchants ────────────────────────────────────────────────────
+
+    private static Transaction merchantTx(String amount, Long brandId, String label, String counterparty,
+                                          String description) {
+        return Transaction.builder().amount(bd(amount)).merchantBrandId(brandId).merchantLabel(label)
+            .counterparty(counterparty).description(description)
+            .account(Account.builder().id(1L).name("Compte").build())
+            .date(LocalDate.of(2025, 3, 10)).build();
+    }
+
+    private void givenCarrefourBrand() {
+        when(knowledgeBase.findById(12L)).thenReturn(Optional.of(new MerchantKnowledgeBase.Brand(
+            12L, "carrefour", "Carrefour", "courses", "#004e9f", "C", "carrefour.fr")));
+    }
+
+    @Test
+    void spendingByMerchant_keysByBrandThenLabelThenCounterparty_withPercentShares() {
+        givenCarrefourBrand();
+        when(budgetSettingsService.logoFetchEnabled(MEMBER)).thenReturn(true);
+        givenTransactions(List.of(
+            // One brand, two store labels: merged under the brand, named by it.
+            merchantTx("-60", 12L, "Carrefour Market", null, "CB CARREFOUR MARKET"),
+            merchantTx("-40", 12L, "Carrefour City", null, "CB CARREFOUR CITY"),
+            // Same label, different case: one merchant, named by the first row.
+            merchantTx("-30", null, "Boulangerie Dupont", null, "x"),
+            merchantTx("-20", null, "BOULANGERIE DUPONT", null, "x"),
+            // No label: the counterparty is cleaned ("CB", card digits, date) to "Sncf", which
+            // meets the labelled row below on the same key.
+            merchantTx("-50", null, null, "CB SNCF 1234 01/02", "x"),
+            merchantTx("-25", null, "Sncf", null, "x"),
+            // Neither: the description, the categorizer's own fallback.
+            merchantTx("-25", null, null, null, "PRLV FREE MOBILE")
+        ));
+
+        MerchantSpendingResponse resp = service.spendingByMerchant(MEMBER, CashflowPeriod.CYCLE, TODAY, 10);
+
+        assertThat(resp.total()).isEqualByComparingTo("250");
+        assertThat(resp.from()).isEqualTo(LocalDate.of(2025, 3, 1));
+        assertThat(resp.to()).isEqualTo(LocalDate.of(2025, 3, 31));
+        assertThat(resp.merchants()).extracting(MerchantSpend::key).containsExactly(
+            "brand:12", "label:sncf", "label:boulangerie dupont", "label:free mobile");
+        assertThat(resp.merchants()).extracting(MerchantSpend::label).containsExactly(
+            "Carrefour", "Sncf", "Boulangerie Dupont", "Free Mobile");
+        assertThat(resp.merchants()).extracting(MerchantSpend::count).containsExactly(2, 2, 2, 1);
+        assertThat(resp.merchants()).extracting(MerchantSpend::amount)
+            .usingElementComparator(BigDecimal::compareTo)
+            .containsExactly(bd("100"), bd("75"), bd("50"), bd("25"));
+        // Percent of the total: 100/250, 75/250, 50/250, 25/250.
+        assertThat(resp.merchants()).extracting(MerchantSpend::share)
+            .usingElementComparator(BigDecimal::compareTo)
+            .containsExactly(bd("40"), bd("30"), bd("20"), bd("10"));
+        assertThat(resp.merchants()).extracting(MerchantSpend::logoUrl)
+            .containsExactly("/api/merchants/12/logo", null, null, null);
+    }
+
+    @Test
+    void spendingByMerchant_hasNoLogoUrl_whenLogosAreOff() {
+        givenCarrefourBrand();
+        when(budgetSettingsService.logoFetchEnabled(MEMBER)).thenReturn(false);
+        givenTransactions(List.of(merchantTx("-60", 12L, "Carrefour Market", null, "x")));
+
+        MerchantSpendingResponse resp = service.spendingByMerchant(MEMBER, CashflowPeriod.CYCLE, TODAY, 10);
+
+        assertThat(resp.merchants().get(0).logoUrl()).isNull();
+    }
+
+    @Test
+    void spendingByMerchant_excludesExactlyWhatByCategoryExcludes() {
+        Category salaire = cat(1, "Salaire", CategoryKind.INCOME);
+        Category courses = cat(2, "Courses", CategoryKind.EXPENSE);
+        Category virement = cat(3, "Virement", CategoryKind.TRANSFER);
+        Transaction income = merchantTx("2000", null, "Employeur", null, "x");
+        income.setCategoryRef(salaire);
+        Transaction transferOut = merchantTx("-900", null, "Livret A", null, "x");
+        transferOut.setCategoryRef(virement);
+        Transaction refund = merchantTx("15", null, "Amazon", null, "x");
+        Transaction groceries = merchantTx("-600", null, "Lidl", null, "x");
+        groceries.setCategoryRef(courses);
+        Transaction uncategorised = merchantTx("-400", null, "Amazon", null, "x");
+        givenTransactions(List.of(income, transferOut, refund, groceries, uncategorised));
+
+        MerchantSpendingResponse byMerchant = service.spendingByMerchant(MEMBER, CashflowPeriod.CYCLE, TODAY, 10);
+        SpendingByCategoryResponse byCategory = service.spendingByCategory(MEMBER, CashflowPeriod.CYCLE, TODAY);
+
+        assertThat(byMerchant.total()).isEqualByComparingTo("1000").isEqualByComparingTo(byCategory.totalExpense());
+        // A credit (the refund, the salary) and a transfer leg are never spend.
+        assertThat(byMerchant.merchants()).extracting(MerchantSpend::key)
+            .containsExactly("label:lidl", "label:amazon");
+        assertThat(byMerchant.merchants().get(1).amount()).isEqualByComparingTo("400");
+    }
+
+    @Test
+    void spendingByMerchant_clampsTheLimitTo1Through25_andKeepsTheFullTotal() {
+        List<Transaction> rows = new ArrayList<>();
+        for (int i = 1; i <= 30; i++) {
+            rows.add(merchantTx("-" + i, null, "Shop " + i, null, "x"));
+        }
+        givenTransactions(rows);
+
+        MerchantSpendingResponse many = service.spendingByMerchant(MEMBER, CashflowPeriod.CYCLE, TODAY, 100);
+        MerchantSpendingResponse one = service.spendingByMerchant(MEMBER, CashflowPeriod.CYCLE, TODAY, 0);
+
+        assertThat(many.merchants()).hasSize(25);
+        assertThat(many.merchants().get(0).key()).isEqualTo("label:shop 30");
+        assertThat(one.merchants()).extracting(MerchantSpend::key).containsExactly("label:shop 30");
+        // 1 + 2 + … + 30 = 465, the unlisted tail included; 30/465 = 6.45 %.
+        assertThat(one.total()).isEqualByComparingTo("465");
+        assertThat(one.merchants().get(0).share()).isEqualByComparingTo("6.45");
+    }
+
+    @Test
+    void spendingByMerchant_withYtdAnchor_windowsOnCalendarYear() {
+        LocalDate anchor = LocalDate.of(2024, 12, 31);
+        givenTransactions(List.of());
+
+        MerchantSpendingResponse resp = service.spendingByMerchant(MEMBER, CashflowPeriod.YTD, anchor, 10);
+
+        verify(transactionRepository).findByMemberIdAndDateBetween(
+            eq(MEMBER), eq(LocalDate.of(2024, 1, 1)), eq(LocalDate.of(2024, 12, 31)));
+        assertThat(resp.total()).isEqualByComparingTo("0");
+        assertThat(resp.merchants()).isEmpty();
     }
 
     // ─── Category drill ──────────────────────────────────────────────────────

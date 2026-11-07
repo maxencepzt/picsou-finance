@@ -18,6 +18,7 @@ import com.picsou.repository.TransactionRepository;
 import com.picsou.service.AccountAccessResolver;
 import com.picsou.service.DividendForecastService;
 import com.picsou.service.DividendReceiptService;
+import com.picsou.service.PriceService;
 import com.picsou.service.UserContext;
 import com.picsou.service.budget.CategorizationService;
 import org.junit.jupiter.api.BeforeEach;
@@ -58,6 +59,7 @@ class DividendControllerAuthorizationTest {
     @Mock TransactionRepository transactions;
     @Mock AccountRepository accounts;
     @Mock CategorizationService categorization;
+    @Mock PriceService prices;
 
     private MockMvc mvc;
 
@@ -79,7 +81,7 @@ class DividendControllerAuthorizationTest {
         Transaction foreignRow = Transaction.builder().id(2L).account(theirs).date(LocalDate.now().minusDays(3))
             .amount(new BigDecimal("10")).txType(TransactionType.DIVIDEND).ticker("TTE.PA").build();
         DividendReceiptService realReceipts = new DividendReceiptService(
-            accounts, access, holdings, sources, transactions, categorization);
+            accounts, access, holdings, sources, transactions, categorization, prices);
         MockMvc receivedMvc = MockMvcBuilders.standaloneSetup(new DividendController(
                 new DividendForecastService(access, holdings, sources, positions, transactions), realReceipts, userContext))
             .setControllerAdvice(new GlobalExceptionHandler())

@@ -162,6 +162,30 @@ The hooks are `useProviderStatus(id)`, `useProviderInitiate(id)`, `useProviderCo
 `useProviderSession(id)`; each is typed from the table entry, so `useProviderStatus('cic').data` is
 `CicSessionStatus`.
 
+### Provider panel anatomy
+
+Every provider body (`components/sync/*Panel.tsx`, `pages/sync/*Tab.tsx`) is built from the blocks of
+`components/sync/ProviderPanel.tsx`, so the Sync page's provider view, the add-account modal and the
+setup wizard show one family. Top to bottom:
+
+- **Status** — `PanelStatus`: a dot (a spinner while syncing) and a word, the facts under it
+  (`sync.panel.lastSync`, relative time; masked token or e-mail), and the actions on the right,
+  secondary first and primary last (`Disconnect`, then `Sync now`); stacked full width on a phone.
+  Shown once connected, or for a state to act on (DEGIRO's reconnect); "not connected" is the
+  provider view header's job. Row states in lists use `ConnectionState` (dot + word, never a
+  filled badge) with `connectionTone()` from `panel-styles.ts`.
+- **Intro** — `PanelIntro`: one or two muted lines on what the provider syncs (the `scope` key).
+- **Error** — `PanelError`: destructive banner, `role="alert"`, with its way out (retry, close).
+- **Form / step** — `PanelForm` (a card; `bare` inside a dialog): `PanelField` (visible label,
+  optional small icon, helper text under the control), inputs `PANEL_INPUT` (36px, 40px on touch),
+  one-time codes `PANEL_CODE_INPUT`, then `PanelActions` (primary right, full width on a phone,
+  secondary ghost). A second-factor step passes `step={{ icon, title }}`; a step with nothing to type
+  (app push, Sécur'Pass) is `PanelWaiting`.
+- **Disconnect** — `PanelDisconnect`: destructive button behind a `ConfirmDialog`.
+- **File imports** — `FileDropZone` (Finary, Actual Budget, HomeBank), previews in `PanelSection`
+  cards (title, count, rows split by hairlines), mapping choices in a `SegmentedControl`
+  (`PANEL_SEGMENTED_WRAP` lets long labels wrap on a phone), outcomes in `PanelStat` tiles.
+
 ## API client
 
 Single Axios instance in `frontend/src/lib/api-client.ts`:
@@ -223,7 +247,8 @@ const DashboardPage = lazy(() =>
 - Imported via `@import "tailwindcss"` in `index.css`.
 - oklch color tokens for both light and dark themes (defined in `:root` and `.dark`).
 - Font: **Geist Variable** (`@fontsource-variable/geist`).
-- Radius scale from `--radius` base.
+- Radius scale from `--radius` base. Cards are `rounded-2xl` (the `Card` primitive), tiles and rows `rounded-xl`, controls `rounded-md`.
+- Dark is the default theme ("Coffre Nocturne", see `DESIGN.md`); both themes share the same roles.
 
 ### shadcn/ui
 
@@ -238,9 +263,11 @@ Text inputs, text buttons, tabs, dropdown menus, segmented controls, and pill fi
 - Font size: `text-sm`
 - Shape: **follow the shadcn theme radius, all derived from `--radius` in `index.css`.** Interactive text controls are `rounded-md` (buttons, filter chips, tabs/segmented items, menu items); their containers (segmented control, dropdown menu, popover) are `rounded-lg`. Never hardcode `rounded-full`, `rounded-xl`, or `rounded-2xl` on a text control or its container — a pill button next to `rounded-lg` cards reads as a foreign design system. `rounded-full` is reserved for avatars, switches, badges, and status dots; larger radii (`rounded-xl`/`rounded-2xl`/`rounded-4xl`) belong to cards and large surfaces only.
 
+**Exception — compact card controls:** the switch inside a card header (period, view, grouping) is `SegmentedControl` (`components/shared/SegmentedControl.tsx`): 32px segments in a `bg-muted` track, the selected one on `bg-card` with a ring. Use it instead of a row of 40px buttons; `TimeRangeSelector` is built on it. A part-to-whole is drawn with `Breakdown` (`components/shared/Breakdown.tsx`), which lets the user pick stacked bar, donut or treemap and always keeps the legend; indicators use `KpiTile`.
+
 Avoid local `h-6`, `h-7`, `h-8`, `h-9`, `text-xs`, or narrow `px-2` overrides for text controls, and never re-pill a control with a `rounded-full` className that overrides the shadcn `Button`/`Tabs` primitive. OTP slots should follow the same readable `h-10` control rhythm unless a dense, space-constrained surface has a documented reason to shrink them. Reserve smaller sizing for pure icon buttons, badges, dense table data, chart labels, and non-interactive metadata.
 
-On phones (below `sm`), nothing may be wider than the card that holds it; `e2e/mobile-layout.spec.ts` checks the main pages at 360px. A segmented control stretches to the full width with equal items (`flex-1 basis-0 px-4`), with its label above it, until its card is wide enough for the desktop row. Key that switch to the card's width with a container query (`@container` + `@xl:flex-none @xl:px-8`, as on the Settings page), not to the viewport: from 768px the sidebar takes a third of the screen. A card header with toggles or buttons uses `flex-wrap` so they drop under the title. A tab or filter strip that does not fit stays on one row inside `ScrollStrip` (`components/shared/ScrollStrip.tsx`), which fades the edge that hides more items and scrolls the active one (`aria-selected`, `aria-current` or `aria-pressed`) into view. Pass it the live selection as `activeKey` (control the `Tabs` value; a `defaultValue` never changes), and do not strip its built-in `-m-1 p-1`: that is the room the 4px focus ring needs inside the overflow. The strip re-reveals the active item when it changes width, but not after a swipe when only its content grows. Titles wrap (`line-clamp-2`) rather than `truncate` when the name is what the user came to read.
+On phones (below `sm`), nothing may be wider than the card that holds it; `e2e/mobile-layout.spec.ts` checks the main pages at 360px. A setting row drops its control under its label on a phone (`pages/settings/SettingRow.tsx`), and the compact `SegmentedControl` keeps its natural width. Key such a switch to the card's width with a container query (`@container` + `@xl:` variants), not to the viewport: from 768px the sidebar takes a third of the screen. A card header with toggles or buttons uses `flex-wrap` so they drop under the title. A tab or filter strip that does not fit stays on one row inside `ScrollStrip` (`components/shared/ScrollStrip.tsx`), which fades the edge that hides more items and scrolls the active one (`aria-selected`, `aria-current` or `aria-pressed`) into view. Pass it the live selection as `activeKey` (control the `Tabs` value; a `defaultValue` never changes), and do not strip its built-in `-m-1 p-1`: that is the room the 4px focus ring needs inside the overflow. The strip re-reveals the active item when it changes width, but not after a swipe when only its content grows. Titles wrap (`line-clamp-2`) rather than `truncate` when the name is what the user came to read.
 
 `Label` and `CardDescription` are app-wide readable primitives (`text-sm`). Do not shrink form labels or section descriptions locally unless the element is truly dense metadata rather than an input label.
 
@@ -276,14 +303,18 @@ All theme color tokens are defined in the `@theme` block of `frontend/src/index.
 
 | Intent | Use |
 |--------|-----|
-| Primary text | `text-foreground` |
+| Primary text, every amount | `text-foreground` |
 | Muted / secondary text | `text-muted-foreground` |
-| Subtle background | `bg-muted` |
+| Subtle background, tiles inside a card | `bg-muted` |
 | Card background | `bg-card` |
-| Primary action color | `text-primary` / `bg-primary` |
-| Destructive / error | `text-destructive` |
+| Primary action color, selected tint | `text-primary` / `bg-primary` / `bg-primary/12` |
+| Gain / positive movement | `text-gain`, `bg-gain/10` |
+| Loss / negative movement, overspent | `text-loss`, `bg-loss/10` |
+| Warning (stale, to check, ≥ 80 %) | `text-warning`, `bg-warning/10` |
+| Asset class (one fixed colour each) | `bg-class-cash` … `bg-class-other`, or `var(--class-*)` in charts; labels on a fill `text-on-class` |
+| Destructive action / error | `text-destructive` |
 
-**Exception:** intentional status colors (`text-green-*`, `text-red-*`, `text-amber-*`, etc.) are fine when used as semantic UI signals (sync status badges, financial gain/loss indicators). Always include dark-mode variants or use the `dark:` prefix for those.
+Gain and loss always come with a sign and an arrow (`components/shared/Delta.tsx`). Raw palette classes (`text-emerald-*`, `bg-red-*`, `text-amber-*`…) are not used anywhere any more: the semantic tokens switch with the theme, so no `dark:` duplicate is needed. Map an account type to its class with `lib/asset-classes.ts`.
 
 ### Icons
 

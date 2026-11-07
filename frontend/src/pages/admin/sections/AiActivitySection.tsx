@@ -1,14 +1,6 @@
 import { Fragment, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ScrollText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
 import {
   Dialog,
   DialogContent,
@@ -18,29 +10,13 @@ import {
 } from '@/components/ui/dialog'
 import { useAiCalls } from '@/features/admin/hooks'
 import { localeFromLanguage } from '@/lib/utils'
+import { SettingsCard, StatusText } from '../components/SettingsBlocks'
 
 const LIMIT = 50
 
-function StatusBadge({ status }: { status: string }) {
-  if (status === 'ERROR') {
-    return (
-      <span className="inline-flex items-center rounded-full bg-destructive/10 px-2 py-0.5 text-[11px] font-medium text-destructive">
-        {status}
-      </span>
-    )
-  }
-  if (status === 'EMPTY') {
-    return (
-      <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-        {status}
-      </span>
-    )
-  }
-  return (
-    <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
-      {status}
-    </span>
-  )
+function CallStatus({ status }: { status: string }) {
+  const tone = status === 'ERROR' ? 'error' : status === 'EMPTY' ? 'neutral' : 'ok'
+  return <StatusText tone={tone}>{status}</StatusText>
 }
 
 function TokenCell({ value }: { value?: number | null }) {
@@ -92,71 +68,71 @@ function AiCallsDialog() {
 
       {/* Table */}
       {!isLoading && !isError && data && data.items.length > 0 && (
-        <div className="overflow-x-auto">
-          <div className="max-h-[60vh] overflow-y-auto">
+        <div className="max-h-[60vh] overflow-auto rounded-xl ring-1 ring-border">
             <table className="w-full min-w-[600px] text-sm">
-              <thead className="sticky top-0 bg-background">
-                <tr className="border-b text-left text-xs font-medium text-muted-foreground">
-                  <th className="pb-2 pr-3">{t('admin.aiActivity.colTime')}</th>
-                  <th className="pb-2 pr-3">{t('admin.aiActivity.colMerchant')}</th>
-                  <th className="pb-2 pr-3">{t('admin.aiActivity.colModel')}</th>
-                  <th className="pb-2 pr-3 text-right">{t('admin.aiActivity.colTokens')}</th>
-                  <th className="pb-2">{t('admin.aiActivity.colStatus')}</th>
+              <thead className="sticky top-0 bg-popover">
+                <tr className="border-b border-border text-left text-xs text-muted-foreground">
+                  <th className="px-3 py-2 font-medium">{t('admin.aiActivity.colTime')}</th>
+                  <th className="px-3 py-2 font-medium">{t('admin.aiActivity.colMerchant')}</th>
+                  <th className="px-3 py-2 font-medium">{t('admin.aiActivity.colModel')}</th>
+                  <th className="px-3 py-2 text-right font-medium">{t('admin.aiActivity.colTokens')}</th>
+                  <th className="px-3 py-2 font-medium">{t('admin.aiActivity.colStatus')}</th>
                 </tr>
               </thead>
               <tbody>
                 {data.items.map((call) => (
                   <Fragment key={call.id}>
                     <tr
-                      className="cursor-pointer border-b last:border-0 hover:bg-muted/30"
+                      className="cursor-pointer border-b border-border last:border-0 hover:bg-muted/50"
+                      aria-expanded={expandedId === call.id}
                       onClick={() =>
                         setExpandedId((prev) => (prev === call.id ? null : call.id))
                       }
                     >
-                      <td className="py-2 pr-3 text-xs text-muted-foreground whitespace-nowrap">
+                      <td className="px-3 py-2 text-xs whitespace-nowrap text-muted-foreground tabular-nums">
                         {new Date(call.createdAt).toLocaleString(locale)}
                       </td>
-                      <td className="py-2 pr-3 max-w-[140px] truncate">
+                      <td className="max-w-[160px] truncate px-3 py-2 font-medium">
                         {call.merchantLabel ?? <span className="text-muted-foreground">—</span>}
                       </td>
-                      <td className="py-2 pr-3 text-xs text-muted-foreground whitespace-nowrap">
+                      <td className="px-3 py-2 text-xs whitespace-nowrap text-muted-foreground">
                         {call.model ? `${call.provider} / ${call.model}` : call.provider}
                       </td>
-                      <td className="py-2 pr-3 text-right text-xs tabular-nums">
+                      <td className="px-3 py-2 text-right text-xs tabular-nums">
                         <TokenCell value={call.promptTokens} />
                         {' / '}
                         <TokenCell value={call.completionTokens} />
                         {' / '}
                         <TokenCell value={call.totalTokens} />
                       </td>
-                      <td className="py-2">
-                        <StatusBadge status={call.status} />
+                      <td className="px-3 py-2">
+                        <CallStatus status={call.status} />
                       </td>
                     </tr>
                     {expandedId === call.id && (
-                      <tr key={`${call.id}-detail`} className="border-b last:border-0 bg-muted/10">
-                        <td colSpan={5} className="px-2 pb-3 pt-1">
+                      <tr key={`${call.id}-detail`} className="border-b border-border bg-muted/30 last:border-0">
+                        <td colSpan={5} className="px-3 pt-1 pb-3">
                           {call.error && (
                             <p className="mb-2 text-xs text-destructive">
-                              <strong>Error:</strong> {call.error}
+                              <strong>{t('common.labelColon', { label: t('common.errorTitle') })}</strong> {call.error}
                             </p>
                           )}
                           {call.prompt && (
                             <div className="mb-2">
-                              <p className="mb-1 text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
+                              <p className="mb-1 text-xs font-medium text-muted-foreground">
                                 {t('admin.aiActivity.prompt')}
                               </p>
-                              <pre className="whitespace-pre-wrap break-all text-[11px] max-h-64 overflow-auto rounded bg-muted/40 p-2">
+                              <pre className="max-h-64 overflow-auto rounded-md bg-muted p-2 font-mono text-[11px] whitespace-pre-wrap break-all">
                                 {call.prompt}
                               </pre>
                             </div>
                           )}
                           {call.response && (
                             <div>
-                              <p className="mb-1 text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
+                              <p className="mb-1 text-xs font-medium text-muted-foreground">
                                 {t('admin.aiActivity.response')}
                               </p>
-                              <pre className="whitespace-pre-wrap break-all text-[11px] max-h-64 overflow-auto rounded bg-muted/40 p-2">
+                              <pre className="max-h-64 overflow-auto rounded-md bg-muted p-2 font-mono text-[11px] whitespace-pre-wrap break-all">
                                 {call.response}
                               </pre>
                             </div>
@@ -168,20 +144,19 @@ function AiCallsDialog() {
                 ))}
               </tbody>
             </table>
-          </div>
         </div>
       )}
 
       {/* Pagination */}
       {!isLoading && !isError && data && total > 0 && (
         <div className="flex items-center justify-between gap-2 text-sm">
-          <span className="text-muted-foreground text-xs">
+          <span className="text-xs text-muted-foreground tabular-nums">
             {from}–{to} / {total}
           </span>
           <div className="flex gap-2">
             <Button
               variant="outline"
-              size="sm"
+              size="xs"
               disabled={offset === 0}
               onClick={() => {
                 setOffset((o) => Math.max(0, o - LIMIT))
@@ -192,7 +167,7 @@ function AiCallsDialog() {
             </Button>
             <Button
               variant="outline"
-              size="sm"
+              size="xs"
               disabled={offset + LIMIT >= total}
               onClick={() => {
                 setOffset((o) => o + LIMIT)
@@ -213,18 +188,13 @@ export function AiActivitySection() {
   const [open, setOpen] = useState(false)
 
   return (
-    <Card className="rounded-4xl bg-card shadow-md">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <ScrollText className="size-5 text-muted-foreground" />
-          {t('admin.aiActivity.title')}
-        </CardTitle>
-        <CardDescription>{t('admin.aiActivity.description')}</CardDescription>
-      </CardHeader>
-      <CardContent>
+    <SettingsCard
+      title={t('admin.aiActivity.title')}
+      description={t('admin.aiActivity.description')}
+      action={
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button variant="outline">{t('admin.aiActivity.view')}</Button>
+            <Button variant="outline" size="xs">{t('admin.aiActivity.view')}</Button>
           </DialogTrigger>
           <DialogContent className="w-[95vw] sm:max-w-3xl">
             <DialogHeader>
@@ -233,7 +203,7 @@ export function AiActivitySection() {
             {open && <AiCallsDialog />}
           </DialogContent>
         </Dialog>
-      </CardContent>
-    </Card>
+      }
+    />
   )
 }

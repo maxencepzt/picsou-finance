@@ -46,6 +46,14 @@ const { loginMutation } = vi.hoisted(() => ({
 }))
 vi.mock('@/features/mfa/hooks', () => ({ useLoginWithRememberMe: () => loginMutation }))
 
+// The redesigned form's Radix checkbox measures itself; jsdom has no ResizeObserver.
+class NoopResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+vi.stubGlobal('ResizeObserver', NoopResizeObserver)
+
 const { LoginPage } = await import('./LoginPage')
 const { useAppStore } = await import('@/stores/app-store')
 const { consumeSsoRevalidate, markSsoRevalidate, rememberSsoPreference, ssoRememberPreference } =

@@ -22,6 +22,25 @@ export function useGoal(id: number) {
   })
 }
 
+export function useGoalHistory(id: number) {
+  return useQuery({
+    queryKey: ['goals', id, 'history'],
+    queryFn: () => goalsApi.getHistory(id),
+    staleTime: QUERY_STALE_TIMES.goals,
+    enabled: !!id,
+  })
+}
+
+/** A recurring plan's purchases over the last 12 calendar months; the backend answers 400 for a savings target. */
+export function useRecurringStats(id: number) {
+  return useQuery({
+    queryKey: ['goals', id, 'recurring-stats'],
+    queryFn: () => goalsApi.getRecurringStats(id),
+    staleTime: QUERY_STALE_TIMES.goals,
+    enabled: !!id,
+  })
+}
+
 export function useGoalMonths(id: number) {
   return useQuery({
     queryKey: ['goals', id, 'months'],

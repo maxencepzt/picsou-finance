@@ -1,7 +1,5 @@
-import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useLoanSummary } from '@/features/accounts/hooks'
-import { LoanMonthlyBreakdownCard } from './LoanMonthlyBreakdownCard'
 import { LoanProgressCard } from './LoanProgressCard'
 import { LoanCostSummaryTable } from './LoanCostSummaryTable'
 import { LoanAmortizationChart } from './LoanAmortizationChart'
@@ -10,31 +8,23 @@ interface LoanDetailSectionProps {
   accountId: number
 }
 
+/** A loan's amortisation curve beside its repayment progress, then what it costs in total. */
 export function LoanDetailSection({ accountId }: LoanDetailSectionProps) {
   const { data, isLoading, isError } = useLoanSummary(accountId)
 
-  if (isLoading) {
-    return (
-      <Card>
-        <CardContent className="pt-6">
-          <Skeleton className="h-32 w-full" />
-        </CardContent>
-      </Card>
-    )
-  }
+  if (isLoading) return <Skeleton className="h-72 w-full rounded-2xl" />
 
   if (isError || !data) return null
 
   const { summary, schedule } = data
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <LoanMonthlyBreakdownCard summary={summary} />
-        <LoanProgressCard summary={summary} />
+    <div className="flex flex-col gap-4">
+      <div className="grid items-stretch gap-4 xl:grid-cols-3">
+        <LoanAmortizationChart schedule={schedule} className="xl:col-span-2" />
+        <LoanProgressCard summary={summary} className={schedule.length === 0 ? 'xl:col-span-3' : undefined} />
       </div>
       <LoanCostSummaryTable summary={summary} />
-      <LoanAmortizationChart schedule={schedule} />
     </div>
   )
 }

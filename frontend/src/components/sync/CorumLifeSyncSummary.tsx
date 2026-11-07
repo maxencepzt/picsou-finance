@@ -23,7 +23,7 @@ export function CorumLifeSyncSummary({ completedAt, ambiguous = 0 }: {
     <div className="mt-2 space-y-1 text-sm" data-testid="corum-life-sync-summary">
       {run.length > 0 && (
         <>
-          <p className="text-emerald-600 dark:text-emerald-400">{t('sync.corum.life.synced', { count: run.length })}</p>
+          <p className="text-gain">{t('sync.corum.life.synced', { count: run.length })}</p>
           <ul className="space-y-0.5">
             {run.map(account => (
               <li key={account.id} className="flex justify-between gap-3">
@@ -35,7 +35,7 @@ export function CorumLifeSyncSummary({ completedAt, ambiguous = 0 }: {
         </>
       )}
       {ambiguous > 0 && (
-        <p className="text-amber-600 dark:text-amber-400">{t('sync.corum.life.ambiguous', { count: ambiguous })}</p>
+        <p className="text-warning">{t('sync.corum.life.ambiguous', { count: ambiguous })}</p>
       )}
     </div>
   )

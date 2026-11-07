@@ -11,7 +11,7 @@ The export is **self-only**: a user exports their own data plus resources shared
 
 ## Goals
 
-- Each authenticated user can download an export of their own data from `Settings → Security & Privacy`.
+- Each authenticated user can download an export of their own data from `Settings → Sécurité → Vos données` (`/settings?section=security`).
 - Export is delivered as a single `picsou-export-<username>-YYYYMMDD-HHmmss.zip` (UTC timestamp; any username character outside `[A-Za-z0-9._-]` becomes `_` so the quoted header value stays valid) containing both a hierarchical `data.json` and a flat `csv/` directory (one file per entity).
 - Export contains every domain field tied to the user, with explicit exclusion of secrets (passwords, MFA secrets, recovery codes, encrypted bank-session credentials, persistent-session tokens, requisition tokens).
 - A toggle lets the user opt in to including their `BalanceSnapshot` history (off by default — keeps the ZIP small for the common case).
@@ -33,9 +33,9 @@ The export is **self-only**: a user exports their own data plus resources shared
 ### High-level flow
 
 ```
-Settings → Security & Privacy
+Settings → Sécurité → Vos données
    │
-   │  user clicks "Export my data"
+   │  user clicks "Exporter"
    ▼
 ExportDataDialog (frontend)
    ├─ account without a password (SSO only): ReauthPanel first
@@ -181,7 +181,7 @@ Backend:
 
 Frontend:
 
-- `frontend/src/pages/settings/security/SecuritySection.tsx` — section card hosting the "Export my data" button
+- `frontend/src/pages/settings/security/SecuritySection.tsx` — the "Vos données" card whose "Exporter" row opens the dialog
 - `frontend/src/pages/settings/security/ExportDataDialog.tsx` — modal with toggle + re-auth field + download trigger; for an account without a password it shows `ReauthPanel` (IdP re-authentication) first
 - `frontend/src/pages/settings/security/ReauthPanel.tsx` — mints the `reauth_proof` (password + TOTP, or an IdP round trip that returns with `resume=export`)
 - `frontend/src/features/export/api.ts` — `requestExport(opts)` returning a `Blob`

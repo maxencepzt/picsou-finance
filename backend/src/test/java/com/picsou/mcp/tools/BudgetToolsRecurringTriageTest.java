@@ -112,7 +112,7 @@ class BudgetToolsRecurringTriageTest {
             new RecurringSeriesService(seriesRepository, categoryRepository, familyMemberRepository, accountRepository),
             new RecurringDetectionService(transactionRepository, seriesRepository, familyMemberRepository),
             cashflowService,
-            new CashflowFlowService(transactionRepository, budgetSettingsService, categoryRepository),
+            new CashflowFlowService(transactionRepository, budgetSettingsService, categoryRepository, knowledgeBase),
             transactionRepository,
             userContext,
             VALIDATOR);

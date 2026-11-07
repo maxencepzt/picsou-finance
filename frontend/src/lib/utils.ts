@@ -313,15 +313,12 @@ export function freshnessLevel(
   return 'old'
 }
 
-/**
- * Text colour per level. Both themes are spelled out: the 600 shades are unreadable on a dark
- * background and the 400s wash out on a light one.
- */
+/** Text colour per level, from the theme's movement tokens (they switch with the theme). */
 export const FRESHNESS_TEXT_CLASS: Record<FreshnessLevel, string> = {
-  fresh: 'text-emerald-600 dark:text-emerald-400',
-  recent: 'text-yellow-600 dark:text-yellow-400',
-  stale: 'text-orange-600 dark:text-orange-400',
-  old: 'text-red-600 dark:text-red-400',
+  fresh: 'text-gain',
+  recent: 'text-warning',
+  stale: 'text-warning',
+  old: 'text-loss',
   unknown: 'text-muted-foreground',
 }
 
@@ -343,4 +340,15 @@ export function safeRedirect(redirect: string | null, fallback = '/'): string {
  */
 export function isOAuthAuthorizeRedirect(redirect: string): boolean {
   return redirect.startsWith('/oauth2/')
+}
+
+/** Lower-cased and stripped of accents, so "epargne" finds "Épargne". */
+export function normalizeSearch(value: string): string {
+  return value.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim()
+}
+
+/** Day and short month ("12 nov."), for compact date columns. */
+export function formatShortDate(dateStr: string | null | undefined, locale = getLocale()): string {
+  if (!dateStr) return '—'
+  return new Intl.DateTimeFormat(normalizeIntlLocale(locale), { day: 'numeric', month: 'short' }).format(toDate(dateStr))
 }

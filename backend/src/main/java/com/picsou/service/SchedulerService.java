@@ -1,5 +1,6 @@
 package com.picsou.service;
 
+import com.picsou.dto.BenchmarkKey;
 import com.picsou.model.Account;
 import com.picsou.model.AccountType;
 import com.picsou.model.BalanceSnapshot;
@@ -217,7 +218,8 @@ public class SchedulerService {
     }
 
     /**
-     * Every hour: refresh the prices of everything anyone holds, in one pass.
+     * Every hour: refresh the prices of everything anyone holds, plus the benchmark ETFs
+     * ({@link BenchmarkKey}), in one pass.
      *
      * <p>Both halves of that sentence are corrections of earlier behaviour.
      *
@@ -253,6 +255,12 @@ public class SchedulerService {
         otherTickers.removeAll(cryptoTickers);
 
         if (cryptoTickers.isEmpty() && otherTickers.isEmpty()) return;
+
+        // The benchmark ETFs, held or not: this pass records today's row in price_snapshot, which
+        // is what keeps GET /api/analysis/benchmark growing without a GET ever writing. After the
+        // return above on purpose: an empty instance has no performance to compare, and a booting
+        // test context must not reach Yahoo.
+        otherTickers.addAll(BenchmarkKey.tickers());
 
         log.debug("Refreshing prices for {} crypto and {} other tickers",
             cryptoTickers.size(), otherTickers.size());

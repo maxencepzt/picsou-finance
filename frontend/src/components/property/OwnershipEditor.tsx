@@ -43,9 +43,7 @@ export function OwnershipEditor({ accountId, canEdit }: OwnershipEditorProps) {
 
   if (isLoading) {
     return (
-      <Card>
-        <CardContent className="pt-6"><Skeleton className="h-24 w-full" /></CardContent>
-      </Card>
+      <Skeleton className="h-40 w-full rounded-2xl" />
     )
   }
   if (!data) return null
@@ -105,11 +103,11 @@ function OwnershipForm({ accountId, ownership, rows, canEdit }: {
 
   return (
     <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base">{t('property.ownership.title')}</CardTitle>
+      <CardHeader>
+        <CardTitle>{t('property.ownership.title')}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <p className="text-sm text-muted-foreground">{t('property.ownership.hint')}</p>
+        <p className="text-[13px] text-muted-foreground">{t('property.ownership.hint')}</p>
 
         <div className="space-y-2">
           {rows.map(member => (
@@ -119,12 +117,13 @@ function OwnershipForm({ accountId, ownership, rows, canEdit }: {
                 style={{ backgroundColor: member.avatarColor }}
                 aria-hidden
               />
-              <Label htmlFor={`share-${member.id}`} className="flex-1">
+              <Label htmlFor={`share-${member.id}`} className="min-w-0 flex-1 truncate">
                 {member.displayName}
               </Label>
-              <div className="flex w-28 items-center gap-1">
+              <div className="flex w-28 items-center gap-1.5">
                 <NumericInput
                   id={`share-${member.id}`}
+                  className="h-9 text-right tabular-nums"
                   value={shares[member.id] ?? ''}
                   disabled={!canEdit}
                   onChange={e => setShares(prev => ({ ...prev, [member.id]: e.target.value }))}
@@ -137,7 +136,7 @@ function OwnershipForm({ accountId, ownership, rows, canEdit }: {
 
         <div className="flex items-center justify-between border-t pt-3 text-sm">
           <span className="text-muted-foreground">{t('property.ownership.total')}</span>
-          <span className={`font-medium tabular-nums ${overAllocated ? 'text-destructive' : ''}`}>
+          <span className={`font-semibold tabular-nums ${overAllocated ? 'text-destructive' : 'text-foreground'}`}>
             {formatPercent(total)}
           </span>
         </div>
@@ -150,8 +149,8 @@ function OwnershipForm({ accountId, ownership, rows, canEdit }: {
         )}
 
         {!overAllocated && unassigned > 0.01 && (
-          <p className="flex items-start gap-2 rounded-md bg-muted/50 p-3 text-xs text-muted-foreground">
-            <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+          <p className="flex items-start gap-2 rounded-xl bg-muted/50 p-3 text-xs text-muted-foreground">
+            <AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-warning" />
             {t('property.ownership.unassigned', { percent: formatPercent(unassigned) })}
           </p>
         )}
@@ -164,7 +163,7 @@ function OwnershipForm({ accountId, ownership, rows, canEdit }: {
 
         {canEdit && (
           <div className="flex justify-end">
-            <Button size="sm" onClick={save} disabled={update.isPending || overAllocated}>
+            <Button size="sm" className="h-9 px-4" onClick={save} disabled={update.isPending || overAllocated}>
               {update.isPending ? t('common.loading') : t('common.save')}
             </Button>
           </div>

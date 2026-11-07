@@ -101,13 +101,13 @@ function ImportWizard({ accountId, onOpenChange }: { accountId: number; onOpenCh
   if (result) {
     return (
       <div className="space-y-4">
-        <div className="flex items-center gap-2 text-emerald-500">
+        <div className="flex items-center gap-2 text-gain">
           <CheckCircle2 className="size-5" />
           <span className="font-medium">{t('import.rowsImported', { count: result.imported })}</span>
         </div>
         {result.skipped > 0 && (
           <div className="space-y-2">
-            <div className="flex items-center gap-2 text-red-500">
+            <div className="flex items-center gap-2 text-loss">
               <AlertCircle className="size-5" />
               <span className="font-medium">{t('import.rowsSkipped', { count: result.skipped })}</span>
             </div>

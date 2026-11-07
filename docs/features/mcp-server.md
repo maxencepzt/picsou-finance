@@ -1,6 +1,6 @@
 # Feature: Embedded MCP server + scoped access-keys
 
-> Last updated: 2026-11-01
+> Last updated: 2026-11-03
 
 ## Context
 
@@ -92,7 +92,7 @@ Three security properties are guaranteed structurally (not by per-call checks):
 
 **Frontend**
 - `frontend/src/features/accessKeys/{api,hooks,scopes,status}.ts` — TanStack Query layer + scope/status helpers.
-- `frontend/src/pages/settings/sections/AccessKeysSection.tsx` — the Settings UI (list, create dialog, one-time secret reveal, connect-your-client block, revoke).
+- `frontend/src/pages/settings/sections/AccessKeysSection.tsx` — the Settings UI (list, create dialog, one-time secret reveal, connect-your-client block, revoke), shown with `ConnectedAppsSection.tsx` in the "Clés d'accès & MCP" section (`/settings?section=mcp`).
 - `i18n/locales/{en,fr}.json` — the `accessKeys.*` namespace.
 
 **Deployment — reverse proxy** (the public `https://<host>/mcp` path; see Gotchas)
@@ -104,9 +104,13 @@ primitive (`42rem` on desktop) because scope cards render in two columns. The
 dialog itself stays inside `100dvh - 2rem`; only the form body scrolls, while the
 title and action buttons remain visible.
 
-The "Connect your MCP client" block uses full-width code-copy rows: endpoint and
-snippet containers are `min-h-10`, rounded, and padded like app inputs, with copy
-buttons that become full-width on mobile and keep a stable desktop width.
+The section is three flat cards: "Clés d'accès" (the key rows, with "Nouvelle clé" in the card
+header; each row shows name, a status dot and word — active, expired, revoked — the key prefix,
+its scopes and last-use / expiry, with Revoke on the right, dropping under the text on a phone),
+"Connecter votre client MCP" (the endpoint and the Claude Desktop snippet on raised `bg-muted`
+blocks, each with a compact Copy button; the snippet scrolls sideways on a phone) and
+"Applications connectées" (the OAuth clients, same row layout). In the create dialog each scope
+card stacks its label, description and scope code under the check box.
 
 ### Flow
 

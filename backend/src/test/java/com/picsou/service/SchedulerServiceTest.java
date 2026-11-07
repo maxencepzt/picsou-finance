@@ -30,6 +30,7 @@ import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
@@ -78,9 +79,10 @@ class SchedulerServiceTest {
         scheduler.refreshPrices();
 
         // The order is the contract: a ticker becomes a logo candidate once this pass has recorded
-        // a price for it, and logo lookups must never get ahead of the price requests.
+        // a price for it, and logo lookups must never get ahead of the price requests. The
+        // benchmark ETFs ride along: their daily row is what GET /api/analysis/benchmark reads.
         InOrder order = inOrder(priceService, instrumentLogoService);
-        order.verify(priceService).refreshPrices(Set.of("AAPL"));
+        order.verify(priceService).refreshPrices(Set.of("AAPL", "IWDA.AS", "SXR8.DE", "C40.PA"));
         order.verify(instrumentLogoService).requestResolution();
     }
 
@@ -103,6 +105,8 @@ class SchedulerServiceTest {
         scheduler.refreshPrices();
 
         verify(instrumentLogoService, never()).requestResolution();
+        // Benchmarks included: an empty instance has nothing to compare them with.
+        verifyNoInteractions(priceService);
     }
 
     @Test

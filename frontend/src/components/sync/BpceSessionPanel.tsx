@@ -1,18 +1,19 @@
 import { useCallback, useEffect, useRef, useState } from "react"
-import {
-  AlertTriangle,
-  Landmark,
-  LogOut,
-  RefreshCw,
-  ShieldAlert,
-  Smartphone,
-} from "lucide-react"
+import { CheckCircle2, Landmark, RefreshCw, ShieldAlert, Smartphone } from "lucide-react"
 import { useTranslation } from "react-i18next"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import {
+  PanelDisconnect,
+  PanelError,
+  PanelField,
+  PanelForm,
+  PanelIntro,
+  PanelLoading,
+  PanelStatus,
+  PanelWaiting,
+} from "@/components/sync/ProviderPanel"
+import { PANEL_ACTION, PANEL_INPUT } from "@/components/sync/panel-styles"
 import {
   Dialog,
   DialogContent,
@@ -29,6 +30,7 @@ import {
   useProviderSync,
 } from "@/features/sync/hooks"
 import { getErrorCode, getErrorDetail, getErrorStatus } from "@/lib/errors"
+import { formatTimeAgo } from "@/lib/utils"
 import type { BpceAuthInitResponse, BpceSessionStatus } from "@/types/api"
 
 /**
@@ -191,7 +193,6 @@ export function BpceSessionPanel({
   const [keypadSecondsLeft, setKeypadSecondsLeft] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const [secondsLeft, setSecondsLeft] = useState(0)
-  const [confirmingDisconnect, setConfirmingDisconnect] = useState(false)
   // When the completion request was lost: the waiting card stays and the session is polled.
   const [lostCompletionAt, setLostCompletionAt] = useState<number | null>(null)
   // Synchronous guard: state updates are async, so a fast double click could
@@ -445,230 +446,170 @@ export function BpceSessionPanel({
     }
   }
 
-  if (status.isLoading)
-    return <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
+  if (status.isLoading) return <PanelLoading />
 
+  // With a region step, nothing goes out before both choices are made.
+  const incomplete = regions !== undefined && (region === "" || customerId === "")
   const showForm = !connected && authState !== "AWAITING_APP"
   const pending =
     authState === "SUBMITTING" || authState === "KEYPAD" || authState === "SENDING_KEYPAD"
-  // With a region step, nothing goes out before both choices are made.
-  const incomplete = regions !== undefined && (region === "" || customerId === "")
+  const lastSync = status.data?.lastSyncCompletedAt
+  const unsupported = status.data?.unsupported ?? []
 
   return (
-    <div className="space-y-6">
-      <Card size="sm">
-        <CardContent className="py-4">
-          <Badge
-            className={
-              connected ? "bg-green-500/10 text-green-600 dark:text-green-400" : undefined
-            }
-            variant={connected ? "default" : "outline"}
-          >
-            {connected
-              ? t(key("sessionActive"))
-              : t(key("noSession"))}
-          </Badge>
-          <p className="mt-2 text-xs text-muted-foreground">{t(key("scope"))}</p>
+    <div className="space-y-4">
+      {connected ? (
+        <PanelStatus
+          tone={isSyncing ? "busy" : backgroundError ? "error" : "ok"}
+          label={t(key("sessionActive"))}
+          meta={[lastSync && t("sync.panel.lastSync", { time: formatTimeAgo(lastSync) })]}
+          actions={
+            <>
+              <PanelDisconnect
+                label={t(key("clearSession"))}
+                provider={t(key("title"))}
+                description={t(key("disconnectConfirm"))}
+                confirmLabel={t(key("disconnectConfirmAction"))}
+                pending={logout.isPending}
+                onConfirm={() => {
+                  setError(null)
+                  logout.mutate(undefined, {
+                    onSuccess: () => setAuthState("IDLE"),
+                    onError: (value) => setError(formatError(value)),
+                  })
+                }}
+              />
+              <Button
+                size="xs"
+                className={PANEL_ACTION}
+                onClick={() => {
+                  setError(null)
+                  sync.mutate(undefined, {
+                    onError: (value) => setError(formatError(value)),
+                  })
+                }}
+                disabled={requestingSync}
+              >
+                <RefreshCw className={requestingSync ? "animate-spin" : undefined} />
+                {requestingSync ? t(key("syncing")) : t(key("sync"))}
+              </Button>
+            </>
+          }
+        >
           {isSyncing && (
-            <p className="mt-2 text-sm text-muted-foreground">
+            <p className="text-muted-foreground">
               {syncStatus === "QUEUED"
                 ? t(key("queued"))
                 : t(key("syncing"))}
             </p>
           )}
-          {syncStatus === "SUCCESS" && status.data?.lastSyncCompletedAt && (
-            <p className="mt-2 text-sm text-emerald-600 dark:text-emerald-400">
+          {syncStatus === "SUCCESS" && lastSync && (
+            <p className="flex items-center gap-1.5 text-gain">
+              <CheckCircle2 className="size-4 shrink-0" aria-hidden />
               {t(key("syncSuccess"))}
             </p>
           )}
-        </CardContent>
-      </Card>
-
-      {visibleError && (
-        <Card size="sm" className="border-destructive/30">
-          <CardContent className="flex items-center gap-3 py-4">
-            <AlertTriangle className="size-5 shrink-0 text-destructive" />
-            <p className="flex-1 text-sm text-destructive">{visibleError}</p>
-            {statusError && !error && (
-              <Button variant="outline" size="sm" onClick={() => void status.refetch()}>
-                {t("common.retry")}
-              </Button>
-            )}
-          </CardContent>
-        </Card>
+          {unsupported.length > 0 && (
+            <div className="space-y-1.5">
+              <p className="font-medium text-foreground">{t(key("unsupportedTitle"))}</p>
+              <p className="text-xs text-muted-foreground">{t(key("unsupportedHint"))}</p>
+              {/* Family code only: the contract id is never shown. */}
+              <ul className="flex flex-wrap gap-1.5">
+                {unsupported.map((contract, index) => (
+                  <li
+                    key={`${contract.familyCode}-${index}`}
+                    className="rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-foreground tabular-nums"
+                  >
+                    {contract.familyCode}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </PanelStatus>
+      ) : (
+        // The provider view's header already says "not connected".
+        <PanelIntro>{t(key("scope"))}</PanelIntro>
       )}
 
-      {connected && (
-        <>
-          <div className="flex flex-wrap gap-3">
-            <Button
-              onClick={() => {
-                setError(null)
-                sync.mutate(undefined, {
-                  onError: (value) => setError(formatError(value)),
-                })
-              }}
-              disabled={requestingSync}
-            >
-              <RefreshCw className={requestingSync ? "animate-spin" : undefined} />
-              {requestingSync ? t(key("syncing")) : t(key("sync"))}
-            </Button>
-            {!confirmingDisconnect && (
-              <Button
-                variant="destructive"
-                onClick={() => setConfirmingDisconnect(true)}
-                disabled={logout.isPending}
-              >
-                <LogOut />
-                {t(key("clearSession"))}
-              </Button>
-            )}
-          </div>
-
-          {confirmingDisconnect && (
-            <Card size="sm" className="border-destructive/30">
-              <CardContent className="space-y-3 py-4">
-                <p className="text-sm">{t(key("disconnectConfirm"))}</p>
-                <div className="flex flex-wrap gap-3">
-                  <Button
-                    variant="destructive"
-                    disabled={logout.isPending}
-                    onClick={() => {
-                      setError(null)
-                      logout.mutate(undefined, {
-                        onSuccess: () => {
-                          setConfirmingDisconnect(false)
-                          setAuthState("IDLE")
-                        },
-                        onError: (value) => {
-                          setConfirmingDisconnect(false)
-                          setError(formatError(value))
-                        },
-                      })
-                    }}
-                  >
-                    <LogOut />
-                    {t(key("disconnectConfirmAction"))}
-                  </Button>
-                  <Button variant="outline" onClick={() => setConfirmingDisconnect(false)}>
-                    {t("common.cancel")}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {(status.data?.unsupported.length ?? 0) > 0 && (
-            <Card size="sm">
-              <CardContent className="space-y-2 py-4">
-                <p className="text-sm font-medium">{t(key("unsupportedTitle"))}</p>
-                <p className="text-xs text-muted-foreground">
-                  {t(key("unsupportedHint"))}
-                </p>
-                {/* Family code only: the contract id is never shown. */}
-                <ul className="flex flex-wrap gap-2">
-                  {status.data?.unsupported.map((contract, index) => (
-                    <li key={`${contract.familyCode}-${index}`}>
-                      <Badge variant="outline">
-                        <span>{contract.familyCode}</span>
-                      </Badge>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-          )}
-        </>
+      {visibleError && (
+        <PanelError onRetry={statusError && !error ? () => void status.refetch() : undefined}>
+          {visibleError}
+        </PanelError>
       )}
 
       {showForm && (
-        <form
-          className="space-y-4"
+        <PanelForm
           onSubmit={(event) => {
             event.preventDefault()
             void submit()
           }}
+          actions={
+            <Button type="submit" size="xs" className={PANEL_ACTION} disabled={pending || incomplete}>
+              {pending && <RefreshCw className="animate-spin" />}
+              {pending ? t(key("connecting")) : t(key("connect"))}
+            </Button>
+          }
         >
-          <Card size="sm" className="border-amber-500/30">
-            <CardContent className="flex items-start gap-3 py-4">
-              <ShieldAlert className="mt-0.5 size-5 shrink-0 text-amber-600 dark:text-amber-400" />
-              <ul className="space-y-1 text-xs text-muted-foreground">
-                <li>{t(key("notice.neverStored"))}</li>
-                <li>{t(key("notice.noRetry"))}</li>
-                <li>{t(key("notice.lockRisk"))}</li>
-              </ul>
-            </CardContent>
-          </Card>
-          <Card size="sm">
-            <CardContent className="space-y-4 py-4">
-              {regions && (
-                <div className="space-y-2">
-                  <Label htmlFor={`${fieldIdPrefix}-region`}>{t(key("region"))}</Label>
-                  <NativeSelect
-                    id={`${fieldIdPrefix}-region`}
-                    value={region}
-                    onChange={(event) => setRegion(event.target.value)}
-                    required
-                  >
-                    <option value="" disabled>
-                      {t(key("regionPlaceholder"))}
-                    </option>
-                    {regions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </NativeSelect>
-                </div>
-              )}
-              <div className="space-y-2">
-                <Label htmlFor={`${fieldIdPrefix}-customer-id`}>
-                  <Landmark className="mr-1 inline-block size-4" />
-                  {t(key("customerId"))}
-                </Label>
-                <Input
-                  id={`${fieldIdPrefix}-customer-id`}
-                  inputMode={alphanumericIdentifier ? "text" : "numeric"}
-                  autoComplete="off"
-                  autoCapitalize={alphanumericIdentifier ? "characters" : undefined}
-                  spellCheck={false}
-                  value={customerId}
-                  onChange={(event) =>
-                    setCustomerId(
-                      event.target.value.replace(alphanumericIdentifier ? /[^A-Za-z0-9]/g : /\D/g, ""),
-                    )
-                  }
-                  required
-                />
-              </div>
-              <Button type="submit" disabled={pending || incomplete}>
-                {pending && <RefreshCw className="animate-spin" />}
-                {pending ? t(key("connecting")) : t(key("connect"))}
-              </Button>
-            </CardContent>
-          </Card>
-        </form>
+          <div className="flex items-start gap-3 rounded-xl bg-warning/10 px-3 py-2.5">
+            <ShieldAlert className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden />
+            <ul className="space-y-1 text-xs text-pretty text-foreground">
+              <li>{t(key("notice.neverStored"))}</li>
+              <li>{t(key("notice.noRetry"))}</li>
+              <li>{t(key("notice.lockRisk"))}</li>
+            </ul>
+          </div>
+          {regions && (
+            <PanelField id={`${fieldIdPrefix}-region`} label={t(key("region"))}>
+              <NativeSelect
+                id={`${fieldIdPrefix}-region`}
+                className={PANEL_INPUT}
+                value={region}
+                onChange={(event) => setRegion(event.target.value)}
+                required
+              >
+                <option value="" disabled>
+                  {t(key("regionPlaceholder"))}
+                </option>
+                {regions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </NativeSelect>
+            </PanelField>
+          )}
+          <PanelField id={`${fieldIdPrefix}-customer-id`} label={t(key("customerId"))} icon={Landmark}>
+            <Input
+              id={`${fieldIdPrefix}-customer-id`}
+              className={PANEL_INPUT}
+              inputMode={alphanumericIdentifier ? "text" : "numeric"}
+              autoComplete="off"
+              autoCapitalize={alphanumericIdentifier ? "characters" : undefined}
+              spellCheck={false}
+              value={customerId}
+              onChange={(event) =>
+                setCustomerId(
+                  event.target.value.replace(alphanumericIdentifier ? /[^A-Za-z0-9]/g : /\D/g, ""),
+                )
+              }
+              required
+            />
+          </PanelField>
+        </PanelForm>
       )}
 
       {!connected && authState === "AWAITING_APP" && (
-        <Card size="sm">
-          <CardContent className="flex items-center gap-3 py-4">
-            <Smartphone className="size-5 shrink-0 text-muted-foreground" />
-            <div className="flex-1 space-y-1">
-              <p className="text-sm">{t(key("securPassPrompt"))}</p>
-              <p className="text-xs text-muted-foreground">
-                {t(key("securPassHint"))}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {t(key("countdownLabel"))}{" "}
-                <span data-testid={`${fieldIdPrefix}-countdown`} className="font-mono">
-                  {formatCountdown(secondsLeft)}
-                </span>
-              </p>
-            </div>
-            <RefreshCw className="size-4 shrink-0 animate-spin text-muted-foreground" />
-          </CardContent>
-        </Card>
+        <PanelWaiting
+          icon={Smartphone}
+          title={t(key("securPassPrompt"))}
+          hint={t(key("securPassHint"))}
+        >
+          {t(key("countdownLabel"))}{" "}
+          <span data-testid={`${fieldIdPrefix}-countdown`} className="font-semibold text-foreground tabular-nums">
+            {formatCountdown(secondsLeft)}
+          </span>
+        </PanelWaiting>
       )}
       <Dialog
         open={authState === "KEYPAD"}
@@ -688,7 +629,8 @@ export function BpceSessionPanel({
           {pad && (
             <>
               {/* Plain <img src> only: the pad comes from the bank, nothing is injected as HTML.
-                  Names are ranks ("Key 1"), never digits, so assistive tech cannot leak them. */}
+                  Names are ranks ("Key 1"), never digits, so assistive tech cannot leak them.
+                  White key faces: the bank draws its digits for a light page, in either theme. */}
               <div
                 data-testid={`${fieldIdPrefix}-keypad-grid`}
                 className="grid gap-2"
@@ -699,14 +641,14 @@ export function BpceSessionPanel({
                     key={index}
                     type="button"
                     aria-label={t(key("keypad.key"), { n: index + 1 })}
-                    className="flex aspect-square items-center justify-center rounded-lg border bg-background p-1 hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
+                    className="flex aspect-square items-center justify-center rounded-xl bg-white p-1.5 ring-1 ring-foreground/10 transition-[box-shadow,transform] hover:ring-primary active:scale-[0.96]"
                     onClick={() => pressKey(index)}
                   >
                     <img src={src} alt="" draggable={false} className="size-full object-contain" />
                   </button>
                 ))}
               </div>
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center justify-between gap-3 rounded-xl bg-muted px-3 py-2">
                 <div
                   data-testid={`${fieldIdPrefix}-keypad-dots`}
                   role="img"
@@ -717,15 +659,15 @@ export function BpceSessionPanel({
                     <span key={index} data-dot className="size-2.5 rounded-full bg-foreground" />
                   ))}
                 </div>
-                <p className="text-xs text-muted-foreground">
+                <p className="shrink-0 text-xs text-muted-foreground">
                   {t(key("keypad.countdownLabel"))}{" "}
-                  <span data-testid={`${fieldIdPrefix}-keypad-countdown`} className="font-mono">
+                  <span data-testid={`${fieldIdPrefix}-keypad-countdown`} className="font-semibold text-foreground tabular-nums">
                     {formatCountdown(keypadSecondsLeft)}
                   </span>
                 </p>
               </div>
               <DialogFooter className="gap-2">
-                <Button type="button" variant="outline" onClick={cancelKeypad}>
+                <Button type="button" variant="ghost" onClick={cancelKeypad}>
                   {t(key("keypad.cancel"))}
                 </Button>
                 <Button
