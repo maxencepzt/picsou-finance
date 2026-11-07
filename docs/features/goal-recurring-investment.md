@@ -301,8 +301,8 @@ other three.
 
 ### Reading the chart
 
-The view (wealth / mix) and the horizon (10 / 20 / 30 years, default 20) are two compact
-`SegmentedControl`s in the card header. The scenarios are lines (`LineChart`), not areas: the
+The view (wealth / risk / mix) is a compact `SegmentedControl` in the card header, beside the
+horizon field (any length from 1 to 40 years, default 10). The scenarios are lines (`LineChart`), not areas: the
 reference scenario is drawn thicker (3px against 2px) because it is the one to read, and the
 contributions are a dashed `--chart-5` line underneath.
 
