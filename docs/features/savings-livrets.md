@@ -189,7 +189,9 @@ for any account that has a `savings_interest_config` row.
 
 **`SavingsConfigSection.tsx`** (`frontend/src/features/savings/SavingsConfigSection.tsx`):
 - Product selector, annual rate input, gross/net toggle (hidden for regulated products), tax rate
-  input (shown only for COMMERCIAL + GROSS), optional ceiling field.
+  input (shown only for COMMERCIAL + GROSS), optional ceiling field. A set ceiling draws a ring
+  gauge in the detail hero and a small ring on the account row (see `accounts-overview.md`,
+  *Ceiling gauge*).
 - Projection card below the config form, shown only once a config is saved. Displays YTD estimate,
   full-year projection, and next capitalisation date. Includes a disclaimer tooltip.
 - Mobile-responsive grid (single-column on narrow viewports, three-column on `sm+`).

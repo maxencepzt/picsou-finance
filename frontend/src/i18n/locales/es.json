@@ -463,9 +463,16 @@
     "detail": {
       "rate": "Tipo anual",
       "ceiling": "Límite",
-      "ceilingUsed": "{{pct}} del límite",
       "share": "Tu parte"
-    }
+    },
+    "ceiling": {
+      "deposits": "Límite de aportaciones",
+      "usedOf": "{{used}} de {{ceiling}}",
+      "remaining": "Disponible",
+      "reached": "Límite alcanzado",
+      "ariaLabel": "{{pct}} del límite ({{used}} / {{ceiling}})"
+    },
+    "depositCeilingHint": "150 000 € para un PEA, 20 000 € para un PEA jeune."
   },
   "analysis": {
     "title": "Análisis",

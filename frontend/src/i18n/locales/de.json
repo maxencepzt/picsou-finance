@@ -463,9 +463,16 @@
     "detail": {
       "rate": "Jahreszins",
       "ceiling": "Obergrenze",
-      "ceilingUsed": "{{pct}} der Obergrenze",
       "share": "Ihr Anteil"
-    }
+    },
+    "ceiling": {
+      "deposits": "Einzahlungsobergrenze",
+      "usedOf": "{{used}} von {{ceiling}}",
+      "remaining": "Verbleibend",
+      "reached": "Obergrenze erreicht",
+      "ariaLabel": "{{pct}} der Obergrenze ({{used}} / {{ceiling}})"
+    },
+    "depositCeilingHint": "150.000 € für einen PEA, 20.000 € für einen PEA jeune."
   },
   "analysis": {
     "title": "Analyse",

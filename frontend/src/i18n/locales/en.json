@@ -474,9 +474,16 @@
     "detail": {
       "rate": "Annual rate",
       "ceiling": "Ceiling",
-      "ceilingUsed": "{{pct}} of the ceiling",
       "share": "Your share"
-    }
+    },
+    "ceiling": {
+      "deposits": "Contribution ceiling",
+      "usedOf": "{{used}} of {{ceiling}}",
+      "remaining": "Left",
+      "reached": "Ceiling reached",
+      "ariaLabel": "{{pct}} of the ceiling ({{used}} / {{ceiling}})"
+    },
+    "depositCeilingHint": "€150,000 for a PEA, €20,000 for a PEA jeune."
   },
   "analysis": {
     "title": "Analysis",

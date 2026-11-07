@@ -532,6 +532,10 @@ export interface Account {
   isOwner?: boolean | null
   /** Present only for a SCPI account. */
   scpi?: ScpiPosition | null
+  /** A PEA's stated contribution ceiling; null when unset (the legal 150 000 € applies). */
+  depositCeiling?: number | null
+  /** Cost basis in EUR, reported for a PEA only: its contribution ceiling is measured against it. */
+  investedEur?: number | null
   /** Insurer-reported contract figures (a synced assurance-vie); null when the provider reports none. */
   contract?: LifeContract | null
 }
@@ -571,6 +575,8 @@ export interface AccountRequest {
    * the field wipe it. The form can change the date but not blank it.
    */
   openedAt?: string | null
+  /** A PEA's contribution ceiling. Omitted leaves the stored value alone, like `openedAt`. */
+  depositCeiling?: number | null
 }
 
 export interface RealEstateMetadataRequest {

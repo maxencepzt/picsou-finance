@@ -189,6 +189,7 @@ export function AddAccountModal({ open, onOpenChange, defaultType, onCreated }: 
     startDate?: string
     endDate?: string
     openedAt?: string
+    depositCeiling?: number
   }) {
     const request: AccountRequest = {
       name: data.name,
@@ -202,6 +203,7 @@ export function AddAccountModal({ open, onOpenChange, defaultType, onCreated }: 
       // Set only when a bank was picked from the catalog; the backend resolves its logo from it.
       institutionId: data.institutionId,
       openedAt: data.openedAt || undefined,
+      depositCeiling: data.type === 'PEA' ? data.depositCeiling : undefined,
     }
     const created = await createAccount.mutateAsync(request)
 

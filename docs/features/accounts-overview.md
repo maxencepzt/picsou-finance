@@ -76,7 +76,7 @@ wipe what the user is typing unless the account itself changed on the server.
 | Mark (`AccountMark`) | `logoKeyUrl(logoKey) ?? logoUrl ?? providerLogoUrl(provider)`, else the monogram of the name (`deriveMonogram`) — see [bank-logos.md](./bank-logos.md) | the glyph of its `propertyKind` from `PROPERTY_KIND_ICONS` on a muted square |
 | Name | `name` + co-ownership share (only below 100 %) | same |
 | Subtitle | freshness dot · `provider` · time since `lastSyncedAt` (plus the borrowed amount for a `LOAN`) | freshness dot · property kind and city · time since `realEstate.lastValuedAt` |
-| Balance | `signedBalance(account)` | same |
+| Balance | `signedBalance(account)`, preceded by a 16 px ceiling ring when the account has a ceiling (tooltip and `aria-label` "22 % of the ceiling (5 000 € / 22 950 €)"); the ring sits left of the balance so every balance keeps the same right edge | same |
 | Actions | edit and delete in a fixed `w-16` column, shown on hover, on keyboard focus and always on touch screens; a pocket has no delete; below `sm` the column is not rendered and both actions live in the side panel | same |
 
 There is no type badge and no "N sub-accounts" label any more: the group header says the class,
@@ -155,12 +155,12 @@ the free-text `property_type` column — never on the raw string.
 
    | Type | Label | Delta | Figures |
    |---|---|---|---|
-   | Holdings (`HOLDING_ACCOUNT_TYPES`) | Portfolio value | unrealised P&L (amount, %) when the basis is known | capital invested, cash / euro fund, positions, opening date |
+   | Holdings (`HOLDING_ACCOUNT_TYPES`) | Portfolio value | unrealised P&L (amount, %) when the basis is known | capital invested, deposit-ceiling gauge (`PEA` only), cash / euro fund, positions, opening date |
    | `CREDIT_CARD` | Card debt | month change | amount due, due date, card type, miles |
    | `LOAN` | Remaining capital | month change, inverted (a falling debt is good news) | borrowed, monthly payment, rate, end date |
    | `REAL_ESTATE` | Current value | gain since purchase (when there is a cost basis) | cost basis, living area |
    | `SCPI` | Current balance | month change | shares, withdrawal price, subscription price, distribution per share |
-   | configured livret | Current balance | month change | annual rate, ceiling (with the share used), projected interest of the year (`useSavingsInterest`, its own component so the query mounts only there) |
+   | configured livret | Current balance | month change | annual rate, ceiling gauge (see *Ceiling gauge*), projected interest of the year (`useSavingsInterest`, its own component so the query mounts only there) |
 
    A co-owned account adds "Your share". The **month change** is `monthChange(history)`: the latest
    snapshot against the last one dated a calendar month or more before it; it is left out when the
@@ -227,6 +227,21 @@ be the one their paperwork carries.
 The column is deliberately general rather than `pea_opened_at`: a PER, a PEA-PME and an
 assurance-vie all have the same shape of rule at different thresholds. Extending the field to
 another type is one entry in `OPENING_DATE_TYPES`.
+
+### Ceiling gauge
+
+`accountCeiling` (`lib/ceiling.ts`) says how far an account is into its ceiling, or null when it has
+none: a livret's balance against `savingsConfig.ceiling`, or a PEA's contributions against
+`account.deposit_ceiling` (V142, nullable; the form field "Contribution ceiling" is offered for a
+`PEA` only, null keeps the stored value like `openedAt`) or, unset, `PEA_DEFAULT_DEPOSIT_CEILING`
+(150 000 €; a PEA jeune states 20 000 €). The PEA figure is the cost basis: the detail page's
+"Capital invested", else `AccountResponse.investedEur`, which the API fills for a `PEA` only
+(shortcut: cost basis approximates net deposits; reinvested dividends and gains differ).
+
+`CeilingRing` (`components/shared/CeilingRing.tsx`) draws it as a `role="meter"` ring: `--primary`
+below 80 %, `--warning` from 80 % (with an icon on the detail page), ink at 100 % with "Ceiling
+reached" and a check. `sm` is the row mark; `CeilingGauge` is the hero version (percentage in the
+centre, "5 000 € of 22 950 €", room left). Amounts go through `useMoney`, so privacy mode masks them.
 
 ### Receivables tab
 

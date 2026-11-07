@@ -58,6 +58,8 @@ const accountSchema = z.object({
   linkedAccountId: z.number().optional(),
   // ISO date. Offered only for the wrappers whose tax treatment is a function of their age.
   openedAt: z.string().optional(),
+  // A PEA's contribution ceiling; empty means the legal 150 000 € (lib/ceiling.ts).
+  depositCeiling: z.number().positive().optional(),
 })
 
 /**
@@ -268,6 +270,19 @@ export function AccountForm({ open, onOpenChange, onSubmit, defaultValues, title
                 )}
               />
               <p className="text-sm text-muted-foreground">{t('accounts.openedAtHint')}</p>
+            </div>
+          )}
+
+          {selectedType === 'PEA' && (
+            <div className="space-y-2">
+              <Label htmlFor="depositCeiling">{t('accounts.ceiling.deposits')}</Label>
+              <NumericInput
+                id="depositCeiling"
+                placeholder="150000"
+                aria-describedby="depositCeilingHint"
+                {...register('depositCeiling', { setValueAs: toOptionalNumber })}
+              />
+              <p id="depositCeilingHint" className="text-sm text-muted-foreground">{t('accounts.depositCeilingHint')}</p>
             </div>
           )}
 

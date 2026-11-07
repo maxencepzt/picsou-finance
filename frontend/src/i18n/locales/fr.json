@@ -474,9 +474,16 @@
     "detail": {
       "rate": "Taux annuel",
       "ceiling": "Plafond",
-      "ceilingUsed": "{{pct}} du plafond",
       "share": "Votre part"
-    }
+    },
+    "ceiling": {
+      "deposits": "Plafond de versements",
+      "usedOf": "{{used}} sur {{ceiling}}",
+      "remaining": "Reste",
+      "reached": "Plafond atteint",
+      "ariaLabel": "{{pct}} du plafond ({{used}} / {{ceiling}})"
+    },
+    "depositCeilingHint": "150 000 € pour un PEA, 20 000 € pour un PEA jeune."
   },
   "analysis": {
     "title": "Analyse",

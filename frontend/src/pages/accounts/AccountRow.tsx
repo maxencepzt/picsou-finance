@@ -5,6 +5,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { CurrencyDisplay } from '@/components/shared/CurrencyDisplay'
+import { CeilingRing } from '@/components/shared/CeilingRing'
+import { useCeilingLabel } from '@/hooks/use-ceiling-label'
+import { accountCeiling, type CeilingUsage } from '@/lib/ceiling'
 import { useInstitutionLogoUrl } from '@/features/accounts/hooks'
 import { useMoney } from '@/hooks/use-money'
 import { logoKeyUrl, providerLogoUrl } from '@/lib/provider-logos'
@@ -54,6 +57,23 @@ export function AccountMark({ account, size = 'md', institutionLogo = null }: {
   )
 }
 
+/** The discreet ceiling mark beside a row's balance, with its figures on hover. */
+function RowCeiling({ usage }: { usage: CeilingUsage }) {
+  const label = useCeilingLabel(usage)
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="flex shrink-0">
+            <CeilingRing usage={usage} label={label} />
+          </span>
+        </TooltipTrigger>
+        <TooltipContent>{label}</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  )
+}
+
 interface AccountRowProps {
   account: Account
   /** Render time, from the page's lazy state: keeps `Date.now()` out of render. */
@@ -83,6 +103,7 @@ export function AccountRow({ account, now, onOpen, onEdit, onDelete, nested, clo
       // A bridge is not a bank: say which bank this is, and that the bridge delivered it.
       ? `${account.institution.name} · ${t('accounts.viaProvider', { provider: account.provider })}`
       : account.provider
+  const ceiling = accountCeiling(account)
   const freshness = accountFreshness(account, now)
   const level = freshness?.level ?? 'unknown'
   // The warning tells the user to reconnect a dead session: meaningless for a figure typed by hand.
@@ -134,6 +155,8 @@ export function AccountRow({ account, now, onOpen, onEdit, onDelete, nested, clo
             </span>
           )}
         </span>
+        {/* Left of the balance, so every balance keeps the same right edge. */}
+        {ceiling && <RowCeiling usage={ceiling} />}
         <CurrencyDisplay
           value={signedBalance(account)}
           className={cn('shrink-0 text-right font-semibold tabular-nums', nested ? 'text-sm' : 'text-[15px]')}

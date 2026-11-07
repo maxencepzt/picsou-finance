@@ -154,3 +154,21 @@ describe('AccountRow for a closed peer loan', () => {
     expect(getByText('peerLoan.summary.closed')).toBeInTheDocument()
   })
 })
+
+describe('AccountRow ceiling ring', () => {
+  it('renders nothing for an account without a ceiling', () => {
+    const { queryByRole } = renderRow(baseAccount)
+    expect(queryByRole('meter')).not.toBeInTheDocument()
+  })
+
+  it('shows a discreet ring for a livret with a ceiling', () => {
+    const { getByRole } = renderRow({
+      ...baseAccount, type: 'SAVINGS', currentBalanceEur: 5000,
+      savingsConfig: { product: 'LIVRET_A', annualRate: 2.4, rateBasis: 'NET', taxRatePct: null, ceiling: 22950 },
+    })
+    const meter = getByRole('meter')
+    expect(meter).toHaveAttribute('aria-valuenow', '22')
+    expect(meter).toHaveAttribute('aria-label', 'accounts.ceiling.ariaLabel')
+  })
+})
+

@@ -1,6 +1,6 @@
 import type { Account } from '@/types/api'
 import { daysFromToday, hoursAgo, monthStartFromToday } from './dates'
-import { holdingsValue } from './holdings'
+import { holdingsCostBasis, holdingsValue } from './holdings'
 import { demoPeerLoan, demoPeerLoans } from './peer-loans'
 
 export const mockAccounts: Account[] = [
@@ -39,6 +39,9 @@ export const mockAccounts: Account[] = [
     // Opened years before Picsou heard of it, which is the whole point of the field: the
     // five-year clock runs from here, not from createdAt.
     openedAt: '2014-03-12',
+    // A PEA jeune: its contribution ceiling is 20 000 €, measured against the cost basis.
+    depositCeiling: 20000,
+    investedEur: holdingsCostBasis(2),
     hidden: false,
   },
   {

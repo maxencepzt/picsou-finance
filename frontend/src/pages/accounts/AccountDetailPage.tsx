@@ -23,6 +23,8 @@ import { MonthEndBalanceModal } from '@/components/shared/MonthEndBalanceModal'
 import { ExportAccountsModal } from '@/components/shared/ExportAccountsModal'
 import { CurrencyDisplay } from '@/components/shared/CurrencyDisplay'
 import { Delta } from '@/components/shared/Delta'
+import { CeilingGauge } from '@/components/shared/CeilingRing'
+import { accountCeiling } from '@/lib/ceiling'
 import { LoanDetailSection } from '@/components/loan/LoanDetailSection'
 import { PeerLoanDetailSection } from '@/components/peer-loan/PeerLoanDetailSection'
 import { CreatePeerLoanDialog } from '@/components/peer-loan/CreatePeerLoanDialog'
@@ -266,6 +268,7 @@ export function AccountDetailPage() {
     <Delta amount={change.amount} percent={change.percent} invert={isLoan}>{t('dashboard.overRange.1M')}</Delta>
   )
   const stats: ReactNode[] = []
+  const ceiling = accountCeiling(account, invested)
 
   if (showHoldings) {
     heroLabel = t('investments.value')
@@ -273,6 +276,7 @@ export function AccountDetailPage() {
       delta = <Delta amount={pnl} percent={pnlPct}>{t(pnl < 0 ? 'investments.unrealisedLoss' : 'investments.unrealisedGain')}</Delta>
     }
     if (invested != null) stats.push(<Stat key="invested" label={t('holdings.capitalInvested')} value={<CurrencyDisplay value={invested} />} />)
+    if (ceiling) stats.push(<CeilingGauge key="ceiling" usage={ceiling} />)
     if (account.cashBalance != null) {
       stats.push(
         <Stat
@@ -330,16 +334,7 @@ export function AccountDetailPage() {
   } else if (account.savingsConfig) {
     const config = account.savingsConfig
     stats.push(<Stat key="rate" label={t('accounts.detail.rate')} value={formatPercent(config.annualRate, { fractionDigits: 2 }, locale)} />)
-    if (config.ceiling != null && config.ceiling > 0) {
-      stats.push(
-        <Stat
-          key="ceiling"
-          label={t('accounts.detail.ceiling')}
-          value={<CurrencyDisplay value={config.ceiling} />}
-          footer={t('accounts.detail.ceilingUsed', { pct: formatPercent((displayBalance / config.ceiling) * 100, { fractionDigits: 0 }, locale) })}
-        />,
-      )
-    }
+    if (ceiling) stats.push(<CeilingGauge key="ceiling" usage={ceiling} />)
     stats.push(<SavingsInterestStat key="interest" accountId={account.id} />)
   }
   if (account.sharePercent != null) {

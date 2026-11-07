@@ -24,6 +24,7 @@ type AccountFormData = {
   endDate?: string
   linkedAccountId?: number
   openedAt?: string
+  depositCeiling?: number
 }
 
 /**
@@ -55,6 +56,8 @@ export function AccountEditDialog({ account, onClose }: { account: Account | nul
       // Undefined leaves the stored date alone, which is what an account type that never offers
       // the field should do -- see AccountRequest.
       openedAt: data.openedAt || undefined,
+      // Same "undefined keeps it" rule; only a PEA offers the field.
+      depositCeiling: data.type === 'PEA' ? data.depositCeiling : undefined,
     }
     await updateAccount.mutateAsync({ id: account.id, data: request })
     if (data.type === 'LOAN' && data.borrowedAmount && data.borrowedAmount > 0) {
@@ -97,6 +100,7 @@ export function AccountEditDialog({ account, onClose }: { account: Account | nul
       ticker: account.ticker ?? '',
       logoKey: account.logoKey ?? '',
       openedAt: account.openedAt ?? '',
+      depositCeiling: account.depositCeiling ?? undefined,
       ...(debt
         ? {
             borrowedAmount: debt.borrowedAmount,
