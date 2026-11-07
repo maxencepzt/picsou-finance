@@ -979,6 +979,38 @@ export interface Projection {
   allocation: AllocationPoint[]
 }
 
+/** One year of the Monte-Carlo fan: percentiles of the portfolio value across the futures. */
+export interface RiskBand {
+  date: string
+  p10Eur: number
+  p25Eur: number
+  p50Eur: number
+  p75Eur: number
+  p90Eur: number
+  contributedEur: number
+}
+
+export interface RiskOutlook {
+  /** Same investable base as {@link Projection}. */
+  baseValueEur: number
+  years: number
+  /** How many futures were drawn. */
+  paths: number
+  points: RiskBand[]
+  summary: {
+    /** Value at the horizon in the worst 5 % of futures. */
+    p5Eur: number
+    /** Percent of futures ending below the capital paid in. */
+    belowContributedPercent: number
+    /** Percent of futures that fall at least `drawdownThresholdPercent` from a high on the way. */
+    drawdownPercent: number
+    drawdownThresholdPercent: number
+    medianWorstDrawdownPercent: number
+  }
+  /** What each tier is assumed to earn and how much it swings. */
+  assumptions: { tier: WealthTier; expectedPercent: number; volatilityPercent: number }[]
+}
+
 export interface GoalMonthEntry {
   yearMonth: string
   objective: number

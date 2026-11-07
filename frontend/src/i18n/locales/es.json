@@ -563,7 +563,8 @@
       "contributed": "Sus aportaciones",
       "views": {
         "wealth": "Patrimonio",
-        "allocation": "Reparto"
+        "allocation": "Reparto",
+        "risk": "Riesgo"
       },
       "target": "Objetivo",
       "blendNote": "Tasa efectiva de su mezcla: cada aportación capitaliza al tipo de su soporte.",
@@ -573,7 +574,26 @@
       "atAge": "{{age}} años",
       "viewLabel": "Vista",
       "horizonLabel": "Horizonte",
-      "chartLabel": "Patrimonio proyectado en {{years}} años: {{values}}"
+      "chartLabel": "Patrimonio proyectado en {{years}} años: {{values}}",
+      "risk": {
+        "p10": "1 de cada 10 por debajo",
+        "p50": "Mediana",
+        "p90": "1 de cada 10 por encima",
+        "inner": "La mitad de los casos",
+        "outer": "8 de cada 10 casos",
+        "legend": "Leyenda",
+        "rangeLabel": "En {{year}}, 8 de cada 10 casos",
+        "rangeNote": "La mitad de los futuros termina por encima de {{median}}.",
+        "worstLabel": "En el 5 % de casos más duros",
+        "worstNote": "Lo que quedaría en el horizonte en un futuro muy desfavorable.",
+        "belowLabel": "Terminar por debajo de lo aportado",
+        "belowNote": "Probabilidad de terminar por debajo de los {{contributed}} aportados.",
+        "drawdownLabel": "Atravesar una caída del {{threshold}}",
+        "drawdownNote": "En su peor momento, un futuro típico pierde {{median}} desde su máximo.",
+        "assumption": "{{tier}}: {{expected}} al año de media, volatilidad {{volatility}}",
+        "method": "{{paths}} futuros posibles simulados mes a mes, con las mismas aportaciones que los escenarios. Sin inflación; no es una previsión.",
+        "chartLabel": "Proyección en {{year}}: 8 de cada 10 casos entre {{low}} y {{high}}, mediana {{median}}"
+      }
     },
     "classification": {
       "title": "Clasificar este valor",

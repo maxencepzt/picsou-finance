@@ -1,6 +1,6 @@
 # Feature: Recurring investment plans and the wealth projection
 
-> Last updated: 2026-11-03
+> Last updated: 2026-11-07
 
 ## Context
 
@@ -148,6 +148,29 @@ to add its whole amount on top of a base that counted half the account.
 
 The maths is monthly, the points are yearly: 480 points × 4 lines is a large payload for a chart
 that cannot render them distinctly anyway.
+
+### The risk tab (Monte-Carlo)
+
+The four scenario curves compound at a steady rate: none of them ever has a bad year, and none
+says how likely it is. The card's **Risk** tab (`RiskOutlook.tsx`, `GET
+/api/analysis/projection/risk?years=`) draws the same base and the same plans over 4 000 random
+futures, month by month (`MonteCarloSimulator`, called from `ProjectionService.riskOutlook`).
+
+- **Model.** Equities and crypto take a log-normal monthly return whose expected value is the
+  tier's rate (or the plan's stated rate), with a long-run volatility of 16 % and 60 %
+  (`VOLATILITY`) and a 0.4 correlation between them: one market per month, so every equity pot
+  takes the same shock. The cushion compounds steadily, as in the scenarios. The mean path is
+  therefore the reference curve; the median sits below it by the volatility drag.
+- **Output.** Per year, the 10th, 25th, 50th, 75th and 90th percentiles and the capital paid in
+  (the fan); at the horizon, the 5th percentile, the share of futures ending below what was paid
+  in, the share that fall 20 % or more from a previous high on the way, and the median of each
+  future's deepest fall. The screen states these in words ("8 in 10 futures", "in the worst 5 %")
+  and names the volatility of each tier it rests on.
+- **Fixed seed.** The same portfolio gives the same odds on every load, so a figure that moves
+  means the portfolio moved.
+- **Rounded on screen** to the thousand: odds over decades do not deserve euros and cents.
+- Fetched only when the tab is opened (`useProjectionRisk`). Demo mode answers with the closed-form
+  log-normal fan around the demo's reference curve (`mockProjectionRisk`).
 
 ### Where the mix is heading
 
@@ -305,6 +328,7 @@ legend and the tooltip still carry the values. The legend is unchanged. The char
 - `backend/src/main/java/com/picsou/dto/GoalRequest.java` — the compact constructor and the `@AssertTrue` rules
 - `backend/src/main/java/com/picsou/service/GoalService.java` — `toRecurringResponse`, `requireSavingsTarget`
 - `backend/src/main/java/com/picsou/service/ProjectionService.java`
+- `backend/src/main/java/com/picsou/service/MonteCarloSimulator.java`, `dto/RiskOutlookResponse.java` — the risk tab
 - `backend/src/main/java/com/picsou/model/GoalAllocation.java`
 - `backend/src/main/resources/db/migration/V85__goal_recurring_investment.sql`,
   `V89__goal_allocation.sql`
@@ -314,6 +338,7 @@ legend and the tooltip still carry the values. The legend is unchanged. The char
   pure helpers
 - `frontend/src/pages/analysis/ProjectionSection.tsx`,
   `AllocationTrajectory.tsx` — the two tabs, both labelled by `useProjectionDateLabel`
+- `frontend/src/pages/analysis/RiskOutlook.tsx` — the fan and the risk figures
 - `frontend/src/pages/analysis/projection-labels.ts` — `spreadLabels`, `labelGutter` for the end labels
 - `frontend/src/pages/goals/RecurringPlanStats.tsx`, `GoalsKpiRow.tsx` — the plan's purchases, the KPI row
 
@@ -343,6 +368,8 @@ after.
 | Compact constructor defaults the type | Keeps four MCP tools and every existing client working untouched | Requiring `type`, and updating every caller |
 | `@AssertTrue` on the record | One endpoint, one DTO; groups cannot self-select from the payload | Two DTOs and two endpoints |
 | A new MCP tool, existing four untouched | Agent prompts are written against those signatures | Adding parameters to `create_goal` |
+| Monte-Carlo on long-run volatilities | The member's history is too short to estimate one (20 monthly returns minimum) | The member's measured volatility |
+| Log-normal returns, fixed seed | Simple, reproducible, the mean matches the reference curve | Bootstrapping historical index months (needs index data imported first) |
 | Geometric monthly rate | `r/12` compounds to 10.47% on a line labelled 10% | Arithmetic division |
 | Contribution at month end | Month start gives the first payment growth it never earned | Beginning-of-month |
 | Scenarios are spreads on risky assets | Lets a per-plan rate coexist with an honest label | Absolute rates applied to cash as well |
@@ -398,6 +425,12 @@ after.
 
 ## Tests
 
+- `MonteCarloSimulatorTest` — a passbook has one future, the same seed draws the same futures,
+  equities spread around their rate with the median below the mean, a plan pays only while active
+- `ProjectionServiceTest` (risk outlook) — same base as the scenarios, ordered percentiles and
+  contributions, the same answer on every load
+- `RiskOutlook.test.tsx` — the horizon is forwarded, the four figures are stated, only tiers that
+  swing are named, nothing renders before the answer
 - `GoalServiceTest` — the 20 savings-target cases unchanged, plus: a recurring plan reports its
   plan without NPE, the calendar/backfill/overrides refuse it, `create` persists the new fields
 - `GoalRequestTest` — an omitted type means `SAVINGS_TARGET`, each `@AssertTrue`, a past deadline

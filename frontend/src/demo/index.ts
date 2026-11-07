@@ -19,6 +19,7 @@ import {
   mockDiversification,
   mockExpenseEstimate,
   mockProjection,
+  mockProjectionRisk,
   mockWealthPyramid,
 } from './data/analysis'
 import { mockDashboard } from './data/dashboard'
@@ -216,6 +217,8 @@ handlers.set(key('PUT', '/me/profile'), (config) => {
 })
 handlers.set(key('GET', '/analysis/projection'), (config) =>
   mockProjection(Number(config.params?.years) || 20))
+handlers.set(key('GET', '/analysis/projection/risk'), (config) =>
+  mockProjectionRisk(Number(config.params?.years) || 20))
 // Demo mode has no scheduler and no network, so the refresh reports a plausible queue rather
 // than pretending work happened.
 handlers.set(key('POST', '/analysis/security-profiles/refresh'), () => ({

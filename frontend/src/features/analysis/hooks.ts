@@ -68,6 +68,16 @@ export function useProjection(years: number) {
   })
 }
 
+/** Monte-Carlo fan of the same projection; fetched only once the risk view is opened. */
+export function useProjectionRisk(years: number, enabled = true) {
+  return useQuery({
+    queryKey: ['analysis', 'projection', 'risk', years],
+    queryFn: () => analysisApi.projectionRisk(years),
+    staleTime: QUERY_STALE_TIMES.analysis,
+    enabled,
+  })
+}
+
 /** Time- and money-weighted return of the investment accounts; `months` 0 is all history. */
 export function usePerformance(months: number) {
   return useQuery({

@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { CurrencyDisplay } from '@/components/shared/CurrencyDisplay'
 import { SegmentedControl } from '@/components/shared/SegmentedControl'
 import { AllocationTrajectory } from './AllocationTrajectory'
+import { RiskOutlook } from './RiskOutlook'
 import {
   ChartContainer,
   ChartTooltip,
@@ -109,7 +110,7 @@ export function ProjectionSection({ className }: { className?: string }) {
   const [years, setYears] = useState<number>(20)
   // Two questions, one card: how much, and in what. Tabs rather than two cards because they
   // share a horizon — switching view must not lose it.
-  const [view, setView] = useState<'wealth' | 'allocation'>('wealth')
+  const [view, setView] = useState<'wealth' | 'risk' | 'allocation'>('wealth')
   // Everything visible until the reader says otherwise. Hidden rather than shown, so a scenario
   // added later to the payload appears without anyone remembering to opt it in.
   const [hidden, setHidden] = useState<Set<string>>(() => new Set())
@@ -208,7 +209,7 @@ export function ProjectionSection({ className }: { className?: string }) {
   const hasSomethingToProject =
     (projection.data?.baseValueEur ?? 0) > 0 || (projection.data?.monthlyInflowEur ?? 0) > 0
 
-  const viewOptions = (['wealth', 'allocation'] as const).map((key) => ({
+  const viewOptions = (['wealth', 'risk', 'allocation'] as const).map((key) => ({
     value: key,
     label: t(`analysis.projection.views.${key}`),
   }))
@@ -260,6 +261,8 @@ export function ProjectionSection({ className }: { className?: string }) {
           <>
             {view === 'allocation' ? (
               <AllocationTrajectory allocation={projection.data.allocation} />
+            ) : view === 'risk' ? (
+              <RiskOutlook years={years} />
             ) : (
               <>
             <ChartContainer

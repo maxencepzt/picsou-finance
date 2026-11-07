@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **The projection shows its risks.** A new **Risk** tab on the Analysis page's projection draws the same portfolio and plans over
+  4 000 random futures: a fan instead of four steady curves, the range where 8 futures in 10 land, the worst 5 %, the chance of
+  ending below what you paid in and of going through a 20 % fall on the way. The volatility each figure rests on is stated.
 - **SimpleFIN accounts show their bank and their positions.** A Chase and a Fidelity account now read "Fidelity Investments · via SimpleFIN"
   instead of "SimpleFIN", and show the bank's logo when logos are enabled in the budget settings. A new account for which the
   bridge reports positions is created as the new **Brokerage account** type (any broker, any country or tax wrapper: Roth IRA, HSA,

@@ -3,6 +3,7 @@ import type {
   Diversification,
   EssentialExpenseEstimate,
   Projection,
+  RiskOutlook,
   WealthPyramid,
 } from '@/types/api'
 
@@ -264,4 +265,43 @@ function isoMonthEnd(monthsFromNow: number): string {
   const now = new Date()
   const d = new Date(now.getFullYear(), now.getMonth() + monthsFromNow + 1, 0)
   return d.toISOString().slice(0, 10)
+}
+
+/**
+ * A log-normal fan around the reference curve: no dice in demo mode, just the closed form a
+ * Monte-Carlo converges to, with the demo portfolio's blended volatility.
+ */
+export function mockProjectionRisk(years: number): RiskOutlook {
+  const reference = mockProjection(years).scenarios.find((s) => s.key === 'REFERENCE')!
+  const sigma = 0.12
+  const at = (value: number, y: number, z: number) =>
+    Math.round(value * Math.exp(z * sigma * Math.sqrt(y) - (sigma * sigma * y) / 2) * 100) / 100
+  const points = reference.points.map((point, y) => ({
+    date: point.date,
+    p10Eur: at(point.valueEur, y, -1.2816),
+    p25Eur: at(point.valueEur, y, -0.6745),
+    p50Eur: at(point.valueEur, y, 0),
+    p75Eur: at(point.valueEur, y, 0.6745),
+    p90Eur: at(point.valueEur, y, 1.2816),
+    contributedEur: point.contributedEur,
+  }))
+  const last = reference.points.at(-1)!
+  return {
+    baseValueEur: 96400,
+    years,
+    paths: 4000,
+    points,
+    summary: {
+      p5Eur: at(last.valueEur, years, -1.6449),
+      belowContributedPercent: years >= 20 ? 6.1 : years >= 10 ? 11.4 : 22.8,
+      drawdownPercent: years >= 20 ? 71.3 : years >= 10 ? 52.6 : 31.9,
+      drawdownThresholdPercent: 20,
+      medianWorstDrawdownPercent: years >= 20 ? 24.5 : years >= 10 ? 20.1 : 15.2,
+    },
+    assumptions: [
+      { tier: 'SAFETY_NET', expectedPercent: 2, volatilityPercent: 0 },
+      { tier: 'EQUITY', expectedPercent: 7.5, volatilityPercent: 16 },
+      { tier: 'CRYPTO', expectedPercent: 7.5, volatilityPercent: 60 },
+    ],
+  }
 }
