@@ -23,7 +23,7 @@ interface Row {
   band: RiskBand
 }
 
-function RiskTooltip({ active, payload, label }: { active?: boolean; payload?: { payload: Row }[]; label?: string }) {
+function RiskTooltip({ active, payload, label }: Readonly<{ active?: boolean; payload?: { payload: Row }[]; label?: string }>) {
   const { t } = useTranslation()
   const money = useMoney()
   const dateLabel = useProjectionDateLabel()
@@ -53,7 +53,7 @@ function RiskTooltip({ active, payload, label }: { active?: boolean; payload?: {
  * and the risk figures said in words — the odds of ending below what was paid in, and of going
  * through a hard fall on the way.
  */
-export function RiskOutlook({ years }: { years: number }) {
+export function RiskOutlook({ years }: Readonly<{ years: number }>) {
   const { t } = useTranslation()
   const money = useMoney()
   const risk = useProjectionRisk(years)

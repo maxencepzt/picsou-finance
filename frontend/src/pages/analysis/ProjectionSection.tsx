@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { Pencil } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { CartesianGrid, Line, LineChart, XAxis, YAxis, usePlotArea, useXAxisScale, useYAxisScale } from 'recharts'
@@ -26,11 +26,25 @@ import { labelGutter, spreadLabels } from './projection-labels'
 const MIN_YEARS = 1
 const MAX_YEARS = 40
 
+type ProjectionViewKey = 'wealth' | 'risk' | 'allocation'
+
+/** The body of the selected tab. Only the selected one is mounted, so the risk tab fetches on demand. */
+function ProjectionView({ view, wealth, risk, allocation }: Readonly<{
+  view: ProjectionViewKey
+  wealth: ReactNode
+  risk: ReactNode
+  allocation: ReactNode
+}>) {
+  if (view === 'allocation') return allocation
+  if (view === 'risk') return risk
+  return wealth
+}
+
 /**
  * The horizon, from 1 to 40 years, typed in place. Applied on Enter or when the field loses focus
  * — not on every keystroke, which would project 2 years on the way to 25.
  */
-function HorizonField({ years, onChange }: { years: number; onChange: (years: number) => void }) {
+function HorizonField({ years, onChange }: Readonly<{ years: number; onChange: (years: number) => void }>) {
   const { t } = useTranslation()
   const [draft, setDraft] = useState(String(years))
   const commit = () => {
@@ -150,7 +164,7 @@ export function ProjectionSection({ className }: { className?: string }) {
   const [years, setYears] = useState<number>(10)
   // Two questions, one card: how much, and in what. Tabs rather than two cards because they
   // share a horizon — switching view must not lose it.
-  const [view, setView] = useState<'wealth' | 'risk' | 'allocation'>('wealth')
+  const [view, setView] = useState<ProjectionViewKey>('wealth')
   // Everything visible until the reader says otherwise. Hidden rather than shown, so a scenario
   // added later to the payload appears without anyone remembering to opt it in.
   const [hidden, setHidden] = useState<Set<string>>(() => new Set())
@@ -290,11 +304,11 @@ export function ProjectionSection({ className }: { className?: string }) {
           <p className="text-sm text-muted-foreground">{t('analysis.projection.nothingToProject')}</p>
         ) : (
           <>
-            {view === 'allocation' ? (
-              <AllocationTrajectory allocation={projection.data.allocation} />
-            ) : view === 'risk' ? (
-              <RiskOutlook years={years} />
-            ) : (
+            <ProjectionView
+              view={view}
+              allocation={<AllocationTrajectory allocation={projection.data.allocation} />}
+              risk={<RiskOutlook years={years} />}
+              wealth={
               <>
             <ChartContainer
               config={config}
@@ -393,7 +407,8 @@ export function ProjectionSection({ className }: { className?: string }) {
               {t('analysis.projection.blendNote')}
             </p>
               </>
-            )}
+              }
+            />
 
             <p className="mt-3 text-xs text-muted-foreground">
               {t('analysis.projection.disclaimer')}

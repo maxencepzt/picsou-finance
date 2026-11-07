@@ -267,6 +267,13 @@ function isoMonthEnd(monthsFromNow: number): string {
   return d.toISOString().slice(0, 10)
 }
 
+/** A demo figure for a long (20+ years), medium (10+) or short horizon. */
+function byHorizon(years: number, long: number, medium: number, short: number): number {
+  if (years >= 20) return long
+  if (years >= 10) return medium
+  return short
+}
+
 /**
  * A log-normal fan around the reference curve: no dice in demo mode, just the closed form a
  * Monte-Carlo converges to, with the demo portfolio's blended volatility.
@@ -293,10 +300,10 @@ export function mockProjectionRisk(years: number): RiskOutlook {
     points,
     summary: {
       p5Eur: at(last.valueEur, years, -1.6449),
-      belowContributedPercent: years >= 20 ? 6.1 : years >= 10 ? 11.4 : 22.8,
-      drawdownPercent: years >= 20 ? 71.3 : years >= 10 ? 52.6 : 31.9,
+      belowContributedPercent: byHorizon(years, 6.1, 11.4, 22.8),
+      drawdownPercent: byHorizon(years, 71.3, 52.6, 31.9),
       drawdownThresholdPercent: 20,
-      medianWorstDrawdownPercent: years >= 20 ? 24.5 : years >= 10 ? 20.1 : 15.2,
+      medianWorstDrawdownPercent: byHorizon(years, 24.5, 20.1, 15.2),
     },
     assumptions: [
       { tier: 'SAFETY_NET', expectedPercent: 2, volatilityPercent: 0 },
