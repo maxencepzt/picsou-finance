@@ -160,11 +160,15 @@ futures, month by month (`MonteCarloSimulator`, called from `ProjectionService.r
   tier's rate (or the plan's stated rate), with a long-run volatility of 16 % and 60 %
   (`VOLATILITY`) and a 0.4 correlation between them: one market per month, so every equity pot
   takes the same shock. The cushion compounds steadily, as in the scenarios. The mean path is
-  therefore the reference curve; the median sits below it by the volatility drag.
+  therefore the reference curve; the median sits below it by the volatility drag. With crypto's 60 %
+  volatility that drag is large (log drift ≈ −10.8 %/year at 7.5 %): a crypto-heavy portfolio
+  shows a median far below the reference curve. That is the model, not a bug. A negative rate a
+  member states on a risky plan is floored at 0 %, as on the reference curve.
 - **Output.** Per year, the 10th, 25th, 50th, 75th and 90th percentiles and the capital paid in
   (the fan); at the horizon, the 5th percentile, the share of futures ending below what was paid
   in, the share that fall 20 % or more from a previous high on the way, and the median of each
-  future's deepest fall. The screen states these in words ("8 in 10 futures", "in the worst 5 %")
+  future's deepest fall. Falls are measured on the market's return alone (an index compounded
+  without the monthly flows), so fresh money cannot hide part of a crash. The screen states these in words ("8 in 10 futures", "in the worst 5 %")
   and names the volatility of each tier it rests on.
 - **Fixed seed.** The same portfolio gives the same odds on every load, so a figure that moves
   means the portfolio moved.
@@ -172,7 +176,9 @@ futures, month by month (`MonteCarloSimulator`, called from `ProjectionService.r
 - **Horizon.** One editable field, 10 years by default, any value from 1 to 40
   (`HorizonField` in `ProjectionSection.tsx`), applied on Enter or blur so typing 25 does not
   project 2 years first. It replaced the 10 / 20 / 30 presets; all three tabs share it.
-- Fetched only when the tab is opened (`useProjectionRisk`). Demo mode answers with the closed-form
+- Fetched only when the tab is opened (`useProjectionRisk`); both projection queries keep the
+  previous horizon on screen while a new one loads (`keepPreviousData`), and a failed simulation
+  shows a retry. Demo mode answers with the closed-form
   log-normal fan around the demo's reference curve (`mockProjectionRisk`).
 
 ### Where the mix is heading

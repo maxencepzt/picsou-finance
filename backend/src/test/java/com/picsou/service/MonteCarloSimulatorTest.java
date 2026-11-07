@@ -73,4 +73,18 @@ class MonteCarloSimulatorTest {
         assertThat(result.contributed()).containsExactly(0, 1200, 1200);
         assertThat(result.percentile(2, 50)).isCloseTo(1200, within(0.01));
     }
+
+    @Test
+    void freshMoneyDoesNotHideAFall() {
+        // The same market, once with a large monthly contribution and once without: the deepest
+        // fall is a property of the market, so both must report the same one.
+        var alone = new MonteCarloSimulator.Source(WealthTier.EQUITY, 7.5, 20_000, 0, never(20));
+        var fed = new MonteCarloSimulator.Source(WealthTier.EQUITY, 7.5, 20_000, 2_000, always(20));
+
+        var without = MonteCarloSimulator.run(List.of(alone), 20, 500, 3L);
+        var with = MonteCarloSimulator.run(List.of(fed), 20, 500, 3L);
+
+        assertThat(with.medianWorstDrawdown()).isCloseTo(without.medianWorstDrawdown(), within(1e-9));
+        assertThat(with.shareWithDrawdown()).isEqualTo(without.shareWithDrawdown());
+    }
 }

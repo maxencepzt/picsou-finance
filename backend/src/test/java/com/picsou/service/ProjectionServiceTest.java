@@ -430,4 +430,17 @@ class ProjectionServiceTest {
 
         assertThat(service.riskOutlook(MEMBER, 20)).isEqualTo(service.riskOutlook(MEMBER, 20));
     }
+
+    @Test
+    void theRiskOutlookFloorsANegativeEquityRateLikeTheReferenceCurve() {
+        plan("1000", AccountType.PEA, "-20", null, null);
+        var negative = service.riskOutlook(MEMBER, 5);
+
+        goals.clear();
+        plan("1000", AccountType.PEA, "0", null, null);
+        var zero = service.riskOutlook(MEMBER, 5);
+
+        // The reference curve reads a negative stated rate on a risky tier as 0 %; the fan must too.
+        assertThat(negative.points()).isEqualTo(zero.points());
+    }
 }

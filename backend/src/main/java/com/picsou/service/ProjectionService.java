@@ -183,13 +183,16 @@ public class ProjectionService {
             double held = startingMix.getOrDefault(tier, BigDecimal.ZERO).doubleValue();
             if (held <= 0) continue;
             sources.add(new MonteCarloSimulator.Source(tier,
-                TIER_RATES.getOrDefault(tier, BigDecimal.ZERO).doubleValue(), held, 0, new boolean[months + 1]));
+                adjust(TIER_RATES.getOrDefault(tier, BigDecimal.ZERO), tier, BigDecimal.ZERO).doubleValue(),
+                held, 0, new boolean[months + 1]));
         }
         for (Plan plan : plans) {
             if (!INVESTABLE.contains(plan.tier())) continue;
             boolean[] active = new boolean[months + 1];
             for (int m = 1; m <= months; m++) active[m] = plan.activeIn(start.plusMonths(m));
-            sources.add(new MonteCarloSimulator.Source(plan.tier(), plan.annualPercent().doubleValue(),
+            // Same floor as the reference curve: a negative stated rate on a risky tier is read as 0 %.
+            sources.add(new MonteCarloSimulator.Source(plan.tier(),
+                adjust(plan.annualPercent(), plan.tier(), BigDecimal.ZERO).doubleValue(),
                 0, plan.monthly().doubleValue(), active));
         }
 

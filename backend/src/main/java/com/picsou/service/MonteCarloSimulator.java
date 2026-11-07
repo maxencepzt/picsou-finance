@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.SplittableRandom;
+import java.util.function.DoublePredicate;
 
 /**
  * Thousands of possible futures for the investable portfolio, month by month.
@@ -125,7 +126,11 @@ final class MonteCarloSimulator {
                 total += amounts[s];
             }
             yearly[0][p] = total;
-            double peak = total;
+            // The fall is measured on what the market did, not on the balance: a month of fresh
+            // money would otherwise hide part of a crash. `index` compounds the portfolio's
+            // monthly return alone, flows excluded.
+            double index = 1;
+            double peak = 1;
             double deepest = 0;
 
             for (int m = 1; m <= months; m++) {
@@ -133,6 +138,8 @@ final class MonteCarloSimulator {
                 // partly the same one.
                 double equityShock = random.nextGaussian();
                 double cryptoShock = EQUITY_CRYPTO_CORRELATION * equityShock + rest * random.nextGaussian();
+                double before = total;
+                double grown = 0;
                 total = 0;
                 for (int s = 0; s < n; s++) {
                     Source source = sources.get(s);
@@ -142,11 +149,13 @@ final class MonteCarloSimulator {
                         default -> steady[s];
                     };
                     amounts[s] *= factor;
+                    grown += amounts[s];
                     if (source.active()[m]) amounts[s] += source.monthly();
                     total += amounts[s];
                 }
-                peak = Math.max(peak, total);
-                if (peak > 0) deepest = Math.max(deepest, (peak - total) / peak);
+                if (before > 0) index *= grown / before;
+                peak = Math.max(peak, index);
+                deepest = Math.max(deepest, (peak - index) / peak);
                 if (m % 12 == 0) yearly[m / 12][p] = total;
             }
             worst[p] = deepest;
@@ -163,7 +172,7 @@ final class MonteCarloSimulator {
         return sorted[Math.max(0, Math.min(sorted.length - 1, index))];
     }
 
-    private static double share(double[] values, java.util.function.DoublePredicate test) {
+    private static double share(double[] values, DoublePredicate test) {
         if (values.length == 0) return 0;
         long hits = Arrays.stream(values).filter(test).count();
         return (double) hits / values.length;
