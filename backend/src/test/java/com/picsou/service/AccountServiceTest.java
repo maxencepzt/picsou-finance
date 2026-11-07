@@ -1799,4 +1799,46 @@ class AccountServiceTest {
         // SUI is also a listed share's symbol; a coin must never borrow that company's mark.
         verifyNoInteractions(instrumentLogoService);
     }
+
+    // ─── PEA deposit ceiling ──────────────────────────────────────────────────
+
+    private static AccountRequest peaRequest(String depositCeiling) {
+        return new AccountRequest("PEA jeune", AccountType.PEA, null, "EUR", null, true, "#6366f1",
+            null, null, null, null, depositCeiling == null ? null : new BigDecimal(depositCeiling));
+    }
+
+    @Test
+    void update_storesTheDepositCeiling_andKeepsItWhenTheClientSendsNone() {
+        Account account = Account.builder().id(1L).name("PEA jeune").type(AccountType.PEA)
+            .currency("EUR").build();
+        when(accountRepository.findByIdAndMemberId(1L, 7L)).thenReturn(Optional.of(account));
+        when(accountRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        AccountResponse set = accountService.update(1L, peaRequest("20000"), 7L);
+        assertThat(account.getDepositCeiling()).isEqualByComparingTo("20000");
+        assertThat(set.depositCeiling()).isEqualByComparingTo("20000");
+
+        // The MCP update_account tool sends no ceiling: a rename must not erase it.
+        accountService.update(1L, peaRequest(null), 7L);
+        assertThat(account.getDepositCeiling()).isEqualByComparingTo("20000");
+    }
+
+    @Test
+    void findById_reportsAPeasCostBasis_andOnlyAPeas() {
+        Account pea = Account.builder().id(1L).name("PEA").type(AccountType.PEA).currency("EUR")
+            .currentBalance(new BigDecimal("5000")).depositCeiling(new BigDecimal("20000")).build();
+        Account checking = Account.builder().id(2L).name("Courant").type(AccountType.CHECKING)
+            .currency("EUR").currentBalance(new BigDecimal("300")).build();
+        when(accessResolver.requireReadable(1L, 7L)).thenReturn(pea);
+        when(accessResolver.requireReadable(2L, 7L)).thenReturn(checking);
+        when(priceService.toEur(any(), eq("EUR"), any())).thenAnswer(inv -> inv.getArgument(0));
+
+        AccountResponse peaResponse = accountService.findById(1L, 7L);
+        assertThat(peaResponse.depositCeiling()).isEqualByComparingTo("20000");
+        assertThat(peaResponse.investedEur()).isEqualByComparingTo("5000");
+
+        AccountResponse checkingResponse = accountService.findById(2L, 7L);
+        assertThat(checkingResponse.investedEur()).isNull();
+        assertThat(checkingResponse.depositCeiling()).isNull();
+    }
 }

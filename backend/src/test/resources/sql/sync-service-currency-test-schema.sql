@@ -39,6 +39,7 @@ CREATE TABLE account (
     institution_domain VARCHAR(255),
     requisition_id BIGINT,
     opened_at DATE,
+    deposit_ceiling NUMERIC(20, 2),
     provider_invested_eur DECIMAL(20, 8),
     provider_paid_in_eur DECIMAL(20, 8),
     scheduled_payment_eur DECIMAL(20, 8),

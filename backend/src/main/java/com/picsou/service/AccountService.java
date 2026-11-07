@@ -197,6 +197,7 @@ public class AccountService {
             // in the institution catalog instead — the only logo source open to it.
             .logoUrl(req.isManual() ? bankLogoUrl(req.provider(), req.institutionId()) : null)
             .openedAt(req.openedAt())
+            .depositCeiling(req.depositCeiling())
             .build();
 
         account = accountRepository.save(account);
@@ -243,6 +244,10 @@ public class AccountService {
         // renamed the account. The cost is that the form can change the date but not blank it.
         if (req.openedAt() != null) {
             account.setOpenedAt(req.openedAt());
+        }
+        // Same "null keeps it" rule as openedAt: only the edit form knows about this field.
+        if (req.depositCeiling() != null) {
+            account.setDepositCeiling(req.depositCeiling());
         }
 
         if (account.getType() == AccountType.SCPI) {
@@ -909,8 +914,13 @@ public class AccountService {
      * @param viewerId     who is asking, used to say whether they administer the account
      */
     AccountResponse toResponse(Account account, BigDecimal sharePercent, Long viewerId) {
-        BigDecimal balanceEur = liveBalanceEur(account);
-        AccountResponse response = AccountResponse.from(account, balanceEur);
+        // One valuation for both figures: a PEA also reports its cost basis, which its
+        // contribution ceiling is measured against.
+        Valuation valuation = valuation(account);
+        AccountResponse response = AccountResponse.from(account, valuation.liveEur());
+        if (account.getType() == AccountType.PEA) {
+            response = response.withInvestedEur(valuation.investedEur());
+        }
 
         BigDecimal reportedShare =
             sharePercent != null && sharePercent.compareTo(new BigDecimal("100")) != 0

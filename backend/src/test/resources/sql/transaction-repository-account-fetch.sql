@@ -19,6 +19,7 @@ ALTER TABLE account ADD institution_domain VARCHAR(255);
 ALTER TABLE account ADD logo_url VARCHAR(255);
 ALTER TABLE account ADD name VARCHAR(100);
 ALTER TABLE account ADD opened_at DATE;
+ALTER TABLE account ADD deposit_ceiling NUMERIC(20, 2);
 ALTER TABLE account ADD parent_account_id BIGINT;
 ALTER TABLE account ADD payment_due_amount DECIMAL(20, 8);
 ALTER TABLE account ADD payment_due_date DATE;

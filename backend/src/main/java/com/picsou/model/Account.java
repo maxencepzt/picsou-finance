@@ -144,6 +144,10 @@ public class Account extends AuditableEntity {
     @Column(name = "opened_at")
     private LocalDate openedAt;
 
+    /** A PEA's contribution ceiling as the member states it; null means the regulatory default. */
+    @Column(name = "deposit_ceiling", precision = 20, scale = 2)
+    private BigDecimal depositCeiling;
+
     /**
      * The contract's own net invested amount, as the provider reports it; null when no connector
      * does. Set by {@link com.picsou.service.CorumLifeWriter}: CORUM's per-line costs leave out
