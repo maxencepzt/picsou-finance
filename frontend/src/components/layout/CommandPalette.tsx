@@ -174,6 +174,8 @@ function PaletteBody({ onClose, onSyncAll }: { onClose: () => void; onSyncAll: (
                     aria-selected={selected}
                     onMouseEnter={() => setActive(position)}
                     onClick={item.run}
+                    // Focus stays in the search field (aria-activedescendant); this only covers a focused option.
+                    onKeyDown={(e) => { if (e.key === 'Enter') item.run() }}
                     className={cn(
                       'grid cursor-pointer grid-cols-[2rem_1fr_auto] items-center gap-3 rounded-md px-3 py-2',
                       selected && 'bg-primary/12',

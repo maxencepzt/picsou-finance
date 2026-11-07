@@ -594,7 +594,7 @@ export function useConnectionSync({ connections, trActive, revolutRemembered, on
     !ownTab(c, revolutRemembered) && !(c.providerType === 'tr' && !trActive)
   , [trActive, revolutRemembered])
 
-  const batchable = useMemo(() => connections.filter(isBatchSyncable), [connections, isBatchSyncable])
+  const batchable = useMemo(() => connections.filter((c) => isBatchSyncable(c)), [connections, isBatchSyncable])
 
   const syncAll = useCallback(() => {
     const started = batchable.filter(c => !syncingIds.has(c.id))

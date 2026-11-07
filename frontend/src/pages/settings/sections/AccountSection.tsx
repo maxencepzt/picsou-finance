@@ -69,7 +69,7 @@ function UsernameRow() {
             id="settings-username"
             value={value}
             onChange={(e) => setValue(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') save(); if (e.key === 'Escape') cancel() }}
+            onKeyDown={(e) => { if (e.key === 'Enter') void save(); if (e.key === 'Escape') cancel() }}
             className="h-8 min-w-0 flex-1 px-3 @md:w-56 @md:flex-none"
             aria-invalid={error ? true : undefined}
             aria-describedby={error ? 'settings-username-error' : undefined}

@@ -78,9 +78,9 @@ function AdminPasswordForm({ notice }: { notice: ReactNode }) {
   const submitAdmin = useSubmitAdmin()
 
   // Pick a default swatch once at mount — a lazy useState initializer keeps
-  // the impure Math.random() call out of render.
+  // the impure random draw out of render.
   const [randomDefault] = useState(
-    () => AVATAR_SWATCHES[Math.floor(Math.random() * AVATAR_SWATCHES.length)]
+    () => AVATAR_SWATCHES[crypto.getRandomValues(new Uint32Array(1))[0] % AVATAR_SWATCHES.length]
   )
   const [showPassword, setShowPassword] = useState(false)
 

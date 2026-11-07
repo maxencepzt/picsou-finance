@@ -201,7 +201,7 @@ function curve(fixture: LoanFixture, asOf: string): PeerLoanCurvePoint[] {
   }
   if (!dates.includes(asOf)) {
     dates.push(asOf)
-    dates.sort()
+    dates.sort((a, b) => a.localeCompare(b))
   }
   return dates.map((date) => ({
     date,

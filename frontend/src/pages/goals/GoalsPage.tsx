@@ -449,7 +449,7 @@ const SECTION_TITLE = 'text-sm font-semibold text-foreground'
 /** Edit / delete (and calendar) at the foot of a card; clicks stay off the card's own handler. */
 function CardActions({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mt-auto flex justify-end gap-0.5 border-t border-border pt-2" onClick={(e) => e.stopPropagation()}>
+    <div className="mt-auto flex justify-end gap-0.5 border-t border-border pt-2" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
       {children}
     </div>
   )
