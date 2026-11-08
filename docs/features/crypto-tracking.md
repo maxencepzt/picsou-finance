@@ -45,7 +45,7 @@ The distributions record (`/sapi/v1/asset/assetDividend`: airdrops, launchpool) 
 - **Window.** Each sync re-reads the last 180 days and rewrites only the months that window covers whole (the month it starts in is partly read). A missed sync catches up; older months are never touched. Rows before the window come from an earlier sync or from a manual import of the exchange's history export, which must use the same key to be taken over.
 - **A month with an unpriced credit is skipped**, keeping any existing row, rather than written short (a `WARN` names it).
 - **A month is never rewritten downward.** Rewards only add up, so a read below the stored quantity can only be short (a history kept less than 180 days, a reward kind not queried) and the stored row stays.
-- **Isolation.** `CryptoExchangeSyncService` runs it after the balance sync commits and only logs a failure: rewards never cost the user a balance update. The exchange and price calls run outside any transaction; only the write opens one of its own (`REQUIRES_NEW`).
+- **Isolation.** `CryptoExchangeSyncService` runs it after the balance sync commits and only logs a failure: rewards never cost the user a balance update. The exchange calls run outside any transaction. The price backfill, then the price reads with the write, each run in a new transaction (`REQUIRES_NEW`): from an `afterCommit` callback the finished balance transaction is still bound to the thread, and database work outside a transaction of its own joins it and is never committed. That is how the first real sync lost the 614 prices it had backfilled and left every month unpriced. Binance's ETH staking history has also answered `-9000 Internal error` once; the next sync went through.
 
 ### Meria adapter
 

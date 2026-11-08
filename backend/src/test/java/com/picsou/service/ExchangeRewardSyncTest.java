@@ -14,6 +14,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -31,6 +32,7 @@ import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -160,6 +162,27 @@ class ExchangeRewardSyncTest {
 
         verify(transactionRepository, never()).save(any());
         assertThat(imported.getAmount()).isEqualByComparingTo("3.00");
+    }
+
+    @Test
+    void backfillsAndReadsPricesInTransactionsOfTheirOwn() {
+        // It runs from an afterCommit callback, where the finished balance transaction is still
+        // bound: price writes outside a new transaction joined it and were never committed, so
+        // every month then read as unpriced.
+        when(adapter.fetchRewards("key", "secret", FIRST_WHOLE_MONTH)).thenReturn(List.of(
+            reward("USDT", "1", "2026-07-01")));
+        price("USDT", "2026-07-01", "0.9");
+
+        rewardSync.sync(adapter, "key", "secret", ExchangeType.BINANCE, 22L);
+
+        InOrder order = inOrder(transactionManager, priceService, priceSnapshotRepository, transactionRepository);
+        order.verify(transactionManager).getTransaction(any());
+        order.verify(priceService).backfillHistoricalPrices(any(), any(), eq(true));
+        order.verify(transactionManager).commit(any());
+        order.verify(transactionManager).getTransaction(any());
+        order.verify(priceSnapshotRepository).findLatestByTickerBeforeOrOnDate(eq("USDT"), any());
+        order.verify(transactionRepository).save(any());
+        order.verify(transactionManager).commit(any());
     }
 
     @Test
