@@ -27,6 +27,7 @@ from pathlib import Path
 import re
 import statistics
 import sys
+import tempfile
 import xml.etree.ElementTree as ElementTree
 import zlib
 
@@ -36,6 +37,22 @@ NAME = re.compile(r"Test.*|.*Test|.*Tests|.*TestCase")
 JUNIT_TEST = re.compile(r"@(Test|ParameterizedTest|RepeatedTest|TestFactory|TestTemplate)\b")
 # Surefire excludes nested classes by default; an excludesFile replaces that default.
 NESTED = "**/*$*"
+REPORTS = "TEST-*.xml"
+
+
+def _confined(path):
+    """`path` resolved, refused unless it lies in the checkout or a temporary directory.
+
+    Every path comes from the workflow's own arguments, but the script only ever needs
+    these places: anything else is a mistake to stop on, not a file to write.
+    """
+    resolved = Path(path).resolve()
+    roots = [ROOT, Path(tempfile.gettempdir()).resolve()]
+    if os.environ.get("RUNNER_TEMP"):
+        roots.append(Path(os.environ["RUNNER_TEMP"]).resolve())
+    if not any(resolved.is_relative_to(root) for root in roots):
+        sys.exit(f"{path} is outside the checkout and the temporary directories")
+    return resolved
 
 
 def discover(tests=TESTS):
@@ -62,7 +79,7 @@ def _top_level(report_name):
 def report_timings(directory):
     """Seconds per top-level class, summed over its nested suites, from TEST-*.xml reports."""
     seconds = defaultdict(float)
-    for report in Path(directory).rglob("TEST-*.xml"):
+    for report in _confined(directory).rglob(REPORTS):
         try:
             suite = ElementTree.parse(report).getroot()
             seconds[_top_level(suite.attrib["name"])] += float(suite.attrib["time"].replace(",", ""))
@@ -72,14 +89,14 @@ def report_timings(directory):
 
 
 def write_timings(directory, path):
-    Path(path).write_text(json.dumps(report_timings(directory), indent=0) + "\n", encoding="utf-8")
+    _confined(path).write_text(json.dumps(report_timings(directory), indent=0) + "\n", encoding="utf-8")
 
 
 def read_timings(path):
     """The --timings file, or {} when there is none (a cache miss)."""
-    if not path or not Path(path).is_file():
+    if not path or not _confined(path).is_file():
         return {}
-    return {name: float(seconds) for name, seconds in json.loads(Path(path).read_text(encoding="utf-8")).items()}
+    return {name: float(seconds) for name, seconds in json.loads(_confined(path).read_text(encoding="utf-8")).items()}
 
 
 def assign(classes, shards, seconds=None):
@@ -115,7 +132,7 @@ def split(shards, shard, out, timings_file=None, tests=TESTS):
     if any(not names for names in bins[:-1]):
         sys.exit(f"{len(classes)} test classes do not fill {shards} shards")
     kind, lines = shard_file(bins, shard)
-    out = Path(out)
+    out = _confined(out)
     out.mkdir(parents=True, exist_ok=True)
     path = out / f"backend-shard-{shard}.{kind}"
     path.write_text("".join(f"{line}\n" for line in lines), encoding="utf-8")
@@ -131,14 +148,14 @@ def split(shards, shard, out, timings_file=None, tests=TESTS):
 
 
 def _reported(folder):
-    names = {report.name[len("TEST-"):-len(".xml")] for report in folder.glob("TEST-*.xml")}
+    names = {report.name[len("TEST-"):-len(".xml")] for report in folder.glob(REPORTS)}
     names |= {report.stem for report in folder.glob("*.txt")}
     return {_top_level(name) for name in names}
 
 
 def check(directory, tests=TESTS):
     """Error messages for classes run twice or never; prints the summed counts."""
-    folders = sorted(path for path in Path(directory).iterdir() if path.is_dir())
+    folders = sorted(path for path in _confined(directory).iterdir() if path.is_dir())
     where = defaultdict(list)
     for folder in folders:
         for name in _reported(folder):
@@ -147,7 +164,7 @@ def check(directory, tests=TESTS):
     errors += [f"{name} has no report" for name in discover(tests) if name not in where]
     totals = defaultdict(int)
     for folder in folders:
-        for report in folder.glob("TEST-*.xml"):
+        for report in folder.glob(REPORTS):
             suite = ElementTree.parse(report).getroot()
             for key in ("tests", "failures", "errors", "skipped"):
                 totals[key] += int(suite.attrib.get(key, 0))

@@ -101,7 +101,7 @@ jobs:
         run: bash -n docker/deploy.sh && shellcheck -x docker/deploy.sh
       - name: Test preflight ordering, failure isolation, and API readiness
         if: matrix.task == 'unit'
-        run: python3 -m pip install pytest && python3 -m pytest docker/tests/test_deploy.py -v
+        run: 'python3 -m pip install --only-binary :all: --require-hashes -r .github/requirements-pytest.txt && python3 -m pytest docker/tests/test_deploy.py -v'
       # The legs come from changes.outputs.release-cases: a case pytest collects but no
       # leg runs would never be tested.
       - name: Every collected smoke case has its own leg
@@ -149,7 +149,7 @@ jobs:
         # pipefail: without it tee would hide pytest's exit code (an error after the pass).
         run: |
           set -o pipefail
-          python3 -m pip install pytest
+          python3 -m pip install --only-binary :all: --require-hashes -r .github/requirements-pytest.txt
           python3 -m pytest -v -s \
             "docker/tests/test_deploy_integration.py::test_packaged_release_migrates_repeats_and_preserves_api_on_bad_schema[$CASE]" \
             | tee case.txt
@@ -168,7 +168,7 @@ jobs:
       - name: Test the Compose trusted proxy addresses
         run: |
           docker info > /dev/null
-          python3 -m pip install pytest
+          python3 -m pip install --only-binary :all: --require-hashes -r .github/requirements-pytest.txt
           python3 -m pytest docker/tests/test_proxy_client_ip.py -v
 
   # The suite in shards of test classes, balanced by the last main run's class times
@@ -371,7 +371,7 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with: {path: ~/.cache/ms-playwright, key: "playwright-${{ runner.os }}-${{ hashFiles('frontend/bun.lock') }}"}
       - name: Install Playwright Chromium
-        run: cd frontend && bunx playwright install chromium
+        run: cd frontend && ./node_modules/.bin/playwright install chromium
       - name: Probe a headless Chromium launch
         id: chromium-probe
         continue-on-error: true
@@ -384,7 +384,7 @@ jobs:
         timeout-minutes: 12
         run: |
           echo "::notice title=e2e-deps-fallback::Chromium could not start; installing its system libraries"
-          cd frontend && bunx playwright install-deps chromium
+          cd frontend && ./node_modules/.bin/playwright install-deps chromium
       - name: Run E2E (demo mode)
         run: make test-e2e
       - name: Upload Playwright report

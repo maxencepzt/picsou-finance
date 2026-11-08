@@ -156,6 +156,17 @@ class ExactlyOnceTest(unittest.TestCase):
                 shards.split(3, 1, out, tests=Path(root))
 
 
+class ConfinedPathTest(unittest.TestCase):
+    def test_a_path_outside_the_checkout_and_the_temporary_directories_is_refused(self):
+        with mock.patch.dict(os.environ, {"RUNNER_TEMP": ""}), self.assertRaises(SystemExit):
+            shards.write_timings(tempfile.gettempdir(), "/etc/backend-timings.json")
+
+    def test_a_path_in_a_temporary_directory_is_accepted(self):
+        with tempfile.TemporaryDirectory() as folder:
+            shards.write_timings(folder, Path(folder) / "timings.json")
+            self.assertEqual(json.loads((Path(folder) / "timings.json").read_text()), {})
+
+
 class CheckTest(unittest.TestCase):
     def check(self, reports, sources=("a.ATest", "a.BTest")):
         with tempfile.TemporaryDirectory() as root, tempfile.TemporaryDirectory() as directory:
