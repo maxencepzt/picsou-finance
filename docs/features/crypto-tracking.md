@@ -30,6 +30,23 @@ Picsou tracks cryptocurrency holdings from two sources: centralized exchanges (B
 
 The Earn lists are paged (`current`, `size` = 100, the maximum) until `total` rows are read; a page without `total` fails the sync rather than stop at one page. Spot may also list flexible Earn as an `LD`-prefixed asset (`LDUSDT`); such a spot line is dropped only when the matching flexible position exists, so `LDO` (Lido) is kept. Binance reports no principal/interest split for them, so `principal` and `interest` stay null. All or nothing: a failed Earn call fails the sync instead of returning spot alone, which would write a balance short by the whole Earn amount into the daily snapshot. Until 2026-11, the adapter read spot only and undercounted any account with coins in Earn. The Funding wallet is still not read. The `testConnection()` method validates credentials before saving.
 
+### Exchange rewards (passive income)
+
+An exchange adapter may implement `CryptoExchangePort.fetchRewards(key, secret, since)`, which returns every yield credit (staking, Earn interest) since `since`; the default returns none. `BinanceAdapter` reads four histories, each in windows of 89 days because Binance refuses a range over 3 months (windows stop 1 ms short of the next one, since Binance ranges include both ends), paged by 100:
+
+- `GET /sapi/v1/simple-earn/flexible/history/rewardsRecord`, once with `type=BONUS` and once with `type=REALTIME` (the parameter is mandatory and flexible products pay both kinds), amount in `rewards`;
+- `GET /sapi/v1/simple-earn/locked/history/rewardsRecord`, amount in `amount`;
+- `GET /sapi/v1/eth-staking/eth/history/rewardsHistory`, amount in `amount`. It pays in BETH or WBETH (Binance's staked-ETH receipts), counted as ETH 1:1, which is how the history import keyed them.
+
+The distributions record (`/sapi/v1/asset/assetDividend`: airdrops, launchpool) is not read: Binance does not document which rewards it repeats, and counting a reward twice is worse than missing an airdrop.
+
+`ExchangeRewardSync` turns the credits into one row per month and asset: a budget-neutral `DIVIDEND` on the exchange account, `ticker` = the asset, `quantity` = the month's total, `amount` = the sum of each credit valued at its own day's price (`price_snapshot`, backfilled for the window first; a snapshot more than 7 days older than the credit counts as no price), dated on the month's last credit. The row is keyed `<exchange>-reward:<accountId>:<yyyy-MM>:<ASSET>` in `external_id` and upserted on that key, so it shows in the dividends and the Passive income page without ever counting twice.
+
+- **Window.** Each sync re-reads the last 180 days and rewrites only the months that window covers whole (the month it starts in is partly read). A missed sync catches up; older months are never touched. Rows before the window come from an earlier sync or from a manual import of the exchange's history export, which must use the same key to be taken over.
+- **A month with an unpriced credit is skipped**, keeping any existing row, rather than written short (a `WARN` names it).
+- **A month is never rewritten downward.** Rewards only add up, so a read below the stored quantity can only be short (a history kept less than 180 days, a reward kind not queried) and the stored row stays.
+- **Isolation.** `CryptoExchangeSyncService` runs it after the balance sync commits and only logs a failure: rewards never cost the user a balance update. The exchange and price calls run outside any transaction; only the write opens one of its own (`REQUIRES_NEW`).
+
 ### Meria adapter
 
 `MeriaAdapter` implements `CryptoExchangePort` against [docs.meria.com](https://docs.meria.com). It differs from Binance in two structural ways:

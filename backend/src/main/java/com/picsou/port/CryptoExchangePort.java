@@ -1,6 +1,7 @@
 package com.picsou.port;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 
 /**
@@ -52,6 +53,24 @@ public interface CryptoExchangePort {
      * @param apiSecret {@code null} when {@link #requiresApiSecret()} is {@code false}
      */
     boolean testConnection(String apiKey, String apiSecret);
+
+    /**
+     * Every yield reward credited since {@code since} (staking, Earn interest), one entry per
+     * credit. The caller groups them by month and asset into passive-income rows.
+     *
+     * <p>Like {@link #fetchPositions}, must throw rather than return a partial list: a month
+     * missing half its credits would overwrite a correct total with a short one.
+     *
+     * <p>Defaulted to none, for exchanges whose rewards are not read.
+     *
+     * @param apiSecret {@code null} when {@link #requiresApiSecret()} is {@code false}
+     */
+    default List<ExchangeReward> fetchRewards(String apiKey, String apiSecret, Instant since) {
+        return List.of();
+    }
+
+    /** One reward credit: {@code amount} of {@code asset}, credited at {@code time}. */
+    record ExchangeReward(String asset, BigDecimal amount, Instant time) {}
 
     /** What an exchange lets an asset be held as. Persisted by name — do not renumber or rename. */
     enum Product { SPOT, STAKING, LENDING }

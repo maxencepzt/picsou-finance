@@ -57,6 +57,7 @@ class CryptoExchangeSyncServiceTest {
     private static final String SECRET = "api-secret";
 
     @Mock CryptoExchangeSessionRepository sessionRepository;
+    @Mock ExchangeRewardSync rewardSync;
     @Mock AccountRepository accountRepository;
     @Mock FamilyMemberRepository familyMemberRepository;
     @Mock AccountService accountService;
@@ -77,7 +78,7 @@ class CryptoExchangeSyncServiceTest {
         return new CryptoExchangeSyncService(
             List.of(adapters), sessionRepository, accountRepository,
             familyMemberRepository, accountService, priceService, encryption, statusWriter,
-            positionRepository, holdingRepository, cryptoLogoService, transactionManager);
+            positionRepository, holdingRepository, cryptoLogoService, transactionManager, rewardSync);
     }
 
     // Both fixtures are lenient: which of the two traits a given test exercises depends on how far
@@ -206,6 +207,40 @@ class CryptoExchangeSyncServiceTest {
         serviceWith(adapter).sync(7L, MEMBER_ID);
 
         verify(adapter).fetchPositions(KEY, null);
+    }
+
+    @Test
+    void sync_writesTheRewardsAfterTheBalance() {
+        CryptoExchangePort adapter = singleKeyAdapter();
+        CryptoExchangeSession session = session(ExchangeType.MERIA, "enc:" + KEY, null);
+        when(sessionRepository.findByIdAndMemberId(7L, MEMBER_ID)).thenReturn(Optional.of(session));
+        when(encryption.decrypt("enc:" + KEY)).thenReturn(KEY);
+        when(encryption.decrypt(null)).thenReturn(null);
+        when(adapter.fetchPositions(KEY, null)).thenReturn(List.of());
+        arrangeAccountResolution();
+
+        serviceWith(adapter).sync(7L, MEMBER_ID);
+
+        verify(rewardSync).sync(eq(adapter), eq(KEY), eq(null), eq(ExchangeType.MERIA), any());
+    }
+
+    @Test
+    void sync_succeedsEvenWhenTheRewardsCannotBeWritten() {
+        // Rewards are a bonus on top of the balance: a failure there must never cost the user a
+        // balance update. The next sync re-reads the whole lookback window.
+        CryptoExchangePort adapter = singleKeyAdapter();
+        CryptoExchangeSession session = session(ExchangeType.MERIA, "enc:" + KEY, null);
+        when(sessionRepository.findByIdAndMemberId(7L, MEMBER_ID)).thenReturn(Optional.of(session));
+        when(encryption.decrypt("enc:" + KEY)).thenReturn(KEY);
+        when(encryption.decrypt(null)).thenReturn(null);
+        when(adapter.fetchPositions(KEY, null)).thenReturn(List.of());
+        arrangeAccountResolution();
+        org.mockito.Mockito.doThrow(new IllegalStateException("rewards down"))
+            .when(rewardSync).sync(any(), any(), any(), any(), any());
+
+        serviceWith(adapter).sync(7L, MEMBER_ID);
+
+        assertThat(session.getStatus()).isEqualTo("CONNECTED");
     }
 
     @Test
