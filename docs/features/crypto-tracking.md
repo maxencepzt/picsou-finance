@@ -22,7 +22,13 @@ Picsou tracks cryptocurrency holdings from two sources: centralized exchanges (B
 
 ### Binance adapter
 
-`BinanceAdapter` implements `CryptoExchangePort`. It calls the Binance REST API (`GET /api/v3/account`) with HMAC-SHA256 signed requests. Returns one `SPOT` `ExchangePosition` per asset with a non-zero balance (free + locked) — it reads `/api/v3/account`, which does not cover Binance Earn. The `testConnection()` method validates credentials before saving.
+`BinanceAdapter` implements `CryptoExchangePort` with HMAC-SHA256 signed requests. It reads three lists and returns one `ExchangePosition` per (product, asset):
+
+- `GET /api/v3/account`: one `SPOT` position per asset with a non-zero balance (free + locked). This endpoint does not include Simple Earn.
+- `GET /sapi/v1/simple-earn/flexible/position`: flexible products as `LENDING`, from `totalAmount`.
+- `GET /sapi/v1/simple-earn/locked/position`: locked products as `STAKING`, from `amount`. Several locked positions in one coin (different durations) are summed into one line, since `crypto_exchange_position` is unique on (account, product, ticker).
+
+The Earn lists are paged (`current`, `size` = 100, the maximum) until `total` rows are read; a page without `total` fails the sync rather than stop at one page. Spot may also list flexible Earn as an `LD`-prefixed asset (`LDUSDT`); such a spot line is dropped only when the matching flexible position exists, so `LDO` (Lido) is kept. Binance reports no principal/interest split for them, so `principal` and `interest` stay null. All or nothing: a failed Earn call fails the sync instead of returning spot alone, which would write a balance short by the whole Earn amount into the daily snapshot. Until 2026-11, the adapter read spot only and undercounted any account with coins in Earn. The Funding wallet is still not read. The `testConnection()` method validates credentials before saving.
 
 ### Meria adapter
 
@@ -53,7 +59,7 @@ them plus the dashboard aggregations, for a display feature.
 
 A position's `interest` is a **decomposition** of its quantity, never an addition: `principal +
 interest = quantity`. `principal` is null when the exchange does not report yield (all of Binance,
-which is spot-only here), and the UI then drops both columns.
+whose Earn endpoints give no split), and the UI then drops both columns.
 
 That identity is enforced, not assumed: a `reward` outside `[0, quantity]` cannot decompose
 anything, so `MeriaAdapter` reports the quantity with **both** halves null rather than publishing

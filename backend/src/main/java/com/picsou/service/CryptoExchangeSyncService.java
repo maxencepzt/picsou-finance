@@ -357,10 +357,11 @@ public class CryptoExchangeSyncService {
         List<CryptoExchangePosition> positions =
             positionRepository.findByAccountIdOrderByProductAscTickerAsc(accountId);
 
-        // Spot-only exchanges report nothing the flat holdings table doesn't already show, so
-        // they keep it. Binance is one: its adapter emits a single SPOT line per asset, and
-        // returning those here would swap its account page over to the product view — which
-        // carries no per-holding edit or delete action — for a breakdown with one group.
+        // A spot-only account reports nothing the flat holdings table doesn't already show, so it
+        // keeps it: returning SPOT lines alone would swap its account page over to the product
+        // view — which carries no per-holding edit or delete action — for a breakdown with one
+        // group. A Binance account with coins in Simple Earn has LENDING/STAKING lines and does
+        // switch to the product view.
         if (positions.stream().allMatch(p -> p.getProduct() == CryptoExchangePort.Product.SPOT)) {
             return List.of();
         }
