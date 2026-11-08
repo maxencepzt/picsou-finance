@@ -156,6 +156,11 @@ public class ExchangeRewardSync {
         String externalId = exchange.name().toLowerCase(Locale.ROOT) + "-reward:"
             + account.getId() + ":" + month.monthAndAsset();
         Optional<Transaction> stored = transactionRepository.findByAccountIdAndExternalId(account.getId(), externalId);
+        // Dust worth less than a cent would only list "0.00 EUR" on the account page. A month that
+        // grows past it later is written then.
+        if (stored.isEmpty() && month.eur().signum() == 0) {
+            return false;
+        }
         if (stored.isPresent() && stored.get().getQuantity() != null
             && month.quantity().compareTo(stored.get().getQuantity()) < 0) {
             log.warn("{} rewards {}: read {} below the stored {} -- keeping the stored row",

@@ -8,10 +8,10 @@ import { localeFromLanguage } from '@/lib/utils'
 import { INCOME_SOURCES, monthLabel, SOURCE_COLORS, type IncomeChartRow } from './income-view'
 
 // Received first, then the forecast in the hero's source order (Recharts sorts alphabetically otherwise).
-const LEGEND_ORDER = ['received', ...INCOME_SOURCES]
+const LEGEND_ORDER = ['received', 'receivedCrypto', ...INCOME_SOURCES]
 
 /**
- * Month by month on one money axis: dividends received as solid bars, the forecast stacked by
+ * Month by month on one money axis: dividends and crypto rewards received as solid bars, the forecast stacked by
  * source as lighter outlined bars. Only the sides and sources that pay something get a bar and a
  * legend entry.
  */
@@ -21,16 +21,18 @@ export function IncomeMonthsChart({ rows, ariaLabel }: { rows: IncomeChartRow[];
   const locale = localeFromLanguage(i18n.resolvedLanguage ?? i18n.language)
 
   const received = rows.some((r) => (r.received ?? 0) > 0)
+  const receivedCrypto = rows.some((r) => (r.receivedCrypto ?? 0) > 0)
   const forecast = INCOME_SOURCES.filter((s) => rows.some((r) => (r[s] ?? 0) > 0))
-  if (!received && forecast.length === 0) return <p className="py-12 text-center text-sm text-muted-foreground">{t('income.months.empty')}</p>
+  if (!received && !receivedCrypto && forecast.length === 0) return <p className="py-12 text-center text-sm text-muted-foreground">{t('income.months.empty')}</p>
   const config = {
     received: { label: t('income.months.received'), color: SOURCE_COLORS.dividends },
+    receivedCrypto: { label: t('income.months.receivedCrypto'), color: 'var(--class-crypto)' },
     ...Object.fromEntries(
       forecast.map((s) => [s, { label: t('income.months.forecastOf', { source: t(`income.source.${s}`) }), color: SOURCE_COLORS[s] }]),
     ),
   } satisfies ChartConfig
   const width = yAxisWidth(
-    rows.map((r) => (r.received ?? 0) + (r.dividends ?? 0) + (r.scpi ?? 0) + (r.rent ?? 0) + (r.interest ?? 0)),
+    rows.map((r) => (r.received ?? 0) + (r.receivedCrypto ?? 0) + (r.dividends ?? 0) + (r.scpi ?? 0) + (r.rent ?? 0) + (r.interest ?? 0)),
     money.tick,
   )
 
@@ -55,6 +57,7 @@ export function IncomeMonthsChart({ rows, ariaLabel }: { rows: IncomeChartRow[];
           itemSorter={(item) => LEGEND_ORDER.indexOf(String(item.dataKey))}
         />
         {received && <Bar dataKey="received" stackId="income" fill="var(--color-received)" />}
+        {receivedCrypto && <Bar dataKey="receivedCrypto" stackId="income" fill="var(--color-receivedCrypto)" />}
         {forecast.map((s) => (
           <Bar
             key={s}

@@ -3675,6 +3675,7 @@
       "projected": "Ingresos pasivos previstos en 12 meses",
       "perMonth": "≈ {{amount}} al mes",
       "received": "{{amount}} en dividendos recibidos en 12 meses",
+      "receivedCrypto": "{{amount}} en recompensas cripto en 12 meses",
       "sources": "De dónde vienen",
       "coverage": "Cobertura de los gastos esenciales",
       "coverageDetail": "{{income}} al mes frente a {{expenses}} de gastos esenciales.",
@@ -3711,6 +3712,7 @@
         "both": "Dividendos recibidos en los últimos 12 meses y previsión para los 12 próximos"
       },
       "received": "Dividendos recibidos",
+      "receivedCrypto": "Recompensas cripto recibidas",
       "forecastOf": "{{source}} (previsión)",
       "empty": "Nada en este periodo.",
       "receivedError": "No se pudieron cargar los dividendos recibidos.",

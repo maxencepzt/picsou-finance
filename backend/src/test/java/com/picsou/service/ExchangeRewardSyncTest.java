@@ -186,6 +186,18 @@ class ExchangeRewardSyncTest {
     }
 
     @Test
+    void addsNoRowForAMonthWorthLessThanACent() {
+        // Dust would only list "0.00 EUR" on the account page; the history import left it out too.
+        when(adapter.fetchRewards("key", "secret", FIRST_WHOLE_MONTH)).thenReturn(List.of(
+            reward("EGLD", "0.0002", "2026-07-05")));
+        price("EGLD", "2026-07-05", "10");
+
+        rewardSync.sync(adapter, "key", "secret", ExchangeType.BINANCE, 22L);
+
+        verify(transactionRepository, never()).save(any());
+    }
+
+    @Test
     void touchesNothingWhenTheExchangeReportsNoReward() {
         when(adapter.fetchRewards(any(), any(), any())).thenReturn(List.of());
 

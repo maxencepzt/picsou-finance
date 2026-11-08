@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Crypto rewards have their own line on the Passive income page.** Staking and Earn rewards received are shown apart
+  from share dividends, in the summary and in the monthly chart, instead of being counted as dividends.
 - **Binance staking and Earn rewards are recorded as passive income.** Each Binance sync reads the Simple Earn and ETH
   staking rewards of the last 180 days and writes one row per month and coin, valued in euros at each day's price. They
   count in the dividends and on the Passive income page, and stay out of the budget.
