@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
@@ -78,9 +79,9 @@ public class ExchangeRewardSync {
     }
 
     /**
-     * Fetches and writes the rewards of one exchange account. The exchange and price calls run
-     * outside any transaction; only the write opens one, of its own, so a failure here never
-     * rolls back the balance sync that has just succeeded.
+     * Fetches and writes the rewards of one exchange account. The exchange calls run outside any
+     * transaction; the price backfill and the write each run in a new one, so a failure here
+     * never rolls back the balance sync that has just succeeded.
      */
     public void sync(CryptoExchangePort adapter, String apiKey, String apiSecret,
                      ExchangeType exchange, Long accountId) {
@@ -91,9 +92,26 @@ public class ExchangeRewardSync {
             from.atStartOfDay(ZoneOffset.UTC).toInstant());
         if (rewards.isEmpty()) return;
 
-        priceService.backfillHistoricalPrices(
-            rewards.stream().map(ExchangeReward::asset).collect(Collectors.toSet()), from, true);
+        Set<String> assets = rewards.stream().map(ExchangeReward::asset).collect(Collectors.toSet());
+        // This runs from an afterCommit callback, where the finished transaction is still bound
+        // to the thread: database work outside a transaction of its own joins it and is never
+        // committed (the backfilled prices vanished that way). Hence a new transaction for the
+        // backfill, committed before the prices are read, and one for the reads and the write.
+        writeTransaction.executeWithoutResult(status ->
+            priceService.backfillHistoricalPrices(assets, from, true));
+        writeTransaction.executeWithoutResult(status -> {
+            List<MonthRow> rows = monthRows(rewards, from, exchange);
+            Account account = accountRepository.findById(accountId).orElseThrow();
+            int written = 0;
+            for (MonthRow row : rows) {
+                if (upsert(account, exchange, row)) written++;
+            }
+            log.info("{} rewards: {} month rows written for account {}", exchange, written, accountId);
+        });
+    }
 
+    /** One row per month and asset; a month whose credits cannot all be priced is left out. */
+    private List<MonthRow> monthRows(List<ExchangeReward> rewards, LocalDate from, ExchangeType exchange) {
         Map<String, List<ExchangeReward>> byMonthAndAsset = new TreeMap<>(rewards.stream()
             .collect(Collectors.groupingBy(r -> YearMonth.from(day(r)) + ":" + r.asset())));
         Map<String, Optional<BigDecimal>> prices = new HashMap<>();
@@ -127,14 +145,7 @@ public class ExchangeRewardSync {
             rows.add(new MonthRow(group.getKey(), group.getValue().getFirst().asset(), last,
                 quantity, eur.setScale(2, RoundingMode.HALF_UP)));
         }
-        writeTransaction.executeWithoutResult(status -> {
-            Account account = accountRepository.findById(accountId).orElseThrow();
-            int written = 0;
-            for (MonthRow row : rows) {
-                if (upsert(account, exchange, row)) written++;
-            }
-            log.info("{} rewards: {} month rows written for account {}", exchange, written, accountId);
-        });
+        return rows;
     }
 
     private record MonthRow(String monthAndAsset, String asset, LocalDate date, BigDecimal quantity,
