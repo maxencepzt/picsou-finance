@@ -3675,6 +3675,7 @@
       "projected": "Passive income expected over 12 months",
       "perMonth": "≈ {{amount}} per month",
       "received": "{{amount}} in dividends received over 12 months",
+      "receivedCrypto": "{{amount}} in crypto rewards over 12 months",
       "sources": "Where it comes from",
       "coverage": "Essential expenses covered",
       "coverageDetail": "{{income}} per month against {{expenses}} of essential expenses.",
@@ -3711,6 +3712,7 @@
         "both": "Dividends received over the last 12 months, forecast for the next 12"
       },
       "received": "Dividends received",
+      "receivedCrypto": "Crypto rewards received",
       "forecastOf": "{{source}} (forecast)",
       "empty": "Nothing over this period.",
       "receivedError": "Could not load the dividends received.",

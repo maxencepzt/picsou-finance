@@ -3675,6 +3675,7 @@
       "projected": "Erwartete passive Einkünfte über 12 Monate",
       "perMonth": "≈ {{amount}} pro Monat",
       "received": "{{amount}} Dividenden in den letzten 12 Monaten erhalten",
+      "receivedCrypto": "{{amount}} Krypto-Prämien in den letzten 12 Monaten",
       "sources": "Woher sie kommen",
       "coverage": "Deckung der Grundausgaben",
       "coverageDetail": "{{income}} pro Monat gegenüber {{expenses}} Grundausgaben.",
@@ -3711,6 +3712,7 @@
         "both": "Erhaltene Dividenden der letzten 12 Monate, Prognose für die nächsten 12"
       },
       "received": "Erhaltene Dividenden",
+      "receivedCrypto": "Erhaltene Krypto-Prämien",
       "forecastOf": "{{source}} (Prognose)",
       "empty": "Nichts in diesem Zeitraum.",
       "receivedError": "Die erhaltenen Dividenden konnten nicht geladen werden.",

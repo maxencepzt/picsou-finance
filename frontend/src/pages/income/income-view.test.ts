@@ -45,10 +45,10 @@ describe('income view', () => {
 
     const both = incomeChartRows(forecast, received, 'both')
     expect(both).toHaveLength(23)
-    expect(both[0]).toEqual({ month: '2025-12', received: 6, dividends: null, scpi: null, rent: null, interest: null })
+    expect(both[0]).toEqual({ month: '2025-12', received: 6, receivedCrypto: 0, dividends: null, scpi: null, rent: null, interest: null })
     expect(both.find((r) => r.month === '2026-03')?.received).toBe(6.5)
     // The current month carries what already landed and what is still forecast.
-    expect(both[11]).toEqual({ month: '2026-11', received: 3, dividends: 10, scpi: 0, rent: 0, interest: 0 })
+    expect(both[11]).toEqual({ month: '2026-11', received: 3, receivedCrypto: 0, dividends: 10, scpi: 0, rent: 0, interest: 0 })
     expect(both[22]).toMatchObject({ month: '2027-10', received: null, dividends: 21 })
 
     const past = incomeChartRows(forecast, received, 'past')
@@ -58,6 +58,20 @@ describe('income view', () => {
     const next = incomeChartRows(forecast, received, 'next')
     expect(next.map((r) => r.month)).toEqual(forecast.map((m) => m.month))
     expect(next.every((r) => r.received === null)).toBe(true)
+  })
+
+  it('keeps crypto rewards apart from share dividends on the received side', () => {
+    const forecast = Array.from({ length: 12 }, (_, i) => month(i < 2 ? `2026-${11 + i}` : `2027-${String(i - 1).padStart(2, '0')}`))
+    const received = [
+      { receivedDate: '2026-06-05', amountEur: 26, accountType: 'PEA' },
+      { receivedDate: '2026-06-30', amountEur: 0.4, accountType: 'CRYPTO' },
+      { receivedDate: '2026-07-01', amountEur: 0.01, accountType: 'CRYPTO' },
+    ] as ReceivedDividend[]
+
+    const rows = incomeChartRows(forecast, received, 'past')
+
+    expect(rows.find((r) => r.month === '2026-06')).toMatchObject({ received: 26, receivedCrypto: 0.4 })
+    expect(rows.find((r) => r.month === '2026-07')).toMatchObject({ received: 0, receivedCrypto: 0.01 })
   })
 
   it('merges dividends and capitalisations, soonest first, capped', () => {

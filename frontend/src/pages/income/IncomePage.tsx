@@ -21,7 +21,7 @@ import type { DividendCadence } from '@/types/api'
 import type { IncomeSource } from '@/features/income/passive-income'
 import { IncomeMonthsChart } from './IncomeMonthsChart'
 import {
-  INCOME_SOURCES, SOURCE_COLORS, incomeBySource, incomeChartRows, nextPayments, receivedTotal, type IncomePayment, type IncomePeriod,
+  INCOME_SOURCES, SOURCE_COLORS, incomeBySource, incomeChartRows, isCryptoReward, nextPayments, receivedTotal, type IncomePayment, type IncomePeriod,
 } from './income-view'
 
 /** Passive income over the next twelve months (where it comes from, when it lands, who pays it), beside the dividends received over the last twelve. */
@@ -43,7 +43,8 @@ export function IncomePage() {
 
   const { totals } = income
   const receivedRows = received.data ?? []
-  const receivedSum = receivedTotal(receivedRows)
+  const receivedSum = receivedTotal(receivedRows.filter((r) => !isCryptoReward(r)))
+  const cryptoSum = receivedTotal(receivedRows.filter(isCryptoReward))
   const unconverted = receivedRows.filter((r) => r.amountEur == null).length
   if (totals.total === 0 && receivedRows.length === 0) {
     return (
@@ -84,6 +85,7 @@ export function IncomePage() {
             <span className="text-[13px] text-muted-foreground">
               {t('income.hero.perMonth', { amount: money.amount(perMonth) })}
               {receivedSum > 0 && <> · {t('income.hero.received', { amount: money.amount(receivedSum) })}</>}
+              {cryptoSum > 0 && <> · {t('income.hero.receivedCrypto', { amount: money.amount(cryptoSum) })}</>}
             </span>
           </div>
 

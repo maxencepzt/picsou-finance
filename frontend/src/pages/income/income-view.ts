@@ -38,6 +38,12 @@ export interface IncomeSourceRow {
 const dividendSource = (d: UpcomingDividend): IncomeSource => (d.source === 'SCPI' ? 'scpi' : 'dividends')
 const paymentDate = (d: UpcomingDividend) => d.paymentDate ?? d.expectedDate
 
+/**
+ * A reward credited on a crypto account (staking, Earn interest), which the backend records as a
+ * dividend. The page keeps it apart from share dividends so neither hides the other.
+ */
+export const isCryptoReward = (r: ReceivedDividend) => r.accountType === 'CRYPTO'
+
 /** Dividends credited over the window, in euros whatever the account currency; a credit with no rate (`amountEur` null) is left out. */
 export function receivedTotal(rows: ReceivedDividend[]): number {
   return rows.reduce((sum, r) => sum + (r.amountEur ?? 0), 0)
@@ -47,11 +53,12 @@ export function receivedTotal(rows: ReceivedDividend[]): number {
 export type IncomePeriod = 'past' | 'next' | 'both'
 
 /** One bar of the months chart. A null value is a side the month does not belong to (no bar, no tooltip row). */
-export type IncomeChartRow = { month: string; received: number | null } & Record<IncomeSource, number | null>
+export type IncomeChartRow = { month: string; received: number | null; receivedCrypto: number | null } & Record<IncomeSource, number | null>
 
 /**
- * The bars of the months chart. The twelve months up to the current one carry the dividends received
- * (by credit date, in euros, credits with no rate left out); the twelve from the current one carry the
+ * The bars of the months chart. The twelve months up to the current one carry the dividends and the
+ * crypto rewards received, apart (by credit date, in euros, credits with no rate left out); the twelve
+ * from the current one carry the
  * forecast by source. The current month belongs to both, so "both" shows 23 bars.
  */
 export function incomeChartRows(forecast: IncomeMonth[], received: ReceivedDividend[], period: IncomePeriod): IncomeChartRow[] {
@@ -59,16 +66,19 @@ export function incomeChartRows(forecast: IncomeMonth[], received: ReceivedDivid
   const past = period === 'next' ? [] : nextMonths(new Date(year, month - 12, 1))
   const next = new Map(period === 'past' ? [] : forecast.map((m) => [m.month, m]))
   const receivedByMonth = new Map<string, number>()
+  const cryptoByMonth = new Map<string, number>()
   for (const r of received) {
     if (r.amountEur == null) continue
     const key = r.receivedDate.slice(0, 7)
-    receivedByMonth.set(key, (receivedByMonth.get(key) ?? 0) + r.amountEur)
+    const byMonth = isCryptoReward(r) ? cryptoByMonth : receivedByMonth
+    byMonth.set(key, (byMonth.get(key) ?? 0) + r.amountEur)
   }
   return [...new Set([...past, ...next.keys()])].map((key) => {
     const f = next.get(key)
     return {
       month: key,
       received: past.includes(key) ? (receivedByMonth.get(key) ?? 0) : null,
+      receivedCrypto: past.includes(key) ? (cryptoByMonth.get(key) ?? 0) : null,
       dividends: f ? f.dividends : null,
       scpi: f ? f.scpi : null,
       rent: f ? f.rent : null,
