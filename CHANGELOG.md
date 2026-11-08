@@ -25,6 +25,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Banque Populaire and Caisse d'Epargne operations are categorized and their recurring payments detected.** These
+  syncs imported operations without running the categorization rules or the merchant-name cleanup, and never ran the
+  recurring-payment detection, so members on these banks saw no category from their rules and no recurring payment.
+  Each sync now does both, after its card-settlement and loan tagging, and never overwrites a category already set.
+
 - **Savings interest projection counted early-year movements twice.** When the first balance
   snapshot of the year came after some of that year's deposits or withdrawals (a livret connected
   mid-year, or a snapshot rebuilt from the ledger), those movements were already in the opening

@@ -19,6 +19,7 @@ import com.picsou.repository.DebtRepository;
 import com.picsou.repository.FamilyMemberRepository;
 import com.picsou.repository.TransactionRepository;
 import com.picsou.service.budget.CategorizationService;
+import com.picsou.service.budget.RecurringDetectionService;
 import com.picsou.service.budget.CategoryService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -49,6 +50,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -80,6 +84,7 @@ class BanquePopulaireSyncServiceTest {
     @Mock DebtRepository debtRepository;
     @Mock AccountService accountService;
     @Mock CategorizationService categorizationService;
+    @Mock RecurringDetectionService recurringDetectionService;
     @Mock CategoryService categoryService;
     @Mock CaisseEpargnePerService perService;
     @Mock BankLogoResolver logoResolver;
@@ -104,14 +109,14 @@ class BanquePopulaireSyncServiceTest {
         }).when(txTemplate).executeWithoutResult(any());
         service = new BanquePopulaireSyncService(
             port, sessionRepository, accountRepository, transactionRepository, memberRepository, debtRepository,
-            accountService, categorizationService, categoryService, encryption, txTemplate, Runnable::run,
+            accountService, categorizationService, categoryService, recurringDetectionService, encryption, txTemplate, Runnable::run,
             perService, logoResolver, Clock.fixed(TODAY.atStartOfDay(ZoneOffset.UTC).toInstant(), ZoneOffset.UTC));
     }
 
     private BanquePopulaireSyncService serviceWith(BankLogoResolver resolver) {
         return new BanquePopulaireSyncService(
             port, sessionRepository, accountRepository, transactionRepository, memberRepository, debtRepository,
-            accountService, categorizationService, categoryService, encryption, txTemplate, Runnable::run,
+            accountService, categorizationService, categoryService, recurringDetectionService, encryption, txTemplate, Runnable::run,
             perService, resolver, Clock.fixed(TODAY.atStartOfDay(ZoneOffset.UTC).toInstant(), ZoneOffset.UTC));
     }
 
@@ -160,6 +165,58 @@ class BanquePopulaireSyncServiceTest {
             assertThat(row.getAmount()).isEqualByComparingTo("1.25");
             assertThat(row.getDescription()).isEqualTo("INTERETS");
         });
+    }
+
+    @Test
+    void queueSync_runsTheMembersCategorizationOverTheImportedRows() {
+        arrangeCommittableSync(current());
+        // The categorizer stamps the clean merchant name the recurring detection groups on.
+        doAnswer(invocation -> {
+            Transaction row = invocation.getArgument(0);
+            row.setMerchantLabel("Supermarche");
+            return false;
+        }).when(categorizationService).autoCategorize(any(Transaction.class),
+            nullable(CategorizationService.CategorizationContext.class));
+
+        service.queueSync(7L);
+
+        verify(categorizationService).loadContext(7L);
+        verify(transactionRepository, times(2)).saveAllAndFlush(transactionsCaptor.capture());
+        assertThat(transactionsCaptor.getAllValues().get(1)).singleElement().satisfies(row -> {
+            assertThat(row.getExternalId()).isEqualTo("bp_t1");
+            assertThat(row.getMerchantLabel()).isEqualTo("Supermarche");
+        });
+    }
+
+    @Test
+    void queueSync_savesNoRowTheCategorizationLeftUnchanged() {
+        arrangeCommittableSync(current());
+
+        service.queueSync(7L);
+
+        verify(transactionRepository, times(1)).saveAllAndFlush(any());
+    }
+
+    @Test
+    void queueSync_detectsRecurringPaymentsOnceTheImportIsCommitted() {
+        BanquePopulaireSession session = arrangeCommittableSync(current());
+
+        service.queueSync(7L);
+
+        verify(recurringDetectionService).detect(7L, TODAY);
+        assertThat(session.getSyncStatus()).isEqualTo(BanquePopulaireSyncStatus.SUCCESS);
+    }
+
+    @Test
+    void queueSync_aFailedRecurringDetectionLeavesTheSyncSuccessful() {
+        BanquePopulaireSession session = arrangeCommittableSync(current());
+        doThrow(new IllegalStateException("boom")).when(recurringDetectionService).detect(7L, TODAY);
+
+        service.queueSync(7L);
+
+        assertThat(session.getSyncStatus()).isEqualTo(BanquePopulaireSyncStatus.SUCCESS);
+        // The session is read to start and to commit, never a third time to record a failure.
+        verify(sessionRepository, times(2)).findByIdAndMemberIdForUpdate(session.getId(), 7L);
     }
 
     @Test

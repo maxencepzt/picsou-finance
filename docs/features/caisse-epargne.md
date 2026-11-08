@@ -1,6 +1,6 @@
 # Feature: Caisse d'Epargne sync
 
-> Last updated: 2026-11-07
+> Last updated: 2026-11-08
 > Status: sidecar, backend and frontend are in the codebase. `docker/docker-compose.yml` runs the `caisse-epargne-auth` sidecar; `application.yml` gives the backend its URL. The user connects from the Sync page (Caisse d'Epargne tab) or the add-account modal: a pop-up shows the bank's virtual keypad, the user clicks his own digits, then approves in Sécur'Pass. There is no keypad table: the sidecar never maps a key image to a digit. Sync is on demand only. Tested offline only: no test covers a full login against the real bank, and the card-transaction `accountIds` is still unverified live (see the sidecar README).
 
 ## Context
@@ -65,6 +65,12 @@ On the current account the loan is debited from, two kinds of rows are categoriz
 - **Installment:** for each due date `firstDueDate + k months` up to the last due date, a debit equal to the monthly payment (±0.01), dated within ±5 days → `credit` (expense, named *Crédit*). That default category is created for the member on first need; an archived one is never revived, and the rows then stay untagged.
 - Rows are matched only among this import's transactions. The 365-day window limits paging, not rows: every row on a page that is read is imported, and the account is paged to the end unless rows are seen newest first (see below). A disbursement or installment dated before the window is therefore tagged when its row is imported and matches the rules above. With newest-first paging, only the last page read reaches past the window, so a loan signed more than about a year before the first sync usually gets no disbursement tag and most of its older installments stay untagged.
 - Exactly one candidate per expected event, else nothing is tagged. A row that already has a category is never overwritten. Re-running the sync changes nothing. Only counts are logged.
+
+### Categorization and recurring payments
+
+After the card-settlement and loan tagging above, every imported row goes through the member's categorization, as Enable Banking and the other sidecar imports do (`BpceSyncEngine.categorizeRows`): the clean merchant name is stamped, then the member's rules and, failing them, the brand knowledge base assign a category. It runs last so those structural tags keep precedence, and like them it never overwrites a row that already has a category, a manual choice included. Only the rows it changed are saved.
+
+Once the import has committed, recurring-payment detection runs for the member (`detectRecurring`), as after an Enable Banking sync. It groups on the merchant name stamped above, so before this both steps were missing: a Banque Populaire or Caisse d'Epargne member had no categories from rules and no recurring payment detected. A detection failure is logged and never fails a sync that already succeeded. This applies to Banque Populaire too, which runs the same engine.
 
 - External account ids and transaction ids are prefixed `ce_`. Transactions are upserted by `(account, externalId)`; rows are never deleted, manual rows are never touched. Each sync reads at least the last 365 days of current-account, Livret A, LDDS, PEL and LEP transactions (whole pages), so a long-held account imports at least its last year on the first sync and older stored rows stay untouched. They are requested ordered by accounting date; the direction is not confirmed live. Paging stops early only after rows are seen newest first, otherwise the account is paged to the end. More than 60 pages before the window is reached (or to the end) fails with `UPSTREAM_FORMAT_CHANGED` `cause=page-cap`. Cards have no window and are paged to the end under the same cap. All reads share the 100 s `/accounts` deadline, so a heavy combination can fail as `UPSTREAM_UNAVAILABLE` (`accounts deadline exceeded`) before any page cap.
 - Anything unexpected refuses the whole snapshot with `UPSTREAM_FORMAT_CHANGED`: unknown `kind`, non-EUR, missing balance, duplicate account, `snapshotComplete=false`, empty list, id over 100 characters.

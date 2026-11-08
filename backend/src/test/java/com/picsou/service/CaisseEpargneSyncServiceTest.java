@@ -30,6 +30,7 @@ import com.picsou.repository.SavingsInterestConfigRepository;
 import com.picsou.repository.ScpiPositionRepository;
 import com.picsou.repository.TransactionRepository;
 import com.picsou.service.budget.CategorizationService;
+import com.picsou.service.budget.RecurringDetectionService;
 import com.picsou.service.budget.CategoryService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -84,6 +85,7 @@ class CaisseEpargneSyncServiceTest {
     @Mock DebtRepository debtRepository;
     @Mock AccountService accountService;
     @Mock CategorizationService categorizationService;
+    @Mock RecurringDetectionService recurringDetectionService;
     @Mock CategoryService categoryService;
     @Mock CaisseEpargnePerService perService;
     @Mock CryptoEncryption encryption;
@@ -1894,7 +1896,7 @@ class CaisseEpargneSyncServiceTest {
     ) {
         return new CaisseEpargneSyncService(
             port, sessionRepository, accountRepository, transactionRepository,
-            memberRepository, debtRepository, snapshotService, categorizationService, categoryService, encryption,
+            memberRepository, debtRepository, snapshotService, categorizationService, categoryService, recurringDetectionService, encryption,
             template, executor,
             perService, Clock.fixed(TODAY.atStartOfDay(ZoneOffset.UTC).toInstant(), ZoneOffset.UTC));
     }
