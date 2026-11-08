@@ -32,7 +32,7 @@ The Earn lists are paged (`current`, `size` = 100, the maximum) until `total` ro
 
 ### Exchange rewards (passive income)
 
-An exchange adapter may implement `CryptoExchangePort.fetchRewards(key, secret, since)`, which returns every yield credit (staking, Earn interest) since `since`; the default returns none. `BinanceAdapter` reads four histories, each in windows of 89 days because Binance refuses a range over 3 months (windows stop 1 ms short of the next one, since Binance ranges include both ends), paged by 100:
+An exchange adapter may implement `CryptoExchangePort.fetchRewards(key, secret, since)`, which returns every yield credit (staking, Earn interest) since `since`; the default returns none. `BinanceAdapter` reads four histories, each in windows of 30 days because the flexible history refuses a longer range with `-6021 Query time range too large` (it did on 89 days, although its docs allow 3 months); windows stop 1 ms short of the next one, since Binance ranges include both ends, paged by 100:
 
 - `GET /sapi/v1/simple-earn/flexible/history/rewardsRecord`, once with `type=BONUS` and once with `type=REALTIME` (the parameter is mandatory and flexible products pay both kinds), amount in `rewards`;
 - `GET /sapi/v1/simple-earn/locked/history/rewardsRecord`, amount in `amount`;

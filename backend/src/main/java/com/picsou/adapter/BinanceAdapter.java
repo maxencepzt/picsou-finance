@@ -34,8 +34,11 @@ public class BinanceAdapter implements CryptoExchangePort {
     /** Simple Earn position endpoints cap a page at 100 rows. */
     private static final int EARN_PAGE_SIZE = 100;
 
-    /** Reward histories refuse a range over 3 months; 89 days stays under it in every month. */
-    private static final Duration REWARD_WINDOW = Duration.ofDays(89);
+    /**
+     * The flexible rewards history refuses a range over 30 days ({"code":-6021,"msg":"Query time
+     * range too large"} on 89 days), whatever its docs say; 30 days suits all four histories.
+     */
+    private static final Duration REWARD_WINDOW = Duration.ofDays(30);
 
     private final WebClient webClient;
     private final Clock clock;
@@ -100,7 +103,7 @@ public class BinanceAdapter implements CryptoExchangePort {
     /**
      * Simple Earn and ETH staking rewards since {@code since}: flexible products pay two kinds
      * (BONUS tiered APR and REALTIME APR, each its own query), locked products and ETH staking
-     * one each. Every history refuses a range over 3 months, so the period is read in windows.
+     * one each. The histories refuse long ranges, so the period is read in 30-day windows.
      */
     @Override
     public List<ExchangeReward> fetchRewards(String apiKey, String apiSecret, Instant since) {

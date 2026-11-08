@@ -14,6 +14,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
@@ -165,18 +166,23 @@ class BinanceAdapterTest {
                 tuple("USDT", "0.02", Instant.ofEpochMilli(1751328000000L)),
                 tuple("EGLD", "0.003", Instant.ofEpochMilli(1751414400000L)),
                 tuple("ETH", "0.0001", Instant.ofEpochMilli(1751414400000L)));
-        // Two windows of at most 89 days cover 2026-06-01 to now without touching: Binance ranges
-        // include both ends, so a credit stamped on a shared boundary would be read twice.
-        List<String> ranges = requests.stream()
+        // Six windows of 30 days cover 2026-06-01 to now without touching: Binance refuses a
+        // longer range (-6021 on 89 days), and its ranges include both ends, so a credit stamped
+        // on a shared boundary would be read twice.
+        List<long[]> ranges = requests.stream()
             .filter(r -> r.url().getPath().endsWith("locked/history/rewardsRecord"))
-            .map(r -> r.url().getQuery().replaceAll(".*(startTime=\\d+&endTime=\\d+).*", "$1"))
+            .map(r -> new long[] {
+                Long.parseLong(r.url().getQuery().replaceAll(".*startTime=(\\d+).*", "$1")),
+                Long.parseLong(r.url().getQuery().replaceAll(".*endTime=(\\d+).*", "$1"))})
             .toList();
-        assertThat(ranges).containsExactly(
-            "startTime=" + Instant.parse("2026-06-01T00:00:00Z").toEpochMilli()
-                + "&endTime=" + (Instant.parse("2026-08-29T00:00:00Z").toEpochMilli() - 1),
-            "startTime=" + Instant.parse("2026-08-29T00:00:00Z").toEpochMilli()
-                + "&endTime=" + Instant.parse("2026-11-08T12:00:00Z").toEpochMilli());
-        assertThat(requests).hasSize(8);
+        assertThat(ranges).hasSize(6);
+        assertThat(ranges.getFirst()[0]).isEqualTo(Instant.parse("2026-06-01T00:00:00Z").toEpochMilli());
+        assertThat(ranges.getLast()[1]).isEqualTo(Instant.parse("2026-11-08T12:00:00Z").toEpochMilli());
+        for (int i = 0; i < ranges.size(); i++) {
+            assertThat(ranges.get(i)[1] - ranges.get(i)[0]).isLessThan(Duration.ofDays(30).toMillis());
+            if (i > 0) assertThat(ranges.get(i)[0]).isEqualTo(ranges.get(i - 1)[1] + 1);
+        }
+        assertThat(requests).hasSize(24);
     }
 
     private BinanceAdapter adapterRouting(Function<String, Mono<ClientResponse>> route) {
