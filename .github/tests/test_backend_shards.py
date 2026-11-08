@@ -158,8 +158,9 @@ class ExactlyOnceTest(unittest.TestCase):
 
 class ConfinedPathTest(unittest.TestCase):
     def test_a_path_outside_the_checkout_and_the_temporary_directories_is_refused(self):
+        reports = tempfile.gettempdir()
         with mock.patch.dict(os.environ, {"RUNNER_TEMP": ""}), self.assertRaises(SystemExit):
-            shards.write_timings(tempfile.gettempdir(), "/etc/backend-timings.json")
+            shards.write_timings(reports, "/etc/backend-timings.json")
 
     def test_a_path_in_a_temporary_directory_is_accepted(self):
         with tempfile.TemporaryDirectory() as folder:
