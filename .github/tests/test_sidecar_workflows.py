@@ -416,6 +416,8 @@ SELECTOR = "changes"
 GATE = "ci-ok"
 PUBLISH = "docker"
 NON_BLOCKING = {"helm-chart"}
+# Path filters that select no job of their own.
+HELPER_FILTERS = {"workflows", "release-deps"}
 
 
 def _selectable(jobs):
@@ -465,7 +467,7 @@ def _selected(jobs, path):
     filtered = {
         name
         for name, patterns in _filters(jobs).items()
-        if name != "workflows" and any(_glob_matches(pattern, path) for pattern in patterns)
+        if name not in HELPER_FILTERS and any(_glob_matches(pattern, path) for pattern in patterns)
     }
     selection = _select_sidecars([path] if "sidecar" in filtered else [], changes=sorted(filtered))
     filtered = set(json.loads(selection["jobs"]))
@@ -479,7 +481,9 @@ def _selected(jobs, path):
 
 
 def _gate(needs):
-    script = _run_commands(_load(CI_WORKFLOW)["jobs"][GATE])
+    """Runs the gate's job-result step; the completeness steps need real reports."""
+    steps = _load(CI_WORKFLOW)["jobs"][GATE]["steps"]
+    script = _expand(next(s for s in steps if s.get("name") == "Every selected job succeeded")["run"])
     return subprocess.run(
         ["bash", "-c", script],
         env={**os.environ, "NEEDS": json.dumps(needs)},
@@ -500,6 +504,20 @@ class CiJobSelectionTest(unittest.TestCase):
                 )
                 self.assertEqual(concurrency["cancel-in-progress"], "${{ github.event_name == 'pull_request' }}")
 
+    def test_codeql_selection_fails_open(self):
+        # Every way the file list can be missing or too big for an env var must analyse all languages.
+        jobs = _load(CODEQL_WORKFLOW)["jobs"]
+        steps = {step.get("id"): step for step in jobs["select"]["steps"]}
+        self.assertIs(steps["filter"]["continue-on-error"], True)
+        env = steps["languages"]["env"]
+        self.assertEqual(env["ALL"], "${{ steps.filter.outcome != 'success' || steps.filter.outputs.changed_count >= 1000 }}")
+        self.assertEqual(
+            env["FILES"],
+            "${{ steps.filter.outputs.changed_count < 1000 && steps.filter.outputs.changed_files || '[]' }}",
+        )
+        # An empty selection (docs only) skips the matrix instead of failing on an empty one.
+        self.assertEqual(jobs["analyze"]["if"], "needs.select.outputs.matrix != '[]'")
+
     def test_every_job_runs_only_when_the_selector_picks_it(self):
         jobs = _load(CI_WORKFLOW)["jobs"]
         outputs = jobs[SELECTOR]["outputs"]
@@ -507,8 +525,10 @@ class CiJobSelectionTest(unittest.TestCase):
             "all": "${{ steps.filter.outcome == 'skipped' }}",
             "jobs": "${{ steps.sidecars.outputs.jobs }}",
             "sidecar-matrix": "${{ steps.sidecars.outputs.matrix }}",
+            "backend-timings-key": "${{ steps.backend-timings.outputs.cache-matched-key }}",
+            "release-cases": "${{ steps.release.outputs.release-cases }}",
         })
-        self.assertEqual(set(_filters(jobs)) - {"workflows"}, _selectable(jobs))
+        self.assertEqual(set(_filters(jobs)) - HELPER_FILTERS, _selectable(jobs))
         self.assertEqual(
             _filter_step(jobs)["if"],
             "github.event_name == 'pull_request' && github.event.pull_request.changed_files < 3000",
@@ -685,12 +705,66 @@ class CiJobSelectionTest(unittest.TestCase):
                 result = _gate(state)
                 self.assertEqual(result.returncode == 0, green, result.stderr)
 
+    def test_the_backend_runs_in_three_shards_that_ci_ok_checks_ran_every_class_once(self):
+        jobs = _load(CI_WORKFLOW)["jobs"]
+        backend = jobs["backend"]
+        self.assertEqual(backend["strategy"], {"fail-fast": False, "matrix": {"shard": [1, 2, 3]}})
+        run = next(step for step in backend["steps"] if "make test-backend" in step.get("run", ""))
+        self.assertEqual(run["env"], {
+            "PICSOU_REQUIRE_DOCKER_TESTS": "true",
+            "SHARD_INCLUDES": "${{ steps.shard.outputs.includes }}",
+            "SHARD_EXCLUDES": "${{ steps.shard.outputs.excludes }}",
+        })
+        select = next(step for step in backend["steps"] if step.get("id") == "shard")
+        self.assertIn("--shards ${{ strategy.job-total }} --shard ${{ matrix.shard }}", select["run"])
+        upload = next(step for step in backend["steps"] if "upload-artifact" in step.get("uses", ""))
+        self.assertEqual(upload["with"]["name"], "surefire-${{ matrix.shard }}")
+        self.assertEqual(upload["with"]["if-no-files-found"], "error")
+        # A re-run shard replaces its first attempt's reports instead of failing on the name.
+        self.assertIs(upload["with"]["overwrite"], True)
+
+        steps = jobs[GATE]["steps"]
+        self.assertEqual(steps[0]["name"], "Every selected job succeeded")
+        self.assertNotIn("if", steps[0])
+        gated = [step for step in steps if "needs.backend" in step.get("if", "")]
+        for step in gated:
+            with self.subTest(step=step["name"]):
+                self.assertIn("needs.backend.result == 'success'", step["if"])
+        self.assertLessEqual({
+            "Download the backend test reports", "Require every backend test class to run exactly once",
+            "Require the PostgreSQL tests",
+        }, {step["name"] for step in gated})
+        # One sparse checkout serves the backend and the frontend completeness checks; a second
+        # one would clean away the files the first brought in.
+        checkouts = [step for step in steps if "actions/checkout" in step.get("uses", "")]
+        self.assertEqual(len(checkouts), 1)
+        self.assertEqual(checkouts[0]["with"]["sparse-checkout"].split("\n"),
+                         ["backend/src/test/java", "frontend/src", ".github/scripts"])
+        self.assertEqual(checkouts[0]["if"], "needs.backend.result == 'success' || needs.frontend.result == 'success'")
+        self.assertLess(steps.index(checkouts[0]), min(steps.index(step) for step in gated if step is not checkouts[0]))
+        download = next(step for step in gated if "download-artifact" in step.get("uses", ""))
+        self.assertEqual(download["with"], {"pattern": "surefire-*", "path": "${{ runner.temp }}/surefire"})
+        commands = "\n".join(step.get("run", "") for step in gated)
+        self.assertIn('python3 .github/scripts/backend_shards.py --check "$RUNNER_TEMP/surefire"', commands)
+        self.assertIn("11 service.ScpiSyncSessionPostgresTest", commands)
+
+        # One lookup in `changes`; the shards restore exactly that key, so a re-run splits the same.
+        lookup = next(step for step in jobs[SELECTOR]["steps"] if step.get("id") == "backend-timings")
+        self.assertIn("restore-keys", lookup["with"])
+        restore = next(step for step in backend["steps"] if "actions/cache/restore" in step.get("uses", ""))
+        self.assertEqual(restore["if"], "needs.changes.outputs.backend-timings-key != ''")
+        self.assertEqual(restore["with"]["key"], "${{ needs.changes.outputs.backend-timings-key }}")
+        self.assertNotIn("restore-keys", restore["with"])
+        save = next(step for step in steps if "actions/cache/save" in step.get("uses", ""))
+        self.assertEqual({lookup["with"]["path"], restore["with"]["path"]}, {save["with"]["path"]})
+        self.assertNotIn("PostgresTest", "\n".join(step.get("run", "") for step in backend["steps"]))
+
     def test_ci_runs_the_make_targets_contributors_run(self):
         jobs = _load(CI_WORKFLOW)["jobs"]
         expected = {
             "backend": "make test-backend SOFIDY_PYTHON=python3",
-            "frontend": "make test-frontend",
-            "e2e": "make test-e2e PLAYWRIGHT_DEPS=--with-deps",
+            "frontend": "make lint-frontend",
+            "e2e": "make test-e2e",
             "sidecar-base": "make test-sidecar-base",
             "sidecar": "make test-sidecar SIDECAR=${{ matrix.service }} ARCH=${{ matrix.arch }}",
             "compose-sidecar-build": 'make build SERVICES="tr-auth bourso-auth amex-auth"',
@@ -699,6 +773,19 @@ class CiJobSelectionTest(unittest.TestCase):
             with self.subTest(job=job):
                 lines = [line.strip() for step in jobs[job]["steps"] for line in step.get("run", "").splitlines()]
                 self.assertIn(command, lines)
+
+    def test_frontend_ci_splits_lint_and_sharded_unit_tests(self):
+        job = _load(CI_WORKFLOW)["jobs"]["frontend"]
+        lines = [line.strip() for step in job["steps"] for line in step.get("run", "").splitlines()]
+
+        self.assertEqual(job["strategy"], {"fail-fast": False, "matrix": {"include": [
+            {"task": "lint"}, {"task": "test-1", "shard": 1, "total": 2}, {"task": "test-2", "shard": 2, "total": 2},
+        ]}})
+        self.assertIn(
+            "make unit-frontend SHARD=${{ matrix.shard }}/${{ matrix.total }}"
+            " VITEST_JSON=${{ runner.temp }}/vitest-${{ matrix.task }}.json",
+            lines,
+        )
 
     def test_the_demo_playwright_suite_runs_once(self):
         jobs = _load(CI_WORKFLOW)["jobs"]
@@ -728,6 +815,28 @@ def _dockerfile_stages(path):
         if stages and line.strip() and not line.lstrip().startswith("#"):
             stages[-1].append(line)
     return stages
+
+
+class JobTimeoutTest(unittest.TestCase):
+    """A hung step otherwise holds a runner for GitHub's 6-hour default."""
+
+    # Minutes a job may be given: about twice its slowest observed run. Per job overrides the file's cap.
+    FILE_CAP = {"ci.yml": 20, "codeql.yml": 60, "docker.yml": 30}
+    JOB_CAP = {("ci.yml", "e2e"): 30}  # bimodal: most runs take 2 min, the slow tail 9-15 min
+
+    def test_every_job_has_a_bounded_timeout(self):
+        workflows = sorted((ROOT / ".github/workflows").glob("*.yml"))
+        self.assertEqual({w.name for w in workflows} - set(self.FILE_CAP) - {"pr-size.yml"}, set(), "give the new workflow a cap")
+        for workflow in workflows:
+            for name, job in _load(workflow)["jobs"].items():
+                if "uses" in job:
+                    continue  # actionlint rejects timeout-minutes on a job that calls a reusable workflow
+                with self.subTest(workflow=workflow.name, job=name):
+                    timeout = job.get("timeout-minutes")
+                    self.assertIs(type(timeout), int)  # not a bool, a string or an expression
+                    self.assertGreater(timeout, 0)
+                    cap = self.JOB_CAP.get((workflow.name, name), self.FILE_CAP.get(workflow.name, 20))
+                    self.assertLessEqual(timeout, cap)
 
 
 class AppImageBuildTest(unittest.TestCase):

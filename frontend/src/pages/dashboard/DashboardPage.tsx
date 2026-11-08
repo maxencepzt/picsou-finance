@@ -27,7 +27,12 @@ import { UpcomingCard } from './UpcomingCard'
 
 type WealthMode = 'net' | 'gross' | 'financial'
 
-const EXCLUDED_FINANCIAL = new Set(['CHECKING', 'LOAN'])
+// Financial wealth = liquid and investable assets only. Checking is the day-to-day
+// cash excluded by design; real estate is tangible property; physical precious
+// metals are tangible movables; OTHER has an unknown nature and must not inflate
+// the figure by default. SCPI stays in: a share of a real-estate fund is an
+// intangible, exchangeable security.
+const EXCLUDED_FINANCIAL = new Set(['CHECKING', 'LOAN', 'REAL_ESTATE', 'PRECIOUS_METALS', 'OTHER'])
 
 const RANGE_MONTHS: Record<TimeRange, number> = { '24H': 1, '7D': 1, '1M': 1, '3M': 3, YTD: 12, '1Y': 12, ALL: 1200 }
 
@@ -78,11 +83,26 @@ export function DashboardPage() {
     () => data ? [...data.assets.map(d => d.accountId), ...data.liabilities.map(l => l.accountId)] : [],
     [data],
   )
-  // Accounts that carry holdings: the portfolio performance line only.
+  // Accounts that carry holdings: the portfolio performance line only. In "financial" mode it
+  // drops the excluded categories too (a real-estate or metals account carrying holdings).
   const investmentAccountIds = useMemo(
-    () => data?.assets.filter(d => d.hasHoldings).map(d => d.accountId) ?? [],
-    [data],
+    () => data?.assets
+      .filter(d => d.hasHoldings)
+      .filter(d => wealthMode !== 'financial' || !EXCLUDED_FINANCIAL.has(d.accountType))
+      .map(d => d.accountId) ?? [],
+    [data, wealthMode],
   )
+  // The allocation beside the hero follows the same filter as the headline value and the curve,
+  // so it never shows a category the figure excludes; shares are recomputed over that total,
+  // since the backend's cover the whole portfolio.
+  const displayDistribution = useMemo(() => {
+    if (!data) return []
+    if (wealthMode !== 'financial') return data.distribution
+    const filtered = data.distribution.filter(d => !EXCLUDED_FINANCIAL.has(d.accountType))
+    const total = filtered.reduce((s, d) => s + d.balanceEur, 0)
+    if (total <= 0) return filtered.map(d => ({ ...d, percentage: 0 }))
+    return filtered.map(d => ({ ...d, percentage: (d.balanceEur / total) * 100 }))
+  }, [data, wealthMode])
 
   const { data: history } = useHistory(chartAccountIds, RANGE_MONTHS[range])
   const { data: monthHistory } = useHistory(allAccountIds, 1)
@@ -208,7 +228,7 @@ export function DashboardPage() {
             <NetWorthChart data={history ?? []} intraday={intraday ?? []} range={range} totalLabel={modeLabel} />
           </CardContent>
         </Card>
-        <AllocationCard distribution={data.distribution} />
+        <AllocationCard distribution={displayDistribution} />
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">

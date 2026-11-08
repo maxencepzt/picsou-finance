@@ -104,7 +104,8 @@ app:
   envFrom: []
 
   # Mount an RSA private key for Enable Banking from a Secret instead of
-  # generating it in the wizard (which stores it under /data/keys).
+  # generating it in the wizard (which stores it under /data/keys). The file is
+  # 0440, owned by root and by podSecurityContext.fsGroup, which must stay set.
   enableBanking:
     existingSecret: ""
     key: enablebanking.pem
@@ -323,6 +324,10 @@ sidecars:
     enabled: true
     urlEnv: CAISSE_EPARGNE_AUTH_URL
     port: 8001
+    # Diagnostics only: "1" adds the bank's catalogue product name to the log line of a
+    # contract Picsou does not import (see services/caisse-epargne-auth/README.md).
+    env:
+      CE_LOG_PRODUCT_DETAILS: ""
   bourse-direct-auth:
     enabled: true
     urlEnv: BOURSE_DIRECT_AUTH_URL
