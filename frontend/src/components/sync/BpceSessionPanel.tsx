@@ -513,14 +513,16 @@ export function BpceSessionPanel({
             <div className="space-y-1.5">
               <p className="font-medium text-foreground">{t(key("unsupportedTitle"))}</p>
               <p className="text-xs text-muted-foreground">{t(key("unsupportedHint"))}</p>
-              {/* Family code only: the contract id is never shown. */}
+              {/* Family and sub-family codes only: the contract id is never shown. */}
               <ul className="flex flex-wrap gap-1.5">
                 {unsupported.map((contract, index) => (
                   <li
                     key={`${contract.familyCode}-${index}`}
                     className="rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-foreground tabular-nums"
                   >
-                    {contract.familyCode}
+                    {contract.subFamilyCode
+                      ? `${contract.familyCode}/${contract.subFamilyCode}`
+                      : contract.familyCode}
                   </li>
                 ))}
               </ul>
