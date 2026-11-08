@@ -6,6 +6,15 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Picsou</title>
+    <!-- Installable app (PWA): the manifest for Android and desktop, the apple-* tags for the iOS
+         home screen, which ignores the manifest's icons. The colours are the dark theme's background. -->
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <meta name="theme-color" content="#0a0c10" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Picsou" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
     <script src="/theme-init.js"></script>
     <!-- Boot indicator for the wait before the first render (main.tsx renders once the language
          bundle is loaded). Inline because index.css may not be loaded yet. Same 200 ms reveal delay

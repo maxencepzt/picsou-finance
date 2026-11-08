@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Picsou installs as an app.** On Android and desktop, Chrome and Edge offer *Install app*; on iOS, Safari's
+  *Add to Home Screen* adds it with its icon. It then opens full screen, without the browser's address bar.
+  Installing needs a certificate the device trusts (see the installable-app note for the bundled Caddy).
 - **The projection shows its risks.** A new **Risk** tab on the Analysis page's projection draws the same portfolio and plans over
   4 000 random futures: a fan instead of four steady curves, the range where 8 futures in 10 land, the worst 5 %, the chance of
   ending below what you paid in and of going through a 20 % fall on the way. The volatility each figure rests on is stated.

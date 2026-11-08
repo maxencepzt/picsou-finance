@@ -26,7 +26,7 @@ public final class SpaPaths {
      * with {@code index.html} would hand HTML to a script or stylesheet tag.
      */
     private static final Pattern STATIC_EXTENSION =
-        Pattern.compile("\\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$", Pattern.CASE_INSENSITIVE);
+        Pattern.compile("\\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|json)$", Pattern.CASE_INSENSITIVE);
 
     private SpaPaths() {
     }
