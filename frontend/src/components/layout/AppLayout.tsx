@@ -13,10 +13,13 @@ import { TelemetryConsentDialog } from '@/components/shared/TelemetryConsentDial
 import { SyncAllModal } from '@/components/sync/SyncAllModal'
 import { useAppStore } from '@/stores/app-store'
 import { isSearchShortcut } from '@/lib/platform'
+import { tintMasks } from '@/lib/privacy-dial'
 
 export function AppLayout() {
   const { t } = useTranslation()
   const hasSeenSidebarStylePrompt = useAppStore((s) => s.hasSeenSidebarStylePrompt)
+  const hideAmounts = useAppStore((s) => s.hideAmounts)
+  useEffect(() => (hideAmounts ? tintMasks() : undefined), [hideAmounts])
   const [searchOpen, setSearchOpen] = useState(false)
   const [syncOpen, setSyncOpen] = useState(false)
 

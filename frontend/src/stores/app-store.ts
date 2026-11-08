@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { withPrivacyDial } from '@/lib/privacy-dial'
 
 export type DateFormat = 'locale' | 'iso'
 export type SidebarStyle = 'current' | 'classic'
@@ -48,8 +49,9 @@ export const useAppStore = create<AppState>()(
       setDismissedInstanceStatusFingerprint: (fingerprint) =>
         set({ dismissedInstanceStatusFingerprint: fingerprint }),
       dismissTelemetryConsent: () => set({ telemetryConsentDismissed: true }),
-      toggleHideAmounts: () => set((s) => ({ hideAmounts: !s.hideAmounts })),
-      setHideAmounts: (hidden) => set({ hideAmounts: hidden }),
+      // Both go through the dial so every entry point (eye, palette, settings) rolls the figures.
+      toggleHideAmounts: () => withPrivacyDial(() => set((s) => ({ hideAmounts: !s.hideAmounts }))),
+      setHideAmounts: (hidden) => withPrivacyDial(() => set({ hideAmounts: hidden })),
     }),
     {
       name: 'picsou-app',

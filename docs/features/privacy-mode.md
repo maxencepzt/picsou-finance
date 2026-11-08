@@ -1,6 +1,6 @@
 # Feature: Privacy mode (hiding amounts)
 
-> Last updated: 2026-11-03
+> Last updated: 2026-11-08
 
 ## Context
 
@@ -33,8 +33,31 @@ The budget allocation donut's centre total also uses `money.compact()`, with at 
 fraction digit. The amount and its currency form one centered label, so the locale owns symbol
 placement and the entire total responds immediately to the privacy toggle.
 
+### The dial animation
+
+Flipping the mode rolls every figure on screen like the dials of a safe (`lib/privacy-dial.ts`).
+The store's `toggleHideAmounts` and `setHideAmounts` both run the state change through
+`withPrivacyDial`, so the eye, the search palette and the settings switch all animate:
+
+1. Read the value of every text node that holds a digit or a mask.
+2. Flip the state inside `flushSync`, so React has rendered the new text when it returns.
+3. For each node whose text changed and is on screen, find the changed run (`changedSpan`: the
+   `€` and the words of a sentence are shared), measure where it stood before by putting the old
+   text back for an instant, and draw a fixed overlay: the old run rolls up right to left, the
+   shared text slides to its new place, the new run rolls in left to right.
+4. The real text is made transparent for ~0.7 s through the CSS Custom Highlight API
+   (`::highlight(privacy-dial)`), then the overlays are removed.
+
+It works on the DOM after React rather than in each component, because amounts reach the screen
+as plain strings in about 300 places — `CurrencyDisplay`, sentences built with `t()`, chart
+ticks — and an animation per component would have missed most of them.
+
+At rest, `tintMasks()` (mounted by `AppLayout` while amounts are hidden) greys every mask through
+a second highlight, `::highlight(privacy-mask)`, kept current by a `MutationObserver`.
+
 ### Key files
 
+- `frontend/src/lib/privacy-dial.ts` — the dial animation and the grey tint of the masks
 - `frontend/src/lib/money.ts` — the masks, `makeMoneyFormatter`, and the private currency format
 - `frontend/src/hooks/use-money.ts` — `useMoney()`, the only public way to format an amount
 - `frontend/src/components/shared/CurrencyDisplay.tsx` — the default path, plus the `publicQuote` opt-out
@@ -69,12 +92,21 @@ Placeholders in the goal calendar *are* masked: they are display-only, unlike a 
 | A fixed-length mask, never per digit | `*********,** €` is visibly wider than `**,** €` — the width **is** the order of magnitude, so a per-digit mask leaks exactly what the mode hides | Masking digit by digit |
 | Deleting `formatCurrency` from `lib/utils.ts` | One amount left legible defeats the feature, so forgetting one had to stop being possible. Making the raw formatter private turned all 12 call sites into compile errors | Leaving it exported and relying on discipline |
 | A hook, not a store read inside the formatter | `useAppStore.getState()` returns the right string but does not re-render the component holding the closure, so chart axes would keep stale ticks | `formatDate`'s non-reactive `getState()` pattern |
-| Keeping the currency symbol and the sign in the mask | `***** €` reads as "an amount, hidden"; a bare `*****` reads as a rendering fault. The sign states a direction, not a magnitude, and the visible percentages give that away anyway | Masking the whole string |
+| Keeping the currency symbol and the sign in the mask | `– – – – – €` reads as "an amount, hidden"; bare dashes read as a rendering fault. The sign states a direction, not a magnitude, and the visible percentages give that away anyway | Masking the whole string |
 | Masked axis ticks rather than a hidden axis | Every `<YAxis>` already carries an explicit `width`, so masked ticks shift nothing, the grid keeps its lines, and the mask is the only in-frame evidence of redaction on a cropped screen-share | `<YAxis hide>` |
 | A second toggle in Settings | Kept from when the eye lived in the desktop-only sidebar; the top bar now shows it on mobile too | Removing it |
 | The eye in the top bar | Reachable on every page and on phones, next to search and Sync | The sidebar, absent on mobile |
 
 ## Gotchas / Pitfalls
+
+- **The dial skips what it cannot place.** A sentence that wraps over two lines, a node off
+  screen, an element React replaces rather than updates (Recharts redraws some axis ticks), and
+  anything past 250 figures swap without rolling. Without the Highlight API (jsdom, older
+  browsers) or with `prefers-reduced-motion`, `withPrivacyDial` only flips the state.
+- **SVG text ignores highlights.** During the roll an SVG label is hidden with `opacity` instead,
+  and its mask is not greyed at rest.
+- **The mask holds no-break spaces** (`–\u00a0–…`). `toHaveTextContent` collapses them, so tests
+  compare against `textContent` with `toContain(AMOUNT_MASK)`.
 
 - **`partialize` in `app-store` is an allowlist.** A field left out is silently not persisted — no
   type error, no runtime error, the setting just does not survive a reload. `AppTopBar.test.tsx`

@@ -69,7 +69,7 @@ describe('AllocationTab total', () => {
     expect(visible).toContain('€')
 
     act(() => { useAppStore.getState().setHideAmounts(true) })
-    expect(total).toHaveTextContent(AMOUNT_MASK)
+    expect(total.textContent).toContain(AMOUNT_MASK)
     expect(total.textContent).not.toMatch(/\d/)
 
     act(() => { useAppStore.getState().setHideAmounts(false) })
@@ -79,7 +79,7 @@ describe('AllocationTab total', () => {
   it('also masks the total when mounted with privacy mode enabled', () => {
     useAppStore.getState().setHideAmounts(true)
     renderTab()
-    expect(centre()).toHaveTextContent(AMOUNT_MASK)
+    expect(centre().textContent).toContain(AMOUNT_MASK)
     expect(centre().textContent).not.toMatch(/\d/)
   })
 

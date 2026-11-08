@@ -54,7 +54,7 @@ describe('CashflowTab chart in privacy mode', () => {
 
     act(() => { useAppStore.getState().setHideAmounts(true) })
 
-    expect(screen.getByTestId('y-ticks')).toHaveTextContent(AXIS_MASK)
+    expect(screen.getByTestId('y-ticks').textContent).toContain(AXIS_MASK)
     expect(screen.getByTestId('y-ticks').textContent).not.toMatch(/\d/)
     expect(screen.getByTestId('tooltip')).toHaveTextContent('budget.cashflow.income')
     expect(screen.getByTestId('tooltip').textContent).not.toMatch(/\d/)
