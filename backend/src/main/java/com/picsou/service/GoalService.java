@@ -163,27 +163,38 @@ public class GoalService {
      * than on the DTO because it needs the database, and it answers 400: the client picks from a
      * list of the account's own holdings, so an unknown ticker is a malformed request, not a
      * user mistake worth a field-level message.
+     *
+     * <p>A ticker the plan already splits into keeps its row and only takes the new amount.
+     * Removing it and adding a fresh row would fail: Hibernate flushes inserts before orphan
+     * deletes, so the new row hits {@code uk_goal_allocation_goal_ticker} while the old one is
+     * still there, and every edit of a plan with a split answered 500.
      */
     private void replaceAllocations(Goal goal, GoalRequest req) {
         List<GoalAllocationRequest> lines = req.allocations();
-        goal.getAllocations().clear();
-        if (lines.isEmpty()) return;
+        if (lines.isEmpty()) {
+            goal.getAllocations().clear();
+            return;
+        }
 
         Long accountId = goal.getAccounts().getFirst().getId();
         Set<String> held = accountHoldingRepository.findByAccount_Id(accountId).stream()
             .map(AccountHolding::getTicker)
             .collect(Collectors.toSet());
 
+        Map<String, GoalAllocation> kept = new LinkedHashMap<>();
+        goal.getAllocations().forEach(a -> kept.put(a.getTicker(), a));
+        goal.getAllocations().clear();
         for (GoalAllocationRequest line : lines) {
             if (!held.contains(line.ticker())) {
                 throw new IllegalArgumentException(
                     "Position " + line.ticker() + " is not held in the funded account");
             }
-            goal.getAllocations().add(GoalAllocation.builder()
-                .goal(goal)
-                .ticker(line.ticker())
-                .monthlyAmount(line.monthlyAmount())
-                .build());
+            GoalAllocation row = kept.remove(line.ticker());
+            if (row == null) {
+                row = GoalAllocation.builder().goal(goal).ticker(line.ticker()).build();
+            }
+            row.setMonthlyAmount(line.monthlyAmount());
+            goal.getAllocations().add(row);
         }
     }
 

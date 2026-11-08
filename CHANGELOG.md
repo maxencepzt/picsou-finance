@@ -25,6 +25,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **A recurring plan with a per-position split can be edited again.** Saving it, even to rename it, failed with a
+  server error and left the dialog open, because the split was rewritten as new rows that collided with the old ones.
 - **Banque Populaire and Caisse d'Epargne operations are categorized and their recurring payments detected.** These
   syncs imported operations without running the categorization rules or the merchant-name cleanup, and never ran the
   recurring-payment detection, so members on these banks saw no category from their rules and no recurring payment.

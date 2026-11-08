@@ -368,6 +368,32 @@ class GoalServiceTest {
     }
 
     @Test
+    void update_keepsTheRowOfATickerTheSplitAlreadyHas() {
+        // Hibernate flushes inserts before orphan deletes: a fresh row for a ticker the plan
+        // already splits into collides with uk_goal_allocation_goal_ticker, so any edit (even a
+        // rename) of a plan with a split answered 500. The existing row must be reused.
+        Goal plan = recurringPlan();
+        GoalAllocation cw8 = GoalAllocation.builder()
+            .goal(plan).ticker("CW8").monthlyAmount(new BigDecimal("300")).build();
+        plan.getAllocations().add(cw8);
+
+        when(goalRepository.findByIdAndMemberId(9L, 42L)).thenReturn(Optional.of(plan));
+        when(accountRepository.findByIdInAndMemberId(List.of(1L), 42L)).thenReturn(List.of(pea()));
+        when(accountHoldingRepository.findByAccount_Id(1L))
+            .thenReturn(List.of(holding("CW8", "World"), holding("ESE", "S&P 500")));
+        when(goalRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        goalService.update(9L, planWithSplit(
+            new GoalAllocationRequest("CW8", new BigDecimal("250")),
+            new GoalAllocationRequest("ESE", new BigDecimal("150"))), 42L);
+
+        assertThat(plan.getAllocations()).hasSize(2);
+        assertThat(plan.getAllocations().getFirst()).isSameAs(cw8);
+        assertThat(cw8.getMonthlyAmount()).isEqualByComparingTo("250");
+        assertThat(plan.getAllocations().get(1).getTicker()).isEqualTo("ESE");
+    }
+
+    @Test
     void update_clearsTheSplitWhenTheRequestCarriesNone() {
         Goal plan = recurringPlan();
         plan.getAllocations().add(GoalAllocation.builder()

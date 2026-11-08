@@ -221,7 +221,11 @@ has typed yet.
 `Goal.allocations` is mapped with `orphanRemoval`, which makes the list's **identity**
 load-bearing: `setAllocations(new ArrayList<>(…))` makes Hibernate throw *"a collection with
 cascade=all-delete-orphan was no longer referenced"* instead of deleting the rows that went away.
-`replaceAllocations` mutates in place — `clear()` then `add()` — and is the only place that does.
+`replaceAllocations` mutates in place and is the only place that does. A ticker the plan already
+splits into **keeps its row** and only takes the new amount; only new tickers get a new row.
+Removing the row and adding a fresh one for the same ticker would fail: Hibernate flushes inserts
+before orphan deletes, so the new row hits `uk_goal_allocation_goal_ticker` while the old one is
+still there, and every edit of a plan with a split (even a rename) answered 500.
 
 The split is **descriptive**: `ProjectionService` still reasons about `monthlyAmount` alone. Giving
 each line its own expected return is the obvious next step and a much larger one; nothing here
