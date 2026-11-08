@@ -538,7 +538,7 @@ class SyncServiceCurrencyMatchTest {
         CaisseEpargneSyncService caisseEpargne = new CaisseEpargneSyncService(
             port, sessions, accountRepository, mock(TransactionRepository.class), memberRepository,
             debtRepository, accountService, mock(CategorizationService.class), mock(CategoryService.class),
-            encryption, new TransactionTemplate(transactionManager), Runnable::run, null);
+            mock(RecurringDetectionService.class), encryption, new TransactionTemplate(transactionManager), Runnable::run, null);
 
         assertThat(caisseEpargne.queueSync(member.getId()).syncStatus()).isEqualTo(CaisseEpargneSyncStatus.SUCCESS);
         entityManager.flush();

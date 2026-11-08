@@ -24,6 +24,7 @@ import com.picsou.repository.DebtRepository;
 import com.picsou.repository.FamilyMemberRepository;
 import com.picsou.repository.TransactionRepository;
 import com.picsou.service.budget.CategorizationService;
+import com.picsou.service.budget.RecurringDetectionService;
 import com.picsou.service.budget.CategoryService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -117,6 +118,7 @@ public final class BpceSyncEngine<S extends BpceSession, R> {
     private final DebtRepository debtRepository;
     private final AccountService accountService;
     private final CategorizationService categorizationService;
+    private final RecurringDetectionService recurringDetectionService;
     private final CategoryService categoryService;
     private final CryptoEncryption encryption;
     private final TransactionTemplate txTemplate;
@@ -210,6 +212,7 @@ public final class BpceSyncEngine<S extends BpceSession, R> {
         AccountService accountService,
         CategorizationService categorizationService,
         CategoryService categoryService,
+        RecurringDetectionService recurringDetectionService,
         CryptoEncryption encryption,
         TransactionTemplate txTemplate,
         Executor syncExecutor,
@@ -230,6 +233,7 @@ public final class BpceSyncEngine<S extends BpceSession, R> {
         this.accountService = accountService;
         this.categorizationService = categorizationService;
         this.categoryService = categoryService;
+        this.recurringDetectionService = recurringDetectionService;
         this.encryption = encryption;
         this.txTemplate = txTemplate;
         this.syncExecutor = syncExecutor;
@@ -463,6 +467,7 @@ public final class BpceSyncEngine<S extends BpceSession, R> {
             BpcePort.AccountsSnapshot fetched = port.fetchAccounts(job.plainState());
             PreparedSnapshot prepared = prepare(fetched);
             if (commit(job, prepared, logoOf(job))) {
+                detectRecurring(job.memberId());
                 for (PreparedAccount account : prepared.accounts()) {
                     if (account.per() == null) continue;
                     try {
@@ -662,12 +667,57 @@ public final class BpceSyncEngine<S extends BpceSession, R> {
             upsertLoanDebts(prepared, savedById, member, job.memberId());
             tagCardSettlements(prepared, rowsByAccount, job.memberId());
             tagLoanRows(prepared, rowsByAccount, job.memberId());
+            categorizeRows(rowsByAccount, job.memberId());
 
             session.recordUnsupportedContracts(serializeUnsupported(prepared.unsupported()));
             session.markSuccessful(syncedAt);
             sessions.save(session);
             return true;
         }));
+    }
+
+    /**
+     * Runs the member's rules, then the brand knowledge base, over every imported row, as the
+     * Enable Banking and shared-sidecar imports do. It also stamps the clean merchant name that
+     * the recurring detection groups on. It runs after the card-settlement and loan tagging,
+     * which only touch rows without a category, so those structural tags keep precedence. A row
+     * that already has a category, including a manual choice, keeps it. Only the rows this call
+     * actually changed are saved.
+     */
+    private void categorizeRows(Map<String, Map<String, Transaction>> rowsByAccount, Long memberId) {
+        List<Transaction> rows = new ArrayList<>();
+        rowsByAccount.values().forEach(byId -> rows.addAll(byId.values()));
+        if (rows.isEmpty()) {
+            return;
+        }
+        CategorizationService.CategorizationContext context = categorizationService.loadContext(memberId);
+        List<Transaction> changed = new ArrayList<>();
+        for (Transaction row : rows) {
+            Category category = row.getCategoryRef();
+            String label = row.getMerchantLabel();
+            Long brand = row.getMerchantBrandId();
+            categorizationService.autoCategorize(row, context);
+            if (row.getCategoryRef() != category || !Objects.equals(label, row.getMerchantLabel())
+                || !Objects.equals(brand, row.getMerchantBrandId())) {
+                changed.add(row);
+            }
+        }
+        if (!changed.isEmpty()) {
+            transactionRepository.saveAllAndFlush(changed);
+        }
+    }
+
+    /**
+     * Recurring payments are detected after the import commits, as the Enable Banking sync does.
+     * A failure here never fails a sync that already succeeded; the next one runs it again.
+     */
+    private void detectRecurring(Long memberId) {
+        try {
+            recurringDetectionService.detect(memberId, LocalDate.now(clock));
+        } catch (RuntimeException ex) {
+            log.warn("{} recurring detection skipped (member={}; type={})",
+                bank.provider(), memberId, ex.getClass().getSimpleName());
+        }
     }
 
     /**

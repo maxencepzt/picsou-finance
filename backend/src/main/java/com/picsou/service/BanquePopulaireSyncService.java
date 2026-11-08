@@ -14,6 +14,7 @@ import com.picsou.repository.DebtRepository;
 import com.picsou.repository.FamilyMemberRepository;
 import com.picsou.repository.TransactionRepository;
 import com.picsou.service.budget.CategorizationService;
+import com.picsou.service.budget.RecurringDetectionService;
 import com.picsou.service.budget.CategoryService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -64,6 +65,7 @@ public class BanquePopulaireSyncService {
         AccountService accountService,
         CategorizationService categorizationService,
         CategoryService categoryService,
+        RecurringDetectionService recurringDetectionService,
         CryptoEncryption encryption,
         TransactionTemplate txTemplate,
         @Qualifier("banquePopulaireSyncExecutor") Executor syncExecutor,
@@ -71,7 +73,7 @@ public class BanquePopulaireSyncService {
         BankLogoResolver logoResolver
     ) {
         this(port, sessionRepository, accountRepository, transactionRepository, memberRepository, debtRepository,
-            accountService, categorizationService, categoryService, encryption, txTemplate, syncExecutor,
+            accountService, categorizationService, categoryService, recurringDetectionService, encryption, txTemplate, syncExecutor,
             perService, logoResolver, Clock.systemDefaultZone());
     }
 
@@ -85,6 +87,7 @@ public class BanquePopulaireSyncService {
         AccountService accountService,
         CategorizationService categorizationService,
         CategoryService categoryService,
+        RecurringDetectionService recurringDetectionService,
         CryptoEncryption encryption,
         TransactionTemplate txTemplate,
         Executor syncExecutor,
@@ -99,7 +102,7 @@ public class BanquePopulaireSyncService {
             BanquePopulaireSyncService::toStatus, SessionStatusResponse::inactive,
             session -> brandingFor(session.getRegion(), logoResolver),
             accountRepository, transactionRepository, memberRepository, debtRepository, accountService,
-            categorizationService, categoryService, encryption, txTemplate, syncExecutor, perService, clock);
+            categorizationService, categoryService, recurringDetectionService, encryption, txTemplate, syncExecutor, perService, clock);
     }
 
     /**
