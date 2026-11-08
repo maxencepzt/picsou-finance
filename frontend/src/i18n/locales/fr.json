@@ -159,7 +159,7 @@
     "searchHoldings": "Rechercher des titres ou tickers...",
     "allHoldings": "Tout",
     "shares": "parts",
-    "gainLoss": "Plus-value / Moins-value",
+    "gainLoss": "± value",
     "totalLiabilities": "Total des dettes",
     "totalAssets": "Total des actifs",
     "liabilities": "Dettes",
@@ -418,7 +418,7 @@
     "importError": "Erreur lors de l'import : {{message}}",
     "addSnapshot": "Enregistrer",
     "monthlyHistory": "Solde en fin de mois",
-    "pnl": "Plus-value / Moins-value",
+    "pnl": "± value",
     "filters": {
       "ALL": "Tout",
       "STOCKS": "Actions & Fonds",
@@ -970,8 +970,8 @@
     "ticker": "Ticker",
     "name": "Nom",
     "unitPrice": "Prix unitaire",
-    "pnl": "Plus-value / Moins-value",
-    "pnlPercent": "Plus-value / Moins-value %",
+    "pnl": "± value",
+    "pnlPercent": "± value %",
     "quantity": "Quantité",
     "account": "Compte",
     "lastUpdated": "Dernière mise à jour",
@@ -1178,7 +1178,7 @@
       "invested": "Investi",
       "months": "Mois avec achat",
       "value": "Valeur actuelle",
-      "gain": "Plus-value",
+      "gain": "± value",
       "noPrice": "Valeur indisponible : il manque le prix d'une ligne achetée.",
       "noPurchase": "Aucun achat de ce plan sur la période.",
       "needsSplit": "Détaillez la répartition du plan pour suivre ses achats.",
@@ -2596,7 +2596,7 @@
       },
       "dashboard_read": {
         "label": "Tableau de bord",
-        "desc": "Voir le patrimoine, le tableau de bord et les +/- values"
+        "desc": "Voir le patrimoine, le tableau de bord et les ± values"
       },
       "prices_read": {
         "label": "Cours",
@@ -3391,7 +3391,7 @@
       "title": "Caractéristiques",
       "costBasis": "Prix de revient",
       "currentValue": "Valeur actuelle",
-      "gain": "Plus-value",
+      "gain": "± value",
       "coOwnedNote": "Vous détenez {{percent}} de ce bien. Les totaux ne comptent que votre part."
     },
     "valuation": {
@@ -3739,7 +3739,7 @@
       "gross": "Valeur brute",
       "debt": "Dette immobilière",
       "net": "Valeur nette",
-      "gain": "Plus-value latente",
+      "gain": "± value latente",
       "loanToValue": "Ratio prêt / valeur",
       "rent": "Loyers mensuels",
       "propertyCount": "{{count}} bien",
@@ -3805,7 +3805,7 @@
       "wrapper": "Enveloppe",
       "avgCost": "PRU",
       "price": "Cours",
-      "pnl": "+/− latent",
+      "pnl": "± latente",
       "weight": "Poids"
     },
     "concentration": {
