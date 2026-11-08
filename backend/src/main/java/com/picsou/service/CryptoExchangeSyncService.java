@@ -55,6 +55,7 @@ public class CryptoExchangeSyncService {
     private final AccountHoldingRepository holdingRepository;
     private final CryptoLogoService cryptoLogoService;
     private final TransactionTemplate sessionTransaction;
+    private final ExchangeRewardSync rewardSync;
 
     public CryptoExchangeSyncService(
         List<CryptoExchangePort> exchangeAdapters,
@@ -68,8 +69,10 @@ public class CryptoExchangeSyncService {
         CryptoExchangePositionRepository positionRepository,
         AccountHoldingRepository holdingRepository,
         CryptoLogoService cryptoLogoService,
-        PlatformTransactionManager transactionManager
+        PlatformTransactionManager transactionManager,
+        ExchangeRewardSync rewardSync
     ) {
+        this.rewardSync = rewardSync;
         this.exchangeAdapters = exchangeAdapters;
         this.sessionRepository = sessionRepository;
         this.accountRepository = accountRepository;
@@ -254,6 +257,9 @@ public class CryptoExchangeSyncService {
             session.setStatus("CONNECTED");
             session.setLastSyncedAt(Instant.now());
             sessionRepository.save(session);
+
+            syncRewardsOnceCommitted(adapter, decryptedKey, decryptedSecret, session.getExchangeType(),
+                account.getId());
 
             return accountService.toResponse(account);
 
@@ -468,6 +474,33 @@ public class CryptoExchangeSyncService {
      */
     private static String externalIdOf(ExchangeType type) {
         return "crypto_exchange_" + type.name().toLowerCase(Locale.ROOT);
+    }
+
+    /**
+     * Rewards are written once the balance sync has committed, in their own transaction, and a
+     * failure there is only logged: they must never cost the user a balance update. The next
+     * sync re-reads its whole lookback window, so a missed run catches up.
+     */
+    private void syncRewardsOnceCommitted(CryptoExchangePort adapter, String apiKey, String apiSecret,
+                                          ExchangeType exchange, Long accountId) {
+        Runnable job = () -> {
+            try {
+                rewardSync.sync(adapter, apiKey, apiSecret, exchange, accountId);
+            } catch (RuntimeException ex) {
+                log.warn("{} reward sync failed for account {} -- the next sync retries it",
+                    exchange, accountId, ex);
+            }
+        };
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            job.run();
+            return;
+        }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                job.run();
+            }
+        });
     }
 
     /**

@@ -1,6 +1,7 @@
 package com.picsou.adapter;
 
 import com.picsou.exception.SyncException;
+import com.picsou.port.CryptoExchangePort;
 import com.picsou.port.CryptoExchangePort.ExchangePosition;
 import com.picsou.port.CryptoExchangePort.Product;
 import org.junit.jupiter.api.Test;
@@ -13,6 +14,9 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
 
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
@@ -35,6 +39,8 @@ class BinanceAdapterTest {
           {"asset":"BNB","free":"0","locked":"0"}
         ]}""";
     private static final String NO_ROWS = "{\"rows\":[],\"total\":0}";
+
+    private static final Clock NOW = Clock.fixed(Instant.parse("2026-11-08T12:00:00Z"), ZoneOffset.UTC);
 
     private final List<ClientRequest> requests = new ArrayList<>();
 
@@ -124,13 +130,59 @@ class BinanceAdapterTest {
             .hasMessageContaining("flexible/position");
     }
 
+    @Test
+    void fetchRewards_readsEveryRewardHistoryInWindowsUnderThreeMonths() {
+        BinanceAdapter adapter = adapterRouting(path -> {
+            String query = requests.getLast().url().getQuery();
+            boolean firstWindow = query.contains("startTime=" + Instant.parse("2026-06-01T00:00:00Z").toEpochMilli());
+            if (!firstWindow) return ok(NO_ROWS);
+            return switch (path) {
+                case "/sapi/v1/simple-earn/flexible/history/rewardsRecord" -> ok(query.contains("type=BONUS")
+                    ? "{\"rows\":[{\"asset\":\"usdt\",\"rewards\":\"0.01\",\"type\":\"BONUS\",\"time\":1751328000000}],\"total\":1}"
+                    : "{\"rows\":[{\"asset\":\"USDT\",\"rewards\":\"0.02\",\"type\":\"REALTIME\",\"time\":1751328000000}],\"total\":1}");
+                case "/sapi/v1/simple-earn/locked/history/rewardsRecord" ->
+                    ok("{\"rows\":[{\"asset\":\"EGLD\",\"amount\":\"0.003\",\"time\":1751414400000}],\"total\":1}");
+                case "/sapi/v1/eth-staking/eth/history/rewardsHistory" ->
+                    ok("{\"rows\":[{\"asset\":\"BETH\",\"amount\":\"0.0001\",\"time\":1751414400000},"
+                        + "{\"asset\":\"WBETH\",\"amount\":\"0\",\"time\":1751414400000}],\"total\":2}");
+                default -> notFound();
+            };
+        });
+
+        List<CryptoExchangePort.ExchangeReward> rewards =
+            adapter.fetchRewards("key", "secret", Instant.parse("2026-06-01T00:00:00Z"));
+
+        // A zero credit is no reward; the asset is upper-cased like the positions, and staked-ETH
+        // receipts (BETH, WBETH) count as ETH, as the history import keyed them.
+        assertThat(rewards)
+            .extracting(CryptoExchangePort.ExchangeReward::asset, r -> r.amount().toPlainString(),
+                CryptoExchangePort.ExchangeReward::time)
+            .containsExactly(
+                tuple("USDT", "0.01", Instant.ofEpochMilli(1751328000000L)),
+                tuple("USDT", "0.02", Instant.ofEpochMilli(1751328000000L)),
+                tuple("EGLD", "0.003", Instant.ofEpochMilli(1751414400000L)),
+                tuple("ETH", "0.0001", Instant.ofEpochMilli(1751414400000L)));
+        // Two windows of at most 89 days cover 2026-06-01 to now without touching: Binance ranges
+        // include both ends, so a credit stamped on a shared boundary would be read twice.
+        List<String> ranges = requests.stream()
+            .filter(r -> r.url().getPath().endsWith("locked/history/rewardsRecord"))
+            .map(r -> r.url().getQuery().replaceAll(".*(startTime=\\d+&endTime=\\d+).*", "$1"))
+            .toList();
+        assertThat(ranges).containsExactly(
+            "startTime=" + Instant.parse("2026-06-01T00:00:00Z").toEpochMilli()
+                + "&endTime=" + (Instant.parse("2026-08-29T00:00:00Z").toEpochMilli() - 1),
+            "startTime=" + Instant.parse("2026-08-29T00:00:00Z").toEpochMilli()
+                + "&endTime=" + Instant.parse("2026-11-08T12:00:00Z").toEpochMilli());
+        assertThat(requests).hasSize(8);
+    }
+
     private BinanceAdapter adapterRouting(Function<String, Mono<ClientResponse>> route) {
         ExchangeFunction exchange = request -> {
             requests.add(request);
             return route.apply(request.url().getPath());
         };
         return new BinanceAdapter(
-            WebClient.builder().baseUrl("https://api.binance.test").exchangeFunction(exchange).build());
+            WebClient.builder().baseUrl("https://api.binance.test").exchangeFunction(exchange).build(), NOW);
     }
 
     private static Mono<ClientResponse> ok(String body) {

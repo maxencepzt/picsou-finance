@@ -12,7 +12,9 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.HexFormat;
@@ -31,15 +33,20 @@ public class BinanceAdapter implements CryptoExchangePort {
     /** Simple Earn position endpoints cap a page at 100 rows. */
     private static final int EARN_PAGE_SIZE = 100;
 
+    /** Reward histories refuse a range over 3 months; 89 days stays under it in every month. */
+    private static final Duration REWARD_WINDOW = Duration.ofDays(89);
+
     private final WebClient webClient;
+    private final Clock clock;
 
     public BinanceAdapter() {
-        this(WebClient.builder().baseUrl(BASE_URL).build());
+        this(WebClient.builder().baseUrl(BASE_URL).build(), Clock.systemUTC());
     }
 
     // Package-private for tests — inject a WebClient backed by an ExchangeFunction.
-    BinanceAdapter(WebClient webClient) {
+    BinanceAdapter(WebClient webClient, Clock clock) {
         this.webClient = webClient;
+        this.clock = clock;
     }
 
     @Override
@@ -90,6 +97,79 @@ public class BinanceAdapter implements CryptoExchangePort {
     }
 
     /**
+     * Simple Earn and ETH staking rewards since {@code since}: flexible products pay two kinds
+     * (BONUS tiered APR and REALTIME APR, each its own query), locked products and ETH staking
+     * one each. Every history refuses a range over 3 months, so the period is read in windows.
+     */
+    @Override
+    public List<ExchangeReward> fetchRewards(String apiKey, String apiSecret, Instant since) {
+        List<ExchangeReward> rewards = new ArrayList<>();
+        Instant now = clock.instant();
+        for (Instant start = since; start.isBefore(now); start = start.plus(REWARD_WINDOW)) {
+            // Binance ranges include both ends: stop 1 ms short of the next window's start, or a
+            // credit stamped exactly on the boundary (daily credits often land at 00:00Z) is read twice.
+            Instant next = start.plus(REWARD_WINDOW);
+            Instant end = next.isAfter(now) ? now : next.minusMillis(1);
+            String range = "startTime=" + start.toEpochMilli() + "&endTime=" + end.toEpochMilli();
+            for (String type : List.of("BONUS", "REALTIME")) {
+                rewards.addAll(rewardRows("/sapi/v1/simple-earn/flexible/history/rewardsRecord",
+                    "type=" + type + "&" + range, "rewards", apiKey, apiSecret));
+            }
+            rewards.addAll(rewardRows("/sapi/v1/simple-earn/locked/history/rewardsRecord",
+                range, "amount", apiKey, apiSecret));
+            rewards.addAll(rewardRows("/sapi/v1/eth-staking/eth/history/rewardsHistory",
+                range, "amount", apiKey, apiSecret));
+        }
+        log.info("Binance: fetched {} reward credits since {}", rewards.size(), since);
+        return rewards;
+    }
+
+    private List<ExchangeReward> rewardRows(
+        String path, String params, String amountField, String apiKey, String apiSecret
+    ) {
+        List<ExchangeReward> rewards = new ArrayList<>();
+        for (JsonNode row : pagedRows(path, params, apiKey, apiSecret)) {
+            BigDecimal amount = new BigDecimal(row.path(amountField).asText("0"));
+            if (amount.signum() > 0) {
+                rewards.add(new ExchangeReward(rewardAsset(row.path("asset").asText("")), amount,
+                    Instant.ofEpochMilli(row.path("time").asLong())));
+            }
+        }
+        return rewards;
+    }
+
+    /**
+     * ETH staking pays in BETH or WBETH, Binance's receipts for staked ETH. They are counted as
+     * ETH, 1:1, which is how the history import keyed them: a separate BETH row would sit beside
+     * the ETH row of the same month. WBETH is worth slightly more than 1 ETH; on a few
+     * thousandths of an ether a month, the difference stays under a cent.
+     */
+    private static String rewardAsset(String asset) {
+        String upper = asset.toUpperCase();
+        return "BETH".equals(upper) || "WBETH".equals(upper) ? "ETH" : upper;
+    }
+
+    /**
+     * Every row of a paged Binance history (current, size = 100 until total is read). A page
+     * without total fails rather than stop at the first page: a short list would be written as
+     * if it were complete.
+     */
+    private List<JsonNode> pagedRows(String path, String params, String apiKey, String apiSecret) {
+        List<JsonNode> all = new ArrayList<>();
+        for (int page = 1; ; page++) {
+            String query = (params.isEmpty() ? "" : params + "&") + "current=" + page + "&size=" + EARN_PAGE_SIZE;
+            JsonNode body = signedGet(path, query, apiKey, apiSecret);
+            JsonNode rows = body.path("rows");
+            if (!rows.isArray() || rows.isEmpty()) return all;
+            rows.forEach(all::add);
+            if (!body.path("total").canConvertToInt()) {
+                throw new SyncException("Binance returned no row count for " + path + ".");
+            }
+            if (all.size() >= body.path("total").asInt()) return all;
+        }
+    }
+
+    /**
      * Every page of one Simple Earn position list, summed per asset: several locked positions in
      * the same coin (different durations) are one line, as the position table is unique on
      * (account, product, ticker).
@@ -98,24 +178,11 @@ public class BinanceAdapter implements CryptoExchangePort {
         String path, String amountField, Product product, String apiKey, String apiSecret
     ) {
         Map<String, BigDecimal> perAsset = new TreeMap<>();
-        int read = 0;
-        for (int page = 1; ; page++) {
-            JsonNode body = signedGet(path, "current=" + page + "&size=" + EARN_PAGE_SIZE, apiKey, apiSecret);
-            JsonNode rows = body.path("rows");
-            if (!rows.isArray() || rows.isEmpty()) break;
-            for (JsonNode row : rows) {
-                BigDecimal amount = new BigDecimal(row.path(amountField).asText("0"));
-                if (amount.signum() > 0) {
-                    perAsset.merge(row.path("asset").asText("").toUpperCase(), amount, BigDecimal::add);
-                }
+        for (JsonNode row : pagedRows(path, "", apiKey, apiSecret)) {
+            BigDecimal amount = new BigDecimal(row.path(amountField).asText("0"));
+            if (amount.signum() > 0) {
+                perAsset.merge(row.path("asset").asText("").toUpperCase(), amount, BigDecimal::add);
             }
-            read += rows.size();
-            // Without total, stopping here could return the first page only: a short list the
-            // caller would write into the snapshot.
-            if (!body.path("total").canConvertToInt()) {
-                throw new SyncException("Binance returned no row count for " + path + ".");
-            }
-            if (read >= body.path("total").asInt()) break;
         }
         List<ExchangePosition> positions = new ArrayList<>();
         perAsset.forEach((asset, quantity) ->

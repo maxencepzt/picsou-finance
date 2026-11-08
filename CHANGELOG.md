@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Binance staking and Earn rewards are recorded as passive income.** Each Binance sync reads the Simple Earn and ETH
+  staking rewards of the last 180 days and writes one row per month and coin, valued in euros at each day's price. They
+  count in the dividends and on the Passive income page, and stay out of the budget.
 - **Picsou installs as an app.** On Android and desktop, Chrome and Edge offer *Install app*; on iOS, Safari's
   *Add to Home Screen* adds it with its icon. It then opens full screen, without the browser's address bar.
   Installing needs a certificate the device trusts (see the installable-app note for the bundled Caddy).

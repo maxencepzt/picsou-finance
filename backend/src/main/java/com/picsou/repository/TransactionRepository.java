@@ -110,6 +110,9 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     /** Dedup guard for synced ingestion (account-scoped). */
     boolean existsByAccountIdAndExternalId(Long accountId, String externalId);
 
+    /** The row a connector keyed under {@code externalId} on this account, if any. */
+    Optional<Transaction> findByAccountIdAndExternalId(Long accountId, String externalId);
+
     /** The account a stored external id lives in, without loading the row. */
     interface StoredExternalId {
         Long getId();
