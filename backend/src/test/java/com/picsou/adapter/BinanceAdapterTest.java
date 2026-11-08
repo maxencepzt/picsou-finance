@@ -11,7 +11,6 @@ import org.springframework.web.reactive.function.client.ClientRequest;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.ExchangeFunction;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
 
 import java.time.Clock;
@@ -113,8 +112,12 @@ class BinanceAdapterTest {
                 .body("{\"code\":-1002,\"msg\":\"unauthorized\"}").build());
         });
 
+        // Binance's own explanation is kept: a bare 400 says nothing about what it rejected.
         assertThatThrownBy(() -> adapter.fetchPositions("key", "secret"))
-            .isInstanceOf(WebClientResponseException.BadRequest.class);
+            .isInstanceOf(SyncException.class)
+            .hasMessageContaining("400")
+            .hasMessageContaining("locked/position")
+            .hasMessageContaining("-1002");
     }
 
     @Test

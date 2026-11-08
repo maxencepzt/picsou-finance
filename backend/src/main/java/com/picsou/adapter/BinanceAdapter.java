@@ -5,6 +5,7 @@ import com.picsou.exception.SyncException;
 import com.picsou.port.CryptoExchangePort;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -204,6 +205,12 @@ public class BinanceAdapter implements CryptoExchangePort {
                 .build())
             .header("X-MBX-APIKEY", apiKey)
             .retrieve()
+            // Binance explains a refusal in the body ({"code":-1102,"msg":"..."}); without it a
+            // 400 in the log says nothing about which parameter it rejected.
+            .onStatus(HttpStatusCode::isError, error -> error.bodyToMono(String.class)
+                .defaultIfEmpty("")
+                .map(body -> new SyncException("Binance answered " + error.statusCode().value()
+                    + " for " + path + ": " + body)))
             .bodyToMono(JsonNode.class)
             .timeout(TIMEOUT)
             .block();
