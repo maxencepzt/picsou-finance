@@ -377,6 +377,32 @@ def _is_entity_code(value) -> bool:
     return isinstance(value, str) and len(value) == 5 and value.isascii() and value.isdecimal()
 
 
+async def _per_detail(account: dict, provider: PerDetailProvider) -> tuple[Any, Optional[str]]:
+    """`(parsed PER, None)`, or `(None, code)` when this PER is unavailable."""
+    ext = account["externalId"]
+    entity_code = account.get("perEntityCode")
+    if not _is_entity_code(entity_code):
+        return None, UpstreamFormatChanged.code
+    try:
+        raw = await provider(ext[len(accounts_parser.CONTRACT_ID_PREFIX):], entity_code)
+    except (replay.SessionExpired, replay.InvalidSessionState):
+        raise
+    except per_client.UnknownPerContract as exc:
+        # Refused before any request: the contract id is not one the insurer
+        # reader knows. Its masked shape tells a new product (an assurance vie
+        # filed under the PER code) apart, without any number.
+        log.info("PER request refused: idShape=%s", _id_shape(ext))
+        return None, exc.code
+    except replay.ReplayError as exc:
+        return None, exc.code
+    except httpx.HTTPError:
+        return None, UpstreamUnavailable.code
+    try:
+        return per_parser.parse_per_detail(raw, currency=account["balance"]["currency"]), None
+    except accounts_parser.ParseError as exc:
+        return None, exc.code
+
+
 async def _fetch_per_details(accounts: list, provider: Optional[PerDetailProvider]) -> tuple[dict, dict]:
     """`({externalId: parsed PER}, {externalId: code})`: complete positions, or the PER unavailable.
 
@@ -393,32 +419,11 @@ async def _fetch_per_details(accounts: list, provider: Optional[PerDetailProvide
     for account in accounts:
         if account["kind"] != "PER":
             continue
-        ext = account["externalId"]
-        entity_code = account.get("perEntityCode")
-        if not _is_entity_code(entity_code):
-            unavailable[ext] = UpstreamFormatChanged.code
-            continue
-        try:
-            raw = await provider(ext[len(accounts_parser.CONTRACT_ID_PREFIX):], entity_code)
-        except (replay.SessionExpired, replay.InvalidSessionState):
-            raise
-        except per_client.UnknownPerContract as exc:
-            # Refused before any request: the contract id is not one the insurer
-            # reader knows. Its masked shape tells a new product (an assurance vie
-            # filed under the PER code) apart, without any number.
-            log.info("PER request refused: idShape=%s", _id_shape(ext))
-            unavailable[ext] = exc.code
-            continue
-        except replay.ReplayError as exc:
-            unavailable[ext] = exc.code
-            continue
-        except httpx.HTTPError:
-            unavailable[ext] = UpstreamUnavailable.code
-            continue
-        try:
-            details[ext] = per_parser.parse_per_detail(raw, currency=account["balance"]["currency"])
-        except accounts_parser.ParseError as exc:
-            unavailable[ext] = exc.code
+        detail, code = await _per_detail(account, provider)
+        if code is None:
+            details[account["externalId"]] = detail
+        else:
+            unavailable[account["externalId"]] = code
     return details, unavailable
 
 
