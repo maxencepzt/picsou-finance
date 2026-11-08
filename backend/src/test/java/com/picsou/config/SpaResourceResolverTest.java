@@ -90,6 +90,8 @@ class SpaResourceResolverTest {
     @Test
     void aMissingFileWithAStaticExtension_isNotFoundNotTheIndex() throws Exception {
         assertThat(served("assets/missing.js")).isEqualTo(REFUSED);
+        // The PWA manifest: a browser handed the index as a manifest reports a broken app.
+        assertThat(served("manifest.json")).isEqualTo(REFUSED);
     }
 
     @Test
