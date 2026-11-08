@@ -52,7 +52,7 @@ describe('a chart scale', () => {
 
     act(() => { useAppStore.getState().setHideAmounts(true) })
 
-    expect(screen.getByTestId('y-ticks')).toHaveTextContent(AXIS_MASK)
+    expect(screen.getByTestId('y-ticks').textContent).toContain(AXIS_MASK)
     expect(screen.getByTestId('y-ticks').textContent).not.toMatch(/\d/)
   })
 })

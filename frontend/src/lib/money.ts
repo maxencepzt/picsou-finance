@@ -1,17 +1,18 @@
 import { getLocale, normalizeIntlLocale, withDrawableSpaces } from '@/lib/utils'
 
 /**
- * A fixed-length token, never derived from the value it replaces.
+ * A fixed-length token, never derived from the value it replaces: five dial slots, the dashes
+ * the figures roll into (`lib/privacy-dial.ts`), kept apart by no-break spaces so they never wrap.
  *
  * This is the whole point. Masking digit by digit — `1 234 567,89 €` → `*********,** €` against
  * `12,00 €` → `**,** €` — leaks the order of magnitude in the width of the mask, which is exactly
  * what the mode exists to hide. Same reason a CSS blur is not enough: it cannot change how wide
  * the element is, and leaves the real digits in the DOM and in a copy-paste.
  */
-export const AMOUNT_MASK = '*****'
+export const AMOUNT_MASK = '–\u00a0–\u00a0–\u00a0–\u00a0–'
 
 /** Shorter, because every masked axis has to fit a gutter as narrow as `width={45}`. */
-export const AXIS_MASK = '***'
+export const AXIS_MASK = '–\u00a0–\u00a0–'
 
 /**
  * The YAxis gutter for {@link MoneyFormatter.tick}. German does not compact thousands, so its
@@ -97,7 +98,7 @@ export const formatCurrencyUnmasked = formatCurrencyIntl
 /**
  * Replaces the digits of a formatted amount, keeping everything the locale put around them.
  *
- * The symbol and its position survive (`***** €` in French, `€*****` in English) so a masked
+ * The symbol and its position survive (`– – – – – €` in French, `€– – – – –` in English) so a masked
  * figure reads as "an amount, hidden" rather than as a rendering fault, and so the currency of a
  * non-EUR account is still legible. The sign survives too: it states a direction, not a
  * magnitude, and the percentages beside it — which stay visible — already give that away.

@@ -22,6 +22,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Hiding amounts rolls the figures away.** Turning privacy mode on or off now animates every amount on screen like the dials
+  of a safe: the digits roll up out of view and five dashes roll in, one after another, then back again. The dashes replace the
+  asterisks and are drawn in grey, so a hidden amount reads as an empty slot. With "reduce motion" set, amounts swap at once.
 - **The app image is one non-root Java process.** nginx, supervisord and the shell entrypoint are
   gone. The container runs as uid 1000 on port 8080; Compose and Helm hand `/data` to that user
   (`data-permissions` service, `fsGroup`). Tomcat trusts forwarded headers only from

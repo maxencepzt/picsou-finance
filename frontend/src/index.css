@@ -278,6 +278,16 @@
   }
 }
 
+/* Privacy mode's dial (lib/privacy-dial.ts): the real figure turns transparent while its
+   overlay rolls over it, so the two never show at once. */
+::highlight(privacy-dial) {
+  color: transparent;
+}
+/* The dashes of a hidden amount, at rest: an empty slot, not a figure. */
+::highlight(privacy-mask) {
+  color: var(--muted-foreground);
+}
+
 /* Respect the OS "reduce motion" setting: neutralize every animation and transition
    app-wide (entrance animations, shadcn dialogs/sheets, hover transitions). This is the
    safety net that lets feature code add motion freely without auditing each case. */
