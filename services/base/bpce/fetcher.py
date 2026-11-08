@@ -372,6 +372,11 @@ PerDetailProvider = Callable[[str, str], Awaitable[Any]]
 _CURRENT_KIND = "CURRENT_ACCOUNT"
 
 
+def _is_entity_code(value) -> bool:
+    """A PER entity code: five ASCII digits."""
+    return isinstance(value, str) and len(value) == 5 and value.isascii() and value.isdecimal()
+
+
 async def _fetch_per_details(accounts: list, provider: Optional[PerDetailProvider]) -> tuple[dict, dict]:
     """`({externalId: parsed PER}, {externalId: code})`: complete positions, or the PER unavailable.
 
@@ -390,24 +395,21 @@ async def _fetch_per_details(accounts: list, provider: Optional[PerDetailProvide
             continue
         ext = account["externalId"]
         entity_code = account.get("perEntityCode")
-        if (
-            not isinstance(entity_code, str)
-            or len(entity_code) != 5
-            or not entity_code.isascii()
-            or not entity_code.isdecimal()
-        ):
+        if not _is_entity_code(entity_code):
             unavailable[ext] = UpstreamFormatChanged.code
             continue
         try:
             raw = await provider(ext[len(accounts_parser.CONTRACT_ID_PREFIX):], entity_code)
         except (replay.SessionExpired, replay.InvalidSessionState):
             raise
+        except per_client.UnknownPerContract as exc:
+            # Refused before any request: the contract id is not one the insurer
+            # reader knows. Its masked shape tells a new product (an assurance vie
+            # filed under the PER code) apart, without any number.
+            log.info("PER request refused: idShape=%s", _id_shape(ext))
+            unavailable[ext] = exc.code
+            continue
         except replay.ReplayError as exc:
-            if isinstance(exc, per_client.UnknownPerContract):
-                # Refused before any request: the contract id is not one the insurer
-                # reader knows. Its masked shape tells a new product (an assurance vie
-                # filed under the PER code) apart, without any number.
-                log.info("PER request refused: idShape=%s", _id_shape(ext))
             unavailable[ext] = exc.code
             continue
         except httpx.HTTPError:

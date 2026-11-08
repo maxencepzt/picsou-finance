@@ -290,6 +290,23 @@ def _check_balance_sign(kind: str, balance: Optional[dict], where: str) -> None:
         raise ParseError(INVALID_SYNTHESIS, f"{where}.balance.value: unexpected sign for this kind")
 
 
+def _identification(item: dict, kind, where: str, provisional_kinds: frozenset) -> dict:
+    """The contract's `identification` object, required except for a provisional kind."""
+    if kind in provisional_kinds and not isinstance(item.get("identification"), dict):
+        # A kind seen in one live run whose `identification` is missing or odd is listed as
+        # unsupported (keyed by position) rather than failing the whole synthesis.
+        return {}
+    return _object(item.get("identification"), INVALID_SYNTHESIS, f"{where}.identification")
+
+
+def _demoted_id(identification: dict, where: str) -> str:
+    """The key of a demoted provisional contract: its contract id, else its position."""
+    try:
+        return _contract_id(identification, where)
+    except ParseError:
+        return CONTRACT_ID_PREFIX + "?" + where
+
+
 def _contract_account(
     item: dict, where: str, skipped_families: frozenset = frozenset(), provisional_kinds: frozenset = PROVISIONAL_KINDS
 ) -> tuple:
@@ -298,12 +315,7 @@ def _contract_account(
     # The kind decides which id to read: PER, loan and insurance contracts have
     # a null `contractPfmId`, and must not fail the sync of the others.
     kind = _contract_kind(identity, where, skipped_families)
-    if kind in provisional_kinds and not isinstance(item.get("identification"), dict):
-        # A kind seen in one live run whose `identification` is missing or odd is listed as
-        # unsupported (keyed by position) rather than failing the whole synthesis.
-        identification = {}
-    else:
-        identification = _object(item.get("identification"), INVALID_SYNTHESIS, f"{where}.identification")
+    identification = _identification(item, kind, where, provisional_kinds)
     rejected = None
     if kind is None:
         external_id = _external_id(None, identification, where)
@@ -317,10 +329,7 @@ def _contract_account(
             # Reported below as unsupported, so it never blocks the other accounts. Its
             # `contractPfmId` may be the very thing that is odd, so it is keyed by its
             # contract id; with no usable id either, by its position in the synthesis.
-            try:
-                external_id = _contract_id(identification, where)
-            except ParseError:
-                external_id = CONTRACT_ID_PREFIX + "?" + where
+            external_id = _demoted_id(identification, where)
     # Id, codes and the catalogue product name only: no account name and no
     # balance leaves the parser. The sub code (already checked by
     # `_contract_kind`) tells a new product apart, so a real sync can reveal
