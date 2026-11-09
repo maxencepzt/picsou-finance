@@ -3808,6 +3808,8 @@
       "avgCost": "PRU",
       "price": "Cours",
       "pnl": "± latente",
+      "pnlSince": "Calculée depuis le premier achat, le {{date}}",
+      "pnlSinceUnknown": "Date du premier achat inconnue : calculée sur le prix de revient synchronisé",
       "weight": "Poids"
     },
     "concentration": {

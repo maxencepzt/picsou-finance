@@ -3808,6 +3808,8 @@
       "avgCost": "Avg cost",
       "price": "Price",
       "pnl": "Unrealized +/−",
+      "pnlSince": "Measured since the first purchase, on {{date}}",
+      "pnlSinceUnknown": "First purchase date unknown: measured against the synced cost basis",
       "weight": "Weight"
     },
     "concentration": {

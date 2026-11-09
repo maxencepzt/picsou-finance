@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom'
-import { render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
 import type { PortfolioLine } from '@/features/accounts/hooks'
@@ -9,7 +9,7 @@ const pea = { id: 1, name: 'PEA Bourso', type: 'PEA', currency: 'EUR', currentBa
 const cto = { id: 2, name: 'CTO', type: 'COMPTE_TITRES', currency: 'EUR', currentBalance: 50, currentBalanceEur: 50 } as Account
 const base = { quantity: 1, accountColor: '#000', averageBuyIn: null, quoteCurrency: null, pnlPercent: 10, priceUpdatedAt: null }
 const lines: PortfolioLine[] = [
-  { ...base, id: '1-NVDA', name: 'NVIDIA', ticker: 'NVDA', accountId: 1, accountName: 'PEA Bourso', accountType: 'PEA', valueEur: 110, costBasisEur: 100, pnlEur: 10 },
+  { ...base, id: '1-NVDA', name: 'NVIDIA', ticker: 'NVDA', accountId: 1, accountName: 'PEA Bourso', accountType: 'PEA', valueEur: 110, costBasisEur: 100, pnlEur: 10, firstBuyDate: '2024-07-23' },
   { ...base, id: '2-IWDA', name: 'iShares World', ticker: 'IWDA', accountId: 2, accountName: 'CTO', accountType: 'COMPTE_TITRES', valueEur: 55, costBasisEur: 50, pnlEur: 5 },
   { ...base, id: 'cash-aggregated', name: 'Euros', ticker: 'EUR', isCash: true, accountId: null, accountName: 'Courant', accountType: 'CHECKING', valueEur: 999, costBasisEur: null, pnlEur: null },
 ]
@@ -82,6 +82,19 @@ describe('InvestmentsPage', () => {
     expect(screen.getByText('Apple')).toBeInTheDocument()
     expect(screen.getByText('Tesla')).toBeInTheDocument()
     expect(screen.getByText('investments.tax.missing')).toBeInTheDocument()
+  })
+
+  it('says on hover since when each percentage runs, or that the first purchase is unknown', async () => {
+    const { container } = render(<MemoryRouter><InvestmentsPage /></MemoryRouter>)
+    // Rows are sorted by value: NVIDIA (110, bought 2024-07-23) first, then iShares World (no purchase history).
+    const triggers = container.querySelectorAll('span.cursor-help')
+    expect(triggers).toHaveLength(2)
+
+    await act(async () => { fireEvent.focus(triggers[0]) })
+    expect((await screen.findAllByText('investments.positions.pnlSince')).length).toBeGreaterThan(0)
+
+    await act(async () => { fireEvent.blur(triggers[0]); fireEvent.focus(triggers[1]) })
+    expect((await screen.findAllByText('investments.positions.pnlSinceUnknown')).length).toBeGreaterThan(0)
   })
 
   it('totals the dividends in euros and says how many credits it had to leave out', () => {

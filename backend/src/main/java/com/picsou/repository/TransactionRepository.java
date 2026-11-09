@@ -110,6 +110,15 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     /** Dedup guard for synced ingestion (account-scoped). */
     boolean existsByAccountIdAndExternalId(Long accountId, String externalId);
 
+    /** First BUY day of each ticker on this account: {ticker, date} pairs. */
+    @Query("""
+        SELECT t.ticker, MIN(t.date) FROM Transaction t
+        WHERE t.account.id = :accountId AND t.txType = com.picsou.model.TransactionType.BUY
+          AND t.ticker IS NOT NULL
+        GROUP BY t.ticker
+        """)
+    List<Object[]> findFirstBuyDatesByAccountId(@Param("accountId") Long accountId);
+
     /** The row a connector keyed under {@code externalId} on this account, if any. */
     Optional<Transaction> findByAccountIdAndExternalId(Long accountId, String externalId);
 
