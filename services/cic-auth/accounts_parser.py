@@ -15,6 +15,19 @@ table per category, each with an invisible caption naming it:
           <span class="ei_sdsf_montant pos">+1 234,56 EUR</span></td>
         ...
 
+Some sites of the platform (Banque Transatlantique) render one table instead,
+"Tri par famille", cut by header rows:
+
+    <tr class="ei_rupture"><th class="rupture">Comptes courants</th></tr>
+    <tr>...account row...</tr>
+    <tr class="ei_rupture"><th class="rupture">Épargne</th></tr>
+    <tr class="ei_rupture"><th class="rupture2">Épargne financière</th></tr>
+    <tr>...Valorisation totale de vos portefeuilles titres...</tr>
+
+The rows are the same; the family headers stand for the captions. The
+securities total row has no account number: the portfolios are read from their
+own pages (portfolio_parser), and the row only says they exist.
+
 Only current accounts and savings accounts are in scope. Other tables are
 skipped only when their rows contain no account-number markers or balance data.
 A title alone can be a contract or offer link, including with an empty balance cell.
@@ -37,6 +50,10 @@ FORMAT_CHANGED = "UPSTREAM_FORMAT_CHANGED"
 
 CHECKING_CATEGORY = "comptes courants"
 SAVINGS_CATEGORY = "livrets et comptes d'épargne"
+# The family layout's names, and where it puts the securities total.
+_SAVINGS_FAMILY = "épargne"
+_SECURITIES_SUBFAMILY = "épargne financière"
+SECURITIES_CATEGORY = "portefeuilles titres"
 
 _DOCUMENT_END_RE = re.compile(r"</html\s*>\s*\Z", re.IGNORECASE)
 _TABLE_RE = re.compile(
@@ -49,7 +66,10 @@ _UNPARSED_CONTAINER_RE = re.compile(
 )
 _CAPTION_RE = re.compile(r"<caption\b[^>]*>(?P<text>.*?)</caption>", re.DOTALL)
 _CATEGORY_RE = re.compile(r"cat[ée]gorie\s*:\s*(?P<name>.+)$", re.IGNORECASE)
-_ROW_RE = re.compile(r"<tr\b[^>]*>(?P<row>.*?)</tr>", re.DOTALL | re.IGNORECASE)
+_ROW_RE = re.compile(r"<tr\b(?P<attrs>[^>]*)>(?P<row>.*?)</tr>", re.DOTALL | re.IGNORECASE)
+# A family header is told by its cell, whatever the row's own class.
+_FAMILY_ROW_RE = re.compile(r'<th\b[^>]*class="[^"]*\brupture\d*\b')
+_SUBFAMILY_RE = re.compile(r'<th\b[^>]*class="[^"]*\brupture\d+\b')
 _TITLE_RE = re.compile(r'class="[^"]*\bei_sdsf_title\b[^"]*"[^>]*>(?P<title>.*?)</span>', re.DOTALL)
 _NUMBER_RE = re.compile(r'class="[^"]*\bdoux\b[^"]*"[^>]*>(?P<number>.*?)</span>', re.DOTALL)
 _AMOUNT_RE = re.compile(r'class="[^"]*\bei_sdsf_montant\b[^"]*"[^>]*>(?P<amount>.*?)</span>', re.DOTALL)
@@ -319,6 +339,43 @@ def _has_account_data(fragment: str, *, contract: bool = False) -> bool:
             or _balance_data(parser, contract=contract))
 
 
+def _sections(body: str) -> tuple[list[tuple[str, list[str]]], bool]:
+    """The table's rows by category, and whether it is the family layout.
+
+    A captioned table is one section. The family layout is cut at its header
+    rows: "Comptes courants" and "Épargne" stand for the two captions, except
+    the "Épargne financière" sub-family, which carries the securities total;
+    any other sub-family keeps its own name, so an account under it fails the page.
+    """
+    rows = list(_ROW_RE.finditer(body))
+    category = _category(body)
+    if category or not any(_FAMILY_ROW_RE.search(row.group("row")) for row in rows):
+        return [(category, [row.group("row") for row in rows])], False
+    sections: list[tuple[str, list[str]]] = [("", [])]
+    family = ""
+    for row in rows:
+        if not _FAMILY_ROW_RE.search(row.group("row")):
+            sections[-1][1].append(row.group("row"))
+            continue
+        name = _text(row.group("row")).lower().replace("’", "'")
+        if _SUBFAMILY_RE.search(row.group("row")):
+            # No other sub-family is known: its accounts fail the page rather than
+            # being taken for passbooks (a life insurance would be one).
+            category = SECURITIES_CATEGORY if family == _SAVINGS_FAMILY and name == _SECURITIES_SUBFAMILY else name
+        else:
+            family = name
+            category = {CHECKING_CATEGORY: CHECKING_CATEGORY, _SAVINGS_FAMILY: SAVINGS_CATEGORY}.get(name, name)
+        sections.append((category, []))
+    return sections, True
+
+
+def _is_securities_total(cells: str) -> bool:
+    """The "Valorisation totale de vos portefeuilles titres" row: a title and an amount, no account number."""
+    title = _TITLE_RE.search(cells)
+    return (title is not None and _NUMBER_RE.search(cells) is None
+            and "PORTEFEUILLES TITRES" in _fold(_text(title.group("title"))))
+
+
 # What the backend calls each in-scope table: it closes an account no longer
 # listed only when the table of its category was read.
 CATEGORY_GROUPS = {CHECKING_CATEGORY: "CHECKING", SAVINGS_CATEGORY: "SAVINGS"}
@@ -332,7 +389,8 @@ def categories_read(page: str) -> list[str]:
     category's accounts as they were.
     """
     page = _PageParser(page).visible_html()
-    found = {_category(table.group("body")) for table in _TABLE_RE.finditer(page)}
+    found = {category for table in _TABLE_RE.finditer(page)
+             for category, _ in _sections(table.group("body"))[0]}
     return [group for name, group in CATEGORY_GROUPS.items() if name in found]
 
 
@@ -343,7 +401,10 @@ def parse_accounts(page: str) -> tuple[list[dict], list[str]]:
 
 
 def parse_accounts_listing(page: str) -> tuple[list[dict], list[str], list[str]]:
-    """Validate once and return accounts, skipped categories, and categories read."""
+    """Validate once and return accounts, skipped categories, and categories read.
+
+    The categories end with SECURITIES when the page carries the securities total row.
+    """
     if _DOCUMENT_END_RE.search(page) is None:
         raise AccountsFormatError(FORMAT_CHANGED, "Incomplete accounts page")
 
@@ -364,46 +425,54 @@ def parse_accounts_listing(page: str) -> tuple[list[dict], list[str], list[str]]
     found: set[str] = set()
     for table in tables:
         body = table.group("body")
-        category = _category(body)
-        supported = category in CATEGORY_GROUPS
-        if supported:
-            found.add(category)
-        if _has_account_data(_ROW_RE.sub("", body), contract=supported):
+        sections, by_family = _sections(body)
+        in_scope = any(category in CATEGORY_GROUPS for category, _ in sections)
+        if _has_account_data(_ROW_RE.sub("", body), contract=in_scope):
             raise AccountsFormatError(FORMAT_CHANGED, "Account data outside a recognized account row")
-        for row in _ROW_RE.finditer(body):
-            cells = row.group("row")
-            if not supported:
-                # A title without an account number or balance can be an offer link.
-                if _has_balance(cells):
-                    # Product titles may contain holder names and balances.
-                    raise AccountsFormatError(
-                        FORMAT_CHANGED,
-                        f"An account table has an unrecognized category {category[:60] or 'unnamed'!r}",
-                    )
-                continue
-            title = _TITLE_RE.search(cells)
-            number = _NUMBER_RE.search(cells)
-            amount = _AMOUNT_RE.search(cells)
-            if not _has_account_data(cells, contract=True):
-                continue
-            if (title is None or number is None or amount is None
-                    or any(len(pattern.findall(cells)) > 1 for pattern in (_TITLE_RE, _NUMBER_RE, _AMOUNT_RE))):
-                raise AccountsFormatError(FORMAT_CHANGED, "An account row has no unique title, number, or balance")
-            account_id = re.sub(r"\D", "", _text(number.group("number")))
-            if not account_id:
-                raise AccountsFormatError(FORMAT_CHANGED, "An account row has an empty number")
-            if account_id in seen:
-                raise AccountsFormatError(FORMAT_CHANGED, "The same account is listed twice")
-            seen.add(account_id)
-            label = _text(title.group("title"))
-            if not label:
-                raise AccountsFormatError(FORMAT_CHANGED, "An account row has an empty title")
-            accounts.append({
-                "id": account_id,
-                "name": label.title(),
-                "type": account_type(category, label),
-                "balanceEur": parse_amount(amount.group("amount")),
-            })
-        if not supported:
-            skipped.append(category or "unnamed")
-    return accounts, skipped, [group for name, group in CATEGORY_GROUPS.items() if name in found]
+        for category, rows in sections:
+            supported = category in CATEGORY_GROUPS
+            if supported:
+                found.add(category)
+            for cells in rows:
+                if by_family and category == SECURITIES_CATEGORY and _is_securities_total(cells):
+                    # Read from the portfolio pages, where each line is listed.
+                    found.add(SECURITIES_CATEGORY)
+                    continue
+                if not supported:
+                    # A title without an account number or balance can be an offer link.
+                    if _has_balance(cells):
+                        # Product titles may contain holder names and balances.
+                        raise AccountsFormatError(
+                            FORMAT_CHANGED,
+                            f"An account table has an unrecognized category {category[:60] or 'unnamed'!r}",
+                        )
+                    continue
+                title = _TITLE_RE.search(cells)
+                number = _NUMBER_RE.search(cells)
+                amount = _AMOUNT_RE.search(cells)
+                if not _has_account_data(cells, contract=True):
+                    continue
+                if (title is None or number is None or amount is None
+                        or any(len(pattern.findall(cells)) > 1 for pattern in (_TITLE_RE, _NUMBER_RE, _AMOUNT_RE))):
+                    raise AccountsFormatError(FORMAT_CHANGED, "An account row has no unique title, number, or balance")
+                account_id = re.sub(r"\D", "", _text(number.group("number")))
+                if not account_id:
+                    raise AccountsFormatError(FORMAT_CHANGED, "An account row has an empty number")
+                if account_id in seen:
+                    raise AccountsFormatError(FORMAT_CHANGED, "The same account is listed twice")
+                seen.add(account_id)
+                label = _text(title.group("title"))
+                if not label:
+                    raise AccountsFormatError(FORMAT_CHANGED, "An account row has an empty title")
+                accounts.append({
+                    "id": account_id,
+                    "name": label.title(),
+                    "type": account_type(category, label),
+                    "balanceEur": parse_amount(amount.group("amount")),
+                })
+            # The family layout opens with a header row, before any family.
+            if not supported and not (by_family and category in ("", SECURITIES_CATEGORY)):
+                skipped.append(category or "unnamed")
+    # SECURITIES: the page announces portfolios, which the caller reads from their own pages.
+    return (accounts, skipped, [group for name, group in CATEGORY_GROUPS.items() if name in found]
+            + (["SECURITIES"] if SECURITIES_CATEGORY in found else []))

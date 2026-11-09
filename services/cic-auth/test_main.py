@@ -23,9 +23,14 @@ from accounts_parser import _PageParser
 from fixtures import (
     ACCOUNTS_PAGE,
     AUTHORITY_MANAGEMENT_PAGE,
+    FAMILY_ACCOUNTS_PAGE,
     LOGIN_PAGE,
     LOGIN_PAGE_WRONG_PASSWORD,
     MOBILE_CONFIRMATION_PAGE,
+    PORTFOLIO_PAGE,
+    PORTFOLIOS_PAGE,
+    SECOND_PORTFOLIO_PAGE,
+    TWO_PORTFOLIOS_PAGE,
     SMS_CONFIRMATION_PAGE,
     accounts_table,
     transaction_state,
@@ -49,6 +54,9 @@ class FakeBank:
         self.final_fields: dict[str, list[str]] = {}
         self.cancelled = False
         self.accounts_page = ACCOUNTS_PAGE
+        self.portfolios_page = PORTFOLIOS_PAGE
+        self.portfolio_page = PORTFOLIO_PAGE
+        self.second_portfolio_page = SECOND_PORTFOLIO_PAGE
 
     def redirect(self, location: str, *cookies: str) -> httpx.Response:
         headers = [("location", location)] + [("set-cookie", cookie) for cookie in cookies]
@@ -118,6 +126,12 @@ class FakeBank:
             return self.redirect(HOME_PATH)
         if path in (HOME_PATH, main.ACCOUNTS_PATH):
             return httpx.Response(200, text=self.accounts_page)
+        if path == main.PORTFOLIOS_PATH:
+            return httpx.Response(200, text=self.portfolios_page)
+        if path == "/fr/banque/PORT_Valo.aspx" and request.url.query == b"ddp=opaque":
+            return httpx.Response(200, text=self.portfolio_page)
+        if path == "/fr/banque/PORT_Valo.aspx" and request.url.query == b"ddp=second":
+            return httpx.Response(200, text=self.second_portfolio_page)
         return httpx.Response(404)
 
 
@@ -274,6 +288,91 @@ class FlowTest(unittest.TestCase):
             self.assertIn("nouveaux contrats", message)
             for private_text in (title, "12 500", "EXAMPLE", "Assurance"):
                 self.assertNotIn(private_text, message)
+
+    def test_a_securities_portfolio_is_listed_as_an_account_with_its_positions(self):
+        session = self.confirm()
+        self.bank.accounts_page = FAMILY_ACCOUNTS_PAGE
+
+        response = self.client.post("/accounts/listing", json={"sessionState": session}, headers=HEADERS)
+
+        self.assertEqual(response.status_code, 200, response.text)
+        body = response.json()
+        self.assertEqual(body["categoriesRead"], ["CHECKING", "SAVINGS", "SECURITIES"])
+        cash, portfolio = body["accounts"]
+        self.assertEqual((cash["externalId"], cash["type"]), ("cic_1000000012345601", "CHECKING"))
+        self.assertNotIn("positions", cash)
+        # Named after its type: the page's label carries the holder's name.
+        self.assertEqual(
+            (portfolio["externalId"], portfolio["name"], portfolio["type"],
+             Decimal(portfolio["balanceEur"]), Decimal(portfolio["cashBalance"])),
+            ("cic_10000000AB00012345678", "Compte titres", "COMPTE_TITRES", Decimal("3650.00"), Decimal("0")))
+        self.assertEqual(
+            [(p["isin"], Decimal(p["quantity"]), p["quoteCurrency"], Decimal(p["currentValueEur"]))
+             for p in portfolio["positions"]],
+            [("US0000000001", Decimal("10"), "USD", Decimal("1150.00")),
+             ("FR0000000002", Decimal("25.5"), "EUR", Decimal("2500.00"))])
+
+    def test_the_bare_accounts_list_leaves_the_portfolios_out(self):
+        # A backend that predates /accounts/listing would take one for a cash account.
+        session = self.confirm()
+        self.bank.accounts_page = FAMILY_ACCOUNTS_PAGE
+
+        response = self.client.post("/accounts", json={"sessionState": session}, headers=HEADERS)
+
+        self.assertEqual([a["type"] for a in response.json()], ["CHECKING"])
+
+    def test_the_portfolio_pages_are_read_only_when_the_accounts_page_announces_them(self):
+        session = self.confirm()
+        self.bank.requests.clear()
+
+        response = self.client.post("/accounts/listing", json={"sessionState": session}, headers=HEADERS)
+
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertEqual(response.json()["categoriesRead"], ["CHECKING", "SAVINGS"])
+        self.assertNotIn(("GET", main.PORTFOLIOS_PATH), self.bank.requests)
+
+    def test_a_portfolio_whose_lines_do_not_add_up_fails_the_whole_read(self):
+        session = self.confirm()
+        self.bank.accounts_page = FAMILY_ACCOUNTS_PAGE
+        self.bank.portfolio_page = PORTFOLIO_PAGE.replace("3&nbsp;650,00", "9&nbsp;999,00")
+
+        response = self.client.post("/accounts/listing", json={"sessionState": session}, headers=HEADERS)
+
+        self.assertEqual((response.status_code, response.json()), (502, {"detail": "PORTFOLIO_INCOMPLETE"}))
+
+    def test_two_portfolios_each_get_their_own_lines(self):
+        session = self.confirm()
+        self.bank.accounts_page = FAMILY_ACCOUNTS_PAGE
+        self.bank.portfolios_page = TWO_PORTFOLIOS_PAGE
+
+        body = self.client.post("/accounts/listing", json={"sessionState": session}, headers=HEADERS).json()
+
+        self.assertEqual(
+            [(a["externalId"], a["type"], Decimal(a["balanceEur"]), len(a["positions"])) for a in body["accounts"][1:]],
+            [("cic_10000000AB00012345678", "COMPTE_TITRES", Decimal("3650.00"), 2),
+             ("cic_10000000AB00012345679", "PEA", Decimal("10.00"), 1)])
+
+    def test_a_site_answering_the_same_page_for_two_portfolios_fails_the_read(self):
+        # Each page reconciles with its own total, so only its number tells them apart.
+        session = self.confirm()
+        self.bank.accounts_page = FAMILY_ACCOUNTS_PAGE
+        self.bank.portfolios_page = TWO_PORTFOLIOS_PAGE
+        self.bank.second_portfolio_page = PORTFOLIO_PAGE
+
+        response = self.client.post("/accounts/listing", json={"sessionState": session}, headers=HEADERS)
+
+        self.assertEqual((response.status_code, response.json()), (502, {"detail": "UPSTREAM_FORMAT_CHANGED"}))
+
+    def test_a_detail_link_leaving_the_bank_is_refused(self):
+        session = self.confirm()
+        self.bank.accounts_page = FAMILY_ACCOUNTS_PAGE
+        self.bank.portfolios_page = PORTFOLIOS_PAGE.replace("https://www.cic.fr/fr/banque/PORT_Valo.aspx",
+                                                             "https://evil.example/fr/banque/PORT_Valo.aspx")
+
+        response = self.client.post("/accounts/listing", json={"sessionState": session}, headers=HEADERS)
+
+        self.assertEqual((response.status_code, response.json()), (502, {"detail": "UPSTREAM_FORMAT_CHANGED"}))
+        self.assertFalse(any("PORT_Valo" in path for _, path in self.bank.requests))
 
     def test_skipped_categories_are_bounded_in_logs(self):
         session = self.confirm()
