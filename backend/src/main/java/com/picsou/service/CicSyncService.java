@@ -67,8 +67,11 @@ public class CicSyncService {
     /** What the sidecar may return; anything else is refused, not stored. */
     private static final Set<AccountType> SUPPORTED_TYPES = EnumSet.of(
         AccountType.CHECKING, AccountType.SAVINGS, AccountType.LIVRET_A, AccountType.LDDS,
-        AccountType.LEP, AccountType.LIVRET_JEUNE, AccountType.PEL, AccountType.CEL
+        AccountType.LEP, AccountType.LIVRET_JEUNE, AccountType.PEL, AccountType.CEL,
+        AccountType.PEA, AccountType.COMPTE_TITRES
     );
+    /** The securities portfolios: accounts that carry lines. */
+    private static final Set<AccountType> PORTFOLIO_TYPES = EnumSet.of(AccountType.PEA, AccountType.COMPTE_TITRES);
     private static final long PENDING_CREDENTIALS_SECONDS = 600;
     private static final ObjectMapper JSON = new ObjectMapper();
 
@@ -81,6 +84,7 @@ public class CicSyncService {
     private final TransactionTemplate txTemplate;
     private final Executor syncExecutor;
     private final Clock clock;
+    private final BrokeragePositions brokeragePositions;
     private final Map<String, PendingCredentials> pendingCredentials = new ConcurrentHashMap<>();
     // A disconnect revokes logins already waiting on the bank, including those without a process ID yet.
     private final Map<Long, Long> authGenerations = new ConcurrentHashMap<>();
@@ -95,8 +99,10 @@ public class CicSyncService {
         CryptoEncryption encryption,
         TransactionTemplate txTemplate,
         @Qualifier("cicSyncExecutor") Executor syncExecutor,
-        Clock clock
+        Clock clock,
+        BrokeragePositions brokeragePositions
     ) {
+        this.brokeragePositions = brokeragePositions;
         this.port = port;
         this.sessionRepository = sessionRepository;
         this.accountRepository = accountRepository;
@@ -451,8 +457,19 @@ public class CicSyncService {
             if (account.balanceEur() == null) {
                 throw error(SidecarErrorCode.INVALID_DATA, "CIC returned an account without balance", null);
             }
+            boolean portfolio = PORTFOLIO_TYPES.contains(account.type());
+            // Lines on a cash account, or a portfolio without its lines, is a reply this service
+            // cannot store truthfully.
+            if (portfolio != (account.positions() != null) || portfolio != (account.cashBalance() != null)) {
+                throw error(SidecarErrorCode.INVALID_DATA, "CIC returned an account whose lines do not match its kind", null);
+            }
+            List<BrokeragePositions.Prepared> positions = portfolio
+                ? brokeragePositions.prepare(account.positions(), "CIC") : null;
             prepared.add(new PreparedAccount(
-                externalId, limit(account.name(), 100, "CIC"), account.type(), account.balanceEur()));
+                externalId, limit(account.name(), 100, "CIC"), account.type(), account.balanceEur(),
+                account.cashBalance(), positions,
+                portfolio ? brokeragePositions.investedAmount(account.cashBalance(), account.balanceEur(), positions)
+                    : null));
         }
         return List.copyOf(prepared);
     }
@@ -511,7 +528,7 @@ public class CicSyncService {
             .provider(PROVIDER)
             .currency("EUR")
             .isManual(false)
-            .color(data.type() == AccountType.CHECKING ? "#ec4899" : "#f59e0b")
+            .color(color(data.type()))
             .build());
         account.setName(data.name());
         account.setType(data.type());
@@ -519,10 +536,15 @@ public class CicSyncService {
         account.setCurrency("EUR");
         account.setManual(false);
         account.setCurrentBalance(data.balanceEur());
-        // A livret or a current account has one number and no cash leg.
-        account.setCashBalance(null);
+        // A livret or a current account has one number and no cash leg; a portfolio has one.
+        account.setCashBalance(data.cashBalance());
         account.setLastSyncedAt(syncedAt);
         Account savedAccount = accountRepository.save(account);
+        if (data.positions() != null) {
+            brokeragePositions.replaceHoldings(savedAccount, data.positions(), syncedAt);
+            accountService.upsertSnapshot(savedAccount, data.balanceEur(), data.investedAmountEur(), LocalDate.now());
+            return;
+        }
         // No cost basis of its own: AccountService derives it as for every balance-only connector.
         accountService.upsertSnapshot(savedAccount, data.balanceEur(), LocalDate.now());
     }
@@ -573,12 +595,29 @@ public class CicSyncService {
             account.setCashBalance(null);
             account.setLastSyncedAt(syncedAt);
             Account saved = accountRepository.save(account);
+            if (PORTFOLIO_TYPES.contains(saved.getType())) {
+                // Its lines would otherwise keep their last value under a zero balance.
+                brokeragePositions.replaceHoldings(saved, List.of(), syncedAt);
+            }
             accountService.upsertSnapshot(saved, BigDecimal.ZERO, LocalDate.now());
         }
     }
 
-    /** The table an account type comes from on the page: {@code CHECKING} or {@code SAVINGS}. */
+    /** The colours the other connectors give the same kinds of account. */
+    private static String color(AccountType type) {
+        return switch (type) {
+            case CHECKING -> "#ec4899";
+            case PEA -> "#10b981";
+            case COMPTE_TITRES -> "#3b82f6";
+            default -> "#f59e0b";
+        };
+    }
+
+    /** Where an account type comes from: the {@code CHECKING} or {@code SAVINGS} table, or the {@code SECURITIES} pages. */
     private static String categoryOf(AccountType type) {
+        if (PORTFOLIO_TYPES.contains(type)) {
+            return "SECURITIES";
+        }
         return type == AccountType.CHECKING ? "CHECKING" : "SAVINGS";
     }
 
@@ -748,5 +787,8 @@ public class CicSyncService {
     private record PendingCredentials(String login, String password, Instant expiresAt, Long memberId, long generation) {}
     private record QueueDecision(SyncJob job, SessionStatusResponse status) {}
     private record SyncJob(Long sessionId, Long memberId, String plainState) {}
-    private record PreparedAccount(String externalId, String name, AccountType type, BigDecimal balanceEur) {}
+    /** {@code cashBalance}, {@code positions} and {@code investedAmountEur} are null except on a securities portfolio. */
+    private record PreparedAccount(String externalId, String name, AccountType type, BigDecimal balanceEur,
+                                   BigDecimal cashBalance, List<BrokeragePositions.Prepared> positions,
+                                   BigDecimal investedAmountEur) {}
 }

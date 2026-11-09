@@ -9,6 +9,9 @@ import com.picsou.model.CicSyncStatus;
 import com.picsou.model.FamilyMember;
 import com.picsou.port.SidecarErrorCode;
 import com.picsou.adapter.CicAdapter;
+import com.picsou.repository.AccountHoldingRepository;
+import com.picsou.model.AccountHolding;
+import com.picsou.adapter.OpenFigiIsinConverter;
 import com.picsou.port.SidecarInitiate;
 import com.picsou.repository.AccountRepository;
 import com.picsou.repository.CicSessionRepository;
@@ -40,8 +43,10 @@ import java.util.Optional;
 import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -67,6 +72,9 @@ class CicSyncServiceTest {
     @Mock TransactionTemplate txTemplate;
     @Mock TransactionStatus transactionStatus;
     @Mock Clock clock;
+    @Mock OpenFigiIsinConverter isinConverter;
+    @Mock SecurityIdentityService identityService;
+    @Mock AccountHoldingRepository holdingRepository;
     @Captor ArgumentCaptor<Account> accountCaptor;
 
     CicSyncService service;
@@ -77,7 +85,8 @@ class CicSyncServiceTest {
         lenient().when(clock.instant()).thenReturn(Instant.parse("2026-10-31T12:00:00Z"));
         service = new CicSyncService(
             port, sessionRepository, accountRepository, memberRepository,
-            accountService, encryption, txTemplate, Runnable::run, clock
+            accountService, encryption, txTemplate, Runnable::run, clock,
+            new BrokeragePositions(isinConverter, identityService, holdingRepository)
         );
     }
 
@@ -101,13 +110,83 @@ class CicSyncServiceTest {
     }
 
     @Test
-    void queueSync_refusesAnAccountTypeOutsideCurrentAndSavings() {
-        arrangeQueuedSession(activeSession(owner()));
+    void queueSync_refusesAnAccountTypeTheConnectorDoesNotRead() {
+        CicSession session = activeSession(owner());
+        arrangeRefusableSession(session);
         when(port.fetchAccounts("plain-state")).thenReturn(CicAdapter.AccountListing.withoutCategories(List.of(
-            new CicAdapter.AccountData("cic_1", "PEA", AccountType.PEA, new BigDecimal("10.00"), true))));
+            new CicAdapter.AccountData("cic_1", "Contrat", AccountType.ASSURANCE_VIE, new BigDecimal("10.00"), true))));
 
         service.queueSync(7L);
 
+        // The refusal itself, not a later failure: everything a commit needs is arranged.
+        assertThat(session.getLastSyncError()).isEqualTo(SidecarErrorCode.INVALID_DATA);
+        verify(accountRepository, never()).save(any());
+    }
+
+    @Test
+    void queueSync_importsASecuritiesPortfolioWithItsLines() {
+        // Two lines resolve through their ISIN; the invested amount is each line's unit cost
+        // times its quantity, on top of the (zero) cash.
+        when(isinConverter.resolve("US0000000001")).thenReturn(new OpenFigiIsinConverter.TickerResult("ACME", "Acme"));
+        when(isinConverter.resolve("FR0000000002")).thenReturn(null);
+        arrangeCommittableSync(List.of(portfolio(List.of(
+            new BrokeragePositions.Raw("US0000000001", "US0000000001", "ACME CORP", new BigDecimal("10"),
+                new BigDecimal("100.00"), new BigDecimal("123.45"), "USD", new BigDecimal("1150.00"), new BigDecimal("150.00")),
+            new BrokeragePositions.Raw("FR0000000002", "FR0000000002", "EXAMPLE WORLD ETF", new BigDecimal("25.5"),
+                new BigDecimal("100.00"), new BigDecimal("98.04"), "EUR", new BigDecimal("2500.00"), new BigDecimal("-50.00"))))));
+
+        CicSyncService.SessionStatusResponse result = service.queueSync(7L);
+
+        assertThat(result.syncStatus()).isEqualTo(CicSyncStatus.SUCCESS);
+        verify(accountRepository).save(accountCaptor.capture());
+        Account account = accountCaptor.getValue();
+        assertThat(account.getType()).isEqualTo(AccountType.COMPTE_TITRES);
+        assertThat(account.getCurrentBalance()).isEqualByComparingTo("3650.00");
+        assertThat(account.getCashBalance()).isEqualByComparingTo("0");
+        // The old lines go first, so one sold since the last sync does not linger.
+        verify(holdingRepository).deleteByAccountId(11L);
+        ArgumentCaptor<List<AccountHolding>> holdings = ArgumentCaptor.forClass(List.class);
+        verify(holdingRepository).saveAll(holdings.capture());
+        assertThat(holdings.getValue())
+            .extracting(AccountHolding::getTicker, h -> h.getQuantity().toPlainString(), AccountHolding::getQuoteCurrency,
+                h -> h.getProviderValueEur().toPlainString())
+            .containsExactly(tuple("ACME", "10", "USD", "1150.00"), tuple("FR0000000002", "25.5", "EUR", "2500.00"));
+        verify(accountService).upsertSnapshot(any(Account.class), eq(new BigDecimal("3650.00")),
+            argThat(invested -> invested.compareTo(new BigDecimal("3550")) == 0), eq(LocalDate.now()));
+    }
+
+    @Test
+    void queueSync_refusesLinesOnACashAccountAndAPortfolioWithoutLines() {
+        for (CicAdapter.AccountData account : List.of(
+            new CicAdapter.AccountData("cic_1", "Compte Courant", AccountType.CHECKING, new BigDecimal("10.00"),
+                BigDecimal.ZERO, List.of(), true),
+            new CicAdapter.AccountData("cic_2", "PEA", AccountType.PEA, new BigDecimal("10.00"), true))) {
+            CicSession session = activeSession(owner());
+            arrangeRefusableSession(session);
+            when(port.fetchAccounts("plain-state"))
+                .thenReturn(CicAdapter.AccountListing.withoutCategories(List.of(account)));
+
+            service.queueSync(7L);
+
+            assertThat(session.getLastSyncError()).as(account.name()).isEqualTo(SidecarErrorCode.INVALID_DATA);
+        }
+
+        verify(accountRepository, never()).save(any());
+        verify(holdingRepository, never()).saveAll(any());
+    }
+
+    @Test
+    void queueSync_refusesThePortfolioWhenOneLineIsUnreadable() {
+        // A quote without its currency cannot be valued: the whole account is refused, not the line.
+        CicSession session = activeSession(owner());
+        arrangeRefusableSession(session);
+        when(port.fetchAccounts("plain-state")).thenReturn(CicAdapter.AccountListing.withoutCategories(List.of(
+            portfolio(List.of(new BrokeragePositions.Raw(null, "ACME", "ACME CORP", BigDecimal.TEN, null,
+                new BigDecimal("1.00"), null, new BigDecimal("10.00"), null))))));
+
+        service.queueSync(7L);
+
+        assertThat(session.getLastSyncError()).isEqualTo(SidecarErrorCode.INVALID_DATA);
         verify(accountRepository, never()).save(any());
     }
 
@@ -733,6 +812,22 @@ class CicSyncServiceTest {
 
     private SyncException expired() {
         return new SyncException("expired", null, SidecarErrorCode.SESSION_EXPIRED.name());
+    }
+
+    private static CicAdapter.AccountData portfolio(List<BrokeragePositions.Raw> positions) {
+        return new CicAdapter.AccountData("cic_10000000AB00012345678", "Compte titres", AccountType.COMPTE_TITRES,
+            new BigDecimal("3650.00"), BigDecimal.ZERO, positions, true);
+    }
+
+    /**
+     * A sync that would commit if the service let the accounts through: the member exists and a
+     * save would succeed, so only the refusal keeps the account from being stored.
+     */
+    private void arrangeRefusableSession(CicSession session) {
+        arrangeQueuedSession(session);
+        lenient().when(memberRepository.findById(7L)).thenReturn(Optional.of(owner()));
+        lenient().when(accountRepository.findByExternalAccountIdAndMemberId(any(), eq(7L))).thenReturn(Optional.empty());
+        lenient().when(accountRepository.save(any(Account.class))).thenAnswer(invocation -> invocation.getArgument(0));
     }
 
     private void arrangeCommittableSync(List<CicAdapter.AccountData> accounts) {

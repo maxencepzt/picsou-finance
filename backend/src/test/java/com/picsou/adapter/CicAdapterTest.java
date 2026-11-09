@@ -47,6 +47,37 @@ class CicAdapterTest {
     }
 
     @Test
+    void fetchAccounts_readsASecuritiesPortfolioWithItsLines() {
+        // The sidecar leaves cashBalance and positions out of a cash account, and sends them on a portfolio.
+        CicAdapter adapter = adapter(new ArrayList<>(), HttpStatus.OK, """
+            {"accounts":[
+              {"externalId":"cic_1000000012345601","name":"Compte Gere Espece","type":"CHECKING",
+               "balanceEur":2500.00,"snapshotComplete":true},
+              {"externalId":"cic_10000000AB00012345678","name":"Compte titres","type":"COMPTE_TITRES",
+               "balanceEur":3650.00,"cashBalance":0,"snapshotComplete":true,
+               "positions":[{"isin":"US0000000001","symbol":"US0000000001","label":"ACME CORP","quantity":10,
+                 "buyingPriceEur":100.00,"currentPrice":123.45,"quoteCurrency":"USD","currentValueEur":1150.00,
+                 "pnlEur":150.00}]}],
+             "categoriesRead":["CHECKING","SAVINGS","SECURITIES"]}
+            """);
+
+        var listing = adapter.fetchAccounts("state");
+
+        assertThat(listing.categoriesRead()).contains("SECURITIES");
+        assertThat(listing.accounts().get(0).positions()).isNull();
+        assertThat(listing.accounts().get(0).cashBalance()).isNull();
+        var portfolio = listing.accounts().get(1);
+        assertThat(portfolio.type()).isEqualTo(com.picsou.model.AccountType.COMPTE_TITRES);
+        assertThat(portfolio.cashBalance()).isEqualByComparingTo("0");
+        assertThat(portfolio.positions()).singleElement().satisfies(position -> {
+            assertThat(position.isin()).isEqualTo("US0000000001");
+            assertThat(position.quantity()).isEqualByComparingTo("10");
+            assertThat(position.quoteCurrency()).isEqualTo("USD");
+            assertThat(position.currentValueEur()).isEqualByComparingTo("1150");
+        });
+    }
+
+    @Test
     void fetchAccounts_fallsBackToTheBareListOfAnOlderSidecar() throws Exception {
         List<String> paths = new ArrayList<>();
         List<String> accountsBodies = new ArrayList<>();

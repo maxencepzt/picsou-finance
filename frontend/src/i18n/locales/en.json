@@ -2173,7 +2173,7 @@
       "clearSession": "Disconnect",
       "noSession": "No active session",
       "sessionActive": "Session active",
-      "scope": "Syncs your CIC current and savings accounts (Livret A, LDDS, PEL…), which the PSD2 bank connection does not return. Balances only.",
+      "scope": "Syncs the CIC accounts the PSD2 bank connection does not return: savings (Livret A, LDDS, PEL…) with the current account, and securities portfolios (compte-titres, PEA) line by line.",
       "errors": {
         "tooManyAttempts": "Too many attempts. Please wait before retrying.",
         "invalidCredentials": "Invalid CIC customer number or password.",
