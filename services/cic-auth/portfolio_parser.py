@@ -98,6 +98,23 @@ def _table(page: str, table_id: str, what: str) -> str:
     return tables[0]
 
 
+def _portfolio(cells: list[str], seen: list[dict]) -> dict:
+    link = _LINK_RE.search(cells[0])
+    # The exact page, not a link merely mentioning it: it is fetched with the session.
+    if link is None or urlsplit(html.unescape(link.group("href"))).path != DETAIL_PATH:
+        raise _error("A portfolio row has no detail link")
+    portfolio_id = re.sub(r"[^0-9A-Za-z]", "", _plain(link.group("text")))
+    if not portfolio_id or any(portfolio["id"] == portfolio_id for portfolio in seen):
+        raise _error("A portfolio row has no unique number")
+    label = _fold(_plain(_LINK_RE.sub("", cells[0], count=1)))
+    return {
+        "id": portfolio_id,
+        "type": "PEA" if _PEA_RE.match(label) else "COMPTE_TITRES",
+        "href": html.unescape(link.group("href")),
+        "valuationEur": _first_number(cells[1], "portfolio valuation"),
+    }
+
+
 def parse_synthesis(page: str) -> list[dict]:
     """The portfolios: {id, type, href, valuationEur}, checked against the page's total."""
     portfolios: list[dict] = []
@@ -110,21 +127,8 @@ def parse_synthesis(page: str) -> list[dict]:
             raise _error("A portfolios row has too few cells")
         if 'id="TdTotalValorisationEur"' in row.group("row"):
             total = _first_number(cells[1], "portfolios total")
-            continue
-        link = _LINK_RE.search(cells[0])
-        # The exact page, not a link merely mentioning it: it is fetched with the session.
-        if link is None or urlsplit(html.unescape(link.group("href"))).path != DETAIL_PATH:
-            raise _error("A portfolio row has no detail link")
-        portfolio_id = re.sub(r"[^0-9A-Za-z]", "", _plain(link.group("text")))
-        if not portfolio_id or any(portfolio["id"] == portfolio_id for portfolio in portfolios):
-            raise _error("A portfolio row has no unique number")
-        label = _fold(_plain(_LINK_RE.sub("", cells[0], count=1)))
-        portfolios.append({
-            "id": portfolio_id,
-            "type": "PEA" if _PEA_RE.match(label) else "COMPTE_TITRES",
-            "href": html.unescape(link.group("href")),
-            "valuationEur": _first_number(cells[1], "portfolio valuation"),
-        })
+        else:
+            portfolios.append(_portfolio(cells, portfolios))
     if total is None:
         raise _error("No total on the portfolios page")
     if sum((portfolio["valuationEur"] for portfolio in portfolios), Decimal(0)) != total:

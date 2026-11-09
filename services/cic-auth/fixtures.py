@@ -98,6 +98,11 @@ AUTHORITY_MANAGEMENT_PAGE = """
 # ─── Family layout and securities portfolios (Banque Transatlantique) ────────
 
 
+# Made-up amounts shared by the pages below, which must agree with one another.
+PORTFOLIO_TOTAL = "3&nbsp;650,00"
+SECOND_PORTFOLIO_TOTAL = "10,00"
+
+
 def family_header(name: str, *, level: int = 1) -> str:
     rupture = "rupture" if level == 1 else f"rupture{level}"
     return (f'<tr id="I0:s1.A1:al.F_{level}.T1" class="ei_rupture ___TrExpander">'
@@ -135,7 +140,7 @@ FAMILY_ACCOUNTS_PAGE = family_accounts_page(
     + account_row(0, "COMPTE GERE ESPECE", "10000 000123456 01", "+2&nbsp;500,00 EUR")
     + family_header("&#201;pargne")
     + family_header("&#201;pargne financi&#232;re", level=2)
-    + securities_total_row("+3&nbsp;650,00 EUR"))
+    + securities_total_row(f"+{PORTFOLIO_TOTAL} EUR"))
 
 
 def portfolio_row(number: str, label: str, valuation: str, *, query: str = "ddp=opaque") -> str:
@@ -161,10 +166,10 @@ def portfolios_page(rows: str, total: str) -> str:
 
 
 PORTFOLIOS_PAGE = portfolios_page(
-    portfolio_row("10000&nbsp;000AB&nbsp;00012345678", "Compte titres", "3&nbsp;650,00"), "3&nbsp;650,00")
+    portfolio_row("10000&nbsp;000AB&nbsp;00012345678", "Compte titres", PORTFOLIO_TOTAL), PORTFOLIO_TOTAL)
 TWO_PORTFOLIOS_PAGE = portfolios_page(
-    portfolio_row("10000&nbsp;000AB&nbsp;00012345678", "Compte titres", "3&nbsp;650,00")
-    + portfolio_row("10000&nbsp;000AB&nbsp;00012345679", "PEA", "10,00", query="ddp=second"), "3&nbsp;660,00")
+    portfolio_row("10000&nbsp;000AB&nbsp;00012345678", "Compte titres", PORTFOLIO_TOTAL)
+    + portfolio_row("10000&nbsp;000AB&nbsp;00012345679", "PEA", SECOND_PORTFOLIO_TOTAL, query="ddp=second"), "3&nbsp;660,00")
 
 
 def position_row(index: int, name: str, isin: str, quantity: str, price: str, unit_cost: str,
@@ -205,7 +210,7 @@ def portfolio_page(rows: str, total: str, *, number: str = "10000 000AB 00012345
 PORTFOLIO_PAGE = portfolio_page(
     position_row(1, "ACME CORP", "US0000000001", "10", "123,45&nbsp;USD", "100,00", "1&nbsp;150,00", "+150,00")
     + position_row(2, "EXAMPLE WORLD ETF", "FR0000000002", "25,5", "98,04&nbsp;EUR", "100,00", "2&nbsp;500,00", "-50,00"),
-    "3&nbsp;650,00")
+    PORTFOLIO_TOTAL)
 SECOND_PORTFOLIO_PAGE = portfolio_page(
-    position_row(1, "ACME CORP", "US0000000001", "1", "10,00&nbsp;EUR", "9,00", "10,00", "+1,00"),
-    "10,00", number="10000 000AB 00012345679")
+    position_row(1, "ACME CORP", "US0000000001", "1", "10,00&nbsp;EUR", "9,00", SECOND_PORTFOLIO_TOTAL, "+1,00"),
+    SECOND_PORTFOLIO_TOTAL, number="10000 000AB 00012345679")
