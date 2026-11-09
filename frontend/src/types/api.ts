@@ -1105,6 +1105,8 @@ export interface HoldingResponse {
    * line → REAL_ESTATE), or null when it implies none. A member override still wins.
    */
   providerWealthTier?: WealthTier | null
+  /** The day of the first recorded purchase of this ticker on the account, or null when the account has no purchase history (positions-only sync). */
+  firstBuyDate?: string | null
 }
 
 // --- Security insight (asset type + ETF composition) ---

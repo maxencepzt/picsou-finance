@@ -402,8 +402,13 @@ public class AccountService {
         // Both lookups are batched outside the stream: calling either inside it would issue one
         // provider request per holding instead of one per page.
         Map<String, HoldingLogoUrls> logos = logosFor(account, holdings);
+        Map<String, LocalDate> firstBuys = new HashMap<>();
+        for (Object[] row : transactionRepository.findFirstBuyDatesByAccountId(account.getId())) {
+            firstBuys.put((String) row[0], (LocalDate) row[1]);
+        }
         return holdings.stream()
-            .map(holding -> toHoldingResponse(account, holding, quotes, logos))
+            .map(holding -> toHoldingResponse(account, holding, quotes, logos)
+                .withFirstBuyDate(firstBuys.get(holding.getTicker())))
             .toList();
     }
 

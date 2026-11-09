@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Since when a position's gain is measured.** On the Investments page, hovering the ± latent percentage of a line shows
+  the date of its first recorded purchase, or says it is unknown when the account only syncs positions.
 - **Crypto rewards have their own line on the Passive income page.** Staking and Earn rewards received are shown apart
   from share dividends, in the summary and in the monthly chart, instead of being counted as dividends.
 - **Binance staking and Earn rewards are recorded as passive income.** Each Binance sync reads the Simple Earn and ETH
@@ -30,6 +32,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **The price chart of a position opens again.** Clicking a position on the Investments page opened its detail with a blank
+  chart: inside the dialog the plot had no height.
 - **Binance balances include Simple Earn.** Coins placed in flexible or locked Simple Earn products were missing from
   the account balance and net worth, because the sync read the spot wallet only. They now show as Lending and Staking
   positions on the account page.

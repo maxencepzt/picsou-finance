@@ -14,8 +14,9 @@ import { SortableTableHead } from '@/components/shared/SortableTableHead'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { accountTypeLabelKey } from '@/lib/constants'
-import { formatPercent } from '@/lib/utils'
+import { formatLocalDate, formatPercent } from '@/lib/utils'
 import { WRAPPERS, wrapperOf, type Wrapper } from './investments'
 
 type Filter = 'all' | Wrapper
@@ -73,6 +74,7 @@ export function PositionsCard({ lines }: { lines: PortfolioLine[] }) {
             />
           </ScrollStrip>
         )}
+        <TooltipProvider>
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
@@ -123,7 +125,22 @@ export function PositionsCard({ lines }: { lines: PortfolioLine[] }) {
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
-                      {l.pnlEur != null ? <Delta amount={l.pnlEur} percent={l.pnlPercent} /> : '—'}
+                      {l.pnlEur != null ? (
+                        // Since when the percentage runs: the first recorded purchase, when the
+                        // account has a purchase history; a positions-only sync has none.
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button type="button" className="inline-flex cursor-help rounded-sm focus-visible:outline-2 focus-visible:outline-ring">
+                              <Delta amount={l.pnlEur} percent={l.pnlPercent} />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {l.firstBuyDate
+                              ? t('investments.positions.pnlSince', { date: formatLocalDate(l.firstBuyDate) })
+                              : t('investments.positions.pnlSinceUnknown')}
+                          </TooltipContent>
+                        </Tooltip>
+                      ) : '—'}
                     </TableCell>
                     <TableCell className="text-right tabular-nums">
                       {total > 0 ? formatPercent((l.valueEur / total) * 100) : '—'}
@@ -134,6 +151,7 @@ export function PositionsCard({ lines }: { lines: PortfolioLine[] }) {
             </TableBody>
           </Table>
         </div>
+        </TooltipProvider>
       </CardContent>
       {selected && <HoldingDetailModal line={selected} onClose={() => setSelected(null)} />}
     </Card>

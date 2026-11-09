@@ -15,7 +15,7 @@ The positions used to be scattered across account pages and the Analysis section
 3. **Performance** (`PerformanceCard`, `usePerformance(months)`, see `investment-performance.md`) beside **Fees** (`FeesCard`, `useFees(12)`):
    - Performance: a period `SegmentedControl` in the card header (3M · 6M · 1A · 3A · 5A · Tout → 3, 6, 12, 36, 60, 0 months), five tiles (each spans three rows of a CSS subgrid, so a label wrapping to two lines keeps the figures of a row aligned) — TWR, annualised, XIRR, volatility, worst fall with its peak and trough dates — and one plain line telling TWR from XIRR. A null metric shows "—" with the reason as its caption (and `aria-label`), never 0. Under it, `PerformanceChart` draws the TWR index at base 100 with a "compare with" switch (none · MSCI World · S&P 500 · CAC 40, `useBenchmark(key, months)`): the benchmark closes are rebased to 100 on the first date both series share, on one axis, with a legend, a tooltip giving both values and the gap in points, and a one-line result for the period.
    - Fees: weighted TER and the yearly cost it implies, the share of the value whose TER is known, the five lines that cost the most a year (value × TER) with the rest summed up, and broker fees paid over 12 months with how many transactions carried one.
-4. **Positions** (`PositionsCard`): every line, sortable (`useTableSort`), filterable by wrapper (PEA / CTO / crypto / other) with a `SegmentedControl`; weight is computed over the lines shown. A click on a non-cash line opens `HoldingDetailModal`.
+4. **Positions** (`PositionsCard`): every line, sortable (`useTableSort`), filterable by wrapper (PEA / CTO / crypto / other) with a `SegmentedControl`; weight is computed over the lines shown. A click on a non-cash line opens `HoldingDetailModal`. Hovering or focusing the ± latent cell says since when its percentage runs: the first recorded purchase (`HoldingResponse.firstBuyDate`, the earliest `BUY` of the ticker on the account, from `TransactionRepository.findFirstBuyDatesByAccountId`), or that it is unknown when the account has no purchase history (a positions-only sync), the percentage then running against the synced cost basis.
 5. **Diversification**: `pages/analysis/DiversificationSection.tsx`, moved here from `/analysis` (see `portfolio-diversification.md`).
 6. **Realised gains** (`RealizedGainsCard`, one year at a time, the year switch in the card header) and **Tax wrappers** (`TaxWrappersCard`), each shown only when it has something to say.
 
@@ -55,6 +55,8 @@ Lines are `usePortfolio()` filtered to `HOLDING_ACCOUNT_TYPES` (`investmentLines
 - Demo mode answers an unhandled endpoint with `{}`, so `realized.data[i]?.lots` is guarded before use.
 - The realised-year selector stays unset until the reader picks a year, so data arriving late still lands on the current year (or the latest year with a sale).
 - The unit price in the positions table is `valueEur ÷ quantity`: a portfolio line carries no quote.
+
+- `NetWorthChart` gives its plot a 250px minimum height. Inside a dialog no parent gives the chart a definite height, so the plot's 100% height resolved to 0 and Recharts drew nothing: the holding detail opened with a blank chart.
 
 ## Tests
 

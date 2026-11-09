@@ -3808,6 +3808,8 @@
       "avgCost": "Coste medio",
       "price": "Cotización",
       "pnl": "Latente +/−",
+      "pnlSince": "Calculada desde la primera compra, el {{date}}",
+      "pnlSinceUnknown": "Fecha de la primera compra desconocida: calculada sobre el coste sincronizado",
       "weight": "Peso"
     },
     "concentration": {

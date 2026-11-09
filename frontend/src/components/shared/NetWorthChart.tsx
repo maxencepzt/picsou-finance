@@ -369,7 +369,9 @@ export function NetWorthChart({ data, intraday = [], range, onRangeChange, total
       {isEmpty24H ? (
         <EmptyChartState />
       ) : (
-      <ChartContainer config={chartConfig} className="aspect-auto min-h-[250px] w-full flex-1 [&>div>div]:!w-full [&>div>div>svg]:!w-full">
+      // The plot keeps 250px even where no parent gives it a definite height (a dialog): its 100%
+      // height then resolves to 0 and Recharts draws nothing, which left the holding detail blank.
+      <ChartContainer config={chartConfig} className="aspect-auto min-h-[250px] w-full flex-1 [&>div>div]:!w-full [&>div>div>svg]:!w-full [&_.recharts-responsive-container]:min-h-[250px]">
         <AreaChart data={filteredData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
         <defs>
           <linearGradient id="fillTotal" x1="0" y1="0" x2="0" y2="1">

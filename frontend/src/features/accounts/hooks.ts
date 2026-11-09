@@ -42,6 +42,8 @@ export interface PortfolioLine {
   listingCurrency?: string | null
   pnlEur: number | null
   pnlPercent: number | null
+  /** First recorded purchase of the line's ticker on its account; the P&L percentage is measured since then. */
+  firstBuyDate?: string | null
   priceUpdatedAt: string | null
   priceAsOf?: string | null
   priceStale?: boolean
@@ -186,6 +188,7 @@ export function usePortfolio() {
             listingCurrency: h.quoteCurrency ?? null,
             pnlEur: h.pnlEur,
             pnlPercent: h.pnlPercent,
+            firstBuyDate: h.firstBuyDate ?? null,
             priceUpdatedAt: h.priceUpdatedAt,
             priceAsOf: h.priceAsOf ?? null,
             priceStale: h.priceStale ?? false,

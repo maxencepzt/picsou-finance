@@ -34,14 +34,34 @@ public record HoldingResponse(
     boolean priceStale,
     // The tier the provider's own asset-class view gives the line (CORUM Life: SCPI units are
     // REAL_ESTATE), or null. A member's classification override still wins over it.
-    WealthTier providerWealthTier
+    WealthTier providerWealthTier,
+    // The day of the first recorded BUY of this ticker on this account, or null when the account
+    // carries no purchase history (a sync that reads positions only). The P&L percentage is
+    // measured since then, which is what the investments page says on hover.
+    LocalDate firstBuyDate
 ) {
+    /** Shape without the first purchase date, which only the holdings list fills in. */
+    public HoldingResponse(String ticker, String name, String logoUrl, String logoUrlDark, BigDecimal quantity,
+        BigDecimal averageBuyIn, BigDecimal currentPrice, String quoteCurrency, BigDecimal currentValueEur,
+        BigDecimal costBasisEur, BigDecimal pnlEur, BigDecimal pnlPercent, Instant priceUpdatedAt,
+        LocalDate priceAsOf, boolean priceStale, WealthTier providerWealthTier) {
+        this(ticker, name, logoUrl, logoUrlDark, quantity, averageBuyIn, currentPrice, quoteCurrency,
+            currentValueEur, costBasisEur, pnlEur, pnlPercent, priceUpdatedAt, priceAsOf, priceStale,
+            providerWealthTier, null);
+    }
+
+    public HoldingResponse withFirstBuyDate(LocalDate date) {
+        return new HoldingResponse(ticker, name, logoUrl, logoUrlDark, quantity, averageBuyIn, currentPrice,
+            quoteCurrency, currentValueEur, costBasisEur, pnlEur, pnlPercent, priceUpdatedAt, priceAsOf,
+            priceStale, providerWealthTier, date);
+    }
+
     /** Pre-provider-tier shape, kept so existing callers need not name the new component. */
     public HoldingResponse(String ticker, String name, String logoUrl, String logoUrlDark, BigDecimal quantity,
         BigDecimal averageBuyIn, BigDecimal currentPrice, String quoteCurrency, BigDecimal currentValueEur,
         BigDecimal costBasisEur, BigDecimal pnlEur, BigDecimal pnlPercent, Instant priceUpdatedAt,
         LocalDate priceAsOf, boolean priceStale) {
         this(ticker, name, logoUrl, logoUrlDark, quantity, averageBuyIn, currentPrice, quoteCurrency,
-            currentValueEur, costBasisEur, pnlEur, pnlPercent, priceUpdatedAt, priceAsOf, priceStale, null);
+            currentValueEur, costBasisEur, pnlEur, pnlPercent, priceUpdatedAt, priceAsOf, priceStale, null, null);
     }
 }

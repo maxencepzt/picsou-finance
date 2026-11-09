@@ -50,6 +50,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.within;
 import static org.mockito.ArgumentMatchers.any;
@@ -611,6 +612,26 @@ class AccountServiceTest {
         assertThat(h.currentValueEur()).isNull();
         assertThat(h.pnlEur()).isNull();
         assertThat(h.pnlPercent()).isNull();
+    }
+
+    @Test
+    void getHoldings_carriesTheFirstPurchaseDayOfEachTicker() {
+        // The investments page says on hover since when the P&L percentage is measured; a ticker
+        // with no recorded BUY (a positions-only sync) has no date rather than a guessed one.
+        when(accountRepository.findByIdAndMemberId(1L, 1L)).thenReturn(Optional.of(ownedAccount()));
+        AccountHolding bought = AccountHolding.builder().id(10L).ticker("PUST.PA")
+            .quantity(new BigDecimal("14")).averageBuyIn(new BigDecimal("80")).build();
+        AccountHolding synced = AccountHolding.builder().id(11L).ticker("DAXXF")
+            .quantity(BigDecimal.ONE).averageBuyIn(new BigDecimal("155")).build();
+        when(holdingRepository.findByAccountIdOrderByCurrentPriceDesc(1L)).thenReturn(List.of(bought, synced));
+        when(transactionRepository.findFirstBuyDatesByAccountId(1L))
+            .thenReturn(List.<Object[]>of(new Object[] {"PUST.PA", LocalDate.of(2024, 7, 23)}));
+        stubQuotes("PUST.PA", null, "DAXXF", null);
+
+        List<HoldingResponse> result = accountService.getHoldings(1L, 1L);
+
+        assertThat(result).extracting(HoldingResponse::ticker, HoldingResponse::firstBuyDate)
+            .containsExactly(tuple("PUST.PA", LocalDate.of(2024, 7, 23)), tuple("DAXXF", null));
     }
 
     @Test

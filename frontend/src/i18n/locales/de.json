@@ -3808,6 +3808,8 @@
       "avgCost": "Ø-Kosten",
       "price": "Kurs",
       "pnl": "Nicht realisiert +/−",
+      "pnlSince": "Seit dem ersten Kauf am {{date}} berechnet",
+      "pnlSinceUnknown": "Datum des ersten Kaufs unbekannt: berechnet auf dem synchronisierten Einstandspreis",
       "weight": "Anteil"
     },
     "concentration": {
