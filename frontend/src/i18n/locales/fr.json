@@ -2173,7 +2173,7 @@
       "clearSession": "Déconnecter",
       "noSession": "Aucune session active",
       "sessionActive": "Session active",
-      "scope": "Synchronise vos comptes CIC, courant et épargne (Livret A, LDDS, PEL…), que la connexion bancaire DSP2 ne remonte pas. Soldes seulement.",
+      "scope": "Synchronise vos comptes CIC que la connexion bancaire DSP2 ne remonte pas : épargne (Livret A, LDDS, PEL…) avec le compte courant, et les portefeuilles titres (compte-titres, PEA) ligne par ligne.",
       "errors": {
         "tooManyAttempts": "Trop de tentatives. Veuillez patienter.",
         "invalidCredentials": "Identifiant ou mot de passe CIC invalide.",

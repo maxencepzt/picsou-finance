@@ -166,6 +166,18 @@ espèce"). It is named after its type, since the page's label carries the holder
 and `COMPTE_TITRES` types before it calls `/accounts/listing` on such a customer. A customer whose accounts
 page announces no portfolio is never sent to these pages.
 
+On the backend, `CicSyncService` accepts the `PEA` and `COMPTE_TITRES` types only with their lines
+(and refuses lines on a cash account). `BrokeragePositions`, shared with nothing else yet, resolves
+each ISIN to a ticker (`OpenFigiIsinConverter`), merges two lines resolving to the same ticker, refuses
+a quote without its currency, and replaces the account's holdings on each sync. The snapshot carries
+the invested amount: each line's unit cost times its quantity, on top of the cash. A portfolio belongs
+to the `SECURITIES` category, so it is closed at zero, its holdings removed, only when the sidecar
+says the portfolio pages were read and no longer list it. A customer who closes their last portfolio
+is the exception: the accounts page then stops announcing portfolios, the sidecar does not read the
+portfolio pages, and the account keeps its last value until it is removed by hand. The rules are the ones
+`BourseDirectSyncService` and `BoursoSyncService` apply in their own private copies; moving those
+two onto the shared class is left for a refactor of its own.
+
 To use the connector for Banque Transatlantique, point it at that site:
 `CIC_BASE_URL=https://www.banquetransatlantique.com`. One instance reads one of the two sites, and the
 connection keeps the CIC name in the interface.

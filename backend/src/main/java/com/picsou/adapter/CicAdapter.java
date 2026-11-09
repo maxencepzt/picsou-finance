@@ -8,6 +8,7 @@ import com.picsou.adapter.sidecar.SidecarSession;
 import com.picsou.adapter.sidecar.SidecarWebClientFactory;
 import com.picsou.exception.SyncException;
 import com.picsou.model.AccountType;
+import com.picsou.service.BrokeragePositions;
 import com.picsou.port.SidecarErrorCode;
 import com.picsou.port.SidecarInitiate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -125,7 +126,10 @@ public class CicAdapter {
         return response.sessionState();
     }
 
-    /** The current and savings accounts, balances only. Insurance and other contracts are left out by the sidecar. */
+    /**
+     * The current and savings accounts, balances only, and the securities portfolios with their
+     * lines. Insurance and other contracts are left out by the sidecar.
+     */
     public AccountListing fetchAccounts(String sessionState) {
         JsonNode response;
         try {
@@ -177,7 +181,7 @@ public class CicAdapter {
 
     /**
      * The accounts, and the in-scope tables the page carried ({@code CHECKING}, {@code SAVINGS}),
-     * an empty one included. {@code categoriesRead} is null when the sidecar does not say
+     * an empty one included, plus {@code SECURITIES} when the portfolios were read. {@code categoriesRead} is null when the sidecar does not say
      * (an older sidecar answering with a bare list).
      */
     public record AccountListing(List<AccountData> accounts, Set<String> categoriesRead) {
@@ -192,5 +196,17 @@ public class CicAdapter {
         }
     }
 
-    public record AccountData(String externalId, String name, AccountType type, BigDecimal balanceEur, boolean snapshotComplete) {}
+    /**
+     * {@code cashBalance} and {@code positions} are null except on a securities portfolio
+     * ({@code PEA}, {@code COMPTE_TITRES}), which carries its lines.
+     */
+    public record AccountData(String externalId, String name, AccountType type, BigDecimal balanceEur,
+                              BigDecimal cashBalance, List<BrokeragePositions.Raw> positions,
+                              boolean snapshotComplete) {
+        /** A current or savings account: a balance and nothing else. */
+        public AccountData(String externalId, String name, AccountType type, BigDecimal balanceEur,
+                           boolean snapshotComplete) {
+            this(externalId, name, type, balanceEur, null, null, snapshotComplete);
+        }
+    }
 }

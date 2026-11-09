@@ -1839,7 +1839,7 @@
       "clearSession": "Trennen",
       "noSession": "Keine aktive Sitzung",
       "sessionActive": "Sitzung aktiv",
-      "scope": "Synchronisiert Ihre CIC-Giro- und Sparkonten (Livret A, LDDS, PEL…), die die PSD2-Bankverbindung nicht liefert. Nur Salden.",
+      "scope": "Synchronisiert die CIC-Konten, die die PSD2-Bankverbindung nicht liefert: Sparkonten (Livret A, LDDS, PEL…) mit dem Girokonto sowie Wertpapierdepots (Compte-titres, PEA) Position für Position.",
       "errors": {
         "tooManyAttempts": "Zu viele Versuche. Bitte warten Sie, bevor Sie es erneut versuchen.",
         "invalidCredentials": "Ungültige CIC-Kundennummer oder ungültiges Passwort.",

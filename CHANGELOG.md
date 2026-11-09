@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **CIC connector: securities portfolios and Banque Transatlantique.** A compte-titres or PEA held at CIC is imported
+  with its lines (quantity, unit cost, value, latent gain). Pointed at `www.banquetransatlantique.com` with
+  `CIC_BASE_URL`, the same connector reads a Banque Transatlantique customer space, a CIC subsidiary on the same platform.
 - **Since when a position's gain is measured.** On the Investments page, hovering the ± latent percentage of a line shows
   the date of its first recorded purchase, or says it is unknown when the account only syncs positions.
 - **Crypto rewards have their own line on the Passive income page.** Staking and Earn rewards received are shown apart

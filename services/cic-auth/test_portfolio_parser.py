@@ -91,6 +91,16 @@ class SynthesisTest(unittest.TestCase):
              "href": "https://www.cic.fr/fr/banque/PORT_Valo.aspx?ddp=other&x=1", "valuationEur": Decimal("1000.50")},
         ])
 
+    def test_a_link_written_relative_to_the_page_is_resolved(self):
+        # What the live site sends; a page saved from a browser carries the absolute form.
+        for href in ("PORT_Valo.aspx?ddp=opaque", "/fr/banque/PORT_Valo.aspx?ddp=opaque", " PORT_Valo.aspx?ddp=opaque"):
+            with self.subTest(href=href):
+                page = PORTFOLIOS_PAGE.replace("https://www.cic.fr/fr/banque/PORT_Valo.aspx?ddp=opaque", href)
+                self.assertEqual(parse_synthesis(page)[0]["href"], "/fr/banque/PORT_Valo.aspx?ddp=opaque")
+        # Relative to the page too, but another page.
+        page = PORTFOLIOS_PAGE.replace("https://www.cic.fr/fr/banque/PORT_Valo.aspx", "../PORT_Valo.aspx")
+        self.assertEqual(code_of(parse_synthesis, page), "UPSTREAM_FORMAT_CHANGED")
+
     def test_the_type_is_read_from_the_product_label_not_the_holder_name(self):
         page = portfolios_page(portfolio_row("1", "Compte titres&nbsp;M PEA", "1,00"), "1,00")
 

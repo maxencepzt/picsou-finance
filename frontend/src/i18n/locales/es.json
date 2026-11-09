@@ -1839,7 +1839,7 @@
       "clearSession": "Desconectar",
       "noSession": "Ninguna sesión activa",
       "sessionActive": "Sesión activa",
-      "scope": "Sincroniza tus cuentas corrientes y de ahorro de CIC (Livret A, LDDS, PEL…), que la conexión bancaria PSD2 no devuelve. Solo saldos.",
+      "scope": "Sincroniza las cuentas de CIC que la conexión bancaria PSD2 no devuelve: ahorro (Livret A, LDDS, PEL…) con la cuenta corriente, y las carteras de valores (compte-titres, PEA) línea por línea.",
       "errors": {
         "tooManyAttempts": "Demasiados intentos. Espera antes de volver a intentarlo.",
         "invalidCredentials": "Número de cliente o contraseña de CIC no válidos.",

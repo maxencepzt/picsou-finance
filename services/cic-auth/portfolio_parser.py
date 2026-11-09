@@ -33,7 +33,7 @@ import html
 import re
 from decimal import Decimal, InvalidOperation
 from typing import Literal
-from urllib.parse import urlsplit
+from urllib.parse import urljoin, urlsplit
 
 from accounts_parser import FORMAT_CHANGED, AccountsFormatError, _DOCUMENT_END_RE, _fold, _PageParser, _text
 
@@ -54,6 +54,7 @@ _PRICE_RE = re.compile(rf"(?P<price>{_NUMBER})\s(?P<currency>[A-Z]{{3}})")
 _ISIN_RE = re.compile(r"\b[A-Z]{2}[A-Z0-9]{9}\d\b")
 # Anchored on the product label, which comes first: the holder's name follows it.
 _PEA_RE = re.compile(r"PEA\b|PLAN D'EPARGNE EN ACTIONS")
+SYNTHESIS_PATH = "/fr/banque/SYNT_Synthese.aspx"
 DETAIL_PATH = "/fr/banque/PORT_Valo.aspx"
 
 
@@ -100,8 +101,11 @@ def _table(page: str, table_id: str, what: str) -> str:
 
 def _portfolio(cells: list[str], seen: list[dict]) -> dict:
     link = _LINK_RE.search(cells[0])
-    # The exact page, not a link merely mentioning it: it is fetched with the session.
-    if link is None or urlsplit(html.unescape(link.group("href"))).path != DETAIL_PATH:
+    # The site writes the link relative to the page ("PORT_Valo.aspx?ddp=…"); a saved copy
+    # carries it absolute. Resolved against the page, it must be the detail page itself, not a
+    # link merely mentioning it: it is fetched with the session.
+    href = urljoin(SYNTHESIS_PATH, html.unescape(link.group("href")).strip()) if link else ""
+    if urlsplit(href).path != DETAIL_PATH:
         raise _error("A portfolio row has no detail link")
     portfolio_id = re.sub(r"[^0-9A-Za-z]", "", _plain(link.group("text")))
     if not portfolio_id or any(portfolio["id"] == portfolio_id for portfolio in seen):
@@ -110,7 +114,7 @@ def _portfolio(cells: list[str], seen: list[dict]) -> dict:
     return {
         "id": portfolio_id,
         "type": "PEA" if _PEA_RE.match(label) else "COMPTE_TITRES",
-        "href": html.unescape(link.group("href")),
+        "href": href,
         "valuationEur": _first_number(cells[1], "portfolio valuation"),
     }
 
