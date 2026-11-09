@@ -87,7 +87,7 @@ describe('InvestmentsPage', () => {
   it('says on hover since when each percentage runs, or that the first purchase is unknown', async () => {
     const { container } = render(<MemoryRouter><InvestmentsPage /></MemoryRouter>)
     // Rows are sorted by value: NVIDIA (110, bought 2024-07-23) first, then iShares World (no purchase history).
-    const triggers = container.querySelectorAll('span.cursor-help')
+    const triggers = container.querySelectorAll('button.cursor-help')
     expect(triggers).toHaveLength(2)
 
     await act(async () => { fireEvent.focus(triggers[0]) })

@@ -130,9 +130,9 @@ export function PositionsCard({ lines }: { lines: PortfolioLine[] }) {
                         // account has a purchase history; a positions-only sync has none.
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <span tabIndex={0} className="inline-flex cursor-help rounded-sm focus-visible:outline-2 focus-visible:outline-ring">
+                            <button type="button" className="inline-flex cursor-help rounded-sm focus-visible:outline-2 focus-visible:outline-ring">
                               <Delta amount={l.pnlEur} percent={l.pnlPercent} />
-                            </span>
+                            </button>
                           </TooltipTrigger>
                           <TooltipContent>
                             {l.firstBuyDate
