@@ -363,6 +363,17 @@ class FlowTest(unittest.TestCase):
 
         self.assertEqual((response.status_code, response.json()), (502, {"detail": "UPSTREAM_FORMAT_CHANGED"}))
 
+    def test_a_detail_link_relative_to_the_portfolios_page_is_followed(self):
+        # The live site writes "PORT_Valo.aspx?ddp=…", not the absolute form of a saved page.
+        session = self.confirm()
+        self.bank.accounts_page = FAMILY_ACCOUNTS_PAGE
+        self.bank.portfolios_page = PORTFOLIOS_PAGE.replace("https://www.cic.fr/fr/banque/PORT_Valo.aspx", "PORT_Valo.aspx")
+
+        response = self.client.post("/accounts/listing", json={"sessionState": session}, headers=HEADERS)
+
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertEqual(len(response.json()["accounts"][1]["positions"]), 2)
+
     def test_a_detail_link_leaving_the_bank_is_refused(self):
         session = self.confirm()
         self.bank.accounts_page = FAMILY_ACCOUNTS_PAGE

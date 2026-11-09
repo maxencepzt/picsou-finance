@@ -53,6 +53,7 @@ from picsou_sidecar import configure_logging, create_app, otp_field_detail
 from pydantic import BaseModel, ConfigDict, Field
 
 from accounts_parser import AccountKind, AccountsFormatError, parse_accounts_listing
+from portfolio_parser import SYNTHESIS_PATH as PORTFOLIOS_PATH
 from portfolio_parser import PortfolioKind, parse_positions, parse_synthesis
 
 log = configure_logging("cic-auth", quiet=("httpx",))
@@ -60,7 +61,6 @@ log = configure_logging("cic-auth", quiet=("httpx",))
 BASE_URL = os.environ.get("CIC_BASE_URL", "https://www.cic.fr").rstrip("/")
 LOGIN_PATH = "/fr/authentification.html"
 ACCOUNTS_PATH = "/fr/banque/comptes-et-contrats.html"
-PORTFOLIOS_PATH = "/fr/banque/SYNT_Synthese.aspx"
 # Where the platform's banking sites poll and cancel a mobile confirmation, per
 # woob's creditmutuel module; used when the page script does not name them.
 DEFAULT_STATE_PATH = "/fr/banque/async/otp/SOSD_OTP_GetTransactionState.htm"
