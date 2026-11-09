@@ -93,3 +93,119 @@ AUTHORITY_MANAGEMENT_PAGE = """
 </body></html>
 """
 
+
+
+# ─── Family layout and securities portfolios (Banque Transatlantique) ────────
+
+
+def family_header(name: str, *, level: int = 1) -> str:
+    rupture = "rupture" if level == 1 else f"rupture{level}"
+    return (f'<tr id="I0:s1.A1:al.F_{level}.T1" class="ei_rupture ___TrExpander">'
+            f'<th scope="rowgroup" colspan="4" class="{rupture} eir_tblshowth"><span>{name}</span></th></tr>')
+
+
+def securities_total_row(amount: str) -> str:
+    return f"""
+<tr class="_c1 _c1"><td colspan="1" class="decalrupt2 _c1 p decal1 ei_sdsf_title-withRefLink _c1">
+<a href="https://www.cic.fr/fr/banque/SYNT_AccueilBourse.aspx?webid=0a1b2c" target="_self">
+<span><span class="_c1 ei_sdsf_title _c1">Valorisation totale de vos portefeuilles titres</span> </span></a>
+<a href="#1" name="r1" class="renvoi"><span class="ei_sronly">Note de bas de page :</span> 1</a></td>
+<td class="d nowrap _c1 p _c1"></td>
+<td class="d nowrap _c1 p ei_sdsf_solde _c1"><span class="ei_sdsf_montant _c1 pos _c1">{amount}</span></td>
+<td class="a_actions nowrap _c1 p _c1"></td></tr>"""
+
+
+def family_accounts_page(rows: str) -> str:
+    return f"""
+<html><body>{LOGOUT_LINK}
+<table id="I0:s2.A2:al.T4" role="presentation" class="_c1 ei_comptescontrats _c1" style="width:100%;">
+<caption class="invisible"><span class="invisible"><span>Liste de Comptes et contrats</span> <span>Tri par famille</span></span></caption>
+<tr><th scope="col"><span class="invisible">Contrat</span></th><th scope="col"><span class="invisible">D&#233;bit</span></th>
+<th scope="col"><span class="invisible">Cr&#233;dit</span></th><th scope="col"><span class="invisible">Actions</span></th></tr>
+{rows}
+{family_header("Assurances")}
+<tr><td colspan="4" class="decalrupt1"><a role="button" href="#"><span class="ei_sdsf_title">Vos contrats et nos offres</span></a></td></tr>
+{family_header("Autres contrats li&#233;s")}
+<tr><td colspan="4"><p>Vous pouvez ajouter &#224; cette page un acc&#232;s rapide vers d'autres contrats.</p></td></tr>
+</table></body></html>"""
+
+
+FAMILY_ACCOUNTS_PAGE = family_accounts_page(
+    family_header("Comptes courants")
+    + account_row(0, "COMPTE GERE ESPECE", "10000 000123456 01", "+2&nbsp;500,00 EUR")
+    + family_header("&#201;pargne")
+    + family_header("&#201;pargne financi&#232;re", level=2)
+    + securities_total_row("+3&nbsp;650,00 EUR"))
+
+
+def portfolio_row(number: str, label: str, valuation: str, *, query: str = "ddp=opaque") -> str:
+    return f"""
+<tr niveauligne="1" tri-complet="2" data-filtre=""><td>&nbsp;<span class="ei_gly_ic_explore" title="Gestion Sous Mandat"></span>
+<a class="nowrap fg" href="https://www.cic.fr/fr/banque/PORT_Valo.aspx?{query}">{number}</a>&nbsp;{label}&nbsp;M JOHN DOE
+<span style="float: right">{valuation} EUR</span><span class="fd"><em>Gestion Sous Mandat&nbsp;</em></span></td>
+<td class="d" style="vertical-align: top">{valuation}</td><td class="d fh">+150,00</td><td class="d fh">+4,29&nbsp;%</td></tr>"""
+
+
+def portfolios_page(rows: str, total: str) -> str:
+    return f"""
+<html><body>{LOGOUT_LINK}
+<table id="tabSYNT" class="over liste" couleuralternee="none">
+<thead><tr niveauligne="1" id="ligEntete"><th scope="col"><span>Portefeuille</span></th>
+<th scope="col"><span>Valorisation&nbsp;en&nbsp;EUR&nbsp;</span><a class="renvoi" href="#n1">1</a></th>
+<th scope="col"><span>+/- Value latente&nbsp;en&nbsp;EUR&nbsp;</span></th><th scope="col"><span>+/- Value latente&nbsp;en %</span></th></tr></thead>
+<tbody>{rows}
+<tr niveauligne="1" tri-complet="3" data-filtre=""><td class="tittot d">TOTAL VALORISATION TITRES</td>
+<td id="TdTotalValorisationEur" class="tot mtt">{total}</td><td id="TdTotalPlusMoinsValueEur" class="tot mtt fh">+150,00</td>
+<td id="TdTotalPlusMoinsValuePourcentage" class="tot mtt fh">+4,29&nbsp;%</td></tr></tbody><tfoot></tfoot></table>
+</body></html>"""
+
+
+PORTFOLIOS_PAGE = portfolios_page(
+    portfolio_row("10000&nbsp;000AB&nbsp;00012345678", "Compte titres", "3&nbsp;650,00"), "3&nbsp;650,00")
+TWO_PORTFOLIOS_PAGE = portfolios_page(
+    portfolio_row("10000&nbsp;000AB&nbsp;00012345678", "Compte titres", "3&nbsp;650,00")
+    + portfolio_row("10000&nbsp;000AB&nbsp;00012345679", "PEA", "10,00", query="ddp=second"), "3&nbsp;660,00")
+
+
+def position_row(index: int, name: str, isin: str, quantity: str, price: str, unit_cost: str,
+                 value: str, gain: str) -> str:
+    return f"""
+<tr niveauligne="1" id="{index}" class=" ligneMere" tri-thvaleurs="{name}" tri-complet="{index}" data-filtre="">
+<td id="CelValDet{index}" class="p"><div><a href="https://www.cic.fr/fr/banque/VALE_Fiche.aspx?v={index}" title="Fiche valeur">{name}</a></div>
+<div><span>{isin}</span></div></td>
+<td class="d p"><span>{quantity} <br><span id="Status" class="ei_statustag ei_statustag--neutral" title="Mode de d&#233;tention">Nominatif</span></span></td>
+<td class="d p"><div><p><span><span>{price}&nbsp;</span><span class="ei_gly_ic_event b"><span class="invisible" title="Cours en diff&#233;r&#233;"></span></span></span></p></div>
+<div><p>{unit_cost}</p></div></td>
+<td id="celValMntPrct{index}" class="d p"><div><p>{value}</p></div><div><p>31,51&nbsp;%</p></div></td>
+<td id="cellValoPlsMoin{index}" class="d p"><div><p class="fh">{gain}</p></div><div><p>+15,00&nbsp;%</p></div></td>
+<td class="vc c p"><div class="a_actions"><a href="#" class="act popmenu" role="button"><span>Actions</span></a></div></td></tr>"""
+
+
+def portfolio_page(rows: str, total: str, *, number: str = "10000 000AB 00012345678") -> str:
+    return f"""
+<html><body>{LOGOUT_LINK}
+<table class="fiche" id="TabSurVol"><tr><td class="g"><span>{number}</span></td>
+<td class="d"><span class="ei_sdsf_montant">{total} EUR</span></td></tr></table>
+<table id="affichage1" role="presentation"><tr><td>A la date du 02/01/2026 Cours de valorisation Cours en temps diff&#233;r&#233;</td></tr></table>
+<table id="tabValorisation" class="liste" couleuralternee="normal">
+<thead><tr niveauligne="1" id="lgEntetValo"><th id="thValeurs" scope="col"><span>Valeur</span></th>
+<th id="thQuantMnt" scope="col"><span>Quantit&#233; / Montant nominal</span></th>
+<th id="thCours" scope="col"><span>Cours <a class="renvoi" href="#n1">1</a></span><br><span>Prix de revient en EUR <a class="renvoi" href="#n2">2</a></span></th>
+<th id="thValo" scope="col"><span>Valorisation&nbsp;en&nbsp;EUR&nbsp;<br>R&#233;partition en %</span></th>
+<th id="thPlusMoinsLatente" scope="col"><span>+/- Value latente en EUR<br>+/- Value latente en %</span><a class="renvoi" href="#n3">3</a></th>
+<th id="thActions" scope="col"><span>Action</span></th></tr></thead>
+<tbody>{rows}
+<tr niveauligne="1" id="lignePied"> </tr>
+<tr niveauligne="1" class="tittot"><td class="tittot d" colspan="3"><span id="spanTot">Total</span></td>
+<td class="tittot d"><div><span>{total}</span></div><div><span>100,00&nbsp;%</span></div></td>
+<td class="tittot d"><div><p class="fh">+150,00</p></div><div><p>+4,29&nbsp;%</p></div></td><td class="tittot d"></td></tr>
+</tbody></table></body></html>"""
+
+
+PORTFOLIO_PAGE = portfolio_page(
+    position_row(1, "ACME CORP", "US0000000001", "10", "123,45&nbsp;USD", "100,00", "1&nbsp;150,00", "+150,00")
+    + position_row(2, "EXAMPLE WORLD ETF", "FR0000000002", "25,5", "98,04&nbsp;EUR", "100,00", "2&nbsp;500,00", "-50,00"),
+    "3&nbsp;650,00")
+SECOND_PORTFOLIO_PAGE = portfolio_page(
+    position_row(1, "ACME CORP", "US0000000001", "1", "10,00&nbsp;EUR", "9,00", "10,00", "+1,00"),
+    "10,00", number="10000 000AB 00012345679")

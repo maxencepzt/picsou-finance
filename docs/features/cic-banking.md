@@ -1,6 +1,6 @@
 # Feature: CIC online-banking sync (livrets)
 
-> Last updated: 2026-11-01
+> Last updated: 2026-11-09
 
 ## Context
 
@@ -126,6 +126,52 @@ balance.
   the user approves the push in the CIC app, iOS drops Safari's pending `/auth/complete` request; the
   backend finishes regardless. A completion lost without an answer (network error, 502/504) keeps the
   waiting card and polls the session status for up to 150 s instead of reporting a failure.
+
+### Family layout and securities portfolios
+
+Some sites of the platform render "Comptes et contrats" as **one table sorted by family** instead of one
+captioned table per category. Banque Transatlantique does (`www.banquetransatlantique.com`, a CIC
+subsidiary on the same Euro-Information platform: same login page, same paths). The table is cut by
+header rows (`tr.ei_rupture`, the family in `th.rupture`, a sub-family in `th.rupture2`); the account
+rows are the same. `accounts_parser._sections` maps "Comptes courants" to the current-account category
+and "Épargne" to the savings one. A sub-family keeps its own name, so an account under one fails the
+page (no savings sub-family has been seen yet; a life insurance must not pass for a passbook), except
+"Épargne financière". There the only known row
+is "Valorisation totale de vos portefeuilles titres", a title and an amount with no account number: it
+is not an account, it says the customer holds securities portfolios, and `parse_accounts_listing` then
+ends its categories with `SECURITIES`. Any numbered contract under that sub-family, or a balance under
+an unknown family, still fails the page.
+
+When the page announces them, the sidecar reads the portfolios from their own pages
+(`portfolio_parser.py`):
+
+- `/fr/banque/SYNT_Synthese.aspx`, table `#tabSYNT`: one row per portfolio (its number in the link to
+  its detail, `PEA` when the label says so, else `COMPTE_TITRES`, its valuation) and a total row
+  (`#TdTotalValorisationEur`).
+- the row's link, `/fr/banque/PORT_Valo.aspx?ddp=…`, table `#tabValorisation`: one `tr.ligneMere` per
+  line (name, ISIN, quantity, price with its currency, unit cost in EUR, value in EUR, latent gain) and
+  a total row (`tr.tittot`).
+
+Each page is checked against its own total to the cent (`PORTFOLIO_INCOMPLETE` otherwise), and an
+unrecognized row carrying figures fails the read. A figure is the first text of its cell, read whole
+(`1 150` followed by anything is refused, never read as a longer number). The detail link must be
+`PORT_Valo.aspx` itself on the bank's site, and the page it answers must show the portfolio's number:
+each page reconciles with its own total, so only the number tells two portfolios apart.
+The two pages are not checked against each other: prices are delayed quotes and can tick between two
+requests. A portfolio is returned by `/accounts/listing` as an account of type `PEA` or
+`COMPTE_TITRES` with `positions[]` (the shape of the other brokerage sidecars) and `cashBalance` 0,
+its balance being the detail page's total: the cash sits on its own current account ("Compte géré
+espèce"). It is named after its type, since the page's label carries the holder's name. The bare
+`/accounts` list leaves portfolios out, for backends that predate them; a backend must accept the `PEA`
+and `COMPTE_TITRES` types before it calls `/accounts/listing` on such a customer. A customer whose accounts
+page announces no portfolio is never sent to these pages.
+
+To use the connector for Banque Transatlantique, point it at that site:
+`CIC_BASE_URL=https://www.banquetransatlantique.com`. One instance reads one of the two sites, and the
+connection keeps the CIC name in the interface.
+
+Not read: the "Type de valeur" view of the detail page (refused), orders and trade confirmations
+(`PORT_OrdresLst.aspx`, `avis_operes.aspx`), life insurance.
 
 ## Connection lifecycle
 
