@@ -66,7 +66,7 @@ function isJobRunning(syncStatus: string | undefined): boolean {
 
 export type ProviderType = 'bank' | 'exchange' | 'wallet' | 'tr' | 'finary' | 'bourso' | 'revolut'
   | 'amundi' | 'fortuneo' | 'bourse-direct' | 'degiro' | 'ibkr' | 'simplefin' | 'wise'
-  | 'amex' | 'corum' | 'sofidy' | 'caisse-epargne' | 'banque-populaire' | 'cmes' | 'cic'
+  | 'amex' | 'corum' | 'sofidy' | 'caisse-epargne' | 'banque-populaire' | 'lbp' | 'bnp' | 'cmes' | 'natixis' | 'cic'
 
 export interface SyncConnection {
   /** The connector's server-side job is queued or running. */
@@ -154,6 +154,8 @@ export function useSyncConnections() {
   const { data: boursoStatus } = useProviderStatus('bourso')
   const { data: caisseEpargneStatus } = useProviderStatus('caisseEpargne')
   const { data: banquePopulaireStatus } = useProviderStatus('banquePopulaire')
+  const { data: lbpStatus } = useProviderStatus('lbp')
+  const { data: bnpStatus } = useProviderStatus('bnp')
   const { data: revolutStatus } = useRevolutStatus()
   const { data: finaryStatus } = useFinaryConnectionStatus()
   const { data: amundiStatus } = useProviderStatus('amundi')
@@ -167,6 +169,7 @@ export function useSyncConnections() {
   const { data: corumStatus } = useProviderStatus('corum')
   const { data: sofidyStatus } = useProviderStatus('sofidy')
   const { data: cmesStatus } = useProviderStatus('cmes')
+  const { data: natixisStatus } = useProviderStatus('natixis')
   const { data: cicStatus } = useProviderStatus('cic')
   const { data: accounts } = useAccounts()
 
@@ -174,10 +177,12 @@ export function useSyncConnections() {
   const revolutRemembered = revolutStatus?.remembered === true
 
   // Show TR if: there are active TR accounts, the session is active, or the session
-  // is expired but was previously created (expiresAt != null). This keeps TR visible even when
-  // accounts were soft-deleted — the session still exists and the user can reconnect from here.
-  // isActive=false + expiresAt=null means no session has ever been created → hide TR.
-  const hasTrSession = trStatus?.isActive === true || trStatus?.expiresAt != null
+  // is deactivated but a sync once ran on it. This keeps TR visible even when accounts were
+  // soft-deleted — the session still exists and the user can reconnect from here.
+  // isActive=false + no sync ever started means no session has ever been created → hide TR.
+  const hasTrSession = trStatus?.isActive === true
+    || trStatus?.lastSyncStartedAt != null
+    || trStatus?.lastSyncCompletedAt != null
   const hasTrAccount = (accounts?.some(a => a.provider === 'Trade Republic') ?? false) || hasTrSession
   // Same "keep visible across soft-delete" rule as TR — see comment above.
   // Remembered credentials play the role expiresAt played for TR: they mean
@@ -228,6 +233,22 @@ export function useSyncConnections() {
         !a.isManual && a.provider != null && BANQUE_POPULAIRE_PROVIDERS.has(a.provider),
       active: banquePopulaireStatus?.isActive ?? false, lastSyncedAt: banquePopulaireStatus?.lastSyncCompletedAt ?? null,
       failed: banquePopulaireStatus?.syncStatus === 'FAILED',
+      running: isJobRunning(banquePopulaireStatus?.syncStatus),
+    },
+    {
+      type: 'lbp' as const, name: 'La Banque Postale', provider: 'La Banque Postale',
+      active: lbpStatus?.isActive ?? false, lastSyncedAt: lbpStatus?.lastSyncCompletedAt ?? null,
+      hasSession: lbpStatus != null
+        && (lbpStatus.isActive || lbpStatus.syncStatus !== 'IDLE' || lbpStatus.savedIdentifier != null),
+      failed: lbpStatus?.syncStatus === 'FAILED',
+      running: isJobRunning(lbpStatus?.syncStatus),
+    },
+    {
+      type: 'bnp' as const, name: 'BNP Paribas / Hello bank!', provider: 'BNP Paribas',
+      active: bnpStatus?.isActive ?? false, lastSyncedAt: bnpStatus?.lastSyncCompletedAt ?? null,
+      hasSession: bnpStatus != null && (bnpStatus.isActive || bnpStatus.syncStatus !== 'IDLE'),
+      failed: bnpStatus?.syncStatus === 'FAILED',
+      running: isJobRunning(bnpStatus?.syncStatus),
     },
     {
       type: 'bourse-direct' as const, name: 'Bourse Direct', provider: 'Bourse Direct',
@@ -291,6 +312,13 @@ export function useSyncConnections() {
       running: isJobRunning(cmesStatus?.syncStatus),
     },
     {
+      type: 'natixis' as const, name: 'Natixis Interépargne', provider: 'Natixis Interépargne',
+      active: natixisStatus?.isActive ?? false, lastSyncedAt: natixisStatus?.lastSyncCompletedAt ?? null,
+      hasSession: natixisStatus != null && natixisStatus.syncStatus !== 'IDLE',
+      failed: natixisStatus?.syncStatus === 'FAILED',
+      running: isJobRunning(natixisStatus?.syncStatus),
+    },
+    {
       type: 'cic' as const, name: 'CIC (livrets)', provider: 'CIC',
       active: cicStatus?.isActive ?? false, lastSyncedAt: cicStatus?.lastSyncCompletedAt ?? null,
       hasSession: cicStatus != null && cicStatus.syncStatus !== 'IDLE',
@@ -298,7 +326,7 @@ export function useSyncConnections() {
       running: isJobRunning(cicStatus?.syncStatus),
       canReconnect: cicStatus?.canReconnect === true,
     },
-  ], [cicStatus, cmesStatus, amexStatus, corumStatus, sofidyStatus, amundiStatus, fortuneoStatus, boursoStatus, caisseEpargneStatus, banquePopulaireStatus, bourseDirectStatus, degiroStatus, ibkrStatus, simplefinStatus, wiseStatus])
+  ], [cicStatus, cmesStatus, natixisStatus, amexStatus, corumStatus, sofidyStatus, amundiStatus, fortuneoStatus, boursoStatus, caisseEpargneStatus, banquePopulaireStatus, lbpStatus, bnpStatus, bourseDirectStatus, degiroStatus, ibkrStatus, simplefinStatus, wiseStatus])
 
   // Memoized so its identity is stable across renders — the sync callbacks depend on it.
   const connections = useMemo<SyncConnection[]>(() => {
@@ -377,6 +405,8 @@ export function useSyncConnections() {
     connections,
     isLoading: banksLoading || exchangesLoading || walletsLoading,
     trActive,
+    /** Phone stored with an ended Trade Republic session: its login then asks for the PIN only. */
+    trMaskedPhone: trStatus?.maskedPhone ?? null,
     revolutRemembered,
   }
 }
@@ -405,6 +435,8 @@ export function useConnectionSync({ connections, trActive, revolutRemembered, on
   const syncBoursoMutation = useProviderSync('bourso')
   const syncCaisseEpargneMutation = useProviderSync('caisseEpargne')
   const syncBanquePopulaireMutation = useProviderSync('banquePopulaire')
+  const syncLbpMutation = useProviderSync('lbp')
+  const syncBnpMutation = useProviderSync('bnp')
   const syncAmundiMutation = useProviderSync('amundi')
   const syncFortuneoMutation = useProviderSync('fortuneo')
   const syncBourseDirectMutation = useProviderSync('bourseDirect')
@@ -418,6 +450,7 @@ export function useConnectionSync({ connections, trActive, revolutRemembered, on
   const syncCorumMutation = useProviderSync('corum')
   const syncSofidyMutation = useProviderSync('sofidy')
   const syncCmesMutation = useProviderSync('cmes')
+  const syncNatixisMutation = useProviderSync('natixis')
   const syncCicMutation = useProviderSync('cic')
 
   const [syncingIds, setSyncingIds] = useState<Set<string>>(() => new Set())
@@ -503,6 +536,8 @@ export function useConnectionSync({ connections, trActive, revolutRemembered, on
       case 'bourso': syncBoursoMutation.mutate(undefined, generic); break
       case 'caisse-epargne': syncCaisseEpargneMutation.mutate(undefined, generic); break
       case 'banque-populaire': syncBanquePopulaireMutation.mutate(undefined, generic); break
+      case 'lbp': syncLbpMutation.mutate(undefined, generic); break
+      case 'bnp': syncBnpMutation.mutate(undefined, generic); break
       case 'amundi': syncAmundiMutation.mutate(undefined, generic); break
       case 'fortuneo': syncFortuneoMutation.mutate(undefined, generic); break
       case 'bourse-direct': syncBourseDirectMutation.mutate(undefined, generic); break
@@ -514,6 +549,7 @@ export function useConnectionSync({ connections, trActive, revolutRemembered, on
       case 'corum': syncCorumMutation.mutate(undefined, generic); break
       case 'sofidy': syncSofidyMutation.mutate(undefined, generic); break
       case 'cmes': syncCmesMutation.mutate(undefined, generic); break
+      case 'natixis': syncNatixisMutation.mutate(undefined, generic); break
       case 'cic': syncCicMutation.mutate(undefined, generic); break
       case 'revolut':
         // Remembered credentials: a blank body makes the backend fall back to them. The spinner
@@ -543,9 +579,9 @@ export function useConnectionSync({ connections, trActive, revolutRemembered, on
     }
   }, [
     retryBankMutation, syncExchangeMutation, syncWalletMutation, syncTrMutation, syncBoursoMutation,
-    syncCaisseEpargneMutation, syncBanquePopulaireMutation, syncAmundiMutation, syncFortuneoMutation, syncBourseDirectMutation,
+    syncCaisseEpargneMutation, syncBanquePopulaireMutation, syncLbpMutation, syncBnpMutation, syncAmundiMutation, syncFortuneoMutation, syncBourseDirectMutation,
     syncDegiroMutation, syncIbkrMutation, syncSimplefinMutation, syncWiseMutation, startRevolutMutation, syncAmexMutation,
-    syncCorumMutation, syncSofidyMutation, syncCmesMutation, syncCicMutation, queryClient, t,
+    syncCorumMutation, syncSofidyMutation, syncCmesMutation, syncNatixisMutation, syncCicMutation, queryClient, t,
     clearSyncing, markSynced, setRowError, clearRowError, onTrSessionDead,
   ])
 
@@ -597,7 +633,8 @@ export function useConnectionSync({ connections, trActive, revolutRemembered, on
   const batchable = useMemo(() => connections.filter((c) => isBatchSyncable(c)), [connections, isBatchSyncable])
 
   const syncAll = useCallback(() => {
-    const started = batchable.filter(c => !syncingIds.has(c.id))
+    // A row whose server-side job is already queued or running is left alone.
+    const started = batchable.filter(c => !syncingIds.has(c.id) && !c.running)
     setBatchIds(started.map(c => c.id))
     started.forEach(syncInPlace)
   }, [batchable, syncingIds, syncInPlace])
@@ -626,6 +663,8 @@ export function useConnectionSync({ connections, trActive, revolutRemembered, on
     syncInPlace,
     isBatchSyncable,
     batchableCount: batchable.length,
+    /** Every row "Sync all" could start is already syncing, from here or on the server. */
+    batchBusy: batchable.length > 0 && batchable.every(c => busyIds.has(c.id)),
     syncAll,
     /** Progress of the last "Sync all" while it runs, else null. */
     batchProgress: batchDone < batchIds.length ? { done: batchDone, total: batchIds.length } : null,

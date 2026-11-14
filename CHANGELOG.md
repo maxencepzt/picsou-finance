@@ -25,13 +25,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **The projection shows its risks.** A new **Risk** tab on the Analysis page's projection draws the same portfolio and plans over
   4 000 random futures: a fan instead of four steady curves, the range where 8 futures in 10 land, the worst 5 %, the chance of
   ending below what you paid in and of going through a 20 % fall on the way. The volatility each figure rests on is stated.
-- **SimpleFIN accounts show their bank and their positions.** A Chase and a Fidelity account now read "Fidelity Investments · via SimpleFIN"
-  instead of "SimpleFIN", and show the bank's logo when logos are enabled in the budget settings. A new account for which the
-  bridge reports positions is created as the new **Brokerage account** type (any broker, any country or tax wrapper: Roth IRA, HSA,
-  401(k), taxable) and lists its individual positions, each valued at the bridge's figure when the price feed cannot find it. A buy-in
-  the bridge reports as 0.00 is treated as unknown (one you entered yourself is kept), and money-market sweep funds count as cash.
-  A portfolio the bridge returns in part is left as it was rather than replaced. Accounts already synced get their bank on the next
-  sync; one typed Checking keeps that type, so change it to Brokerage once to import its positions.
+
+### Changed
+
+- **Hiding amounts rolls the figures away.** Turning privacy mode on or off now animates every amount on screen like the dials
+  of a safe: the digits roll up out of view and five dashes roll in, one after another, then back again. The dashes replace the
+  asterisks and are drawn in grey, so a hidden amount reads as an empty slot. With "reduce motion" set, amounts swap at once.
 
 ### Fixed
 
@@ -47,18 +46,106 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   recurring-payment detection, so members on these banks saw no category from their rules and no recurring payment.
   Each sync now does both, after its card-settlement and loan tagging, and never overwrites a category already set.
 
+## [1.2.0] — 2026-11-12
+
+### Added
+
+- **BNP Paribas and Hello bank! sync (partly verified against one real account).** A new `bnp-auth` sidecar
+  (Camoufox) signs in on the bank's own page: you type the customer number, click the six digits of your
+  password on the bank's shuffled keypad in Picsou (only positions are sent, the password is never stored),
+  then confirm with the Cle Digitale app or an SMS code when the bank asks for one. Picsou imports current accounts, savings,
+  securities accounts with positions, life insurance (balance only), PER and loans, and lists products it
+  does not recognise without guessing. Only the encrypted session cookies are kept (`V150`). One
+  owner-assisted run covered the login, current and savings accounts and their operations on BNP Paribas;
+  the second factor, Hello bank!, securities, life insurance and loans are unverified, see
+  `docs/features/bnp-paribas.md`. Closes the connector part of #306.
+- **Banque Populaire: import Plan Épargne Retraite (PER).** A PER (family 4, sub 05)
+  is synced via the Natixis Assurances portal with its funds and euro fund, matching
+  Caisse d'Epargne support. (#524)
+
+- **Banque Populaire: remember identifier across reconnections.** The customer
+  identifier from the last successful login is stored encrypted at rest on its `sidecar_session` row (`V148`),
+  and reconnecting offers to reuse it along with its associated regional bank,
+  matching the Caisse d'Epargne reconnection flow. The user can choose to type
+  another identifier instead. Passwords and virtual keypad inputs are never stored.
+
+- **SimpleFIN accounts show their bank and their positions.** A Chase and a Fidelity account now read "Fidelity Investments · via SimpleFIN"
+  instead of "SimpleFIN", and show the bank's logo when logos are enabled in the budget settings. A new account for which the
+  bridge reports positions is created as the new **Brokerage account** type (any broker, any country or tax wrapper: Roth IRA, HSA,
+  401(k), taxable) and lists its individual positions, each valued at the bridge's figure when the price feed cannot find it. A buy-in
+  the bridge reports as 0.00 is treated as unknown (one you entered yourself is kept), and money-market sweep funds count as cash.
+  A portfolio the bridge returns in part is left as it was rather than replaced. Accounts already synced get their bank on the next
+  sync; one typed Checking keeps that type, so change it to Brokerage once to import its positions.
+
+### Fixed
+
+- **`:latest` could go back to an older schema.** Every push to `main` also tagged `:latest`, so
+  when a merge was reverted on `main`, installs that auto-update `:latest` were handed an image
+  with fewer migrations than their database had already run, and the app crash-looped (#553).
+  `:latest` now moves only to the highest stable version tag. `main` keeps `:nightly` and
+  `:sha-<short>`.
+- **An older image on a newer database died in Hibernate instead of at Flyway.** Spring Boot
+  defaults Flyway to ignore applied versions the image does not ship, so after V131–V146 had been
+  applied, an image that only ships up to V128 logged `Schema is up to date` and then failed with
+  `Schema-validation: missing table [amex_session]`
+  ([#553](https://github.com/Cloeille/picsou-finance/issues/553)). The app now refuses to start
+  with Flyway's `Detected applied migration not resolved locally` error naming the missing version,
+  as the release migration CLI already did.
+- **Trade Republic sync wrote account data to the backend log.** Each sync logged the raw answers of
+  Trade Republic at INFO: the cash account number, the balance, every position's quantity and buy-in
+  price, and the account value. The log now keeps the id, type and size of each answer and the number
+  of positions. Raw answers are logged only when you set
+  `logging.level.com.picsou.adapter.TradeRepublicAdapter=TRACE`.
+- **A mortgage split could only be edited through the API.** The ownership editor lived on the
+  property sheet alone, so a loan kept whatever split it already had — no rows by default, the
+  administrative owner holding 100% — while the property showed its own split. The loan account
+  sheet now carries the same editor, so each mortgage gets the split the backend already accepted.
+  The editor sits next to the loan section rather than inside it, so the split stays editable
+  even when the loan has no debt details or the viewer is a co-owner (issue #550).
+- **Revolut sync failed with "Failed to sync Revolut accounts" when a card payment settled days
+  after it was made.** Revolut lists transactions by creation date, and the connector moved through
+  the pages by settlement date. With a late settlement the pages overlapped, the read stopped, and
+  the whole sync was refused, balances included. The connector now follows the creation date.
+- **Family dashboard and MCP history counted Revolut pockets twice.** A Revolut wallet's balance
+  is the sum of its pockets, which is why the dashboard leaves pockets out of net worth. The
+  family dashboard's shared net worth added each pocket on top of its wallet, and the MCP
+  `get_net_worth_history` and `get_profit_and_loss` tools did the same when called without
+  account ids. A pocket now counts only when its wallet is not in the same list.
+- **Long descriptions overflowed the rows of the "Add account" source list.** A description longer than the dialog (Caisse d'Epargne, German or Spanish copy, any row on a phone) kept its one-line width, ran past the card's right edge and pushed that row's arrow out of line with the others. A description now wraps inside its row, clamped to two lines with the full text as a tooltip, and every arrow keeps its size and position.
+- **The dashboard holdings card counted property, SCPI and Revolut pockets as cash.** Its
+  "Euros" line added up every account that is neither a holdings account nor a debt, so a flat
+  or an SCPI was shown as euros, and a Revolut wallet's money was counted again through each of
+  its pockets. The line now adds up bank and savings accounts only, the same types as the Cash
+  tab, and leaves out a pocket whose wallet is in that same list.
 - **Savings interest projection counted early-year movements twice.** When the first balance
   snapshot of the year came after some of that year's deposits or withdrawals (a livret connected
   mid-year, or a snapshot rebuilt from the ledger), those movements were already in the opening
   capital and were added again quinzaine by quinzaine. The opening capital is now the snapshot
   minus the movements booked up to its date.
 - **HTTPS access by LAN IP.** The bundled Caddy proxy now uses `PICSOU_DOMAIN` as its default TLS SNI when a client omits SNI, allowing it to select the certificate for the configured site address.
+- **The dashboard showed the whole loan instalment to every co-owner.** `monthlyPayment` (and so
+  `totalMonthlyPayment`) was the full loan's instalment while the balance was weighed by the
+  member's share, so on a 50/50 loan each co-owner saw half the remaining capital but the full
+  monthly payment. The instalment is now weighed by the same share as the balance, on the
+  dashboard and in the real-estate summary; `percentPaid` stays the loan's own progress.
+- **Fortuneo sync failed on accounts with a long history.** The sidecar answered `/accounts` fine, but the backend rejected any payload over Spring's 256 KB default buffer (`DataBufferLimitException`, surfaced as `UPSTREAM_UNAVAILABLE`). The Fortuneo adapter now allows 16 MB like the Caisse d'Épargne one.
+- **Other bank sidecars could fail the same way on a long history.** Amex, Amundi, Bourse Direct,
+  BoursoBank, CIC, Crédit Mutuel Épargne Salariale, CORUM, DEGIRO, Revolut, Sofidy and Trade
+  Republic still decoded their sidecar's answer with Spring's 256 KB default. The 16 MB limit now
+  lives in `SidecarWebClientFactory`, so every sidecar adapter gets it.
 
 ### Changed
 
-- **Hiding amounts rolls the figures away.** Turning privacy mode on or off now animates every amount on screen like the dials
-  of a safe: the digits roll up out of view and five dashes roll in, one after another, then back again. The dashes replace the
-  asterisks and are drawn in grey, so a hidden amount reads as an empty slot. With "reduce motion" set, amounts swap at once.
+- **Peer loans: the transaction sheet points at the loan.** A transaction that is a
+  lending outflow or a linked repayment now carries its loan, and its detail sheet hides
+  the "Create a loan" / "Assign to a repayment" actions (they could only fail as
+  "already linked") in favour of a link to the loan. The repayment dialog shows the
+  remaining due next to the accrued interest, and deleting a repayment asks for
+  confirmation first, saying what happens to its cash movement: it is deleted with the
+  row when Picsou wrote it, it stays in its account when the repayment only links an
+  existing transaction, and it is not mentioned when the row has none. See
+  [Peer loans](docs/features/peer-loans.md).
+
 - **The app image is one non-root Java process.** nginx, supervisord and the shell entrypoint are
   gone. The container runs as uid 1000 on port 8080; Compose and Helm hand `/data` to that user
   (`data-permissions` service, `fsGroup`). Tomcat trusts forwarded headers only from
@@ -94,11 +181,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **La Banque Postale replacement connector.** A dedicated sidecar reads the current
+  account and the savings products Enable Banking cannot reach (Livret A, LDDS, LEP,
+  Compte sur Livret, Livret Jeune), then replaces the Enable Banking connection for
+  this bank. The login runs in headless Chromium (shuffled keypad clicked by the user,
+  mobile approval), the identifier can be remembered encrypted, and the regulated
+  livrets get their default savings configuration on import. The connector is wired
+  into the Sync tab, Add-account and the dashboard Sync all modal. Migrations V129-V130.
+  Validated live on an isolated stack by the author (current account, Livret A and
+  LEP, 27 transactions); the maintainer live run is still pending. See
+  [La Banque Postale](docs/features/la-banque-postale.md).
+
 - **Banque Populaire sync.** A new Sync tab connects a Banque Populaire account: pick your
   regional bank, type your identifier, click your digits on the bank's keypad and approve in
-  Sécur'Pass. Imports the current account, Livret A, Livret Jeune and LDDS with their
-  transactions, on demand. It shares the Caisse d'Epargne code through the BPCE platform; cards,
-  loans, PER and revolving credit are not imported. The accounts carry your regional bank's name
+  Sécur'Pass. Imports the current account, Livret A, Livret Jeune, LDDS, Compte sur Livret and PEL
+  with their transactions, and term deposits and cooperative shares with their synthesis
+  balance, on demand. It shares the Caisse d'Epargne code through the BPCE platform; cards,
+  loans and revolving credit are not imported. The PER is read from the Natixis Assurances portal.
+  The accounts carry your regional bank's name
   (for example "Banque Populaire Rives de Paris") and, when Enable Banking is configured, its logo.
   Enable the `banque-populaire` Compose profile. The shared code also fixes Caisse d'Epargne: a
   Livret Jeune (same BPCE product code as the Livret A) is now imported as a Livret Jeune, and a
@@ -116,6 +216,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   is `:latest` in Compose); an older app refuses the whole sync, current account included, as
   soon as you hold a PEL (a LEP alone is already known to it). If you created a PEL or LEP by hand, delete or archive it
   first: the first sync creates its own and net worth would count both.
+- **Caisse d'Epargne: assurance vie.** An assurance vie is now imported like a PER: each unit-linked
+  fund with its ISIN, quantity and price, plus the euro fund as a separate line, repriced between syncs. Funds the insurer shows without a price date
+  take the contract's valuation date. A contract the sync cannot read is listed under
+  unsupported instead of failing the sync. No contract number, name or amount is logged.
+  **Upgrade:** update the `caisse-epargne-auth` sidecar and the app together; an older app
+  refuses the whole sync as soon as you hold one. If you created the contract by hand, delete or
+  archive it first: the first sync creates its own and net worth would count both.
 - **Wise jars.** Wise's open-banking access only returns current balances, so money in
   jars was missing. A member can now paste a read-only Wise personal API token; Picsou
   imports every jar as a savings account and refreshes its balance by hand, from Sync All
@@ -123,6 +230,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Banking. Jars carry no transactions: Wise refuses statements to personal tokens in the
   EEA and the UK. Migration V131. See [ADR](docs/decisions/2026-11-03-wise-jars-beside-enable-banking.md)
   and [feature note](docs/features/wise-jars.md).
+
+- **Natixis Interépargne (employee savings) sync.** A new Natixis Interépargne tab connects a
+  saver space once, with the code Natixis sends by SMS, voice call or e-mail; later syncs, manual
+  or in the daily 08:00 job, run unattended on the refresh token Natixis issues, until Natixis
+  refuses it and asks to reconnect. Each plan (PEE, PER) becomes an account holding its fund
+  lines at the units and unit values Natixis reports, so the balance matches the saver space.
+  The operations history comes in as BUY and SELL transactions on the plan, kept off the
+  budget, cash flow and categorization. The provider gets its logo. Migration V146 (a `NATIXIS` row in `sidecar_session`). See
+  [Natixis Interépargne](docs/features/natixis-interepargne.md).
+
 - **Sign in with your identity provider (SSO).** Set `SSO_ISSUER_URI` and `SSO_CLIENT_ID` to add
   a "Sign in with <provider>" button that works with any OpenID Connect provider (Zitadel,
   Authentik, Keycloak, Authelia, Pocket ID...). It sits alongside passwords: without these
@@ -170,6 +287,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   lists these accounts only; `OTHER` accounts get their own filter. See
   [Precious metals](docs/features/precious-metals.md). (#448)
 
+- **Trade Republic: password and authenticator login, and a one-field reconnect.** The
+  backend accepts a password (1 to 128 characters) in place of the 4-digit PIN, and the new
+  `authenticator` flow takes the 6-digit code of an authenticator app through `/auth/complete`.
+  `POST /api/tr/auth/reconnect` asks only for the PIN or password and reuses the phone number
+  kept in the encrypted session state, which is also shown masked (`maskedPhone`, last two
+  digits only) in `GET /api/tr/status`. The PIN is never stored. The daily and MCP syncs never
+  start a login: an expired session stays `SESSION_EXPIRED` until the member reconnects. Members
+  connected before this change enter their phone number once more. See
+  [Trade Republic](docs/features/trade-republic.md).
+- **Trade Republic transactions import automatically during the sync.** The sync now also
+  fetches Trade Republic's own CSV export through the `tr-auth` sidecar and feeds it to the
+  existing CSV importer, so card payments, interest and trades land in TR Cash and the PEA/CTO
+  without a manual upload. Rows already imported by hand are skipped. An unavailable export never
+  fails the sync. Rows the export states in a currency other than EUR are left out and counted,
+  on the manual upload too, instead of being stored as euros. See
+  [Trade Republic](docs/features/trade-republic.md).
+
 - **AI categorization over MCP.** `start_ai_categorization` starts the inbox's AI job and
   `get_ai_categorization_status` reports its progress as counters only, under a new
   `budget:ai-write` scope. A scheduler can now run categorization on a local model without a
@@ -195,16 +329,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Unused-file check for the frontend.** `frontend/knip.jsonc` lets
   `bunx knip --production` report unused files under `src/`. German and Spanish strings still
   in English are listed for translators in `docs/features/i18n-untranslated.md`.
+- **One session table for ten bank connectors.** Amex, Amundi, Bourse Direct, BoursoBank,
+  Caisse d'Epargne, CIC, CMES, CORUM, Fortuneo and Sofidy now share one `sidecar_session`
+  table and one sync cycle. Migration V142 copies every stored session, so nobody has to
+  reconnect; a CORUM or Sofidy row with an inconsistent failure state is repaired on the way.
+  It drops the old tables and cannot be undone, so plan an offline upgrade: stop the app (an
+  old app writing a session after the copy loses it), then use the
+  [safe release deployment](docs/features/release-deployment.md), which takes a backup first.
+  (#337)
+- **Banque Populaire sessions join the shared session table.** Migration V147 moves every
+  stored Banque Populaire session, regional bank included, into `sidecar_session`, so nobody
+  has to reconnect, then drops the old table. The same offline upgrade applies. (#478)
 
 ### Fixed
 
+- **American Express: a login blocked by the site's anti-bot fails at once and says so in the log.**
+  When Akamai refuses AMEX's login request (HTTP 403, retried silently by the page), the sidecar
+  used to wait its full 30 s and log a bare `outcome=timeout`. It now stops after two 403s in a
+  row, answers the same retryable `UPSTREAM_UNAVAILABLE`, and logs
+  `AMEX login blocked by anti-bot login_post_403=<n> akamai_edge=<bool>`. The timeout warning
+  also counts the login responses, so "never answered" and "refused" no longer look alike.
+- **Adding a manual transaction wiped hand-entered month-end snapshots.** On a manual ledger account the balance became the sum of the transactions and every snapshot was deleted and rebuilt from the ledger alone, whichever order statements and transactions were entered in. Snapshots now carry their origin and native figure (`balance_snapshot.source`, `native_balance`, migration V150), and statements entered through the month-end modal are ground truth: rebuilds only recompute derived rows, and the balance is anchored on the latest statement plus later transactions. HomeBank, Actual Budget and Finary file imports preserve statements the same way; the first two also anchor the balance on them. Older statements regain protection once re-entered (re-typing the same figure is enough).
+- **American Express no longer says its site changed when the login page is just slow.** The
+  login form is drawn by a script American Express loads separately, which is sometimes slow or
+  fails. The connection now waits longer and reloads the page once; if the page still has no form,
+  you are asked to try again ("Impossible de joindre American Express") instead of being told the
+  site format changed. That message now only appears when the page loads twice without its fields (#482).
+
+- **Caisse d'Epargne remembers your identifier.** A reconnect after the bank session
+  expired no longer asks for the identifier again: the one from the last successful login is
+  stored encrypted, like BoursoBank's (migration `V145`). The password and the Sécur'Pass
+  approval are still never stored, and "Disconnect" forgets everything. See
+  [Caisse d'Epargne](docs/features/caisse-epargne.md#remembered-identifier).
+- **Peer loans: invalid repayments are refused instead of silently absorbed.** A manual
+  repayment cannot exceed the accrued interest plus the remaining capital (the excess
+  used to be written to the cash account while the ledger dropped it, inflating net
+  worth); a linked pre-existing transaction still links and the ledger clamps it, since
+  no money is created. Standalone write-offs and interest repayments with no accrued
+  interest are refused — a write-off is recorded by closing the loan. Backdated closes
+  ignore later repayments, transaction dates follow the same bounds as lending dates,
+  and history is repaired from the oldest affected date. See
+  [Peer loans](docs/features/peer-loans.md).
+- **Caisse d'Epargne PER: a buy-in you entered by hand survives the next sync.** The sync used to
+  delete and recreate the PER's lines, so a cost entered on a line was lost each time. Lines are now
+  updated in place; only a fund the insurer stops reporting is removed.
 - **The Finary file import reaches the preview again.** The upload was sent as JSON
   (`{"file":{}}`) instead of multipart, so the file was lost and the server answered
   415 Unsupported Media Type.
 
-- **Caisse d'Epargne PER: a buy-in you entered by hand survives the next sync.** The sync used to
-  delete and recreate the PER's lines, so a cost entered on a line was lost each time. Lines are now
-  updated in place; only a fund the insurer stops reporting is removed.
 - **Crypto coins outside the built-in list get a price.** NEXO and CRO are now priced
   ([#419](https://github.com/Cloeille/picsou-finance/issues/419)). Beyond them, a coin held in a
   crypto account that Picsou does not know yet is looked up on CoinGecko and remembered once it is
@@ -296,6 +468,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   PostgreSQL, the backend and Vite, `make test` runs the backend, frontend, e2e and sidecar suites, `make build`
   builds the images, `make release VERSION=x.y.z` checks the CHANGELOG and pushes the tag.
   CI calls the same targets, and `CONTRIBUTING.md` is the one place that lists commands.
+- **Trade Republic moves to the shared sidecar session table; members reconnect it once.**
+  The old refresh route no longer works, so stored Trade Republic sessions are dropped by
+  migration V149. Until a member signs in again, their Trade Republic balances and holdings stay
+  frozen at the last sync, and the daily sync lists Trade Republic as not connected
+  (`SKIPPED_NOT_CONNECTED`), not as needing re-authentication; the Trade Republic tab says the
+  accounts are no longer updated. Each member signs in again once, with phone number and PIN, and
+  confirms in the Trade Republic app (a 4-digit code if Trade Republic asks for one). Syncing then queues
+  in the background like the other banks, and an interrupted sync is recovered at startup.
+  See [Trade Republic](docs/features/trade-republic.md).
+
 - **Sidecar URLs live under one `app.sidecars` map.** `app.bourso-auth.url` and its 12
   siblings are now `app.sidecars.<service>.url`. The environment variables (`BOURSO_AUTH_URL`,
   `TR_AUTH_URL`, …) and their defaults are unchanged, so a Docker or Helm install needs nothing.

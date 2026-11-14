@@ -17,8 +17,11 @@ import { BourseDirectPanel } from '@/components/sync/BourseDirectPanel'
 import { BoursoPanel } from '@/components/sync/BoursoPanel'
 import { CaisseEpargnePanel } from '@/components/sync/CaisseEpargnePanel'
 import { BanquePopulairePanel } from '@/components/sync/BanquePopulairePanel'
+import { LbpPanel } from '@/components/sync/LbpPanel'
+import { BnpPanel } from '@/components/sync/BnpPanel'
 import { DegiroPanel } from '@/components/sync/DegiroPanel'
 import { AmundiPanel } from '@/components/sync/AmundiPanel'
+import { NatixisPanel } from '@/components/sync/NatixisPanel'
 import { FortuneoPanel } from '@/components/sync/FortuneoPanel'
 import { AmexPanel } from '@/components/sync/AmexPanel'
 import { CorumPanel } from '@/components/sync/CorumPanel'
@@ -69,6 +72,8 @@ const PANEL_STEPS: Record<string, ComponentType<{ onConnected?: () => void }>> =
   bourso: BoursoPanel,
   'caisse-epargne': CaisseEpargnePanel,
   'banque-populaire': BanquePopulairePanel,
+  lbp: LbpPanel,
+  bnp: BnpPanel,
   'bourse-direct': BourseDirectPanel,
   degiro: DegiroPanel,
   ibkr: IbkrPanel,
@@ -76,6 +81,7 @@ const PANEL_STEPS: Record<string, ComponentType<{ onConnected?: () => void }>> =
   wise: WisePanel,
   amundi: AmundiPanel,
   cmes: CmesPanel,
+  natixis: NatixisPanel,
   cic: CicPanel,
   fortuneo: FortuneoPanel,
   amex: AmexPanel,

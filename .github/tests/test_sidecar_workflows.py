@@ -85,14 +85,24 @@ def _sidecar_steps(service, arch="x86_64"):
 
 
 class SidecarWorkflowInventoryTest(unittest.TestCase):
-    def run_publish_versions(self, ref_type, ref_name, sha):
+    def run_publish_versions(self, ref_type, ref_name, sha, tags=()):
         workflow = _load(DOCKER_WORKFLOW)
         step = next(step for step in workflow["jobs"]["base"]["steps"] if step.get("id") == "versions")
-        with tempfile.NamedTemporaryFile() as output:
+        with tempfile.NamedTemporaryFile() as output, tempfile.TemporaryDirectory() as bin_dir:
+            git = Path(bin_dir) / "git"
+            listing = "".join(f"{tag}\\n" for tag in tags)
+            git.write_text(
+                "#!/bin/sh\n"
+                f"[ \"$*\" = 'tag --list' ] && printf '{listing}' && exit 0\n"
+                "exit 93\n",
+                encoding="utf-8",
+            )
+            git.chmod(0o755)
             result = subprocess.run(
-                ["bash", "-c", step["run"]],
+                ["bash", "--noprofile", "--norc", "-e", "-o", "pipefail", "-c", step["run"]],
                 env={
                     **os.environ,
+                    "PATH": f"{bin_dir}{os.pathsep}{os.environ['PATH']}",
                     "GITHUB_REF_TYPE": ref_type,
                     "GITHUB_REF_NAME": ref_name,
                     "GITHUB_SHA": sha,
@@ -282,7 +292,7 @@ class SidecarWorkflowInventoryTest(unittest.TestCase):
                 self.assertEqual(runner, {"x86_64": "ubuntu-latest", "aarch64": "ubuntu-24.04-arm"}[arch])
 
     def test_camoufox_starts_headful_offline_in_each_built_sidecar_on_both_architectures(self):
-        for service in ("amex-auth", "revolut-auth"):
+        for service in ("amex-auth", "bnp-auth", "revolut-auth"):
             for arch in ("x86_64", "aarch64"):
                 with self.subTest(service=service, arch=arch):
                     commands = _sidecar_steps(service, arch)
@@ -334,23 +344,25 @@ class SidecarWorkflowInventoryTest(unittest.TestCase):
         cases = {
             ("tag", "v1.2.3"): {
                 "app-version": "1.2.3", "image-tag": "1.2.3",
-                "chart-release-version": "1.2.3",
+                "chart-release-version": "1.2.3", "latest": "true", "latest-major": "true",
             },
             ("branch", "main"): {
                 "app-version": "nightly-0123456", "image-tag": "sha-0123456",
-                "chart-release-version": "",
+                "chart-release-version": "", "latest": "false", "latest-major": "false",
             },
         }
+        tags = ("1.0.9", "v1.2.3", "1.10.0-rc.1", "not-a-version")
         for ref, expected in cases.items():
             with self.subTest(ref=ref):
-                self.assertEqual(self.run_publish_versions(*ref, sha), expected)
+                self.assertEqual(self.run_publish_versions(*ref, sha, tags), expected)
 
         workflow = _load(DOCKER_WORKFLOW)
         base = workflow["jobs"]["base"]
         build = workflow["jobs"]["build"]
         chart = workflow["jobs"]["chart"]
         self.assertEqual(set(base["outputs"]), {
-            "python", "chromium", "camoufox", "app-version", "image-tag", "chart-release-version", "matrix",
+            "python", "chromium", "camoufox", "app-version", "image-tag", "chart-release-version",
+            "latest", "latest-major", "matrix",
         })
         self.assertEqual(chart["needs"], ["base", "build"])
         version = next(step for step in chart["steps"] if step.get("id") == "version")
@@ -369,6 +381,49 @@ class SidecarWorkflowInventoryTest(unittest.TestCase):
         self.assertIn("needs.base.outputs.app-version", build["steps"][-1]["with"]["build-args"])
         self.assertNotIn("GITHUB_SHA", _run_commands(chart))
         self.assertNotIn("GITHUB_REF", _run_commands(chart))
+
+    def test_latest_follows_only_the_highest_stable_release_tag(self):
+        # #553: latest moved on every main push, so a revert on main walked installs back
+        # to an older schema. An older line's patch release must not move it either.
+        tags = ("1.0.18", "1.0.19", "1.1.0", "1.1.1", "1.2.0-rc.1")
+        cases = {
+            ("branch", "main"): ("false", "false"),
+            ("tag", "1.1.1"): ("true", "true"),
+            ("tag", "v1.1.1"): ("true", "true"),
+            ("tag", "1.0.19"): ("false", "false"),
+            ("tag", "1.1.0"): ("false", "false"),
+            ("tag", "1.2.0-rc.1"): ("false", "false"),
+        }
+        for ref, expected in cases.items():
+            with self.subTest(ref=ref):
+                values = self.run_publish_versions(*ref, "0123456789abcdef", tags)
+                self.assertEqual((values["latest"], values["latest-major"]), expected)
+        # Numeric order, not lexical: 1.0.10 is above 1.0.9.
+        for version, expected in (("1.0.10", ("true", "true")), ("1.0.9", ("false", "false"))):
+            with self.subTest(version=version):
+                values = self.run_publish_versions("tag", version, "0123456789abcdef", ("1.0.9", "1.0.10"))
+                self.assertEqual((values["latest"], values["latest-major"]), expected)
+        # An older major's patch still moves its own major tag, not latest.
+        values = self.run_publish_versions("tag", "0.9.4", "0123456789abcdef", ("0.9.3", "0.9.4", "1.1.1"))
+        self.assertEqual((values["latest"], values["latest-major"]), ("false", "true"))
+
+        workflow = _load(DOCKER_WORKFLOW)
+        checkout = next(step for step in workflow["jobs"]["base"]["steps"] if step.get("name") == "Checkout")
+        self.assertEqual(checkout["with"]["fetch-depth"], 0)
+        text = DOCKER_WORKFLOW.read_text(encoding="utf-8")
+        self.assertNotIn("type=raw,value=latest,enable=${{ github.ref", text)
+        self.assertNotIn("startsWith(github.ref, 'refs/tags/')", text)
+        bases = [step for step in workflow["jobs"]["base"]["steps"] if str(step.get("id", "")).startswith("meta-")]
+        build = next(step for step in workflow["jobs"]["build"]["steps"] if step.get("id") == "meta")
+        for step, outputs in [*((base, "steps.versions.outputs") for base in bases), (build, "needs.base.outputs")]:
+            with self.subTest(step=step["id"]):
+                tag_lines = step["with"]["tags"].splitlines()
+                self.assertEqual(step["with"]["flavor"], "latest=false")
+                self.assertIn(f"type=raw,value=latest,enable=${{{{ {outputs}.latest == 'true' }}}}", tag_lines)
+                self.assertIn(
+                    f"type=semver,pattern={{{{major}}}},enable=${{{{ {outputs}.latest-major == 'true' }}}}", tag_lines)
+                self.assertNotIn("type=semver,pattern={{major}}", tag_lines)
+        self.assertEqual(len(bases), 3)
 
     def test_chart_version_uses_fetched_local_tags_without_a_remote_lookup(self):
         workflow = _load(DOCKER_WORKFLOW)
@@ -553,7 +608,7 @@ class CiJobSelectionTest(unittest.TestCase):
     def test_runs_without_a_file_list_select_every_sidecar(self):
         everything = _select_sidecars([], every=True, changes=())
         self.assertEqual(json.loads(everything["matrix"]), _legs())
-        self.assertEqual(len(_legs()), len(_inventory()) + 2)
+        self.assertEqual(len(_legs()), len(_inventory()) + 3)
         self.assertEqual(_select_sidecars([], changes=["frontend"]), {"jobs": '["frontend"]', "matrix": "[]"})
         removed = _select_sidecars(["services/gone-auth/main.py"], changes=["workflow-inventory", "sidecar"])
         self.assertEqual(removed, {"jobs": '["workflow-inventory"]', "matrix": "[]"})
@@ -561,7 +616,7 @@ class CiJobSelectionTest(unittest.TestCase):
     def test_a_change_selects_the_jobs_it_can_affect(self):
         jobs = _load(CI_WORKFLOW)["jobs"]
         sidecars = {f"sidecar:{entry['service']}" for entry in _inventory()} | {
-            "sidecar:amex-auth:arm64", "sidecar:revolut-auth:arm64",
+            "sidecar:amex-auth:arm64", "sidecar:bnp-auth:arm64", "sidecar:revolut-auth:arm64",
         }
         everything = (_selectable(jobs) - {"sidecar"}) | sidecars
         services = {"compose-sidecar-build", "workflow-inventory"}
@@ -746,7 +801,7 @@ class CiJobSelectionTest(unittest.TestCase):
         self.assertEqual(download["with"], {"pattern": "surefire-*", "path": "${{ runner.temp }}/surefire"})
         commands = "\n".join(step.get("run", "") for step in gated)
         self.assertIn('python3 .github/scripts/backend_shards.py --check "$RUNNER_TEMP/surefire"', commands)
-        self.assertIn("11 service.ScpiSyncSessionPostgresTest", commands)
+        self.assertIn("\nservice.ScpiSyncSessionPostgresTest\n", commands)
 
         # One lookup in `changes`; the shards restore exactly that key, so a re-run splits the same.
         lookup = next(step for step in jobs[SELECTOR]["steps"] if step.get("id") == "backend-timings")
@@ -899,7 +954,7 @@ class SharedSidecarBaseTest(unittest.TestCase):
         }
         for service in _shared_base_services():
             with self.subTest(service=service):
-                if service in {"amex-auth", "revolut-auth"}:
+                if service in {"amex-auth", "bnp-auth", "revolut-auth"}:
                     expected = "camoufox"
                 else:
                     expected = "chromium" if service in uses_playwright else "python"
@@ -928,7 +983,7 @@ class SharedSidecarBaseTest(unittest.TestCase):
         }
         self.assertEqual(workflow["jobs"]["base"]["outputs"]["matrix"], "${{ steps.matrix.outputs.matrix }}")
         self.assertEqual(
-            {matrix[service]["base"] for service in ("amex-auth", "revolut-auth")},
+            {matrix[service]["base"] for service in ("amex-auth", "bnp-auth", "revolut-auth")},
             {"camoufox"},
         )
         for service in _shared_base_services():

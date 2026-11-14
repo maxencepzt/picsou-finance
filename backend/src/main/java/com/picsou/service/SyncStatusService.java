@@ -14,7 +14,6 @@ import com.picsou.repository.FinarySessionRepository;
 import com.picsou.repository.IbkrConnectionRepository;
 import com.picsou.repository.RequisitionRepository;
 import com.picsou.repository.SimplefinConnectionRepository;
-import com.picsou.repository.TradeRepublicSessionRepository;
 import com.picsou.repository.WalletAddressRepository;
 import com.picsou.repository.WiseConnectionRepository;
 import org.springframework.stereotype.Service;
@@ -34,18 +33,20 @@ import java.util.function.Supplier;
 @Service
 public class SyncStatusService {
 
-    private static final Set<String> REAUTH_ON_INVALID_CREDENTIALS = Set.of("bourso", "cmes", "cic", "corum");
+    private static final Set<String> REAUTH_ON_INVALID_CREDENTIALS = Set.of("bourso", "cmes", "cic", "corum", "natixis", "lbp", "bnp");
 
     private final RevolutSyncService revolutSyncService;
     private final RequisitionRepository requisitionRepository;
     private final TradeRepublicSyncService tradeRepublicSyncService;
-    private final TradeRepublicSessionRepository tradeRepublicSessionRepository;
     private final BoursoSyncService boursoSyncService;
     private final BourseDirectSyncService bourseDirectSyncService;
     private final AmundiSyncService amundiSyncService;
     private final CmesSyncService cmesSyncService;
     private final CicSyncService cicSyncService;
     private final CorumSyncService corumSyncService;
+    private final NatixisSyncService natixisSyncService;
+    private final LbpSyncService lbpSyncService;
+    private final BnpSyncService bnpSyncService;
     private final FortuneoSyncService fortuneoSyncService;
     private final AmexSyncService amexSyncService;
     private final IbkrConnectionRepository ibkrConnectionRepository;
@@ -59,13 +60,15 @@ public class SyncStatusService {
     public SyncStatusService(RevolutSyncService revolutSyncService,
                              RequisitionRepository requisitionRepository,
                              TradeRepublicSyncService tradeRepublicSyncService,
-                             TradeRepublicSessionRepository tradeRepublicSessionRepository,
                              BoursoSyncService boursoSyncService,
                              BourseDirectSyncService bourseDirectSyncService,
                              AmundiSyncService amundiSyncService,
                              CmesSyncService cmesSyncService,
                              CicSyncService cicSyncService,
                              CorumSyncService corumSyncService,
+                             NatixisSyncService natixisSyncService,
+                             LbpSyncService lbpSyncService,
+                             BnpSyncService bnpSyncService,
                              FortuneoSyncService fortuneoSyncService,
                              AmexSyncService amexSyncService,
                              IbkrConnectionRepository ibkrConnectionRepository,
@@ -78,13 +81,15 @@ public class SyncStatusService {
         this.revolutSyncService = revolutSyncService;
         this.requisitionRepository = requisitionRepository;
         this.tradeRepublicSyncService = tradeRepublicSyncService;
-        this.tradeRepublicSessionRepository = tradeRepublicSessionRepository;
         this.boursoSyncService = boursoSyncService;
         this.bourseDirectSyncService = bourseDirectSyncService;
         this.amundiSyncService = amundiSyncService;
         this.cmesSyncService = cmesSyncService;
         this.cicSyncService = cicSyncService;
         this.corumSyncService = corumSyncService;
+        this.natixisSyncService = natixisSyncService;
+        this.lbpSyncService = lbpSyncService;
+        this.bnpSyncService = bnpSyncService;
         this.fortuneoSyncService = fortuneoSyncService;
         this.amexSyncService = amexSyncService;
         this.ibkrConnectionRepository = ibkrConnectionRepository;
@@ -101,7 +106,10 @@ public class SyncStatusService {
         List<String> lines = new ArrayList<>();
         add(lines, "revolut", () -> revolut(memberId));
         add(lines, "enable-banking", () -> banking(memberId));
-        add(lines, "trade-republic", () -> tradeRepublic(memberId));
+        add(lines, "trade-republic", () -> {
+            TradeRepublicSyncService.SessionStatusResponse s = tradeRepublicSyncService.getStatus(memberId);
+            return List.of(broker("trade-republic", s.isActive(), s.syncStatus().name(), s.lastSyncCompletedAt(), s.lastSyncError()));
+        });
         add(lines, "bourso", () -> {
             BoursoSyncService.SessionStatusResponse s = boursoSyncService.getStatus(memberId);
             return List.of(broker("bourso", s.isActive(), s.syncStatus().name(), s.lastSyncCompletedAt(), s.lastSyncError()));
@@ -125,6 +133,18 @@ public class SyncStatusService {
         add(lines, "corum", () -> {
             CorumSyncService.SessionStatusResponse s = corumSyncService.getStatus(memberId);
             return List.of(broker("corum", s.isActive(), s.syncStatus().name(), s.lastSyncCompletedAt(), s.lastSyncError()));
+        });
+        add(lines, "natixis", () -> {
+            NatixisSyncService.SessionStatusResponse s = natixisSyncService.getStatus(memberId);
+            return List.of(broker("natixis", s.isActive(), s.syncStatus().name(), s.lastSyncCompletedAt(), s.lastSyncError()));
+        });
+        add(lines, "lbp", () -> {
+            LbpSyncService.SessionStatusResponse s = lbpSyncService.getStatus(memberId);
+            return List.of(broker("lbp", s.isActive(), s.syncStatus().name(), s.lastSyncCompletedAt(), s.lastSyncError()));
+        });
+        add(lines, "bnp", () -> {
+            BnpSyncService.SessionStatusResponse s = bnpSyncService.getStatus(memberId);
+            return List.of(broker("bnp", s.isActive(), s.syncStatus().name(), s.lastSyncCompletedAt(), s.lastSyncError()));
         });
         add(lines, "fortuneo", () -> {
             FortuneoSyncService.SessionStatusResponse s = fortuneoSyncService.getStatus(memberId);
@@ -184,17 +204,6 @@ public class SyncStatusService {
             lines.add(line(label, status, row.getLastSyncedAt(), reauth, null));
         }
         return lines;
-    }
-
-    private List<String> tradeRepublic(Long memberId) {
-        TradeRepublicSyncService.SessionStatusResponse status = tradeRepublicSyncService.getSessionStatus(memberId);
-        if (status.isActive()) {
-            return List.of(line("trade-republic", "CONNECTED", null, false, null));
-        }
-        if (tradeRepublicSessionRepository.findByMemberId(memberId).isEmpty()) {
-            return List.of(line("trade-republic", "NOT_CONNECTED", null, false, null));
-        }
-        return List.of(line("trade-republic", "NEEDS_REAUTH", null, true, null));
     }
 
     private List<String> ibkr(Long memberId) {
@@ -296,8 +305,10 @@ public class SyncStatusService {
     private static String broker(String source, boolean active, String syncStatus, Instant completed, Enum<?> error) {
         String errorName = error == null ? null : error.name();
         // A stored password these sites rejected can only be fixed by the member.
+        // An unreadable Trade Republic session ends it, as SourceSyncResult reports.
         boolean reauth = "SESSION_EXPIRED".equals(errorName)
-            || (REAUTH_ON_INVALID_CREDENTIALS.contains(source) && "INVALID_CREDENTIALS".equals(errorName));
+            || (REAUTH_ON_INVALID_CREDENTIALS.contains(source) && "INVALID_CREDENTIALS".equals(errorName))
+            || ("trade-republic".equals(source) && "INVALID_SESSION_STATE".equals(errorName));
         String status;
         if (reauth) {
             status = "NEEDS_REAUTH";

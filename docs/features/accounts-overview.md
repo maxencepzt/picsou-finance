@@ -232,7 +232,7 @@ another type is one entry in `OPENING_DATE_TYPES`.
 
 `accountCeiling` (`lib/ceiling.ts`) says how far an account is into its ceiling, or null when it has
 none: a livret's balance against `savingsConfig.ceiling`, or a PEA's contributions against
-`account.deposit_ceiling` (V142, nullable; the form field "Contribution ceiling" is offered for a
+`account.deposit_ceiling` (V152, nullable; the form field "Contribution ceiling" is offered for a
 `PEA` only, null keeps the stored value like `openedAt`) or, unset, `PEA_DEFAULT_DEPOSIT_CEILING`
 (150 000 €; a PEA jeune states 20 000 €). The PEA figure is the cost basis: the detail page's
 "Capital invested", else `AccountResponse.investedEur`, which the API fills for a `PEA` only

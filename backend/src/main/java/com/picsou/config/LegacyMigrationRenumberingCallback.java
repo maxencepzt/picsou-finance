@@ -20,13 +20,15 @@ import java.util.List;
 
 /**
  * Rewrites schema-history rows written under an older numbering to the version and checksum their
- * file carries today, before Flyway validates the history. Two renumberings are covered:
+ * file carries today, before Flyway validates the history. Three renumberings are covered:
  *
  * <ul>
  *   <li>Issue #174: commit 2839c94 moved the 1.1.0 branch's V80, V81 and V86-V88 to V93-V99.</li>
  *   <li>Issue #265: merging main into 1.1.0 (1906d3a) moved the 1.0.11-1.0.18 releases' V38 and
  *       V54-V64 to V56-V65, V94 and V96, and added comments to V51 and V55-V58. Release 1.0.6
  *       applied today's V36 as V33.</li>
+ *   <li>This fork's deposit-ceiling migration, applied as V142 before upstream 1.2.0 used
+ *       V142-V151: it moved to V152, unchanged.</li>
  * </ul>
  *
  * <p>Without it, such a database fails validation, and would then re-run the moved files on
@@ -92,7 +94,11 @@ public class LegacyMigrationRenumberingCallback implements Callback {
         new Renumbering("51", "51", "requisition oauth state", 1952390840, 960451194),
         new Renumbering("38", "94", "backfill tr crypto transaction tickers", 2050086936),
         // 1.0.6 applied V36 as V33; 1.0.7 renamed it.
-        new Renumbering("33", "36", "transaction security name", -924862297)
+        new Renumbering("33", "36", "transaction security name", -924862297),
+        // This fork applied its deposit-ceiling migration as V142 before upstream's 1.2.0 took
+        // V142-V151 (sidecar_session and the bank sessions after it). The file is unchanged and
+        // now lives at V152; upstream's V142-V151 then apply out of order.
+        new Renumbering("142", "152", "account deposit ceiling", 293769879)
     );
 
     private static final MigrationVersion V47 = MigrationVersion.fromVersion("47");
@@ -172,7 +178,7 @@ public class LegacyMigrationRenumberingCallback implements Callback {
             }
         }
         if (!renumbered.isEmpty()) {
-            log.info("Renumbered {} legacy Flyway schema-history row(s) (issues #174, #265): {}",
+            log.info("Renumbered {} legacy Flyway schema-history row(s): {}",
                 renumbered.size(), String.join(", ", renumbered));
         }
     }

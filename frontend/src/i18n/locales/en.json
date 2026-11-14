@@ -384,6 +384,7 @@
     "tabOverview": "Overview",
     "cashBalance": "Cash in the PEA/securities account",
     "perEuroFundBalance": "PER euro fund (last sync)",
+    "lifeEuroFundBalance": "Euro fund (last sync)",
     "dividends": {
       "title": "Upcoming dividends",
       "carousel": "Upcoming dividends carousel",
@@ -799,7 +800,8 @@
       "onTrack": "On schedule",
       "disclaimer": "Indicative forecast, never contractual.",
       "simulationResult": "{{months}} months · {{monthlyPayment}}/month · {{interest}} of interest",
-      "accruedHint": "Interest accrued so far:"
+      "accruedHint": "Interest accrued so far:",
+      "remainingHint": "Remaining due (most one repayment can take):"
     },
     "overview": {
       "title": "Peer loans",
@@ -844,6 +846,7 @@
       "confirm": "Assign",
       "created": "Repayment recorded."
     },
+    "linkedTransaction": "Linked to {{name}}'s loan",
     "actions": {
       "close": "Close the loan",
       "simulate": "Calculate"
@@ -852,6 +855,13 @@
       "title": "Close the loan",
       "description": "The remaining balance ({{amount}}) will be written off and removed from net worth today.",
       "confirm": "Close"
+    },
+    "deleteRepayment": {
+      "title": "Delete the repayment",
+      "description": "The repayment of {{amount}} will be deleted together with its cash movement. The loan balance will be recomputed.",
+      "descriptionLinked": "The repayment of {{amount}} will be unlinked from the loan. The linked transaction stays in its account. The loan balance will be recomputed.",
+      "descriptionNoCashLeg": "The repayment of {{amount}} will be deleted. The loan balance will be recomputed.",
+      "confirm": "Delete"
     },
     "validation": {
       "principal": "The amount lent must be greater than zero.",
@@ -1500,17 +1510,20 @@
       "finary": "Import from Finary",
       "manual": "Create an account manually",
       "amundi": "PEE, PEG, PERCO, PER held at Amundi",
+      "natixis": "PEE, PERCO, PER held at Natixis Interépargne",
       "amex": "American Express credit card: balance and transactions",
       "corum": "CORUM SCPI and CORUM Life insurance: units, valuation and operations",
       "sofidy": "Sofidy SCPI shares, at withdrawal price",
-      "actual": "Accounts, categories and transactions of an Actual budget",
-      "homebank": "HomeBank backup or QIF export",
       "property": "House, apartment, land…",
       "fortuneo": "Sync your Fortuneo accounts",
-      "caisseEpargne": "Current account, Livret A, LDDS, PEL, LEP, PER, loans and cards at Caisse d'Epargne",
+      "caisseEpargne": "Current account, Livret A, LDDS, PEL, LEP, PER, life insurance, loans and cards at Caisse d'Epargne",
+      "banquePopulaire": "Current account, Livret A, Livret Jeune, LDDS, Compte sur Livret, PEL, term deposit, cooperative shares and PER at Banque Populaire",
+      "lbp": "Current account, Livret A and LEP at La Banque Postale",
+      "bnp": "Current accounts, savings, securities and life insurance at BNP Paribas or Hello bank!",
+      "actual": "Accounts, categories and transactions of an Actual budget",
+      "homebank": "HomeBank backup or QIF export",
       "cmes": "PEE, PEG, PERCOL at Crédit Mutuel or CIC",
-      "cic": "CIC current and savings accounts (Livret A, LDDS, PEL…)",
-      "banquePopulaire": "Current account, Livret A, Livret Jeune and LDDS at Banque Populaire"
+      "cic": "CIC current and savings accounts (Livret A, LDDS, PEL…)"
     },
     "subtitle": "Enter an account yourself, or connect an institution to sync it.",
     "connectHeading": "or connect an institution"
@@ -1557,7 +1570,7 @@
     "tr": {
       "title": "Trade Republic",
       "phone": "Phone number",
-      "pin": "PIN code",
+      "pin": "PIN or password",
       "tan": "Verification code",
       "connect": "Connect",
       "sync": "Synchronize",
@@ -1565,21 +1578,35 @@
       "clearSession": "Disconnect",
       "noSession": "No active session",
       "sessionActive": "Active session",
-      "expiresAt": "Expires on",
       "errors": {
         "tooManyAttempts": "Too many attempts. Please wait a few minutes.",
         "invalidPhoneNumber": "Invalid phone number.",
-        "invalidPin": "Incorrect PIN.",
+        "invalidPin": "Incorrect PIN or password.",
         "invalidTan": "The verification code is incorrect or expired. Use the latest code you received, or restart the step to receive a new one.",
         "authenticationFailed": "Trade Republic authentication failed.",
         "serviceUnavailable": "The local Trade Republic service is unavailable. Restart the servers, then try again.",
-        "temporarilyBlocked": "Trade Republic blocked the request. Retry in a minute.",
         "serverError": "Trade Republic server error. Please try again.",
         "phoneNumberRequired": "Phone number is required.",
-        "pinRequired": "PIN is required.",
+        "pinRequired": "PIN or password is required.",
         "validationFailed": "Invalid data.",
-        "unknownError": "An unexpected error occurred."
+        "unknownError": "An unexpected error occurred.",
+        "invalidCredentials": "Incorrect Trade Republic phone number or PIN/password.",
+        "appValidationTimeout": "The login was not confirmed in the app in time. Please start over.",
+        "appValidationCancelled": "The login was declined in the Trade Republic app. Please start over.",
+        "authAttemptExpired": "The authentication attempt expired. Please start over.",
+        "sessionExpired": "The Trade Republic session expired. Please reconnect."
       },
+      "appConfirmPrompt": "Confirm the login in your Trade Republic app.",
+      "appConfirmHint": "This page updates as soon as you confirm.",
+      "countdownLabel": "Time left:",
+      "queued": "Sync queued…",
+      "syncing": "Syncing…",
+      "syncSuccess": "Last sync succeeded.",
+      "staleAccounts": "Your Trade Republic accounts are no longer updated: their session has ended. Sign in again below to resume the daily sync.",
+      "authenticatorCode": "Authenticator code",
+      "authenticatorPrompt": "Enter the 6-digit code from your authenticator app, then confirm the sign-in in the Trade Republic app.",
+      "reconnectPhone": "Phone number",
+      "useAnotherNumber": "Use another number",
       "tanPrompt": "Enter the {{length}}-digit code Trade Republic sent you, by text or in the app."
     },
     "revolut": {
@@ -1882,7 +1909,7 @@
       "openFinary": "Open Finary page to sync",
       "sessionExpired": "Session expired",
       "reconnect": "Reconnect on the provider's tab",
-      "trManualInfo": "Trade Republic is the only bank that requires manual re-authentication. You will need to re-enter your phone number and PIN each time you sync.",
+      "trManualInfo": "Trade Republic sessions end after about 24 hours. To reconnect, re-enter your PIN or password; the phone number is kept.",
       "trSlowWarning": "Connection may take a few moments, this is normal.",
       "revolutManualInfo": "Revolut requires approval on your phone. Click the icon to enter your credentials.",
       "neverSynced": "Never synced",
@@ -1932,6 +1959,9 @@
     "caisseEpargne": {
       "title": "Caisse d'Epargne",
       "customerId": "Identifier",
+      "rememberedIdentifier": "Identifier remembered",
+      "useAnotherIdentifier": "Use another identifier",
+      "backToRememberedIdentifier": "Use the remembered identifier",
       "connect": "Connect",
       "connecting": "Connecting…",
       "sync": "Sync",
@@ -1943,7 +1973,7 @@
       "disconnectConfirmAction": "Delete the stored session",
       "noSession": "No active session",
       "sessionActive": "Session active",
-      "scope": "Syncs your Caisse d'Epargne current accounts, Livret A, LDDS, PEL, LEP, PER (with its funds when the insurer details are available), personal loans and cards on demand. Only the session is kept, encrypted. Contracts Picsou cannot import are listed but never created.",
+      "scope": "Syncs your Caisse d'Epargne current accounts, Livret A, LDDS, PEL, LEP, PER (with its funds when the insurer details are available), life insurance, personal loans and cards on demand. Only the session and your identifier are kept, encrypted; never your password. Contracts Picsou cannot import are listed but never created.",
       "notice": {
         "neverStored": "Picsou never sees or stores your password. You click it on the bank's keypad yourself; only the positions of the keys are sent, once.",
         "noRetry": "Picsou never retries a sign-in. If it fails, nothing is sent again until you submit the form yourself.",
@@ -1982,6 +2012,9 @@
     "banquePopulaire": {
       "title": "Banque Populaire",
       "customerId": "Identifier",
+      "rememberedIdentifier": "Identifier remembered",
+      "useAnotherIdentifier": "Use another identifier",
+      "backToRememberedIdentifier": "Use the remembered identifier",
       "region": "Your Banque Populaire",
       "regionPlaceholder": "Choose your bank",
       "connect": "Connect",
@@ -1995,7 +2028,7 @@
       "disconnectConfirmAction": "Delete the stored session",
       "noSession": "No active session",
       "sessionActive": "Session active",
-      "scope": "Syncs your Banque Populaire current accounts, Livret A, Livret Jeune and LDDS on demand. Only the session is kept, encrypted. Contracts Picsou cannot import are listed but never created.",
+      "scope": "Syncs your Banque Populaire current accounts, Livret A, Livret Jeune, LDDS, Compte sur Livret, PEL, term deposits, cooperative shares and PER on demand. Only the session and your identifier are kept, encrypted; never your password. Contracts Picsou cannot import are listed but never created.",
       "notice": {
         "neverStored": "Picsou never sees or stores your password. You click it on the bank's keypad yourself; only the positions of the keys are sent, once.",
         "noRetry": "Picsou never retries a sign-in. If it fails, nothing is sent again until you submit the form yourself.",
@@ -2029,6 +2062,60 @@
         "cancel": "Cancel",
         "validate": "Validate",
         "sending": "Sending…",
+        "countdownLabel": "Time left:"
+      }
+    },
+    "lbp": {
+      "title": "La Banque Postale",
+      "customerId": "Identifier",
+      "rememberIdentifier": "Remember the identifier",
+      "rememberIdentifierHint": "The identifier is stored encrypted on your server. The password is never saved.",
+      "connect": "Connect",
+      "connecting": "Connecting…",
+      "sync": "Sync",
+      "queued": "Sync queued…",
+      "syncing": "Syncing…",
+      "syncSuccess": "La Banque Postale accounts synced.",
+      "clearSession": "Disconnect",
+      "disconnectConfirm": "This deletes the stored session and the remembered identifier in Picsou. The La Banque Postale session itself is not ended and may stay active until it expires.",
+      "disconnectConfirmAction": "Delete the stored session",
+      "noSession": "No active session",
+      "sessionActive": "Session active",
+      "scope": "Syncs your La Banque Postale current account and savings books (Livret A, LDDS, LEP, Compte sur livret) on demand. Only the session is kept, encrypted.",
+      "notice": {
+        "neverStored": "Picsou never sees or stores your password. You click your six digits yourself on the bank's shuffled keypad; only the key positions are sent, once.",
+        "noRetry": "Picsou never retries a sign-in. If it fails, nothing is sent again until you submit the form yourself.",
+        "lockRisk": "Wrong attempts count against your bank access and can lock your La Banque Postale account. Check your identifier and the six digits you click before validating."
+      },
+      "securPassPrompt": "Approve the sign-in in the La Banque Postale app.",
+      "securPassHint": "Picsou does not touch your phone. This page continues on its own once you approve.",
+      "countdownLabel": "Time left to approve:",
+      "unsupportedTitle": "Products not imported",
+      "unsupportedHint": "Picsou does not support these products yet (family code shown).",
+      "errors": {
+        "rateLimited": "Too many sign-in attempts. Please wait before trying again.",
+        "rateLimitedRetryAfter": "Too many sign-in attempts. Try again in {{minutes}} min.",
+        "invalidCredentials": "The bank refused the identifier or password. Check them before trying again: repeated failures can lock your account.",
+        "tooManySyncs": "Too many syncs. Please wait before syncing again.",
+        "tooManySyncsRetryAfter": "Too many syncs. Try again in {{minutes}} min.",
+        "invalidIdentifier": "The identifier must contain 6 to 12 digits.",
+        "keypadChanged": "The keypad changed, please start again. Nothing was sent.",
+        "appValidationTimeout": "The sign-in was not approved in the mobile app in time. Start over if you want to try again.",
+        "authAttemptExpired": "The sign-in attempt expired. Start over if you want to try again.",
+        "sessionExpired": "The La Banque Postale session expired. Please reconnect.",
+        "formatChanged": "The La Banque Postale website format changed. Your existing data was kept.",
+        "invalidSessionState": "The stored session could not be read. Please reconnect.",
+        "serverError": "Could not reach La Banque Postale. Please try again later.",
+        "keypadExpired": "The keypad expired before you validated. Start over if you want to try again.",
+        "invalidPositions": "The keypad entry was not accepted. Start over and enter six keys."
+      },
+      "keypad": {
+        "title": "Click your password",
+        "description": "Click the six digits of your password in order. The digits are shown on the keys themselves.",
+        "entered": "{{count}} keys entered",
+        "clear": "Clear",
+        "cancel": "Cancel",
+        "validate": "Validate",
         "countdownLabel": "Time left:"
       }
     },
@@ -2114,6 +2201,37 @@
         "formatChanged": "The Amundi website format changed. Your existing data was kept.",
         "invalidData": "Amundi returned inconsistent data. Your existing data was kept.",
         "serverError": "Could not reach Amundi. Please try again."
+      }
+    },
+    "natixis": {
+      "title": "Natixis Interépargne",
+      "login": "E-mail",
+      "password": "Password",
+      "otpCode": "Verification code",
+      "otpPrompt": "Enter the code Natixis Interépargne sent you by SMS, e-mail or voice call.",
+      "connect": "Connect",
+      "connecting": "Connecting…",
+      "validate": "Submit code",
+      "validating": "Validating…",
+      "sync": "Sync",
+      "queued": "Sync queued…",
+      "syncing": "Syncing…",
+      "syncSuccess": "Savings plans synced.",
+      "clearSession": "Disconnect",
+      "noSession": "No active session",
+      "sessionActive": "Session active",
+      "scope": "Syncs your Natixis Interépargne employee savings plans (PEE, PERCO, PER…) and the funds they hold: units, unit value and gain. After this first sign-in, syncs run on their own until Natixis ends the session; you will then be asked to reconnect.",
+      "errors": {
+        "tooManyAttempts": "Natixis Interépargne blocked further attempts. Please try again later.",
+        "invalidCredentials": "Natixis Interépargne rejected the e-mail or password.",
+        "mfaTypeUnsupported": "This account only offers passkey sign-in, or a second factor Picsou cannot handle. Picsou needs password sign-in and codes by SMS, e-mail or voice call: enable both in your Natixis Interépargne security settings.",
+        "authAttemptExpired": "The authentication attempt expired. Please start over.",
+        "sessionExpired": "The Natixis Interépargne session expired. Reconnect to resume syncing.",
+        "portfolioIncomplete": "Natixis Interépargne returned incomplete savings plans. Your existing data was kept.",
+        "formatChanged": "The Natixis Interépargne website format changed. Your existing data was kept.",
+        "invalidData": "Natixis Interépargne returned invalid savings plan data. Your existing data was kept.",
+        "serverError": "Natixis Interépargne is temporarily unavailable. Please try again.",
+        "invalidCode": "Wrong verification code. Check it and type it again."
       }
     },
     "cmes": {
@@ -2333,6 +2451,73 @@
         "serverError": "Could not reach Fortuneo. Please try again."
       }
     },
+    "bnp": {
+      "title": "BNP Paribas / Hello bank!",
+      "customerId": "Customer number",
+      "brand": "Bank",
+      "brands": {
+        "bnp": "BNP Paribas",
+        "hellobank": "Hello bank!"
+      },
+      "connect": "Connect",
+      "connecting": "Connecting…",
+      "sync": "Sync",
+      "queued": "Sync queued…",
+      "syncing": "Syncing…",
+      "syncSuccess": "Last sync succeeded.",
+      "clearSession": "Disconnect",
+      "disconnectConfirm": "Delete the stored BNP Paribas / Hello bank! session from Picsou? The bank's own session is not revoked.",
+      "disconnectConfirmAction": "Delete the session",
+      "noSession": "No session",
+      "sessionActive": "Session active",
+      "scope": "Imports current accounts, savings, securities accounts (PEA, securities account) with their positions, life insurance (balance only) and loans, as far as the bank's site exposes them. Products Picsou does not recognise are listed, never guessed.",
+      "notice": {
+        "neverStored": "Your password is never stored: you click it on the bank's own keypad, shown below.",
+        "noRetry": "Only one attempt is made. A wrong password counts against the bank's limit and nothing is retried automatically.",
+        "lockRisk": "Too many wrong attempts can lock your access at the bank.",
+        "unverified": "Not yet verified against a real account: the login page was checked, but the second factor and the data import follow the open-source woob module."
+      },
+      "approvalPrompt": "Approve the sign-in in your bank's mobile app.",
+      "approvalHint": "This page waits for your approval, then imports your accounts.",
+      "countdownLabel": "Time left:",
+      "codePrompt": "Enter the code the bank sent you by SMS.",
+      "codeHint": "The code is sent once to the bank and never stored.",
+      "code": "SMS code",
+      "sendCode": "Send the code",
+      "sendingCode": "Sending…",
+      "unsupportedTitle": "Products not imported",
+      "unsupportedHint": "Picsou does not import these products yet. Only the product family code is shown.",
+      "errors": {
+        "invalidIdentifier": "The customer number must be 7 to 10 digits.",
+        "invalidCredentials": "The bank refused these credentials. Wait before trying again.",
+        "invalidCode": "The code is wrong. Check the SMS and try again.",
+        "keypadChanged": "The bank's login page changed. Nothing was sent.",
+        "keypadExpired": "The keypad expired. Start again.",
+        "invalidPositions": "The keypad answer was refused. Start again.",
+        "mfaUnsupported": "This second factor is not supported by Picsou.",
+        "actionRequired": "The bank requires an action on its own site (password change or reactivation).",
+        "rateLimited": "Too many attempts. Wait before trying again.",
+        "rateLimitedRetryAfter": "Too many attempts. Try again in about {{minutes}} min.",
+        "tooManySyncs": "Too many syncs. Wait before trying again.",
+        "tooManySyncsRetryAfter": "Too many syncs. Try again in about {{minutes}} min.",
+        "appValidationTimeout": "The approval did not arrive in time. Start again.",
+        "authAttemptExpired": "This sign-in attempt expired. Start again.",
+        "sessionExpired": "The session expired. Sign in again.",
+        "formatChanged": "The bank's site no longer looks as expected. Nothing was imported.",
+        "invalidSessionState": "The stored session is unusable. Sign in again.",
+        "serverError": "Something went wrong. Try again later."
+      },
+      "keypad": {
+        "title": "Click your password",
+        "description": "Click the keys showing the six digits of your password, in order. The keys are shuffled by the bank. Picsou does not see your digits.",
+        "key": "Key {{position}}",
+        "entered": "{{count}} of 6 digits entered",
+        "countdownLabel": "Time left:",
+        "cancel": "Cancel",
+        "clear": "Clear",
+        "validate": "Validate"
+      }
+    },
     "catalog": {
       "title": "Add a connection",
       "description": "Banks, brokers, crypto, employee savings, SCPI or a file import.",
@@ -2496,23 +2681,6 @@
       "saving": "Saving…",
       "unsaved": "Unsaved changes"
     },
-    "sectionsNav": "Settings sections",
-    "themeHint": "Dark by default; “System” follows your device.",
-    "languageHint": "Interface language.",
-    "dateFormatHint": "How dates are shown across Picsou.",
-    "amountsHint": "Hides every amount on screen, handy in public.",
-    "sidebarStyleHint": "Layout of the navigation menu on a computer.",
-    "usernameHint": "The name you sign in with.",
-    "dangerZone": "Sensitive zone",
-    "otherDevices": "Other devices",
-    "otherDevicesHint": "Closes the “Remember me” sessions open elsewhere.",
-    "otherDevicesNone": "No other device is signed in.",
-    "logoutHint": "Ends your session on this device.",
-    "mfaEnabledHint": "A code from your authenticator app is required at every sign-in.",
-    "mfaDisabledHint": "Only your password protects this account.",
-    "mfaRecoveryCodes": "Recovery codes",
-    "dataTitle": "Your data",
-    "exportAction": "Export",
     "signInMethods": {
       "title": "Sign-in methods",
       "password": "Password",
@@ -2539,6 +2707,23 @@
       "linkDesc": "Confirm your identity, then sign in with the {{provider}} account to link.",
       "linkMfaNote": "When you sign in with {{provider}}, Picsou doesn't ask for your authenticator code: a second factor is then the sign-in provider's job. Password sign-ins still ask for the code, except on a trusted device."
     },
+    "sectionsNav": "Settings sections",
+    "themeHint": "Dark by default; “System” follows your device.",
+    "languageHint": "Interface language.",
+    "dateFormatHint": "How dates are shown across Picsou.",
+    "amountsHint": "Hides every amount on screen, handy in public.",
+    "sidebarStyleHint": "Layout of the navigation menu on a computer.",
+    "usernameHint": "The name you sign in with.",
+    "dangerZone": "Sensitive zone",
+    "otherDevices": "Other devices",
+    "otherDevicesHint": "Closes the “Remember me” sessions open elsewhere.",
+    "otherDevicesNone": "No other device is signed in.",
+    "logoutHint": "Ends your session on this device.",
+    "mfaEnabledHint": "A code from your authenticator app is required at every sign-in.",
+    "mfaDisabledHint": "Only your password protects this account.",
+    "mfaRecoveryCodes": "Recovery codes",
+    "dataTitle": "Your data",
+    "exportAction": "Export",
     "usernameTaken": "This username is already taken."
   },
   "accessKeys": {
@@ -2843,6 +3028,7 @@
       "corum": "CORUM SCPI and life-insurance holdings",
       "sofidy": "Sofidy SCPI holdings",
       "traderepublic": "Trade Republic",
+      "lbp": "La Banque Postale",
       "finary": "Finary",
       "crypto": "Crypto"
     },
@@ -3076,6 +3262,10 @@
           "title": "Fortuneo",
           "description": "Sync your PEA, securities account, and current accounts with two-factor authentication."
         },
+        "lbp": {
+          "title": "La Banque Postale",
+          "description": "Sync your current account and savings books (Livret A, LEP) with the keypad and mobile approval."
+        },
         "finary": {
           "title": "Finary",
           "description": "Import holdings and auto-sync with your Finary account. TOTP is handled at add-time."
@@ -3246,6 +3436,13 @@
       "tip": "Picsou only stores an encrypted session. Your password and 2FA code are never stored. Imported accounts remain attached to their PEA, securities, or current account.",
       "cta": "Enable Fortuneo",
       "skip": "Don't enable Fortuneo"
+    },
+    "lbp": {
+      "title": "La Banque Postale is ready.",
+      "body": "Connect your account after setup from Accounts → Add an account. You will enter your identifier, then your six digits on the bank's keypad.",
+      "tip": "Picsou only stores an encrypted session and, if you ask, your identifier. The password and keypad positions are never stored.",
+      "cta": "Enable La Banque Postale",
+      "skip": "Don't enable La Banque Postale"
     }
   },
   "savings": {
@@ -3625,6 +3822,41 @@
       "no": "No"
     }
   },
+  "activation": {
+    "subtitleSso": "Activate it with {{provider}}, or choose a password to complete your account setup.",
+    "ssoButton": "Activate with {{provider}}"
+  },
+  "reauth": {
+    "confirm": "Confirm",
+    "confirmWith": "Confirm with {{provider}}",
+    "ssoHint": "{{provider}} will ask you to sign in again, then bring you back here.",
+    "expired": "Your confirmation has expired. Please confirm your identity again."
+  },
+  "ssoErrors": {
+    "NOT_LINKED": "This account is not linked to your sign-in provider. Sign in with your password, then link it from Settings.",
+    "NOT_IN_ADMIN_GROUP": "Your account is not in the group required to administer this instance.",
+    "IDENTITY_IN_USE": "This identity is already linked to another account.",
+    "REAUTH_REQUIRED": "Please confirm your identity again to continue.",
+    "REAUTH_TOO_OLD": "Your last confirmation is too old. Please confirm your identity again.",
+    "REAUTH_WRONG_ACCOUNT": "You confirmed a different account than the one you are signed in with. Please use the same account.",
+    "ACCOUNT_INACTIVE": "This account is inactive. Contact your administrator.",
+    "ADMIN_RECOVERY_ACTIVE": "An administrator recovery is in progress for this account. Finish it before signing in with SSO.",
+    "ACTIVATION_INVALID": "Single sign-on isn't available with this link. If it's a password reset link, set a new password with the form instead. Otherwise the link is invalid, has expired or was already used: ask your administrator for a new one.",
+    "SETUP_ALREADY_CLAIMED": "The initial setup has already been claimed by another administrator.",
+    "IDP_UNAVAILABLE": "The sign-in provider is unreachable. Please try again in a few minutes.",
+    "IDP_ERROR": "The sign-in provider returned an error. Please try again.",
+    "SESSION_EXPIRED": "Your sign-in attempt expired. Please start again.",
+    "RATE_LIMITED": "Too many attempts. Please wait a moment and try again.",
+    "SSO_ADMIN_REQUIRED": "First-time setup requires an administrator from your sign-in provider. Use SSO to create the administrator account.",
+    "IDENTITY_NOT_USED_YET": "You have not signed in with SSO yet. Sign in once with it before turning off password sign-in.",
+    "LAST_SIGN_IN_METHOD": "This is your last sign-in method. Add another one before removing it.",
+    "PASSWORD_ALREADY_SET": "A password is already set for this account.",
+    "REAUTH_FAILED": "Re-authentication failed. Check your credentials and try again.",
+    "SSO_REVALIDATE": "Your session needs to be re-validated with your sign-in provider.",
+    "SSO_DISABLED": "Single sign-on is not enabled on this instance.",
+    "SELF_UNLINK_FORBIDDEN": "To unlink your own SSO identities, use Sign-in methods in Settings.",
+    "generic": "Single sign-on failed. Please try again."
+  },
   "topbar": {
     "search": "Search an account, a security, a page…",
     "scope": "Scope",
@@ -3909,41 +4141,6 @@
       "brokerCount_other": "{{count}} transactions with a fee",
       "empty": "No fees to show yet."
     }
-  },
-  "activation": {
-    "subtitleSso": "Activate it with {{provider}}, or choose a password to complete your account setup.",
-    "ssoButton": "Activate with {{provider}}"
-  },
-  "reauth": {
-    "confirm": "Confirm",
-    "confirmWith": "Confirm with {{provider}}",
-    "ssoHint": "{{provider}} will ask you to sign in again, then bring you back here.",
-    "expired": "Your confirmation has expired. Please confirm your identity again."
-  },
-  "ssoErrors": {
-    "NOT_LINKED": "This account is not linked to your sign-in provider. Sign in with your password, then link it from Settings.",
-    "NOT_IN_ADMIN_GROUP": "Your account is not in the group required to administer this instance.",
-    "IDENTITY_IN_USE": "This identity is already linked to another account.",
-    "REAUTH_REQUIRED": "Please confirm your identity again to continue.",
-    "REAUTH_TOO_OLD": "Your last confirmation is too old. Please confirm your identity again.",
-    "REAUTH_WRONG_ACCOUNT": "You confirmed a different account than the one you are signed in with. Please use the same account.",
-    "ACCOUNT_INACTIVE": "This account is inactive. Contact your administrator.",
-    "ADMIN_RECOVERY_ACTIVE": "An administrator recovery is in progress for this account. Finish it before signing in with SSO.",
-    "ACTIVATION_INVALID": "Single sign-on isn't available with this link. If it's a password reset link, set a new password with the form instead. Otherwise the link is invalid, has expired or was already used: ask your administrator for a new one.",
-    "SETUP_ALREADY_CLAIMED": "The initial setup has already been claimed by another administrator.",
-    "IDP_UNAVAILABLE": "The sign-in provider is unreachable. Please try again in a few minutes.",
-    "IDP_ERROR": "The sign-in provider returned an error. Please try again.",
-    "SESSION_EXPIRED": "Your sign-in attempt expired. Please start again.",
-    "RATE_LIMITED": "Too many attempts. Please wait a moment and try again.",
-    "SSO_ADMIN_REQUIRED": "First-time setup requires an administrator from your sign-in provider. Use SSO to create the administrator account.",
-    "IDENTITY_NOT_USED_YET": "You have not signed in with SSO yet. Sign in once with it before turning off password sign-in.",
-    "LAST_SIGN_IN_METHOD": "This is your last sign-in method. Add another one before removing it.",
-    "PASSWORD_ALREADY_SET": "A password is already set for this account.",
-    "REAUTH_FAILED": "Re-authentication failed. Check your credentials and try again.",
-    "SSO_REVALIDATE": "Your session needs to be re-validated with your sign-in provider.",
-    "SSO_DISABLED": "Single sign-on is not enabled on this instance.",
-    "SELF_UNLINK_FORBIDDEN": "To unlink your own SSO identities, use Sign-in methods in Settings.",
-    "generic": "Single sign-on failed. Please try again."
   },
   "realEstate": {
     "purchasePrice": "Purchase price"

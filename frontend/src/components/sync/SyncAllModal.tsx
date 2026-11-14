@@ -15,10 +15,12 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { AlertTriangle, ExternalLink, Info, Loader2, Plus, RefreshCw } from 'lucide-react'
-import { useCompleteTrAuth, useInitiateTrAuth } from '@/features/sync/hooks'
-import { formatTrAuthError } from '@/lib/errors'
+import { useCompleteTrAuth, useInitiateTrAuth, useReconnectTrAuth } from '@/features/sync/hooks'
+import { formatTrAuthError, isTrAttemptOverError, isTrInvalidSessionStateError } from '@/lib/errors'
+import { TrAppConfirmation } from '@/components/sync/TrAppConfirmation'
 import { formatTimeAgo } from '@/lib/utils'
-import { TR_VERIFICATION_CODE_LENGTH } from '@/lib/constants'
+import { TR_AUTHENTICATOR_CODE_LENGTH, TR_PIN_MAX_LENGTH, TR_VERIFICATION_CODE_LENGTH } from '@/lib/constants'
+import type { TrAuthInitResponse } from '@/types/api'
 import { ConnectionRow } from '@/pages/sync/ConnectionRow'
 import {
   needsReconnect,
@@ -60,16 +62,23 @@ export function SyncAllModal({ open, onOpenChange }: SyncAllModalProps) {
   const [now] = useState(() => Date.now())
 
   // TR inline auth state
-  const [trAuthStep, setTrAuthStep] = useState<'idle' | 'phone' | 'tan'>('idle')
+  const [trAuthStep, setTrAuthStep] = useState<'idle' | 'phone' | 'app' | 'tan'>('idle')
   const [trPhone, setTrPhone] = useState('')
   const [trPin, setTrPin] = useState('')
   const [trTan, setTrTan] = useState('')
   const [trProcessId, setTrProcessId] = useState<string | null>(null)
+  const [trCountdown, setTrCountdown] = useState(0)
+  const [trAuthenticator, setTrAuthenticator] = useState(false)
+  const [trReconnectOff, setTrReconnectOff] = useState(false)
   const [trAuthError, setTrAuthError] = useState<string | null>(null)
   const initiateTrMutation = useInitiateTrAuth()
+  const reconnectTrMutation = useReconnectTrAuth()
   const completeTrMutation = useCompleteTrAuth()
 
-  const { connections, isLoading, trActive, revolutRemembered } = useSyncConnections()
+  const { connections, isLoading, trActive, trMaskedPhone, revolutRemembered } = useSyncConnections()
+  const trReconnecting = trMaskedPhone !== null && !trReconnectOff
+  const trCodeLength = trAuthenticator ? TR_AUTHENTICATOR_CODE_LENGTH : TR_VERIFICATION_CODE_LENGTH
+  const trInitiatePending = initiateTrMutation.isPending || reconnectTrMutation.isPending
   const onTrSessionDead = useCallback(() => setTrAuthStep('phone'), [])
   const sync = useConnectionSync({ connections, trActive, revolutRemembered, onTrSessionDead })
 
@@ -105,31 +114,9 @@ export function SyncAllModal({ open, onOpenChange }: SyncAllModalProps) {
   // failure has no valid processId, so stay on the phone/PIN step and clear
   // pending state; a complete failure keeps the processId so the user can
   // retry the code without re-entering phone/PIN.
-  function handleTrInitiate(e: React.FormEvent) {
-    e.preventDefault()
-    initiateTrMutation.mutate(
-      { phoneNumber: trPhone, pin: trPin },
-      {
-        onSuccess: (data) => {
-          setTrProcessId(data.processId)
-          setTrAuthStep('tan')
-          setTrAuthError(null)
-        },
-        onError: (err: unknown) => {
-          setTrAuthError(formatTrAuthError(err, t))
-          setTrProcessId(null)
-          setTrTan('')
-          setTrAuthStep('phone')
-        },
-      },
-    )
-  }
-
-  function handleTrComplete(e: React.FormEvent) {
-    e.preventDefault()
-    if (!trProcessId || trTan.length !== TR_VERIFICATION_CODE_LENGTH) return
+  function completeTrLogin(processId: string, tan?: string) {
     completeTrMutation.mutate(
-      { processId: trProcessId, tan: trTan },
+      { processId, tan },
       {
         onSuccess: () => {
           resetTrAuth()
@@ -140,9 +127,53 @@ export function SyncAllModal({ open, onOpenChange }: SyncAllModalProps) {
         onError: (err: unknown) => {
           setTrAuthError(formatTrAuthError(err, t))
           setTrTan('')
+          // An in-app confirmation or a dead attempt cannot be retried: start over.
+          if (tan === undefined || isTrAttemptOverError(err)) {
+            setTrProcessId(null)
+            setTrAuthStep('phone')
+          }
         },
       },
     )
+  }
+
+  function handleTrInitiate(e: React.FormEvent) {
+    e.preventDefault()
+    const callbacks = {
+      onSuccess: (data: TrAuthInitResponse) => {
+        setTrProcessId(data.processId)
+        setTrAuthError(null)
+        if (data.flow === 'confirmInApp') {
+          setTrCountdown(data.countdownInSeconds)
+          setTrAuthStep('app')
+          completeTrLogin(data.processId)
+          return
+        }
+        setTrAuthenticator(data.flow === 'authenticator')
+        setTrAuthStep('tan')
+      },
+      onError: (err: unknown) => {
+        if (trReconnecting && isTrInvalidSessionStateError(err)) {
+          // No phone stored server-side: fall back to the full phone + PIN form.
+          setTrReconnectOff(true)
+          setTrPin('')
+          setTrAuthError(null)
+        } else {
+          setTrAuthError(formatTrAuthError(err, t))
+        }
+        setTrProcessId(null)
+        setTrTan('')
+        setTrAuthStep('phone')
+      },
+    }
+    if (trReconnecting) reconnectTrMutation.mutate({ pin: trPin }, callbacks)
+    else initiateTrMutation.mutate({ phoneNumber: trPhone, pin: trPin }, callbacks)
+  }
+
+  function handleTrComplete(e: React.FormEvent) {
+    e.preventDefault()
+    if (!trProcessId || trTan.length !== trCodeLength) return
+    completeTrLogin(trProcessId, trTan)
   }
 
   function resetTrAuth() {
@@ -152,6 +183,8 @@ export function SyncAllModal({ open, onOpenChange }: SyncAllModalProps) {
     setTrTan('')
     setTrProcessId(null)
     setTrAuthError(null)
+    setTrAuthenticator(false)
+    setTrReconnectOff(false)
   }
 
   function trForm() {
@@ -168,20 +201,30 @@ export function SyncAllModal({ open, onOpenChange }: SyncAllModalProps) {
         {trAuthStep === 'phone' && (
           <form onSubmit={handleTrInitiate} className="space-y-3">
             <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label htmlFor="tr-modal-phone">{t('sync.tr.phone')}</Label>
-                <Input id="tr-modal-phone" type="tel" className="h-9" value={trPhone}
-                  onChange={e => setTrPhone(e.target.value)} placeholder="+49..." required />
-              </div>
+              {trReconnecting ? (
+                <div className="space-y-1.5">
+                  <p className="text-sm font-medium text-foreground">{t('sync.tr.reconnectPhone')}</p>
+                  <p className="flex h-9 items-center font-mono text-sm text-foreground" data-testid="tr-modal-masked-phone">
+                    {trMaskedPhone}
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  <Label htmlFor="tr-modal-phone">{t('sync.tr.phone')}</Label>
+                  <Input id="tr-modal-phone" type="tel" className="h-9" value={trPhone}
+                    onChange={e => setTrPhone(e.target.value)} placeholder="+49..." required />
+                </div>
+              )}
               <div className="space-y-1.5">
                 <Label htmlFor="tr-modal-pin">{t('sync.tr.pin')}</Label>
                 <Input id="tr-modal-pin" type="password" className="h-9" value={trPin}
-                  onChange={e => setTrPin(e.target.value)} required />
+                  onChange={e => setTrPin(e.target.value)} maxLength={TR_PIN_MAX_LENGTH}
+                  autoComplete="current-password" required />
               </div>
             </div>
             <div className="flex gap-2">
-              <Button type="submit" size="xs" className="px-4" disabled={initiateTrMutation.isPending}>
-                {initiateTrMutation.isPending && <Loader2 className="animate-spin" />}
+              <Button type="submit" size="xs" className="px-4" disabled={trInitiatePending}>
+                {trInitiatePending && <Loader2 className="animate-spin" />}
                 {t('sync.tr.connect')}
               </Button>
               <Button type="button" size="xs" variant="ghost" className="px-4" onClick={resetTrAuth}>
@@ -190,25 +233,31 @@ export function SyncAllModal({ open, onOpenChange }: SyncAllModalProps) {
             </div>
           </form>
         )}
+        {trAuthStep === 'app' && <TrAppConfirmation countdownInSeconds={trCountdown} />}
         {trAuthStep === 'tan' && (
           <form onSubmit={handleTrComplete} className="space-y-3">
             <div className="space-y-1.5">
-              <Label htmlFor="tr-modal-tan">{t('sync.tr.tan')}</Label>
+              <Label htmlFor="tr-modal-tan">
+                {trAuthenticator ? t('sync.tr.authenticatorCode') : t('sync.tr.tan')}
+              </Label>
+              {trAuthenticator && (
+                <p className="text-xs text-muted-foreground">{t('sync.tr.authenticatorPrompt')}</p>
+              )}
               <Input
                 id="tr-modal-tan"
                 className="h-9 max-w-40 tabular-nums"
                 value={trTan}
-                onChange={e => setTrTan(e.target.value.replace(/\D/g, '').slice(0, TR_VERIFICATION_CODE_LENGTH))}
+                onChange={e => setTrTan(e.target.value.replace(/\D/g, '').slice(0, trCodeLength))}
                 inputMode="numeric"
                 autoComplete="one-time-code"
-                maxLength={TR_VERIFICATION_CODE_LENGTH}
+                maxLength={trCodeLength}
                 autoFocus
                 required
               />
             </div>
             <div className="flex gap-2">
               <Button type="submit" size="xs" className="px-4"
-                disabled={completeTrMutation.isPending || trTan.length !== TR_VERIFICATION_CODE_LENGTH}>
+                disabled={completeTrMutation.isPending || trTan.length !== trCodeLength}>
                 {completeTrMutation.isPending && <Loader2 className="animate-spin" />}
                 {t('sync.tr.connect')}
               </Button>
@@ -359,12 +408,18 @@ export function SyncAllModal({ open, onOpenChange }: SyncAllModalProps) {
             <Button
               className="w-full sm:w-auto sm:self-end"
               onClick={sync.syncAll}
-              disabled={progress !== null || isLoading || sync.batchableCount === 0}
+              disabled={progress !== null || isLoading || sync.batchableCount === 0 || sync.batchBusy}
             >
               {progress ? (
                 <>
                   <Loader2 className="animate-spin" />
                   {t('sync.all.syncingProgress', { done: progress.done, total: progress.total })}
+                </>
+              ) : sync.batchBusy ? (
+                // Every row is already syncing, started from a row or on the server.
+                <>
+                  <Loader2 className="animate-spin" />
+                  {t('sync.all.syncing')}
                 </>
               ) : (
                 <>

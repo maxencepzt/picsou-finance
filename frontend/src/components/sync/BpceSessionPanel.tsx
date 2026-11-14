@@ -185,6 +185,10 @@ export function BpceSessionPanel({
   const key = useCallback((suffix: string) => `${translationPrefix}.${suffix}`, [translationPrefix])
   const [authState, setAuthState] = useState<AuthState>("IDLE")
   const [customerId, setCustomerId] = useState("")
+  // Caisse d'Epargne and Banque Populaire: the backend remembers the identifier of the last
+  // successful login (encrypted, never sent back) and an empty one reuses it. This flag shows
+  // the field to type another one.
+  const [typingIdentifier, setTypingIdentifier] = useState(false)
   const [region, setRegion] = useState("")
   const [pad, setPad] = useState<KeypadPad | null>(null)
   // Key positions only (indexes in the pad's DOM order), never digits. Component
@@ -262,6 +266,7 @@ export function BpceSessionPanel({
     setLostCompletionAt(null)
     setAuthState("IDLE")
     setCustomerId("")
+    setTypingIdentifier(false)
     void refetchStatus()
     // A fresh session holds no accounts yet. Both completion paths queue one
     // first sync, and the caller is told only once its accounts exist.
@@ -309,6 +314,7 @@ export function BpceSessionPanel({
   }, [api, key, lostCompletionAt, startFirstSync, t])
 
   const connected = status.data?.isActive === true
+  const useRememberedIdentifier = status.data?.remembered === true && !typingIdentifier
   const syncStatus = status.data?.syncStatus ?? "IDLE"
   const isSyncing = syncStatus === "QUEUED" || syncStatus === "RUNNING"
   const requestingSync = sync.isPending || isSyncing
@@ -393,7 +399,7 @@ export function BpceSessionPanel({
     setError(null)
     setAuthState("SUBMITTING")
     try {
-      const result = await api.initiateAuth(customerId, region)
+      const result = await api.initiateAuth(useRememberedIdentifier ? "" : customerId, region)
       const images = result.keypad?.images
       if (!result.processId || !Array.isArray(images) || images.length !== 10) {
         setError(t(key("errors.formatChanged")))
@@ -412,6 +418,9 @@ export function BpceSessionPanel({
     } catch (value) {
       setError(formatError(value))
       setAuthState("ERROR")
+      // A rejected remembered identifier is forgotten server side: re-read the
+      // status so the field comes back.
+      if (useRememberedIdentifier) void refetchStatus()
     } finally {
       submitting.current = false
     }
@@ -449,7 +458,7 @@ export function BpceSessionPanel({
   if (status.isLoading) return <PanelLoading />
 
   // With a region step, nothing goes out before both choices are made.
-  const incomplete = regions !== undefined && (region === "" || customerId === "")
+  const incomplete = !useRememberedIdentifier && regions !== undefined && (region === "" || customerId === "")
   const showForm = !connected && authState !== "AWAITING_APP"
   const pending =
     authState === "SUBMITTING" || authState === "KEYPAD" || authState === "SENDING_KEYPAD"
@@ -561,7 +570,7 @@ export function BpceSessionPanel({
               <li>{t(key("notice.lockRisk"))}</li>
             </ul>
           </div>
-          {regions && (
+          {regions && !useRememberedIdentifier && (
             <PanelField id={`${fieldIdPrefix}-region`} label={t(key("region"))}>
               <NativeSelect
                 id={`${fieldIdPrefix}-region`}
@@ -581,23 +590,59 @@ export function BpceSessionPanel({
               </NativeSelect>
             </PanelField>
           )}
-          <PanelField id={`${fieldIdPrefix}-customer-id`} label={t(key("customerId"))} icon={Landmark}>
-            <Input
+          {useRememberedIdentifier ? (
+            // The backend reuses the identifier of the last successful login: nothing to type.
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <Landmark className="size-3.5 text-muted-foreground" aria-hidden />
+                {t(key("rememberedIdentifier"))}
+              </p>
+              <Button
+                type="button"
+                variant="link"
+                size="xs"
+                className="h-auto p-0"
+                onClick={() => setTypingIdentifier(true)}
+              >
+                {t(key("useAnotherIdentifier"))}
+              </Button>
+            </div>
+          ) : (
+            <PanelField
               id={`${fieldIdPrefix}-customer-id`}
-              className={PANEL_INPUT}
-              inputMode={alphanumericIdentifier ? "text" : "numeric"}
-              autoComplete="off"
-              autoCapitalize={alphanumericIdentifier ? "characters" : undefined}
-              spellCheck={false}
-              value={customerId}
-              onChange={(event) =>
-                setCustomerId(
-                  event.target.value.replace(alphanumericIdentifier ? /[^A-Za-z0-9]/g : /\D/g, ""),
+              label={t(key("customerId"))}
+              icon={Landmark}
+              hint={
+                status.data?.remembered === true && (
+                  <Button
+                    type="button"
+                    variant="link"
+                    size="xs"
+                    className="h-auto p-0"
+                    onClick={() => setTypingIdentifier(false)}
+                  >
+                    {t(key("backToRememberedIdentifier"))}
+                  </Button>
                 )
               }
-              required
-            />
-          </PanelField>
+            >
+              <Input
+                id={`${fieldIdPrefix}-customer-id`}
+                className={PANEL_INPUT}
+                inputMode={alphanumericIdentifier ? "text" : "numeric"}
+                autoComplete="off"
+                autoCapitalize={alphanumericIdentifier ? "characters" : undefined}
+                spellCheck={false}
+                value={customerId}
+                onChange={(event) =>
+                  setCustomerId(
+                    event.target.value.replace(alphanumericIdentifier ? /[^A-Za-z0-9]/g : /\D/g, ""),
+                  )
+                }
+                required
+              />
+            </PanelField>
+          )}
         </PanelForm>
       )}
 
