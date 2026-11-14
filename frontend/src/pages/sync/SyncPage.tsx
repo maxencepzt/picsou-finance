@@ -69,7 +69,7 @@ function ConnectionsCard({ onOpen }: { onOpen: (href: string) => void }) {
         </CardDescription>
         {!isLoading && sync.batchableCount > 0 && (
           <CardAction>
-            <Button size="xs" variant="outline" className="h-8 px-3 pointer-coarse:h-10" disabled={progress !== null} onClick={sync.syncAll}>
+            <Button size="xs" variant="outline" className="h-8 px-3 pointer-coarse:h-10" disabled={progress !== null || sync.batchBusy} onClick={sync.syncAll}>
               {progress ? <Loader2 className="animate-spin" /> : <RefreshCw />}
               {progress
                 ? t('sync.all.syncingProgress', { done: progress.done, total: progress.total })

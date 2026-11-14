@@ -121,7 +121,7 @@ services:
   # `--build` builds them before the sidecars (Compose v2.33+).
   sidecar-python:
     image: ghcr.io/cloeille/picsou-finance/sidecar-python:latest
-    profiles: ["bourso", "cic", "cmes", "degiro", "sofidy", "all-connectors"]
+    profiles: ["bourso", "cic", "cmes", "degiro", "natixis", "sofidy", "all-connectors"]
     build:
       context: ../services/base
       target: python
@@ -129,7 +129,7 @@ services:
 
   sidecar-chromium:
     image: ghcr.io/cloeille/picsou-finance/sidecar-chromium:latest
-    profiles: ["amundi", "banque-populaire", "bourse-direct", "caisse-epargne", "corum", "fortuneo", "tr", "all-connectors"]
+    profiles: ["amundi", "banque-populaire", "bourse-direct", "caisse-epargne", "corum", "fortuneo", "lbp", "tr", "all-connectors"]
     build:
       context: ../services/base
       target: chromium
@@ -137,7 +137,7 @@ services:
 
   sidecar-camoufox:
     image: ghcr.io/cloeille/picsou-finance/sidecar-camoufox:latest
-    profiles: ["amex", "revolut", "all-connectors"]
+    profiles: ["amex", "bnp", "revolut", "all-connectors"]
     build:
       context: ../services/base
       target: camoufox
@@ -204,6 +204,35 @@ services:
       # log line of a contract Picsou does not import. See services/caisse-epargne-auth/README.md.
       CE_LOG_PRODUCT_DETAILS: ${CE_LOG_PRODUCT_DETAILS:-}
 
+  bnp-auth:
+    image: ghcr.io/cloeille/picsou-finance/bnp-auth:latest
+    profiles: ["bnp", "all-connectors"]
+    build:
+      context: ../services/bnp-auth
+      dockerfile: Dockerfile
+      args:
+        SIDECAR_BASE: sidecar-camoufox
+      additional_contexts:
+        sidecar-camoufox: service:sidecar-camoufox
+    restart: unless-stopped
+    init: true
+    environment:
+      APP_SIDECAR_API_KEY: ${APP_SIDECAR_API_KEY:-}
+
+  lbp-auth:
+    image: ghcr.io/cloeille/picsou-finance/lbp-auth:latest
+    profiles: ["lbp", "all-connectors"]
+    build:
+      context: ../services/lbp-auth
+      dockerfile: Dockerfile
+      args:
+        SIDECAR_BASE: sidecar-chromium
+      additional_contexts:
+        sidecar-chromium: service:sidecar-chromium
+    restart: unless-stopped
+    environment:
+      APP_SIDECAR_API_KEY: ${APP_SIDECAR_API_KEY:-}
+
   banque-populaire-auth:
     image: ghcr.io/cloeille/picsou-finance/banque-populaire-auth:latest
     profiles: ["banque-populaire", "all-connectors"]
@@ -217,6 +246,7 @@ services:
     restart: unless-stopped
     environment:
       APP_SIDECAR_API_KEY: ${APP_SIDECAR_API_KEY:-}
+      CE_LOG_PRODUCT_DETAILS: ${CE_LOG_PRODUCT_DETAILS:-}
 
   bourse-direct-auth:
     image: ghcr.io/cloeille/picsou-finance/bourse-direct-auth:latest
@@ -325,6 +355,20 @@ services:
     profiles: ["cmes", "all-connectors"]
     build:
       context: ../services/cmes-auth
+      dockerfile: Dockerfile
+      args:
+        SIDECAR_BASE: sidecar-python
+      additional_contexts:
+        sidecar-python: service:sidecar-python
+    restart: unless-stopped
+    environment:
+      APP_SIDECAR_API_KEY: ${APP_SIDECAR_API_KEY:-}
+
+  natixis-auth:
+    image: ghcr.io/cloeille/picsou-finance/natixis-auth:latest
+    profiles: ["natixis", "all-connectors"]
+    build:
+      context: ../services/natixis-auth
       dockerfile: Dockerfile
       args:
         SIDECAR_BASE: sidecar-python

@@ -18,6 +18,9 @@ import { DegiroTab } from './DegiroTab'
 import { AmundiTab } from './AmundiTab'
 import { CmesTab } from './CmesTab'
 import { CicTab } from './CicTab'
+import { LbpTab } from './LbpTab'
+import { BnpTab } from './BnpTab'
+import { NatixisTab } from './NatixisTab'
 import { AmexTab } from './AmexTab'
 import { CorumTab } from './CorumTab'
 import { SofidyTab } from './SofidyTab'
@@ -49,7 +52,10 @@ const VIEW_PANELS: Record<ViewKey, ComponentType> = {
   simplefin: SimplefinTab,
   amundi: AmundiTab,
   cmes: CmesTab,
+  natixis: NatixisTab,
   cic: CicTab,
+  lbp: LbpTab,
+  bnp: BnpTab,
   fortuneo: FortuneoTab,
   amex: AmexTab,
   corum: CorumTab,

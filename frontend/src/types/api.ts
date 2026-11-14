@@ -713,6 +713,11 @@ export interface PeerLoanRepayment {
   capitalPart?: number | null
   /** True when this row has a cash movement in a linked account. */
   hasCashLeg?: boolean
+  /**
+   * True when Picsou wrote that movement and deletes it with the row; false when the row only
+   * links a transaction that stays in its account.
+   */
+  cashLegOwned?: boolean
 }
 
 export type PeerLoanRatePeriod = 'ANNUAL' | 'MONTHLY'
@@ -1208,9 +1213,42 @@ export interface WalletStatus {
   lastSyncedAt: string | null
 }
 
-export interface TrSessionStatus {
-  isActive: boolean
-  expiresAt: string | null
+/** Codes a Trade Republic auth or sync call can fail with (`SidecarBank.TRADE_REPUBLIC`). */
+export type TrErrorCode =
+  | 'INVALID_CREDENTIALS'
+  | 'INVALID_OTP'
+  | 'APP_VALIDATION_TIMEOUT'
+  | 'APP_VALIDATION_CANCELLED'
+  | 'AUTH_ATTEMPT_EXPIRED'
+  | 'SESSION_EXPIRED'
+  | 'INVALID_SESSION_STATE'
+  | 'RATE_LIMITED'
+  | 'UPSTREAM_FORMAT_CHANGED'
+  | 'INVALID_DATA'
+  | 'UPSTREAM_UNAVAILABLE'
+  | 'INTERNAL_ERROR'
+
+/** Same shape as every sidecar-backed session: a deactivated session reports `SESSION_EXPIRED`. */
+export type TrSessionStatus = SidecarSessionStatusOf<
+  TrErrorCode,
+  {
+    /** Phone stored with the session (e.g. `+33 * ** ** ** 78`), `null` when none: reconnect needs it. */
+    maskedPhone: string | null
+  }
+>
+
+/**
+ * `confirmInApp`: the member confirms the login in the Trade Republic app and `auth/complete`
+ * stays open until they do. `otp`: Trade Republic texted a 4-digit code the member types.
+ * `authenticator`: the member types the 6-digit code of their authenticator (TOTP) app.
+ */
+export type TrAuthFlow = 'confirmInApp' | 'otp' | 'authenticator'
+
+export interface TrAuthInitResponse {
+  processId: string
+  flow: TrAuthFlow
+  /** How long the member has to confirm in the app. */
+  countdownInSeconds: number
 }
 
 /**
@@ -1359,6 +1397,8 @@ export interface CaisseEpargneSessionStatus {
   lastSyncError: CaisseEpargneErrorCode | null
   unsupported: CaisseEpargneUnsupportedContract[]
   unsupportedCount: number
+  /** An identifier is stored (encrypted): an empty one at initiate reuses it. Never the value. */
+  remembered?: boolean
 }
 
 /**
@@ -1420,6 +1460,141 @@ export type BanquePopulaireAuthInitResponse = CaisseEpargneAuthInitResponse
 export type BanquePopulaireAuthKeypadResponse = CaisseEpargneAuthKeypadResponse
 export type BanquePopulaireAuthCompleteResponse = CaisseEpargneAuthCompleteResponse
 export type BanquePopulaireDeleteResponse = CaisseEpargneDeleteResponse
+
+// --- La Banque Postale ---
+
+export type LbpErrorCode =
+  | 'INVALID_CREDENTIALS'
+  | 'KEYPAD_CHANGED'
+  | 'KEYPAD_EXPIRED'
+  | 'INVALID_POSITIONS'
+  | 'APP_VALIDATION_TIMEOUT'
+  | 'AUTH_ATTEMPT_EXPIRED'
+  | 'SESSION_EXPIRED'
+  | 'UPSTREAM_UNAVAILABLE'
+  | 'UPSTREAM_FORMAT_CHANGED'
+  | 'INVALID_SESSION_STATE'
+  | 'INTERNAL_ERROR'
+
+/** A product the sidecar saw but does not import: family code only, never the account id. */
+export interface LbpUnsupportedProduct {
+  externalId: string
+  familyCode: string
+}
+
+/** Mirrors `LbpSyncService.SessionStatusResponse`. */
+export interface LbpSessionStatus {
+  isActive: boolean
+  syncStatus: 'IDLE' | 'QUEUED' | 'RUNNING' | 'SUCCESS' | 'FAILED'
+  lastSyncStartedAt: string | null
+  lastSyncCompletedAt: string | null
+  lastSyncError: LbpErrorCode | null
+  unsupported: LbpUnsupportedProduct[]
+  unsupportedCount: number
+  /** The identifier the user asked to remember, decrypted for the form. Never a password. */
+  savedIdentifier: string | null
+}
+
+/**
+ * The bank's shuffled keypad: ten digit labels in DOM order. The user clicks his
+ * own digits and only the clicked positions go back, never the digits.
+ */
+export interface LbpKeypad {
+  keys: string[]
+  columns: number
+}
+
+export interface LbpAuthInitResponse {
+  processId: string
+  keypad: LbpKeypad
+  /** Lifetime of the keypad step, not of the mobile-approval wait. */
+  expiresInSeconds: number
+}
+
+/** The second factor is a notification in the bank's mobile app: a human approves it. */
+export interface LbpAuthKeypadResponse {
+  processId: string
+  status: 'APPROVAL_PENDING'
+}
+
+export type LbpAuthCompleteResponse = LbpSessionStatus
+
+/** `bankSessionRevoked` is always false: only Picsou's stored copy is deleted. */
+export interface LbpDeleteResponse {
+  removed: boolean
+  bankSessionRevoked: boolean
+  message: string
+}
+
+// --- BNP Paribas / Hello bank! ---
+
+export type BnpBrand = 'bnp' | 'hellobank'
+
+export type BnpErrorCode =
+  | 'INVALID_CREDENTIALS'
+  | 'INVALID_OTP'
+  | 'KEYPAD_CHANGED'
+  | 'KEYPAD_EXPIRED'
+  | 'INVALID_POSITIONS'
+  | 'MFA_TYPE_UNSUPPORTED'
+  | 'ACTION_REQUIRED'
+  | 'RATE_LIMITED'
+  | 'APP_VALIDATION_TIMEOUT'
+  | 'AUTH_ATTEMPT_EXPIRED'
+  | 'SESSION_EXPIRED'
+  | 'UPSTREAM_UNAVAILABLE'
+  | 'UPSTREAM_FORMAT_CHANGED'
+  | 'INVALID_SESSION_STATE'
+  | 'INTERNAL_ERROR'
+
+/** A product the sidecar saw but does not import: family code only, never the account id. */
+export interface BnpUnsupportedProduct {
+  externalId: string
+  familyCode: string
+}
+
+/** Mirrors `BnpSyncService.SessionStatusResponse`. */
+export interface BnpSessionStatus {
+  isActive: boolean
+  syncStatus: 'IDLE' | 'QUEUED' | 'RUNNING' | 'SUCCESS' | 'FAILED'
+  lastSyncStartedAt: string | null
+  lastSyncCompletedAt: string | null
+  lastSyncError: BnpErrorCode | null
+  unsupported: BnpUnsupportedProduct[]
+  unsupportedCount: number
+}
+
+/**
+ * The bank's shuffled keypad: the digit written on each of the ten keys, in the order the bank
+ * shows them (row by row). The member clicks his own digits; only the clicked positions (0..9)
+ * go back, never the digits.
+ */
+export interface BnpKeypad {
+  keys: string[]
+  columns: number
+}
+
+export interface BnpAuthInitResponse {
+  processId: string
+  keypad: BnpKeypad
+  /** Lifetime of the keypad step, not of the second-factor wait. */
+  expiresInSeconds: number
+}
+
+/** `CODE_REQUIRED`: an SMS code is typed in Picsou. `APPROVAL_PENDING`: approve in the bank's app. */
+export interface BnpAuthKeypadResponse {
+  processId: string
+  status: 'APPROVAL_PENDING' | 'CODE_REQUIRED'
+}
+
+export type BnpAuthCompleteResponse = BnpSessionStatus
+
+/** `bankSessionRevoked` is always false: only Picsou's stored copy is deleted. */
+export interface BnpDeleteResponse {
+  removed: boolean
+  bankSessionRevoked: boolean
+  message: string
+}
 
 export type DegiroSessionStatusValue = 'ACTIVE' | 'REAUTH_REQUIRED' | 'FAILED'
 
@@ -1485,6 +1660,24 @@ export type AmundiErrorCode =
   | 'UPSTREAM_UNAVAILABLE'
   | 'INVALID_DATA'
   | 'INTERNAL_ERROR'
+
+export type NatixisSessionStatus = SidecarSessionStatusOf<NatixisErrorCode>
+
+export type NatixisErrorCode =
+  | 'INVALID_CREDENTIALS'
+  | 'MFA_TYPE_UNSUPPORTED'
+  | 'INVALID_OTP'
+  | 'RATE_LIMITED'
+  | 'AUTH_ATTEMPT_EXPIRED'
+  | 'SESSION_EXPIRED'
+  | 'PORTFOLIO_INCOMPLETE'
+  | 'UPSTREAM_FORMAT_CHANGED'
+  | 'UPSTREAM_UNAVAILABLE'
+  | 'INVALID_DATA'
+  | 'INTERNAL_ERROR'
+
+/** Natixis always asks for a code, typed from an SMS, a voice call or an e-mail. */
+export type NatixisAuthInitResponse = SidecarAuthInitResponse<'SMS' | 'VOICE' | 'EMAIL'>
 
 export type CmesSessionStatus = SidecarSessionStatusOf<CmesErrorCode>
 
@@ -1682,6 +1875,12 @@ export interface FinaryAutoSyncResponse {
   newAccountCount: number
 }
 
+export interface PeerLoanLink {
+  kind: 'LENDING' | 'REPAYMENT'
+  accountId: number
+  accountName: string
+}
+
 export interface Transaction {
   id: number
   date: string
@@ -1709,6 +1908,8 @@ export interface Transaction {
   fees: number | null
   /** True for CORUM Life contract operations: shown on the account, excluded from the budget. */
   budgetNeutral: boolean
+  /** The peer loan this row belongs to, if any: hides the link actions, links to the loan. */
+  peerLoanLink?: PeerLoanLink | null
 }
 
 export interface TransactionRequest {

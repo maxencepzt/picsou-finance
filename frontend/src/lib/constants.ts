@@ -60,6 +60,13 @@ export const HOLDING_ACCOUNT_TYPES: AccountType[] = [
 /** Mirrors the backend's `AccountType.isLiability()`: debts, never part of the user's assets. */
 export const LIABILITY_ACCOUNT_TYPES: AccountType[] = ['LOAN', 'CREDIT_CARD']
 
+/**
+ * Bank and savings accounts: the dashboard holdings card's "Cash" tab and the types its
+ * aggregated "Euros" line adds up. Property, SCPI and debts are not cash; holdings accounts
+ * show their own lines.
+ */
+export const HOLDINGS_CASH_ACCOUNT_TYPES: AccountType[] = [...CASH_ACCOUNT_TYPES, 'OTHER']
+
 /** Translation key for an account type's display label. */
 export function accountTypeLabelKey(type: AccountType): string {
   return ACCOUNT_TYPES.find((t) => t.value === type)?.labelKey ?? 'accountTypes.other'
@@ -126,6 +133,10 @@ export const FRENCH_HOUSEHOLD_SAVINGS_RATE = 17.5
  * TradeRepublicTab) so client-side validation stays consistent.
  */
 export const TR_VERIFICATION_CODE_LENGTH = 4
+/** Digits of the code an authenticator (TOTP) app shows, for the Trade Republic `authenticator` flow. */
+export const TR_AUTHENTICATOR_CODE_LENGTH = 6
+/** Longest PIN or password Trade Republic accepts, as enforced by the backend. */
+export const TR_PIN_MAX_LENGTH = 128
 
 /**
  * Mirrors the `@Size` bounds on `CryptoExchangeController.AddExchangeRequest`, shared by both

@@ -29,6 +29,7 @@ Track bank accounts, brokerage, crypto, and net worth — all in one place.
 - **Account aggregation** — Bank accounts (LEP, PEA, Livret, current), brokerage, crypto wallets, on-chain addresses, debts/loans
 - **Bank sync** — Enable Banking (PSD2/OAuth, 2000+ EU banks) and SimpleFIN (setup token, mostly US banks via SimpleFIN Bridge). Wise jars through a Wise personal API token.
 - **BoursoBank** — Current accounts, livrets and the PEA/CTO with its cash and positions, via a local read-only sidecar. Reaches the securities account PSD2 cannot.
+- **La Banque Postale** — Current account and livrets (Livret A, LDDS, LEP) via a local sidecar, replacing Enable Banking for this bank.
 - **Brokerage sync** — Trade Republic via WebSocket or CSV import, and Bourse Direct PEA/CTO positions via a local read-only sidecar
 - **Employee savings** — Amundi Épargne Salariale plans (PEE/PEG, PERCO, PER) and their FCPE lines, via a local read-only sidecar
 - **Crypto** — Binance and Meria exchange sync, on-chain BTC/ETH/SOL address tracking
@@ -65,7 +66,7 @@ Modules, data flows and key constraints: [docs/ARCHITECTURE.md](docs/ARCHITECTUR
 | Layer | Technology |
 |-------|-----------|
 | Backend | Java 21, Spring Boot 3.5, Maven |
-| Frontend | React 19, TypeScript 5.9, Vite 7, Tailwind v4, Bun |
+| Frontend | React 19, TypeScript 5.9, Vite 8, Tailwind v4, Bun |
 | Database | PostgreSQL 16, Flyway |
 | Runtime | Docker (one non-root Spring Boot process) |
 
@@ -96,10 +97,13 @@ Picsou publishes pre-built, multi-arch (amd64/arm64) images to the GitHub Contai
 | `ghcr.io/cloeille/picsou-finance/bourso-auth` | BoursoBank login/2FA sidecar |
 | `ghcr.io/cloeille/picsou-finance/caisse-epargne-auth` | Caisse d'Epargne login (keypad + Sécur'Pass) and accounts sidecar |
 | `ghcr.io/cloeille/picsou-finance/banque-populaire-auth` | Banque Populaire login (keypad + Sécur'Pass) and accounts sidecar |
+| `ghcr.io/cloeille/picsou-finance/bnp-auth` | BNP Paribas and Hello bank! browser-login sidecar (accounts, savings, PEA/CTO, life insurance, loans) |
+| `ghcr.io/cloeille/picsou-finance/lbp-auth` | La Banque Postale browser-login sidecar (current account and livrets) |
 | `ghcr.io/cloeille/picsou-finance/fortuneo-auth` | Fortuneo login/2FA and portfolio sidecar |
 | `ghcr.io/cloeille/picsou-finance/cmes-auth` | Crédit Mutuel / CIC Épargne Salariale login/2FA and plans sidecar |
+| `ghcr.io/cloeille/picsou-finance/natixis-auth` | Natixis Interépargne login/2FA and plans sidecar |
 
-Bank connectors (the `*-auth` sidecars) are opt-in: with no profile, Compose pulls and runs only the app and the database. Pick the banks you sync through a comma-separated `COMPOSE_PROFILES` list, or use `all-connectors` for every one. Add `tls` to that same list when you use the bundled Caddy proxy. Connector profiles: `amex`, `amundi`, `banque-populaire`, `bourse-direct`, `bourso`, `caisse-epargne`, `cic`, `cmes`, `corum`, `degiro`, `fortuneo`, `revolut`, `sofidy`, and `tr` (Trade Republic). The `tls` profile enables the bundled Caddy proxy. The app and the enabled connectors authenticate each other with one shared secret, `APP_SIDECAR_API_KEY`, required as soon as one connector is enabled; each connector refuses to start without it. Set the shared key before the first launch:
+Bank connectors (the `*-auth` sidecars) are opt-in: with no profile, Compose pulls and runs only the app and the database. Pick the banks you sync through a comma-separated `COMPOSE_PROFILES` list, or use `all-connectors` for every one. Add `tls` to that same list when you use the bundled Caddy proxy. Connector profiles: `amex`, `amundi`, `banque-populaire`, `bourse-direct`, `bnp`, `bourso`, `caisse-epargne`, `cic`, `cmes`, `corum`, `degiro`, `fortuneo`, `lbp`, `natixis`, `revolut`, `sofidy`, and `tr` (Trade Republic). The `tls` profile enables the bundled Caddy proxy. The app and the enabled connectors authenticate each other with one shared secret, `APP_SIDECAR_API_KEY`, required as soon as one connector is enabled; each connector refuses to start without it. Set the shared key before the first launch:
 
 ```bash
 [ -f docker/.env ] || cp docker/.env.example docker/.env
@@ -120,7 +124,7 @@ docker compose -f docker/docker-compose.yml pull    # fetch the published images
 docker compose -f docker/docker-compose.yml up -d
 ```
 
-> The compose file pins `:latest`. To follow the bleeding edge instead, override with `:nightly` (built on every `main` push), or pin a release such as `:1.0.0`.
+> The compose file pins `:latest`, the highest release tag. To follow the bleeding edge instead, override with `:nightly`, which follows `main` and may carry migrations not yet released, or pin a release such as `:1.0.0`.
 >
 > Building from source instead of pulling? Run `docker compose -f docker/docker-compose.yml up --build` — the `build:` sections are kept for contributors.
 
@@ -387,7 +391,10 @@ cp docker/.env.example docker/.env
 | `BANQUE_POPULAIRE_AUTH_URL` | Custom sidecar | Defaults to `http://banque-populaire-auth:8001` |
 | `BOURSE_DIRECT_AUTH_URL` | Custom sidecar | Defaults to `http://bourse-direct-auth:8001` |
 | `FORTUNEO_AUTH_URL` | Custom sidecar | Defaults to `http://fortuneo-auth:8001` |
+| `BNP_AUTH_URL` | Custom sidecar | Defaults to `http://bnp-auth:8001`. Set it to reach a `bnp-auth` sidecar run elsewhere (BNP Paribas, Hello bank!) |
+| `LBP_AUTH_URL` | Custom sidecar | Defaults to `http://lbp-auth:8001`. Set it to reach an `lbp-auth` sidecar run elsewhere (La Banque Postale) |
 | `CMES_AUTH_URL` | Custom sidecar | Defaults to `http://cmes-auth:8001`. Set it to reach a `cmes-auth` sidecar run elsewhere (Crédit Mutuel / CIC Épargne Salariale) |
+| `NATIXIS_AUTH_URL` | Custom sidecar | Defaults to `http://natixis-auth:8001`. Set it to reach a `natixis-auth` sidecar run elsewhere (Natixis Interépargne) |
 | `CIC_AUTH_URL` | Custom sidecar | Defaults to `http://cic-auth:8001`. Set it to reach a `cic-auth` sidecar run elsewhere (CIC online banking) |
 | `PICSOU_DOMAIN` | TLS profile | Hostname Caddy serves — see [step 3](#3-https-decide-before-the-first-launch) |
 | `HSTS_ENABLED` | Trusted cert | `true` only with a publicly-trusted certificate |

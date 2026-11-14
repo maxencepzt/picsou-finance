@@ -13,6 +13,7 @@ import com.picsou.dto.ScpiPositionResponse;
 import com.picsou.dto.SnapshotRequest;
 import com.picsou.dto.TransactionResponse;
 import com.picsou.exception.ResourceNotFoundException;
+import com.picsou.finary.FinaryPersistenceHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.picsou.model.ScpiProvider;
@@ -24,6 +25,7 @@ import com.picsou.model.Debt;
 import com.picsou.model.FamilyMember;
 import com.picsou.model.PropertyValuation;
 import com.picsou.model.RealEstateMetadata;
+import com.picsou.model.SnapshotSource;
 import com.picsou.model.ValuationMode;
 import com.picsou.port.BankConnectorPort;
 import com.picsou.repository.AccountHoldingRepository;
@@ -74,9 +76,19 @@ public class AccountService {
         BourseDirectSyncService.PROVIDER,
         AmundiSyncService.PROVIDER,
         CmesSyncService.PROVIDER,
+        NatixisSyncService.PROVIDER,
         BoursoSyncService.PROVIDER,
-        FortuneoSyncService.PROVIDER
+        FortuneoSyncService.PROVIDER,
+        BnpSyncService.PROVIDER,
+        BnpSyncService.HELLO_BANK_PROVIDER
     );
+
+    /**
+     * Provider-valued accounts that are never priced from market quotes, even when every
+     * ticker resolves. Natixis Interépargne employer funds are quoted nowhere, so a quote
+     * found for one of their tickers (a label slug, say) belongs to another instrument.
+     */
+    private static final Set<String> NEVER_MARKET_PRICED = Set.of(NatixisSyncService.PROVIDER);
 
     private final AccountRepository accountRepository;
     private final BalanceSnapshotRepository snapshotRepository;
@@ -96,6 +108,8 @@ public class AccountService {
     private final ScpiFundService scpiFundService;
     private final PeerLoanTermsRepository peerLoanTermsRepository;
     private final PeerLoanRepaymentRepository peerLoanRepaymentRepository;
+    private final PeerLoanTransactionLinks peerLoanTransactionLinks;
+    private final FinaryPersistenceHelper finaryPersistenceHelper;
 
     public AccountService(
         AccountRepository accountRepository,
@@ -115,7 +129,9 @@ public class AccountService {
         ScpiPositionRepository scpiPositionRepository,
         ScpiFundService scpiFundService,
         PeerLoanTermsRepository peerLoanTermsRepository,
-        PeerLoanRepaymentRepository peerLoanRepaymentRepository
+        PeerLoanRepaymentRepository peerLoanRepaymentRepository,
+        PeerLoanTransactionLinks peerLoanTransactionLinks,
+        FinaryPersistenceHelper finaryPersistenceHelper
     ) {
         this.accountRepository = accountRepository;
         this.snapshotRepository = snapshotRepository;
@@ -135,6 +151,8 @@ public class AccountService {
         this.scpiFundService = scpiFundService;
         this.peerLoanTermsRepository = peerLoanTermsRepository;
         this.peerLoanRepaymentRepository = peerLoanRepaymentRepository;
+        this.peerLoanTransactionLinks = peerLoanTransactionLinks;
+        this.finaryPersistenceHelper = finaryPersistenceHelper;
     }
 
     /**
@@ -274,8 +292,20 @@ public class AccountService {
             BigDecimal oldBalance = account.getCurrentBalance();
             BigDecimal newBalance = signedBalance(account.getType(), req.currentBalance());
             account.setCurrentBalance(newBalance);
+            // Only a figure that changed is a statement. The form sends the balance it was
+            // opened with, so a rename would otherwise pin today's balance, and a transaction
+            // dated before today, added, edited or deleted later, would stop moving it.
             if (newBalance.compareTo(oldBalance) != 0) {
-                upsertSnapshotFromNative(account, newBalance, LocalDate.now());
+                BalanceSnapshot snap = upsertSnapshotFromNative(account, newBalance, LocalDate.now());
+                if (account.getType().isLedger()) {
+                    // A typed balance on a manual ledger is a statement about today: without
+                    // the mark, the next transaction would anchor on an older statement and
+                    // silently drop the edited figure (issue #543).
+                    snap.setSource(SnapshotSource.MANUAL);
+                    snap.setNativeBalance(newBalance);
+                    snap.setStatementEnteredAt(java.time.Instant.now());
+                    snapshotRepository.save(snap);
+                }
             }
         }
 
@@ -368,16 +398,41 @@ public class AccountService {
                 "A peer loan's balance comes from its repayment ledger, not a manual snapshot");
         }
         BigDecimal balance = signedBalance(account.getType(), req.balance());
+        boolean manualLedger = account.isManual() && account.getType().isLedger();
 
-        // Update current balance if this is the most recent snapshot
-        Optional<BalanceSnapshot> latest = snapshotRepository.findLatestByAccountId(accountId);
-        if (latest.isEmpty() || !req.date().isBefore(latest.get().getDate())) {
-            account.setCurrentBalance(balance);
-            account.setLastSyncedAt(Instant.now());
-            accountRepository.save(account);
+        // Update current balance if this is the most recent snapshot — except on a manual
+        // ledger, where the anchored recompute below covers every case (a back-dated
+        // statement moves the anchor just like a latest one).
+        if (!manualLedger) {
+            Optional<BalanceSnapshot> latest = snapshotRepository.findLatestByAccountId(accountId);
+            if (latest.isEmpty() || !req.date().isBefore(latest.get().getDate())) {
+                account.setCurrentBalance(balance);
+                account.setLastSyncedAt(Instant.now());
+                accountRepository.save(account);
+            }
         }
 
-        return upsertSnapshotFromNative(account, balance, req.date());
+        // Hand-entered statements are ground truth: later rebuilds preserve MANUAL rows.
+        // Re-entering an older statement flips it, which is also the recovery path for
+        // statements entered before the source column existed. The native figure travels
+        // with the row so the balance anchor never depends on a later FX rate.
+        BalanceSnapshot snap = upsertSnapshotFromNative(account, balance, req.date());
+        snap.setSource(SnapshotSource.MANUAL);
+        snap.setNativeBalance(balance);
+        snap.setStatementEnteredAt(java.time.Instant.now());
+        snapshotRepository.save(snap);
+
+        if (manualLedger) {
+            // Entering a statement can move the anchor even when it is not the latest row
+            // (transaction first, statement after): recompute the anchored balance and the
+            // derived history so both orders converge (issue #543).
+            account.setCurrentBalance(finaryPersistenceHelper.computeManualLedgerBalance(account));
+            account.setLastSyncedAt(Instant.now());
+            accountRepository.save(account);
+            finaryPersistenceHelper.reconstructSnapshotsFromDb(account);
+        }
+
+        return snap;
     }
 
     public List<BalanceSnapshot> getHistory(Long accountId, Long memberId, LocalDate from, LocalDate to) {
@@ -414,9 +469,8 @@ public class AccountService {
 
     public List<TransactionResponse> getTransactions(Long accountId, Long memberId) {
         getOrThrow(accountId, memberId); // validate account exists
-        return transactionRepository.findByAccountIdOrderByDateDesc(accountId).stream()
-            .map(TransactionResponse::from)
-            .toList();
+        return peerLoanTransactionLinks.annotate(
+            transactionRepository.findByAccountIdOrderByDateDesc(accountId));
     }
 
     @Transactional
@@ -487,7 +541,17 @@ public class AccountService {
      * provider has no historical FX, and an approximate EUR figure beats a USD one read as EUR.
      */
     BalanceSnapshot upsertSnapshotFromNative(Account account, BigDecimal nativeBalance, LocalDate date) {
-        return upsertSnapshot(account, toSnapshotEur(account, nativeBalance), date);
+        BalanceSnapshot snap = upsertSnapshot(account, toSnapshotEur(account, nativeBalance), date);
+        if (snap.getSource() == SnapshotSource.MANUAL) {
+            // A hand-entered row keeps its native figure current: updateAccount rewrites
+            // today's row through here, and a stale native would anchor the next rebuild
+            // on the old statement (issue #543). The entry instant moves too: the row may
+            // have been created DERIVED earlier the same day.
+            snap.setNativeBalance(nativeBalance);
+            snap.setStatementEnteredAt(java.time.Instant.now());
+            return snapshotRepository.save(snap);
+        }
+        return snap;
     }
 
     private BigDecimal toSnapshotEur(Account account, BigDecimal nativeBalance) {
@@ -653,7 +717,7 @@ public class AccountService {
         boolean anyHoldingPriced = false;
         boolean anyStale = false;
         boolean anyCostBasisUnknown = false;
-        boolean caisseEpargnePer = isCaisseEpargnePer(account);
+        boolean caisseEpargnePer = CaisseEpargneSyncService.isInsurerContract(account);
 
         for (AccountHolding h : holdings) {
             BigDecimal qty = h.getQuantity();
@@ -821,6 +885,9 @@ public class AccountService {
      * what was synced.
      */
     private Map<String, PriceService.Quote> quotesFor(Account account, List<AccountHolding> holdings) {
+        // No quote at all: each line falls back to its provider value, and the provider-valued
+        // override in valuation() keeps the provider's own total.
+        if (account.getProvider() != null && NEVER_MARKET_PRICED.contains(account.getProvider())) return Map.of();
         Set<String> tickers = tickersOf(holdings);
         if (tickers.isEmpty()) return Map.of();
         return account.getType() == AccountType.CRYPTO
@@ -892,11 +959,6 @@ public class AccountService {
     private static boolean isSyncedCorumLife(Account account) {
         return !account.isManual() && account.getExternalAccountId() != null
             && account.getExternalAccountId().startsWith(Account.CORUM_LIFE_EXTERNAL_ID_PREFIX);
-    }
-
-    private boolean isCaisseEpargnePer(Account account) {
-        return account.getType() == AccountType.PER
-            && CaisseEpargneSyncService.PROVIDER.equals(account.getProvider());
     }
 
     /**
@@ -998,8 +1060,9 @@ public class AccountService {
         // pair. A subsequent provider sync will repopulate both fields.
         // Except a CORUM Life line's value: no feed quotes its unit, so clearing it would
         // leave the line unvalued until the next sync. Only the P&L goes, which is what
-        // lets the edited buy-in become the line's cost basis.
-        if (!isSyncedCorumLife(account)) {
+        // lets the edited buy-in become the line's cost basis. Same for a Caisse d'Epargne
+        // PER or assurance vie: the insurer's value is the line's fallback when no quote resolves.
+        if (!isSyncedCorumLife(account) && !CaisseEpargneSyncService.isInsurerContract(account)) {
             h.setProviderValueEur(null);
         }
         h.setProviderPnlEur(null);
@@ -1177,7 +1240,7 @@ public class AccountService {
         // resolves and its logo does not, which reads as a missing image rather than a bug.
         boolean hasTicker = holding.getTicker() != null && !holding.getTicker().isBlank();
         String tickerKey = hasTicker ? holding.getTicker().toUpperCase(Locale.ROOT) : null;
-        boolean caisseEpargnePer = isCaisseEpargnePer(account);
+        boolean caisseEpargnePer = CaisseEpargneSyncService.isInsurerContract(account);
         BigDecimal providerValue = holding.getProviderValueEur();
         boolean hasProviderValue = providerValue != null;
         if (caisseEpargnePer && providerValue != null && providerValue.signum() <= 0) {

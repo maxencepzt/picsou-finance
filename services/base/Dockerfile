@@ -7,7 +7,7 @@
 # docs/decisions/2026-10-21-shared-sidecar-base-image.md.
 
 # 3.12.16-slim-bookworm, multi-arch index (amd64 CI and arm64 local).
-FROM python:3.12-slim-bookworm@sha256:e697c81897302a4c4333bade000d98038fbb21eb064f8ee1fd42d02ebcd9d337 AS python
+FROM python:3.12-slim-bookworm@sha256:935c3c5b12357a7e10caa9c1e6ca5692344d97cf229832ef584be2cec9fc03df AS python
 
 WORKDIR /app
 
@@ -30,7 +30,7 @@ COPY picsou_sidecar /opt/sidecar-base/lib/picsou_sidecar
 # test fixtures and must remain outside production images.
 COPY euro_information/__init__.py euro_information/client.py euro_information/forms.py /opt/sidecar-base/lib/euro_information/
 # Same for bpce: bpce/testing.py is the fake browser of the sidecar tests.
-COPY bpce/__init__.py bpce/site.py bpce/keypad_table.py bpce/replay.py bpce/login.py \
+COPY bpce/__init__.py bpce/site.py bpce/keypad_table.py bpce/replay.py bpce/login.py bpce/shape.py \
      bpce/accounts_parser.py bpce/per_parser.py bpce/per_client.py bpce/fetcher.py \
      /opt/sidecar-base/lib/bpce/
 RUN echo /opt/sidecar-base/lib > "$(python -c 'import site; print(site.getsitepackages()[0])')/picsou-sidecar.pth" \

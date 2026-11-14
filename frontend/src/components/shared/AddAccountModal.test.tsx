@@ -42,6 +42,7 @@ vi.mock('@/features/sync/hooks', () => ({
   useBankCountries: () => ({ data: undefined }),
   useInitiateBankSync: () => ({ mutate: vi.fn(), isPending: false }),
   useInitiateTrAuth: () => ({ mutate: initiateTrAuth, isPending: false }),
+  useReconnectTrAuth: () => ({ mutate: vi.fn(), isPending: false }),
   useCompleteTrAuth: () => ({ mutate: completeTrAuth, isPending: false }),
   useAddCryptoExchange: () => ({ mutate: addCryptoExchange, isPending: false }),
   useAddCryptoWallet: () => ({ mutate: vi.fn(), isPending: false }),
@@ -157,9 +158,7 @@ function fillPhoneAndPin() {
   fireEvent.change(screen.getByLabelText('sync.tr.phone'), {
     target: { value: '+33612345678' },
   })
-  const pinInput = screen.getAllByRole('textbox').find((input) => input !== screen.getByLabelText('sync.tr.phone'))
-  if (!pinInput) throw new Error('PIN input not found')
-  fireEvent.change(pinInput, { target: { value: '1234' } })
+  fireEvent.change(screen.getByLabelText('sync.tr.pin'), { target: { value: '1234' } })
 }
 
 describe('AddAccountModal Trade Republic wizard', () => {
@@ -197,8 +196,8 @@ describe('AddAccountModal Trade Republic wizard', () => {
   })
 
   it('moves focus to the TAN input once the PIN is accepted', async () => {
-    initiateTrAuth.mockImplementation((_params, options: { onSuccess: (data: { processId: string }) => void }) => {
-      options.onSuccess({ processId: 'process-123' })
+    initiateTrAuth.mockImplementation((_params, options: { onSuccess: (data: { processId: string; flow: string; countdownInSeconds: number }) => void }) => {
+      options.onSuccess({ processId: 'process-123', flow: 'otp', countdownInSeconds: 120 })
     })
 
     renderTradeRepublicWizard()
@@ -210,8 +209,8 @@ describe('AddAccountModal Trade Republic wizard', () => {
   })
 
   it('keeps the TAN form visible when completion fails', async () => {
-    initiateTrAuth.mockImplementation((_params, options: { onSuccess: (data: { processId: string }) => void }) => {
-      options.onSuccess({ processId: 'process-123' })
+    initiateTrAuth.mockImplementation((_params, options: { onSuccess: (data: { processId: string; flow: string; countdownInSeconds: number }) => void }) => {
+      options.onSuccess({ processId: 'process-123', flow: 'otp', countdownInSeconds: 120 })
     })
     completeTrAuth.mockImplementation((_params, options: { onError: (error: unknown) => void }) => {
       options.onError({ response: { status: 500, data: { detail: 'VALIDATION_CODE_INVALID' } } })
@@ -496,6 +495,19 @@ describe('AddAccountModal Banque Populaire wizard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'banque-populaire-wizard' }))
 
     expect(onOpenChange).toHaveBeenCalledWith(false)
+  })
+})
+
+describe('AddAccountModal source rows', () => {
+  // jsdom does no layout, so the real geometry is covered by e2e/add-account-source-list.spec.ts;
+  // this pins the classes that keep a long description inside its row.
+  it('clamps a long description inside its row and keeps the full text reachable', () => {
+    render(<AddAccountModal open onOpenChange={vi.fn()} />)
+
+    const description = screen.getByText('addAccount.desc.caisseEpargne')
+    expect(description).toHaveClass('line-clamp-2')
+    expect(description).toHaveAttribute('title', 'addAccount.desc.caisseEpargne')
+    expect(description.parentElement!).toHaveClass('min-w-0')
   })
 })
 

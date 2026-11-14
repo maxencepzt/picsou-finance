@@ -82,7 +82,7 @@ export function ProviderCatalog({ onSelect, autoFocus }: {
                       <ProviderMark name={t(p.labelKey)} logo={p.logo} icon={p.icon} />
                       <span className="flex min-w-0 flex-col gap-0.5">
                         <span className="text-sm leading-snug font-semibold text-foreground">{t(p.labelKey)}</span>
-                        <span className="line-clamp-2 text-xs text-muted-foreground">{t(p.descKey)}</span>
+                        <span className="line-clamp-2 text-xs text-muted-foreground" title={t(p.descKey)}>{t(p.descKey)}</span>
                       </span>
                     </button>
                   </li>

@@ -5,7 +5,7 @@ import { useToggleIntegration } from '@/features/admin/hooks'
 import { IntegrationMark } from '@/pages/setup/components/IntegrationMark'
 import { SettingsCard } from '../components/SettingsBlocks'
 
-const INTEGRATION_KEYS = ['enablebanking', 'boursobank', 'boursedirect', 'fortuneo', 'traderepublic', 'finary', 'crypto'] as const
+const INTEGRATION_KEYS = ['enablebanking', 'boursobank', 'boursedirect', 'fortuneo', 'traderepublic', 'lbp', 'finary', 'crypto'] as const
 
 export function IntegrationsSection({ integrations }: { integrations: Record<string, boolean> }) {
   const { t } = useTranslation()

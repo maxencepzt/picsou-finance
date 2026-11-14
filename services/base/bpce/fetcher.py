@@ -22,7 +22,6 @@ transactions query, and the `meta.nextPageToken` / `pageToken` pagination
 import copy
 import json
 import logging
-import os
 import urllib.parse
 from datetime import date, timedelta
 from decimal import Decimal
@@ -30,7 +29,7 @@ from typing import Any, Awaitable, Callable, Optional
 
 import httpx
 
-from . import accounts_parser, per_client, per_parser, replay
+from . import accounts_parser, per_client, per_parser, replay, shape
 from .site import Site
 
 log = logging.getLogger("bpce")
@@ -265,30 +264,8 @@ def _serialise_loan(loan: Optional[dict]) -> Optional[dict]:
     }
 
 
-def _mask(value: Any, *, cap: int, letters: bool) -> str:
-    """One masking rule for every diagnostic log field.
-
-    Every digit, lowercase letter, accent and symbol becomes `9`, and the value is cut
-    at `cap` characters first. With `letters`, ASCII capitals are kept (a product code
-    such as `PERIC`, a catalogue name such as `LIVRET A`); without, they are masked
-    too and only the blanks and the length show. No number ever shows.
-    """
-    if not isinstance(value, str):
-        return "None"
-    keep = (lambda c: "A" <= c <= "Z" or c == " ") if letters else (lambda c: c == " ")
-    kept = "".join(c if keep(c) else "9" for c in value[:cap])
-    return kept.strip() or "None"
-
-
-def _log_details() -> bool:
-    """`CE_LOG_PRODUCT_DETAILS=1` adds the letters of the contract id and the bank's
-    catalogue name to the diagnostic log of a contract Picsou does not import.
-
-    Off by default: both are free text on a product not seen yet, so a normal run
-    never writes them (it logs the codes, whether a pfm id was sent and the length
-    shape of the id).
-    """
-    return os.environ.get("CE_LOG_PRODUCT_DETAILS") == "1"
+_mask = shape.mask  # one masking rule for every diagnostic log field (see `shape`)
+_log_details = shape.log_details
 
 
 def _id_shape(external_id: str) -> str:
@@ -356,7 +333,7 @@ def _serialise_account(
         "snapshotComplete": True,
         "loan": _serialise_loan(loan) if kind == "LOAN" else None,
     }
-    if per is not None and kind == "PER":
+    if per is not None and kind in accounts_parser.INSURER_KINDS:
         # The insurer valuation can be newer than the bank's synthesis total.
         result["balance"] = _dec(per["balance"])
         result["per"] = _serialise_per(per)
@@ -372,39 +349,10 @@ PerDetailProvider = Callable[[str, str], Awaitable[Any]]
 _CURRENT_KIND = "CURRENT_ACCOUNT"
 
 
-def _is_entity_code(value) -> bool:
-    """A PER entity code: five ASCII digits."""
-    return isinstance(value, str) and len(value) == 5 and value.isascii() and value.isdecimal()
+async def _fetch_per_details(accounts: list, provider: Optional[PerDetailProvider]) -> tuple[dict, dict, dict]:
+    """`({externalId: parsed insurer detail}, {externalId: code})` for every PER and assurance vie.
 
-
-async def _per_detail(account: dict, provider: PerDetailProvider) -> tuple[Any, Optional[str]]:
-    """`(parsed PER, None)`, or `(None, code)` when this PER is unavailable."""
-    ext = account["externalId"]
-    entity_code = account.get("perEntityCode")
-    if not _is_entity_code(entity_code):
-        return None, UpstreamFormatChanged.code
-    try:
-        raw = await provider(ext[len(accounts_parser.CONTRACT_ID_PREFIX):], entity_code)
-    except (replay.SessionExpired, replay.InvalidSessionState):
-        raise
-    except per_client.UnknownPerContract as exc:
-        # Refused before any request: the contract id is not one the insurer
-        # reader knows. Its masked shape tells a new product (an assurance vie
-        # filed under the PER code) apart, without any number.
-        log.info("PER request refused: idShape=%s", _id_shape(ext))
-        return None, exc.code
-    except replay.ReplayError as exc:
-        return None, exc.code
-    except httpx.HTTPError:
-        return None, UpstreamUnavailable.code
-    try:
-        return per_parser.parse_per_detail(raw, currency=account["balance"]["currency"]), None
-    except accounts_parser.ParseError as exc:
-        return None, exc.code
-
-
-async def _fetch_per_details(accounts: list, provider: Optional[PerDetailProvider]) -> tuple[dict, dict]:
-    """`({externalId: parsed PER}, {externalId: code})`: complete positions, or the PER unavailable.
+    Complete positions, or that contract unavailable.
 
     A missing provider is legacy compatibility for direct callers. Production supplies it
     using the stored session and never substitutes a successful balance-only import on failure.
@@ -414,17 +362,58 @@ async def _fetch_per_details(accounts: list, provider: Optional[PerDetailProvide
     """
     details: dict = {}
     unavailable: dict = {}
+    # Contracts to list as unsupported besides `unavailable`, with the reason: a product the
+    # insurer reader does not know, or an answer whose shape changed (not a transport failure).
+    listed: dict = {}
     if provider is None:
-        return details, unavailable
+        return details, unavailable, listed
     for account in accounts:
-        if account["kind"] != "PER":
+        if account["kind"] not in accounts_parser.INSURER_KINDS:
             continue
-        detail, code = await _per_detail(account, provider)
-        if code is None:
-            details[account["externalId"]] = detail
-        else:
-            unavailable[account["externalId"]] = code
-    return details, unavailable
+        ext = account["externalId"]
+        entity_code = account.get("perEntityCode")
+        if (
+            not isinstance(entity_code, str)
+            or len(entity_code) != 5
+            or not entity_code.isascii()
+            or not entity_code.isdecimal()
+        ):
+            unavailable[ext] = UpstreamFormatChanged.code
+            continue
+        try:
+            raw = await provider(ext[len(accounts_parser.CONTRACT_ID_PREFIX):], entity_code)
+        except (replay.SessionExpired, replay.InvalidSessionState):
+            raise
+        except replay.ReplayError as exc:
+            if isinstance(exc, per_client.UnknownPerContract):
+                # Refused before any request: the contract id is not one the insurer
+                # reader knows. Its masked shape tells a new insurer product (one filed
+                # under the PER code) apart, without any number.
+                log.info("insurer request refused: idShape=%s", _id_shape(ext))
+                listed[ext] = "unknown insurer product"
+            elif isinstance(exc, per_client.IncompleteInsurerDetail) and account["kind"] == "ASSURANCE_VIE":
+                listed[ext] = "insurer detail"
+            unavailable[ext] = exc.code
+            continue
+        except httpx.HTTPError:
+            unavailable[ext] = UpstreamUnavailable.code
+            continue
+        try:
+            details[ext] = per_parser.parse_per_detail(
+                raw,
+                currency=account["balance"]["currency"],
+                undated_prices_ok=account["kind"] == "ASSURANCE_VIE",
+            )
+        except accounts_parser.ParseError as exc:
+            # Field path only (the parser names fields and positions, never a value): which
+            # part of an insurer answer changed, for a product seen in few live runs.
+            log.warning(
+                "insurer detail unreadable: kind=%s rejected=%s", account["kind"], accounts_parser._reason(exc)
+            )
+            if account["kind"] == "ASSURANCE_VIE":
+                listed[ext] = "insurer detail"
+            unavailable[ext] = exc.code
+    return details, unavailable, listed
 
 
 async def _fetch_loan_details(
@@ -591,9 +580,26 @@ async def fetch_import(
         loans, loan_unavailable = await _fetch_loan_details(
             client, base_url, accounts, loan_token, home_loan_token, home_loan_base_url
         )
-        pensions, per_unavailable = await _fetch_per_details(accounts, per_detail)
+        pensions, per_unavailable, per_listed = await _fetch_per_details(accounts, per_detail)
         unavailable.update(loan_unavailable)
         unavailable.update(per_unavailable)
+        for account in accounts:
+            # An assurance vie whose insurer answer changed shape (unparseable detail, or no detail
+            # object) and a `4/05` contract whose product the insurer reader does not know are also
+            # listed as unsupported, the one list the Sync tab shows (`unavailable` is not shown).
+            # A network or session failure is not a format change and is not listed.
+            reason = per_listed.get(account["externalId"])
+            if reason:
+                unsupported.append(
+                    {
+                        "externalId": account["externalId"],
+                        "hasPfmId": False,
+                        "familyCode": "4",
+                        "subFamilyCode": "05",
+                        "productLabel": None,
+                        "rejected": reason,
+                    }
+                )
 
         stage = "serialisation"
         result_accounts: list = []

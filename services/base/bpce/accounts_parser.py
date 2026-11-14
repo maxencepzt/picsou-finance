@@ -19,12 +19,12 @@ Facts deliberately NOT guessed (the fixtures and findings do not settle them):
 * the unit of `fillingRatio` (21.8 in the fixture): passed through untouched;
 * the meaning of contract `status` (`2 Actif`): contracts are not filtered on it;
 * which product families exist beyond those observed (`1`, `3/01` Livret A or
-  Livret Jeune, `3/28` LDDS, `3/04` PEL, `3/27` LEP, `4/05` PER, `6/12` personal loan,
-  `6/13` home loan): they are skipped (with their cards)
+  Livret Jeune, `3/02` Compte sur Livret, `3/28` LDDS, `3/04` PEL, `3/27` LEP, `4/05` PER or assurance vie, `4/09` term deposit,
+  `4/10` cooperative shares, `6/12` personal loan, `6/13` home loan): they are skipped (with their cards)
   and reported in `build_import(...)["unsupported"]` by id, family and sub
   code and catalogue `productLabel` (never `contractLabel`, never a balance), never mapped to a guessed kind, so a PEA or an insurance contract
-  cannot block the sync of the supported accounts. PER, loan and insurance
-  contracts carry a null `contractPfmId`: they are keyed by
+  cannot block the sync of the supported accounts. PER, loan, insurance, term deposit and
+  cooperative shares contracts carry a null `contractPfmId`: they are keyed by
   `contract:<contractId.id>` instead, and the kind is decided before any id
   is read;
 * what a `3/01` contract is beyond its `productLabel`: Banque Populaire files
@@ -62,14 +62,19 @@ FAMILY_SAVINGS_AVAILABLE = "3"
 LIVRET_A_LABEL = "LIVRET A"
 
 # Observed live 2026-10-13: `productFamilyPFM.code` / `subProductFamilyPFM.code`.
-# PEL `3/04` and LEP `3/27` observed live 2026-11-06 (catalogue labels `PEL ...`
-# and `LEP`, both with a `contractPfmId`).
+# PEL `3/04` and LEP `3/27` observed live 2026-11-06; Compte sur Livret `3/02` and
+# PEL `3/04` observed live on Banque Populaire 2026-11-08 (all with a `contractPfmId`);
+# term deposit `4/09` and cooperative shares `4/10` observed live on Banque Populaire
+# 2026-11-08 (both without `contractPfmId`).
 # Any other pair (insurance `5`, other sub codes) is unsupported, never fatal.
 _KINDS_BY_FAMILY = {
+    (FAMILY_SAVINGS_AVAILABLE, "02"): "SAVINGS",
     (FAMILY_SAVINGS_AVAILABLE, "28"): "LDDS",
     (FAMILY_SAVINGS_AVAILABLE, "04"): "PEL",
     (FAMILY_SAVINGS_AVAILABLE, "27"): "LEP",
     ("4", "05"): "PER",
+    ("4", "09"): "TERM_DEPOSIT",
+    ("4", "10"): "COOPERATIVE_SHARES",
     ("6", "12"): "LOAN",
     ("6", "13"): "LOAN",
 }
@@ -83,14 +88,23 @@ _JEUNE_LABEL_RE = re.compile(r"\bJEUNES?\b")
 # Kinds with PFM transactions, keyed by `contractPfmId`. PER and loan contracts
 # carry a null `contractPfmId` and are keyed by `contract:<contractId.id>`.
 PFM_KINDS = frozenset(
-    {"CURRENT_ACCOUNT", "LIVRET_A", "LIVRET_JEUNE", "LDDS", "PEL", "LEP"}
+    {"CURRENT_ACCOUNT", "SAVINGS", "LIVRET_A", "LIVRET_JEUNE", "LDDS", "PEL", "LEP"}
 )
-# Kinds seen in one live run only (2026-11-06). A contract of these kinds that the
+# Contracts read from the insurer's app rather than the bank's PFM feed: a PER and an
+# assurance vie (observed live 2026-11-06, Millevie Essentielle). Both are family `4`,
+# sub `05`, with a null `contractPfmId`; the product code inside `contractId.id`
+# (`<entity> <PRODUCT><number>`) tells them apart. A `4/05` contract with any other
+# product code stays a PER, as before: the insurer reader then refuses it, visibly.
+INSURER_KINDS = frozenset({"PER", "ASSURANCE_VIE"})
+INSURER_PRODUCT_KINDS = {"PERIC": "PER", "PERIB": "PER", "ESSEN": "ASSURANCE_VIE"}
+_INSURER_ID_RE = re.compile(r"(?:[0-9]{5} {1,16}|(?:ASV)?(?=PERIB))(?P<product>[A-Z]{5})[0-9]{1,64}\Z")
+
+# Kinds seen in few live runs (2026-11-06, 2026-11-08). A contract of these kinds that the
 # parser cannot read (no integer `contractPfmId`, no balance, a negative balance...)
 # is listed as unsupported instead of failing the whole synthesis, as it was before
 # they were supported; the loud failure of the long-observed kinds is kept for those.
-# Their cards are not read: a PEL or LEP has none.
-PROVISIONAL_KINDS = frozenset({"PEL", "LEP"})
+# Their cards are not read: a savings book, a plan or an assurance vie has none.
+PROVISIONAL_KINDS = frozenset({"SAVINGS", "PEL", "LEP", "ASSURANCE_VIE", "TERM_DEPOSIT", "COOPERATIVE_SHARES"})
 
 # A family or sub-family code the bank sends: short and plain. Anything else is
 # reported as "?" so an unexpected value never reaches a log or the backend.
@@ -222,6 +236,14 @@ def _contract_kind(identity: dict, where: str, skipped_families: frozenset = fro
     return None
 
 
+def _insurer_kind(identification: dict) -> str:
+    """`ASSURANCE_VIE` when the contract id carries a known assurance-vie product code, else PER."""
+    contract_id = identification.get("contractId")
+    raw = contract_id.get("id") if isinstance(contract_id, dict) else None
+    match = _INSURER_ID_RE.fullmatch(raw.strip()) if isinstance(raw, str) else None
+    return INSURER_PRODUCT_KINDS.get(match.group("product"), "PER") if match else "PER"
+
+
 def _folded(label: str) -> str:
     """Upper case without accents: `Épargne` and `EPARGNE` compare equal."""
     decomposed = unicodedata.normalize("NFKD", label)
@@ -281,30 +303,13 @@ def _code(value: Any) -> str:
 
 
 def _check_balance_sign(kind: str, balance: Optional[dict], where: str) -> None:
-    # A loan is outstanding capital, negative on the bank side; a PER, a PEL and
-    # a LEP are assets. The other sign means the field changed meaning.
+    # A loan is outstanding capital, negative on the bank side; a PER, an assurance vie, a PEL,
+    # a LEP, a Compte sur Livret, a term deposit and cooperative shares are assets. The other sign means the field changed meaning.
     if balance is None:  # `_money(required=True)` has already refused it
         raise ParseError(INVALID_SYNTHESIS, f"{where}.balance: missing")
     value = balance["value"]
-    if (kind == "LOAN" and value > 0) or (kind in ("PER", "PEL", "LEP") and value < 0):
+    if (kind == "LOAN" and value > 0) or (kind in INSURER_KINDS | {"SAVINGS", "PEL", "LEP", "TERM_DEPOSIT", "COOPERATIVE_SHARES"} and value < 0):
         raise ParseError(INVALID_SYNTHESIS, f"{where}.balance.value: unexpected sign for this kind")
-
-
-def _identification(item: dict, kind, where: str, provisional_kinds: frozenset) -> dict:
-    """The contract's `identification` object, required except for a provisional kind."""
-    if kind in provisional_kinds and not isinstance(item.get("identification"), dict):
-        # A kind seen in one live run whose `identification` is missing or odd is listed as
-        # unsupported (keyed by position) rather than failing the whole synthesis.
-        return {}
-    return _object(item.get("identification"), INVALID_SYNTHESIS, f"{where}.identification")
-
-
-def _demoted_id(identification: dict, where: str) -> str:
-    """The key of a demoted provisional contract: its contract id, else its position."""
-    try:
-        return _contract_id(identification, where)
-    except ParseError:
-        return CONTRACT_ID_PREFIX + "?" + where
 
 
 def _contract_account(
@@ -315,7 +320,19 @@ def _contract_account(
     # The kind decides which id to read: PER, loan and insurance contracts have
     # a null `contractPfmId`, and must not fail the sync of the others.
     kind = _contract_kind(identity, where, skipped_families)
-    identification = _identification(item, kind, where, provisional_kinds)
+    unreadable = not isinstance(item.get("identification"), dict)
+    # A `4/05` contract holds a PER or an assurance vie and the product code that tells them
+    # apart lives in `identification`: without it the kind is not known, so on a site that has
+    # the assurance vie as a provisional kind it is treated as one.
+    undecided = kind == "PER" and "ASSURANCE_VIE" in provisional_kinds
+    if (kind in provisional_kinds or undecided) and unreadable:
+        # A kind seen in one live run whose `identification` is missing or odd is listed as
+        # unsupported (keyed by position) rather than failing the whole synthesis.
+        identification = {}
+    else:
+        identification = _object(item.get("identification"), INVALID_SYNTHESIS, f"{where}.identification")
+    if kind == "PER":
+        kind = _insurer_kind(identification)  # family 4/05 holds both products
     rejected = None
     if kind is None:
         external_id = _external_id(None, identification, where)
@@ -323,13 +340,16 @@ def _contract_account(
         try:
             return _supported_contract(kind, identification, identity, where), None
         except ParseError as exc:
-            if kind not in provisional_kinds:
+            if kind not in provisional_kinds and not (undecided and unreadable):
                 raise
             rejected = _reason(exc)
             # Reported below as unsupported, so it never blocks the other accounts. Its
             # `contractPfmId` may be the very thing that is odd, so it is keyed by its
             # contract id; with no usable id either, by its position in the synthesis.
-            external_id = _demoted_id(identification, where)
+            try:
+                external_id = _contract_id(identification, where)
+            except ParseError:
+                external_id = CONTRACT_ID_PREFIX + "?" + where
     # Id, codes and the catalogue product name only: no account name and no
     # balance leaves the parser. The sub code (already checked by
     # `_contract_kind`) tells a new product apart, so a real sync can reveal
@@ -339,8 +359,8 @@ def _contract_account(
     entry = {
         "externalId": external_id,
         # For the diagnostic log only (the fetcher does not return it): whether the bank
-        # sent a `contractPfmId`, which the key alone cannot tell once a PEL or LEP that
-        # has one is rejected for another reason.
+        # sent a `contractPfmId`, which the key alone cannot tell once a provisional
+        # contract that has one is rejected for another reason.
         "hasPfmId": identification.get("contractPfmId") is not None,
         "familyCode": _code(identity["productFamilyPFM"]["code"]),
         "subFamilyCode": _code(sub["code"]) if sub is not None else None,
@@ -385,7 +405,7 @@ def _supported_contract(kind: str, identification: dict, identity: dict, where: 
         "iban": None,
         "ibanAmbiguous": False,
     }
-    if kind == "PER":
+    if kind in INSURER_KINDS:
         # Routing uses the contract's actual entity, not an assumed login-query field.
         contract_id = identification.get("contractId")
         account["perEntityCode"] = contract_id.get("entityCode") if isinstance(contract_id, dict) else None
@@ -472,8 +492,11 @@ def _parse_synthesis(
             unsupported.append(skipped)
             continue  # its cards are skipped with it
         add(contract, where)
-        if contract["kind"] in provisional_kinds:
-            continue  # no card is read from a PEL or a LEP
+        if contract["kind"] in provisional_kinds or contract["kind"] == "LEP":
+            # A savings book or plan has no card: none is read, and its `augmentedCards`
+            # is not checked. A LEP is skipped on every site, since a `3/01` contract
+            # can be labelled LEP where `LEP` is not provisional.
+            continue
 
         if "augmentedCards" not in item["identity"]:
             raise ParseError(INVALID_SYNTHESIS, f"{where}.augmentedCards: missing")
@@ -855,8 +878,8 @@ def build_account(
         account["nextDueDate"] = next_due_date(pages, today=today)
         account["balance"] = {"value": outstanding, "currency": account["currency"]}
     elif kind in provisional_kinds:
-        # Never read: it would only join the loan debit-account match, and a PEL or LEP
-        # does not debit a loan.
+        # Never read: it would only join the loan debit-account match, and a provisional
+        # savings book or plan does not debit a loan.
         account["iban"], account["ibanAmbiguous"] = None, False
     else:
         account["iban"], account["ibanAmbiguous"] = extract_iban(pages)

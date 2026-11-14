@@ -27,6 +27,8 @@ test.describe('Sync page', () => {
       'Banques européennes',
       'BoursoBank',
       "Caisse d'Epargne",
+      'La Banque Postale',
+      'BNP Paribas / Hello bank!',
       'Banque Populaire',
       'CIC (livrets)',
       'Fortuneo',
@@ -42,6 +44,7 @@ test.describe('Sync page', () => {
       'Portefeuilles crypto',
       'Amundi',
       'Crédit Mutuel / CIC Épargne Salariale',
+      'Natixis Interépargne',
       'CORUM',
       'Sofidy',
       'Finary',
@@ -128,6 +131,14 @@ test.describe('Sync page', () => {
     await expect(page.getByRole('main').getByText('Non connecté', { exact: true })).toBeVisible()
     await expect(page.getByLabel('Identifiant')).toBeVisible()
     await expect(page.getByText(/Invalid input|syncStatus|ZodError/)).toHaveCount(0)
+  })
+
+  test('should open the La Banque Postale view and show its identifier form', async ({ page }) => {
+    await openProvider(page, 'La Banque Postale')
+
+    await expect(page.locator('#lbp-customer-id')).toBeVisible()
+    await expect(page.getByLabel('Identifiant', { exact: true })).toBeVisible()
+    await expect(page.getByText('Aucune session active')).toBeVisible()
   })
 
   // A provider view is a deep link: choosing a tile writes ?tab=<key>.
