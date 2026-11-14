@@ -178,7 +178,7 @@ public class LegacyMigrationRenumberingCallback implements Callback {
             }
         }
         if (!renumbered.isEmpty()) {
-            log.info("Renumbered {} legacy Flyway schema-history row(s) (issues #174, #265): {}",
+            log.info("Renumbered {} legacy Flyway schema-history row(s): {}",
                 renumbered.size(), String.join(", ", renumbered));
         }
     }

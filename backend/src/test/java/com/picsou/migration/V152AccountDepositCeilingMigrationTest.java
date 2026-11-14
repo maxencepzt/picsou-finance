@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * Proves a database at V141 upgrades in place: existing accounts keep a NULL deposit ceiling
+ * Proves a database at V151 upgrades in place: existing accounts keep a NULL deposit ceiling
  * (the legal default applies), a stated one is stored, and a non-positive one is refused.
  */
 @RequiresPostgres
@@ -35,7 +35,7 @@ class V152AccountDepositCeilingMigrationTest {
     static final PostgreSQLContainer<?> POSTGRES = PostgresContainers.newContainer();
 
     @BeforeAll
-    static void migrateToV141() {
+    static void migrateToV151() {
         flyway("151").migrate();
     }
 

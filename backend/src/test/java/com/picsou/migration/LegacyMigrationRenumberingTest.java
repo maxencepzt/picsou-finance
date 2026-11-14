@@ -405,6 +405,35 @@ class LegacyMigrationRenumberingTest {
     }
 
     @Test
+    void aDatabaseWithTheDepositCeilingAtV142MovesItToV152AndMigratesToHead() throws Exception {
+        String url = createDatabase("deposit_ceiling_at_142");
+        Path before = Files.createTempDirectory("ceiling-at-142");
+        try (Stream<Path> files = Files.list(Path.of(migrationDirectory()))) {
+            for (Path file : files.toList()) {
+                String name = file.getFileName().toString();
+                if (version(name) <= 141) {
+                    Files.copy(file, before.resolve(name));
+                } else if (version(name) == 152) {
+                    Files.copy(file, before.resolve("V142__account_deposit_ceiling.sql"));
+                }
+            }
+        }
+        Flyway.configure()
+            .dataSource(url, POSTGRES.getUsername(), POSTGRES.getPassword())
+            .locations("filesystem:" + before)
+            .load()
+            .migrate();
+
+        upgrade(url).migrate();
+
+        assertThat(upgrade(url).info().pending()).isEmpty();
+        assertThat(query(url, "SELECT version || ' ' || description FROM flyway_schema_history "
+            + "WHERE version IN ('142', '152') ORDER BY version::int")).containsExactly(
+            "142 sidecar session", "152 account deposit ceiling");
+        assertThat(schema(url)).isEqualTo(schema(freshDatabase("deposit_ceiling_fresh")));
+    }
+
+    @Test
     void aSecondStartChangesNothing() throws Exception {
         String url = createDatabase("second_start");
         migrateLegacy(url, SECURITY_PROFILE_LINE);
