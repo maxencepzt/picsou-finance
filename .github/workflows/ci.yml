@@ -310,11 +310,13 @@ jobs:
       # whose html.parser fails a cic-auth guard the base image (3.12.16) passes. uv runs the
       # python-build-standalone build of the latest patch, the runtime the desktop app bundles.
       - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+      # The base pins with their hashes, wheels only: `uv run --with-requirements` checks no hash.
+      - name: Install the base sidecar dependencies
+        run: |
+          uv venv --managed-python --python 3.12 .native-venv
+          uv pip install --python .native-venv --no-build --require-hashes -r .github/requirements-native-sidecars.txt
       - name: Test and start each browserless sidecar
-        run: >-
-          uv run --no-project --no-build --managed-python --python 3.12
-          --with-requirements services/base/requirements.txt
-          python .github/scripts/native_sidecars.py
+        run: uv run --no-project --python .native-venv python .github/scripts/native_sidecars.py
 
   # The desktop shell (#235): the supervisor's unit tests and a locked release build.
   # Not in ci-ok: a crates.io or apt outage must not hold back the image publish.

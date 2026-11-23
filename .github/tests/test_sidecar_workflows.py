@@ -839,14 +839,22 @@ class CiJobSelectionTest(unittest.TestCase):
         job = _load(CI_WORKFLOW)["jobs"]["native-sidecars"]
         self.assertEqual(job["strategy"]["matrix"]["os"], ["macos-latest", "windows-latest"])
         self.assertEqual(job["runs-on"], "${{ matrix.os }}")
-        run = " ".join(next(step["run"] for step in job["steps"] if "native_sidecars.py" in step.get("run", "")).split())
+        runs = " ".join(" ".join(step.get("run", "").split()) for step in job["steps"])
         base = re.search(r"(?m)^FROM python:(\d+\.\d+)-", (ROOT / BASE_DOCKERFILE).read_text(encoding="utf-8"))
         # The image's minor on uv's managed builds: the runners' toolcache lags its patch release.
-        self.assertIn(f"--managed-python --python {base.group(1)} ", run)
-        self.assertIn("--with-requirements services/base/requirements.txt", run)
-        # Wheels only: no package's setup script runs on the runner.
-        self.assertIn("--no-build", run)
-        self.assertTrue(run.endswith("python .github/scripts/native_sidecars.py"))
+        self.assertIn(f"--managed-python --python {base.group(1)} ", runs)
+        # Hash-checked wheels only: no unverified download, no package's setup script on the runner.
+        self.assertIn("--no-build --require-hashes -r .github/requirements-native-sidecars.txt", runs)
+        self.assertTrue(runs.endswith("python .github/scripts/native_sidecars.py"))
+
+    def test_native_sidecar_lock_carries_every_base_pin(self):
+        def pins(path):
+            text = (ROOT / path).read_text(encoding="utf-8")
+            return dict(re.findall(r"(?m)^([A-Za-z0-9_.-]+)==([^\s;\\]+)", text))
+        lock = {name.lower(): version for name, version in pins(".github/requirements-native-sidecars.txt").items()}
+        for name, version in pins("services/base/requirements.txt").items():
+            with self.subTest(package=name):
+                self.assertEqual(lock.get(name.lower()), version, "regenerate .github/requirements-native-sidecars.txt")
 
     def test_native_script_rejects_a_sidecar_that_needs_a_browser(self):
         result = subprocess.run([sys.executable, str(ROOT / ".github/scripts/native_sidecars.py"), "tr-auth"],
