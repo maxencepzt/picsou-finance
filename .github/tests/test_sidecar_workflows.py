@@ -845,7 +845,8 @@ class CiJobSelectionTest(unittest.TestCase):
         self.assertIn(f"--managed-python --python {base.group(1)} ", runs)
         # Hash-checked wheels only: no unverified download, no package's setup script on the runner.
         self.assertIn("--no-build --require-hashes -r .github/requirements-native-sidecars.txt", runs)
-        self.assertTrue(runs.endswith("python .github/scripts/native_sidecars.py"))
+        self.assertTrue(runs.endswith("'.native-venv/bin/python' }} .github/scripts/native_sidecars.py"))
+        self.assertNotIn("uv run", runs)
 
     def test_native_sidecar_lock_carries_every_base_pin(self):
         def pins(path):
