@@ -1652,7 +1652,25 @@ handlers.set(key('GET', '/bourse-direct/status'), () => ({ ...demoIdleSidecar, e
 handlers.set(key('GET', '/amex/status'), () => demoIdleSidecar)
 handlers.set(key('GET', '/corum/status'), () => demoIdleSidecar)
 handlers.set(key('GET', '/sofidy/status'), () => demoIdleSidecar)
-handlers.set(key('GET', '/louve/status'), () => ({ connected: false, status: null, lastSyncedAt: null }))
+// Louve: the consent page is skipped, the browser comes straight back to the callback route.
+let demoLouveSyncedAt: string | null = null
+const demoLouveStatus = () => demoLouveSyncedAt
+  ? { connected: true, status: 'CONNECTED' as const, lastSyncedAt: demoLouveSyncedAt }
+  : { connected: false, status: null, lastSyncedAt: null }
+handlers.set(key('GET', '/louve/status'), demoLouveStatus)
+handlers.set(key('POST', '/louve/auth/start'), () => ({ authorizeUrl: '/sync/louve/callback?code=demo&state=demo' }))
+handlers.set(key('POST', '/louve/auth/complete'), () => {
+  demoLouveSyncedAt = new Date().toISOString()
+  return demoLouveStatus()
+})
+handlers.set(key('POST', '/louve/sync'), () => {
+  if (demoLouveSyncedAt) demoLouveSyncedAt = new Date().toISOString()
+  return demoLouveStatus()
+})
+handlers.set(key('DELETE', '/louve/connection'), () => {
+  demoLouveSyncedAt = null
+  return {}
+})
 handlers.set(key('GET', '/degiro/status'), () => ({ isActive: false, status: null, lastSyncedAt: null }))
 handlers.set(key('GET', '/finary/status'), () => ({
   connected: false, sessionId: null, status: null, lastSyncedAt: null, maskedEmail: null,
