@@ -133,6 +133,13 @@ function formatCountdown(totalSeconds: number): string {
   return `${minutes}:${String(seconds).padStart(2, "0")}`
 }
 
+/** Contracts Picsou does not import but can name, by "family/sub-family" code. */
+const KNOWN_UNSUPPORTED_CONTRACTS = new Map([
+  ["6/12", "sync.bpceContracts.personalLoan"],
+  ["6/13", "sync.bpceContracts.homeLoan"],
+  ["2/11", "sync.bpceContracts.revolvingCredit"],
+])
+
 /** The banks of the BPCE platform: same login, keypad, Sécur'Pass and payloads. */
 export type BpceProviderId = "caisseEpargne" | "banquePopulaire"
 
@@ -516,6 +523,13 @@ export function BpceSessionPanel({
             <p className="flex items-center gap-1.5 text-gain">
               <CheckCircle2 className="size-4 shrink-0" aria-hidden />
               {t(key("syncSuccess"))}
+              {/* Only inside a live session, next to the list it points to. */}
+              {unsupported.length > 0 && (
+                <span className="text-muted-foreground">
+                  {" "}
+                  {t("sync.bpceContracts.notImported", { count: unsupported.length })}
+                </span>
+              )}
             </p>
           )}
           {unsupported.length > 0 && (
@@ -524,16 +538,20 @@ export function BpceSessionPanel({
               <p className="text-xs text-muted-foreground">{t(key("unsupportedHint"))}</p>
               {/* Family and sub-family codes only: the contract id is never shown. */}
               <ul className="flex flex-wrap gap-1.5">
-                {unsupported.map((contract, index) => (
-                  <li
-                    key={`${contract.familyCode}-${index}`}
-                    className="rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-foreground tabular-nums"
-                  >
-                    {contract.subFamilyCode
-                      ? `${contract.familyCode}/${contract.subFamilyCode}`
-                      : contract.familyCode}
-                  </li>
-                ))}
+                {unsupported.map((contract, index) => {
+                  const code = contract.subFamilyCode
+                    ? `${contract.familyCode}/${contract.subFamilyCode}`
+                    : contract.familyCode
+                  const nameKey = KNOWN_UNSUPPORTED_CONTRACTS.get(code)
+                  return (
+                    <li
+                      key={`${contract.familyCode}-${index}`}
+                      className="rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-foreground tabular-nums"
+                    >
+                      {nameKey ? `${t(nameKey)} (${code})` : code}
+                    </li>
+                  )
+                })}
               </ul>
             </div>
           )}

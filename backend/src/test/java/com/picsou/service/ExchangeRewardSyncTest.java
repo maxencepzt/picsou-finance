@@ -5,6 +5,7 @@ import com.picsou.model.ExchangeType;
 import com.picsou.model.PriceSnapshot;
 import com.picsou.model.Transaction;
 import com.picsou.model.TransactionType;
+import com.picsou.port.CryptoExchangePort.ExchangeCredentials;
 import com.picsou.port.CryptoExchangePort;
 import com.picsou.port.CryptoExchangePort.ExchangeReward;
 import com.picsou.repository.AccountRepository;
@@ -43,6 +44,8 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class ExchangeRewardSyncTest {
 
+    private static final ExchangeCredentials CREDENTIALS = new ExchangeCredentials("key", "secret", null, null);
+
     private static final Clock TODAY = Clock.fixed(Instant.parse("2026-11-08T12:00:00Z"), ZoneOffset.UTC);
     // 180 days before 2026-11-08 is 2026-05-12: May is only partly read, so June is the first month.
     private static final Instant FIRST_WHOLE_MONTH = Instant.parse("2026-06-01T00:00:00Z");
@@ -68,7 +71,7 @@ class ExchangeRewardSyncTest {
 
     @Test
     void writesOneRowPerMonthAndAsset_eachCreditValuedAtItsOwnDay() {
-        when(adapter.fetchRewards("key", "secret", FIRST_WHOLE_MONTH)).thenReturn(List.of(
+        when(adapter.fetchRewards(CREDENTIALS, FIRST_WHOLE_MONTH)).thenReturn(List.of(
             reward("USDT", "1", "2026-07-01"),
             reward("USDT", "2", "2026-07-20"),
             reward("EGLD", "0.5", "2026-08-03")));
@@ -76,7 +79,7 @@ class ExchangeRewardSyncTest {
         price("USDT", "2026-07-20", "0.8");
         price("EGLD", "2026-08-03", "10");
 
-        rewardSync.sync(adapter, "key", "secret", ExchangeType.BINANCE, 22L);
+        rewardSync.sync(adapter, CREDENTIALS, ExchangeType.BINANCE, 22L);
 
         ArgumentCaptor<Transaction> saved = ArgumentCaptor.forClass(Transaction.class);
         verify(transactionRepository, times(2)).save(saved.capture());
@@ -102,11 +105,11 @@ class ExchangeRewardSyncTest {
             .budgetNeutral(true).isManual(true).build();
         when(transactionRepository.findByAccountIdAndExternalId(22L, "binance-reward:22:2026-07:USDT"))
             .thenReturn(Optional.of(imported));
-        when(adapter.fetchRewards("key", "secret", FIRST_WHOLE_MONTH)).thenReturn(List.of(
+        when(adapter.fetchRewards(CREDENTIALS, FIRST_WHOLE_MONTH)).thenReturn(List.of(
             reward("USDT", "2", "2026-07-20")));
         price("USDT", "2026-07-20", "0.9");
 
-        rewardSync.sync(adapter, "key", "secret", ExchangeType.BINANCE, 22L);
+        rewardSync.sync(adapter, CREDENTIALS, ExchangeType.BINANCE, 22L);
 
         verify(transactionRepository).save(imported);
         assertThat(imported.getAmount()).isEqualByComparingTo("1.80");
@@ -116,14 +119,14 @@ class ExchangeRewardSyncTest {
     @Test
     void leavesAMonthAsItWasWhenOneOfItsCreditsHasNoPrice() {
         // Writing the priced credits alone would replace a correct total with a short one.
-        when(adapter.fetchRewards("key", "secret", FIRST_WHOLE_MONTH)).thenReturn(List.of(
+        when(adapter.fetchRewards(CREDENTIALS, FIRST_WHOLE_MONTH)).thenReturn(List.of(
             reward("WBETH", "0.001", "2026-07-01"),
             reward("USDT", "1", "2026-07-02")));
         when(priceSnapshotRepository.findLatestByTickerBeforeOrOnDate("WBETH", LocalDate.parse("2026-07-01")))
             .thenReturn(Optional.empty());
         price("USDT", "2026-07-02", "0.9");
 
-        rewardSync.sync(adapter, "key", "secret", ExchangeType.BINANCE, 22L);
+        rewardSync.sync(adapter, CREDENTIALS, ExchangeType.BINANCE, 22L);
 
         ArgumentCaptor<Transaction> saved = ArgumentCaptor.forClass(Transaction.class);
         verify(transactionRepository).save(saved.capture());
@@ -134,13 +137,13 @@ class ExchangeRewardSyncTest {
     void refusesAPriceMoreThanAWeekOlderThanTheCredit() {
         // A provider failure returns no price rather than throwing, leaving a months-old snapshot
         // as the latest one: valuing July's credits at it would overwrite a correct total.
-        when(adapter.fetchRewards("key", "secret", FIRST_WHOLE_MONTH)).thenReturn(List.of(
+        when(adapter.fetchRewards(CREDENTIALS, FIRST_WHOLE_MONTH)).thenReturn(List.of(
             reward("EGLD", "0.5", "2026-07-20")));
         when(priceSnapshotRepository.findLatestByTickerBeforeOrOnDate("EGLD", LocalDate.parse("2026-07-20")))
             .thenReturn(Optional.of(PriceSnapshot.builder().ticker("EGLD").date(LocalDate.parse("2026-07-12"))
                 .priceEur(BigDecimal.TEN).build()));
 
-        rewardSync.sync(adapter, "key", "secret", ExchangeType.BINANCE, 22L);
+        rewardSync.sync(adapter, CREDENTIALS, ExchangeType.BINANCE, 22L);
 
         verify(transactionRepository, never()).save(any());
     }
@@ -154,11 +157,11 @@ class ExchangeRewardSyncTest {
             .budgetNeutral(true).build();
         when(transactionRepository.findByAccountIdAndExternalId(22L, "binance-reward:22:2026-07:ETH"))
             .thenReturn(Optional.of(imported));
-        when(adapter.fetchRewards("key", "secret", FIRST_WHOLE_MONTH)).thenReturn(List.of(
+        when(adapter.fetchRewards(CREDENTIALS, FIRST_WHOLE_MONTH)).thenReturn(List.of(
             reward("ETH", "0.0004", "2026-07-20")));
         price("ETH", "2026-07-20", "2500");
 
-        rewardSync.sync(adapter, "key", "secret", ExchangeType.BINANCE, 22L);
+        rewardSync.sync(adapter, CREDENTIALS, ExchangeType.BINANCE, 22L);
 
         verify(transactionRepository, never()).save(any());
         assertThat(imported.getAmount()).isEqualByComparingTo("3.00");
@@ -169,11 +172,11 @@ class ExchangeRewardSyncTest {
         // It runs from an afterCommit callback, where the finished balance transaction is still
         // bound: price writes outside a new transaction joined it and were never committed, so
         // every month then read as unpriced.
-        when(adapter.fetchRewards("key", "secret", FIRST_WHOLE_MONTH)).thenReturn(List.of(
+        when(adapter.fetchRewards(CREDENTIALS, FIRST_WHOLE_MONTH)).thenReturn(List.of(
             reward("USDT", "1", "2026-07-01")));
         price("USDT", "2026-07-01", "0.9");
 
-        rewardSync.sync(adapter, "key", "secret", ExchangeType.BINANCE, 22L);
+        rewardSync.sync(adapter, CREDENTIALS, ExchangeType.BINANCE, 22L);
 
         InOrder order = inOrder(transactionManager, priceService, priceSnapshotRepository, transactionRepository);
         order.verify(transactionManager).getTransaction(any());
@@ -188,20 +191,20 @@ class ExchangeRewardSyncTest {
     @Test
     void addsNoRowForAMonthWorthLessThanACent() {
         // Dust would only list "0.00 EUR" on the account page; the history import left it out too.
-        when(adapter.fetchRewards("key", "secret", FIRST_WHOLE_MONTH)).thenReturn(List.of(
+        when(adapter.fetchRewards(CREDENTIALS, FIRST_WHOLE_MONTH)).thenReturn(List.of(
             reward("EGLD", "0.0002", "2026-07-05")));
         price("EGLD", "2026-07-05", "10");
 
-        rewardSync.sync(adapter, "key", "secret", ExchangeType.BINANCE, 22L);
+        rewardSync.sync(adapter, CREDENTIALS, ExchangeType.BINANCE, 22L);
 
         verify(transactionRepository, never()).save(any());
     }
 
     @Test
     void touchesNothingWhenTheExchangeReportsNoReward() {
-        when(adapter.fetchRewards(any(), any(), any())).thenReturn(List.of());
+        when(adapter.fetchRewards(any(), any())).thenReturn(List.of());
 
-        rewardSync.sync(adapter, "key", "secret", ExchangeType.BINANCE, 22L);
+        rewardSync.sync(adapter, CREDENTIALS, ExchangeType.BINANCE, 22L);
 
         verifyNoInteractions(accountRepository, priceService, priceSnapshotRepository);
         verify(transactionRepository, never()).save(any());

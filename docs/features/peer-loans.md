@@ -1,6 +1,6 @@
 # Feature: Peer loans (receivables between individuals)
 
-> Last updated: 2026-11-08
+> Last updated: 2026-11-12
 > Status: ✅ v1 implemented. See
 > [the ADR](../decisions/2026-11-05-peer-loans-receivable.md).
 
@@ -296,12 +296,18 @@ not a side effect of a payment.
 
 - `components/peer-loan/PeerLoanDetailSection.tsx` renders in `AccountDetailPage` where
   `LoanDetailSection` does for `LOAN`:
-  - summary: lent / repaid (%) / remaining / accrued interest / written off;
+  - "Loan summary" card (the borrower is already the page title), with the lent → expected
+    back period: lent / repaid (%) / remaining / accrued interest / written off; "capital
+    repaid" is hidden when it is 0 on a written-off loan;
   - forecast card with the scheduled-vs-actual figures, the drift, and the
-    actual-vs-scheduled chart (`PeerLoanForecastChart`);
+    actual-vs-scheduled chart (`PeerLoanForecastChart`). It is hidden on a closed loan that
+    has no plan and no curve, where it would only show empty figures;
+  - the write-off created by "close the loan" stores the note `PeerLoanService.CLOSURE_NOTE`
+    ("Closure write-off"); the ledger shows it translated (`peerLoan.ledger.closureWriteOffNote`);
   - repayment ledger with the kind badge, the "dont X € d'intérêts" split, add / edit /
     delete; capital and interest amounts are green and prefixed `+`, a write-off is red
-    and prefixed `−`. Editing is hidden once the loan is closed, but the write-off stays
+    and prefixed `−`; edit and delete are outline buttons with icons, delete in the
+    destructive colour. Editing is hidden once the loan is closed, but the write-off stays
     deletable: removing it is how the loan is reopened;
   - "close the loan" action with the residual amount in the confirmation.
 - `PeerLoanTermsDialog.tsx` — terms plus the simulator (a duration fills the monthly
@@ -355,6 +361,9 @@ Backend:
 - `backend/.../service/DashboardService.java` - receivable excluded from the allocation
   distribution; the response also carries an `assets` list (receivable included) that the
   wealth modes, history and gross figure use
+- `frontend/src/pages/dashboard/DashboardPage.tsx` - `EXCLUDED_FINANCIAL` leaves the
+  receivable out of the "financial" wealth mode (figure and curve): it counts in net and
+  gross wealth only
 - `backend/.../model/AssetClass.java`, `WealthTier.java` — exhaustive switches
 - `backend/.../db/migration/V135__account_type_peer_loan.sql`,
   `V136__peer_loans.sql`, `V137__peer_loan_cash_leg.sql`,

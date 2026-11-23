@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter, useLocation } from 'react-router'
 import type { Account, PeerLoansOverview, RealEstateMetadata } from '@/types/api'
 import type { NetWorthPoint } from '@/features/history/api'
@@ -8,6 +8,10 @@ import type { NetWorthPoint } from '@/features/history/api'
 const useAccounts = vi.fn()
 const useHistory = vi.fn()
 const usePeerLoansOverview = vi.fn<() => { data: PeerLoansOverview | undefined }>(() => ({ data: undefined }))
+const useSavingsSuggestions = vi.fn<() => { data: Array<{ accountId: number; accountName: string; suggestedProduct: string; defaultAnnualRate: number }> | undefined }>(() => ({ data: undefined }))
+const navigateMock = vi.fn()
+const orderMutate = vi.fn()
+const collapseMutate = vi.fn()
 
 vi.mock('@/features/accounts/hooks', async (importActual) => ({
   // useAccountTree is a pure useMemo over the accounts handed in -- it groups Revolut pockets
@@ -21,11 +25,13 @@ vi.mock('@/features/accounts/hooks', async (importActual) => ({
   useUpdateAccount: () => ({ mutate: vi.fn(), isPending: false }),
   useDeleteAccount: () => ({ mutate: vi.fn(), isPending: false }),
   useUpdateDebtMetadata: () => ({ mutate: vi.fn(), isPending: false }),
+  useSetDisplayOrder: () => ({ mutate: orderMutate, isPending: false }),
+  useSetListCollapsed: () => ({ mutate: collapseMutate, isPending: false }),
 }))
 
 // The savings-suggestion banner is a query of its own and has nothing to say about gain/loss.
 vi.mock('@/features/savings/hooks', () => ({
-  useSavingsSuggestions: () => ({ data: undefined }),
+  useSavingsSuggestions: () => useSavingsSuggestions(),
 }))
 
 vi.mock('@/features/history/hooks', () => ({
@@ -57,7 +63,7 @@ vi.mock('@/components/shared/AccountsStackedChart', () => ({
 
 vi.mock('react-router', async (importActual) => ({
   ...(await importActual<typeof import('react-router')>()),
-  useNavigate: () => vi.fn(),
+  useNavigate: () => navigateMock,
 }))
 
 vi.mock('react-i18next', () => ({
@@ -286,6 +292,8 @@ describe('AccountsPage - closed peer loans', () => {
       logoKey: null,
       createdAt: '2026-01-01T00:00:00Z',
       hidden: false,
+      listPosition: null,
+      listCollapsed: false,
     }
     useAccounts.mockReturnValue({ data: [closedLoan], isLoading: false })
     useHistory.mockReturnValue({ data: history([closedLoan]), isLoading: false })
@@ -399,5 +407,146 @@ describe('AccountsPage — grouping, panel and edit deep link', () => {
     setup([investmentAccount(1, 'PEA', 1000)])
     renderPage('/accounts?edit=99')
     expect(screen.queryByTestId('edit-form')).not.toBeInTheDocument()
+  })
+})
+
+describe('AccountsPage - savings suggestion banner', () => {
+  it('opens the savings configuration tab directly', () => {
+    navigateMock.mockReset()
+    useSavingsSuggestions.mockReturnValue({
+      data: [{ accountId: 99, accountName: 'Livret A', suggestedProduct: 'LIVRET_A', defaultAnnualRate: 2.4 }],
+    })
+    const accounts = [investmentAccount(99, 'PEA', 100)]
+    useAccounts.mockReturnValue({ data: accounts, isLoading: false })
+    useHistory.mockReturnValue({ data: history(accounts), isLoading: false })
+
+    renderPage()
+    fireEvent.click(screen.getByRole('button', { name: 'savings.configureSavings' }))
+    expect(navigateMock).toHaveBeenCalledWith('/accounts/99?tab=config')
+    useSavingsSuggestions.mockReturnValue({ data: undefined })
+  })
+})
+
+describe('AccountsPage - Tout list order and collapse', () => {
+  beforeEach(() => {
+    useAccounts.mockReset()
+    useHistory.mockReset()
+    orderMutate.mockReset()
+    collapseMutate.mockReset()
+    usePeerLoansOverview.mockReturnValue({ data: undefined })
+  })
+
+  function account(id: number, type: Account['type'], balance: number, extra: Partial<Account> = {}): Account {
+    return {
+      ...investmentAccount(id, 'PEA', balance),
+      type,
+      listPosition: null,
+      listCollapsed: false,
+      ...extra,
+    }
+  }
+
+  function setup(accounts: Account[]) {
+    useAccounts.mockReturnValue({ data: accounts, isLoading: false })
+    useHistory.mockReturnValue({ data: history(accounts), isLoading: false })
+  }
+
+  /** Row names in screen order. */
+  function rowNames(region: HTMLElement) {
+    return within(region).getAllByText(/^Compte \d+$/).map((el) => el.textContent)
+  }
+
+  it('shows arrange controls on shared rows and sends every visible id', () => {
+    setup([account(1, 'CHECKING', 100, { isOwner: true }), account(2, 'CHECKING', 100, { isOwner: false })])
+    renderPage()
+    fireEvent.click(screen.getByRole('button', { name: 'accounts.reorder' }))
+
+    // Both rows can be arranged: prefs are per viewer, owned or shared.
+    expect(screen.getAllByRole('button', { name: 'accounts.moveUp' })).toHaveLength(2)
+    expect(screen.getAllByRole('button', { name: 'accounts.moveDown' })).toHaveLength(2)
+    expect(screen.getAllByRole('button', { name: 'accounts.collapseAccount' })).toHaveLength(2)
+
+    // Moving the owned row down keeps the shared one in the saved order.
+    fireEvent.click(screen.getAllByRole('button', { name: 'accounts.moveDown' })[0])
+    expect(orderMutate).toHaveBeenCalledWith([2, 1])
+    expect(collapseMutate).not.toHaveBeenCalled()
+    // A control is not the row: the side panel stays closed.
+    expect(screen.queryByTestId('panel')).not.toBeInTheDocument()
+  })
+
+  it('keeps one filled primary button while reordering', () => {
+    setup([account(1, 'CHECKING', 100)])
+    const { container } = renderPage()
+    fireEvent.click(screen.getByRole('button', { name: 'accounts.reorder' }))
+
+    expect(screen.getByRole('button', { name: 'accounts.doneReordering' })).toHaveAttribute('aria-pressed', 'true')
+    expect(container.querySelectorAll('[data-slot="button"][data-variant="default"]')).toHaveLength(1)
+  })
+
+  it('orders each group by the saved positions, the rest largest first', () => {
+    setup([
+      account(1, 'CHECKING', 300),
+      account(2, 'CHECKING', 200, { listPosition: 1 }),
+      account(3, 'CHECKING', 100, { listPosition: 0 }),
+      account(4, 'CHECKING', 400),
+    ])
+    renderPage()
+    expect(rowNames(screen.getByRole('region', { name: 'assetClasses.cash' }))).toEqual(['Compte 3', 'Compte 2', 'Compte 4', 'Compte 1'])
+
+    // Another tab keeps the natural order.
+    fireEvent.click(screen.getByRole('button', { name: 'accounts.filters.CHECKING' }))
+    expect(rowNames(screen.getByRole('region', { name: 'assetClasses.cash' }))).toEqual(['Compte 4', 'Compte 1', 'Compte 2', 'Compte 3'])
+    expect(screen.queryByRole('button', { name: 'accounts.reorder' })).not.toBeInTheDocument()
+  })
+
+  it('moves a row inside its group without moving any other row of the list', () => {
+    // Cash: 1 then 3; stocks: 2. One order serves both groupings, so 2 keeps its place against 3.
+    setup([account(1, 'CHECKING', 300), account(2, 'PEA', 200), account(3, 'CHECKING', 100)])
+    renderPage()
+    fireEvent.click(screen.getByRole('button', { name: 'accounts.reorder' }))
+
+    const cash = screen.getByRole('region', { name: 'assetClasses.cash' })
+    expect(within(cash).getAllByRole('button', { name: 'accounts.moveUp' })[0]).toBeDisabled()
+    fireEvent.click(within(cash).getAllByRole('button', { name: 'accounts.moveDown' })[0])
+    expect(orderMutate).toHaveBeenCalledWith([2, 3, 1])
+
+    const stocks = screen.getByRole('region', { name: 'assetClasses.equity' })
+    expect(within(stocks).getByRole('button', { name: 'accounts.moveUp' })).toBeDisabled()
+    expect(within(stocks).getByRole('button', { name: 'accounts.moveDown' })).toBeDisabled()
+  })
+
+  it('gathers collapsed accounts in a recap row that still counts them in the total', () => {
+    setup([
+      account(1, 'CHECKING', 100),
+      account(2, 'CHECKING', 50, { listCollapsed: true }),
+      account(3, 'LOAN', 30, { listCollapsed: true }),
+    ])
+    renderPage()
+
+    expect(screen.getByText('Compte 1')).toBeInTheDocument()
+    expect(screen.queryByText('Compte 2')).not.toBeInTheDocument()
+    expect(screen.queryByText('Compte 3')).not.toBeInTheDocument()
+    // The debts group had only the collapsed loan: it leaves the list with it.
+    expect(screen.queryByRole('region', { name: 'accounts.filters.DEBTS' })).not.toBeInTheDocument()
+
+    // Signed like the header total: 50 - 30.
+    const recap = screen.getByText('accounts.collapsedRecap').closest('div')!
+    expect(recap).toHaveTextContent(/20,00/)
+    // 100 + 50 - 30: collapsing is display-only.
+    expect(screen.getByText('accounts.total').closest('[data-slot="card"]')).toHaveTextContent(/120,00/)
+
+    // Manage opens the reorder mode, where collapsed rows come back to be unfolded.
+    fireEvent.click(screen.getByRole('button', { name: 'accounts.manageCollapsed' }))
+    expect(screen.getByText('Compte 2')).toBeInTheDocument()
+    expect(screen.queryByText('accounts.collapsedRecap')).not.toBeInTheDocument()
+    const expand = screen.getAllByRole('button', { name: 'accounts.expandAccount' })
+    expect(expand).toHaveLength(2)
+    fireEvent.click(expand[0])
+    expect(collapseMutate).toHaveBeenCalledWith({ id: 2, collapsed: false })
+
+    // Another tab ignores the collapse.
+    fireEvent.click(screen.getByRole('button', { name: 'accounts.filters.CHECKING' }))
+    expect(screen.getByText('Compte 2')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'accounts.expandAccount' })).not.toBeInTheDocument()
   })
 })

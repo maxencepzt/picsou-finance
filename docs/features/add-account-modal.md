@@ -29,7 +29,7 @@ The modal and the `/sync` tabs render the same components, so a fix lands on bot
 | Shared piece | Used by the modal in | Used by the Sync page in |
 |---|---|---|
 | `pages/sync/ProviderCatalog.tsx` | the selector | the "Add a connection" card |
-| `components/sync/*Panel.tsx` (IBKR, SimpleFIN, Wise, Bourso, Caisse d'Epargne, Banque Populaire, Bourse Direct, DEGIRO, Amundi, CMES, CIC, Fortuneo, Amex, CORUM, Sofidy) | `PANEL_STEPS` | the matching `*Tab` |
+| `components/sync/*Panel.tsx` (IBKR, SimpleFIN, Wise, Bourso, Caisse d'Epargne, Banque Populaire, Bourse Direct, DEGIRO, Amundi, CMES, CIC, Fortuneo, Amex, CORUM, Sofidy, Louve Invest) | `PANEL_STEPS` | the matching `*Tab` |
 | `components/sync/InstitutionSearch.tsx` | `BankWizard` (`layout="modal"`) | `BankSyncTab` (`layout="page"`) |
 | `components/sync/CryptoExchangeForm.tsx` | `ExchangeWizard` | `CryptoExchangeTab` |
 | `components/sync/CryptoWalletForm.tsx` | `WalletWizard` | `CryptoWalletTab` |
@@ -61,6 +61,7 @@ AccountsPage → "Add account" button
        ├─ American Express → AmexPanel (onConnected → handleDone)
        ├─ CORUM → CorumPanel (onConnected → handleDone)
        ├─ Sofidy → SofidyPanel (onConnected → handleDone)
+       ├─ Louve Invest → LouvePanel (OAuth on Louve's site, back through /sync/louve/callback)
        ├─ Trade Republic → TradeRepublicWizard
        │    └─ phone + PIN (InputOTP 4-digit) → verification code (InputOTP 4-digit) → success
        ├─ CMES / CIC / BoursoBank / Caisse d'Epargne / Bourse Direct → their Panel
@@ -175,7 +176,7 @@ assurance-vie and carries an opening date.
 
 - `frontend/src/lib/utils.test.ts` — `formatCurrency` regression case: an invalid code does not throw
   and the raw code appears in the output (issue #9).
-- `frontend/src/components/shared/AddAccountModal.test.tsx` — Trade Republic wizard regression cases; exchange, bank and Finary wizard cases; Bourse Direct, Amundi, IBKR, SimpleFIN, Wise, Amex, CORUM, Sofidy, CMES and CIC wizard flow tests (mock panel → `onOpenChange(false)`); catalog search, category filter, manual choice first, Actual/HomeBank routed to their Sync view.
+- `frontend/src/components/shared/AddAccountModal.test.tsx` — Trade Republic wizard regression cases; exchange, bank and Finary wizard cases; Bourse Direct, Amundi, IBKR, SimpleFIN, Wise, Amex, CORUM, Sofidy, Louve Invest, CMES and CIC wizard flow tests (mock panel → `onOpenChange(false)`); catalog search, category filter, manual choice first, Actual/HomeBank routed to their Sync view.
 - `backend/src/test/java/com/picsou/validation/CurrencyValidatorTest.java` — accepts valid ISO 4217
   codes, rejects unknown ones, leaves null/blank to `@NotBlank`.
 
@@ -187,3 +188,5 @@ assurance-vie and carries an opening date.
 ### Sync all modal parity
 
 The modal's layout (groups, progress, row states) is described in [sync-page.md](./sync-page.md); the connection rules below live in `pages/sync/use-sync-connections.ts`, shared with the Sync page overview. `SyncAllModal` lists the same sidecar connectors as the selector, including Amex, CORUM, Sofidy, Caisse d'Epargne, Banque Populaire and La Banque Postale. A session-based row is shown when its session is live or the member still has accounts whose `provider` matches. Caisse d'Epargne matches the `provider` its sync service stamps (`Caisse d'Epargne`); Banque Populaire matches `Banque Populaire`; La Banque Postale matches `La Banque Postale`. CORUM and Sofidy match the `provider` the SCPI reconciler stamps on the accounts it creates (`CORUM`, `Sofidy`), and also any SCPI account carrying their fund code (`scpi.corumFundCode` / `scpi.sofidyFundCode`), because an adopted manual SCPI keeps the provider the user typed. An expired session therefore stays listed; an inactive one routes to its Sync-page view (`amex`/`corum`/`sofidy`/`caisse-epargne`/`banque-populaire`/`lbp`) for re-authentication, and the batch *Sync all* skips it. Caisse d'Epargne and Banque Populaire never store the password (only the session cookies and the identifier), so their keypad and Sécur'Pass login can run only on that tab; La Banque Postale likewise stores no credentials, and its mobile-app approval step can run only on that view.
+
+Louve Invest is a session provider built like Wise: a row matches an account whose provider is `Louve Invest` or that carries `scpi.louveFundCode`, syncs in place (`useSyncLouve`), and a `REAUTH_REQUIRED` answer sends the user to `?tab=louve`.

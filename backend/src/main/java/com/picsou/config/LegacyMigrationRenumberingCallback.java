@@ -28,7 +28,8 @@ import java.util.List;
  *       V54-V64 to V56-V65, V94 and V96, and added comments to V51 and V55-V58. Release 1.0.6
  *       applied today's V36 as V33.</li>
  *   <li>This fork's deposit-ceiling migration, applied as V142 before upstream 1.2.0 used
- *       V142-V151: it moved to V152, unchanged.</li>
+ *       V142-V151, then as V152 before upstream 1.2.2 used V152-V155: it moved to V1000, unchanged.
+ *       Fork-only migrations live at V1000 and above, out of upstream's range.</li>
  * </ul>
  *
  * <p>Without it, such a database fails validation, and would then re-run the moved files on
@@ -98,7 +99,8 @@ public class LegacyMigrationRenumberingCallback implements Callback {
         // This fork applied its deposit-ceiling migration as V142 before upstream's 1.2.0 took
         // V142-V151 (sidecar_session and the bank sessions after it). The file is unchanged and
         // now lives at V152; upstream's V142-V151 then apply out of order.
-        new Renumbering("142", "152", "account deposit ceiling", 293769879)
+        new Renumbering("142", "1000", "account deposit ceiling", 293769879),
+        new Renumbering("152", "1000", "account deposit ceiling", 293769879)
     );
 
     private static final MigrationVersion V47 = MigrationVersion.fromVersion("47");

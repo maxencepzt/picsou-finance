@@ -26,6 +26,8 @@ vi.mock('@/features/accounts/hooks', () => ({
       lastSeenAt: null, lastSyncedAt: null, accountId: null, accountName: null },
     { provider: 'SOFIDY', fundCode: 'DY', label: 'SOFIDYNAMIC', ignored: false, lastOutcome: 'UPDATED',
       lastSeenAt: null, lastSyncedAt: null, accountId: 5, accountName: 'SOFIDYNAMIC' },
+    { provider: 'LOUVE', fundCode: 'aurore', label: 'Aurore', ignored: false, lastOutcome: 'AMBIGUOUS',
+      lastSeenAt: null, lastSyncedAt: null, accountId: null, accountName: null },
   ] }),
 }))
 
@@ -53,6 +55,17 @@ describe('AddScpiModal', () => {
     expect(screen.getByLabelText('scpi.name')).toHaveValue('CORUM XL')
     expect(screen.getByLabelText('scpi.corumFundCode')).toHaveValue('XL')
     expect(screen.queryByLabelText(/surface/i)).toBeNull()
+  })
+
+  it('fills the Louve Invest code from a Louve fund and leaves the management company to the sync', () => {
+    render(<AddScpiModal open onOpenChange={() => {}} />)
+
+    expect(screen.getByRole('option', { name: 'Aurore (Louve Invest aurore)' })).toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText('scpi.seenFund'), { target: { value: 'LOUVE:aurore' } })
+    expect(screen.getByLabelText('scpi.louveFundCode')).toHaveValue('aurore')
+    expect(screen.getByLabelText('scpi.sofidyFundCode')).toHaveValue('')
+    // Louve distributes funds managed by others: the company comes from the next sync.
+    expect(screen.getByLabelText('scpi.managementCompany')).toHaveValue('')
   })
 
   it('keeps save disabled when only the distribution amount is set', () => {

@@ -230,4 +230,22 @@ describe('ProjectionSection', () => {
     expect(screen.getByText('89.7%')).toBeInTheDocument()
     expect(screen.getByText('—')).toBeInTheDocument()
   })
+
+  it('lets the user enter a custom annual return rate, appends the custom legend entry, and clears it', () => {
+    render(<ProjectionSection />)
+
+    const input = screen.getByLabelText('analysis.projection.customRateLabel')
+    expect(screen.queryByRole('button', { name: /analysis\.projection\.scenarios\.CUSTOM/ })).not.toBeInTheDocument()
+
+    fireEvent.change(input, { target: { value: '12' } })
+
+    expect(
+      screen.getByRole('button', { name: 'analysis.projection.scenarios.CUSTOM:12%' }),
+    ).toBeInTheDocument()
+    // The fork opens on ten years, and the result is stated for the horizon on screen.
+    expect(screen.getByText('analysis.projection.customRateResult:10,12%')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'analysis.projection.customRateClear' }))
+    expect(screen.queryByRole('button', { name: /analysis\.projection\.scenarios\.CUSTOM/ })).not.toBeInTheDocument()
+  })
 })

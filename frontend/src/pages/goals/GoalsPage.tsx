@@ -5,7 +5,7 @@ import { useGoals, useCreateGoal, useUpdateGoal, useDeleteGoal } from '@/feature
 import { useAccounts } from '@/features/accounts/hooks'
 import { useMemberProfile } from '@/features/profile/hooks'
 import { AllocationPicker } from './AllocationPicker'
-import { allocatedTotal, isActiveThisMonth } from './plan-math'
+import { allocatedTotal, hasIncompleteAllocations, isActiveThisMonth } from './plan-math'
 import { SavingsRateCard } from './SavingsRateCard'
 import { GoalsKpiRow } from './GoalsKpiRow'
 import { GoalTrajectory } from './GoalTrajectory'
@@ -14,6 +14,7 @@ import { Stat, StatusDot } from './Stat'
 import { goalStatus } from './goal-stats'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { EmptyState } from '@/components/shared/EmptyState'
+import { ErrorState } from '@/components/shared/ErrorState'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { CurrencyDisplay } from '@/components/shared/CurrencyDisplay'
 import { LoadingSkeleton } from '@/components/shared/LoadingSkeleton'
@@ -66,7 +67,7 @@ export function GoalsPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
 
-  const { data: goals, isLoading } = useGoals()
+  const { data: goals, isLoading, isError, refetch } = useGoals()
   const { data: accounts } = useAccounts()
   const { data: profile, isPending: profilePending } = useMemberProfile()
   const createGoal = useCreateGoal()
@@ -170,12 +171,25 @@ export function GoalsPage() {
   const overAllocated =
     form.type === 'RECURRING_INVESTMENT' &&
     allocatedTotal(form.allocations) - monthlyAmountValue > 0.005
+  // A ticked line without an amount would be dropped on save; Save waits for it instead.
+  const incompleteAllocations =
+    form.type === 'RECURRING_INVESTMENT' && hasIncompleteAllocations(form.allocations)
 
   const handleConfirmDelete = () => {
     if (deleteId != null) {
       deleteGoal.mutate(deleteId)
       setDeleteId(null)
     }
+  }
+
+  // A failed load is not "no goals": the empty state would invite recreating what already exists.
+  if (isError) {
+    return (
+      <div className="space-y-6">
+        <PageHeader title={t('goals.title')} />
+        <ErrorState onRetry={() => void refetch()} />
+      </div>
+    )
   }
 
   if (isLoading) return <LoadingSkeleton />
@@ -416,7 +430,8 @@ export function GoalsPage() {
                   createGoal.isPending ||
                   updateGoal.isPending ||
                   form.accountIds.length === 0 ||
-                  overAllocated
+                  overAllocated ||
+                  incompleteAllocations
                 }
               >
                 {(createGoal.isPending || updateGoal.isPending) && (

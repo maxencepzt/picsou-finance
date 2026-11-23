@@ -7,9 +7,19 @@ import { Card, CardContent } from '@/components/ui/card'
 import { BankCountrySelect, DEFAULT_BANK_COUNTRY } from '@/components/shared/BankCountrySelect'
 import { PanelError, PanelLoading } from '@/components/sync/ProviderPanel'
 import { ProviderMark } from '@/components/shared/ProviderMark'
-import { Search } from 'lucide-react'
-import { extractErrorMessage, formatApiError } from '@/lib/errors'
-import { useSearchInstitutions } from '@/features/sync/hooks'
+import { AlertTriangle, Search } from 'lucide-react'
+import { extractErrorMessage, formatApiError, getErrorCode, getErrorDetail } from '@/lib/errors'
+import { useBankCountries, useSearchInstitutions } from '@/features/sync/hooks'
+import { useAuthStore } from '@/stores/auth-store'
+
+function isEnableBankingNotConfigured(err: unknown): boolean {
+  if (getErrorCode(err) === 'ENABLE_BANKING_NOT_CONFIGURED') return true
+  const detail = getErrorDetail(err) ?? ''
+  return (
+    detail.includes('Enable Banking is not fully configured') ||
+    detail.includes('Enable Banking private key is missing')
+  )
+}
 
 interface InstitutionSearchProps {
   onConnect: (institutionId: string, institutionName: string) => void
@@ -21,8 +31,22 @@ interface InstitutionSearchProps {
 export function InstitutionSearch({ onConnect, connecting, layout }: InstitutionSearchProps) {
   const { t } = useTranslation()
   const modal = layout === 'modal'
+  const isAdmin = useAuthStore((s) => s.user?.role) === 'ADMIN'
   const [searchQuery, setSearchQuery] = useState('')
   const [country, setCountry] = useState(DEFAULT_BANK_COUNTRY)
+
+  const {
+    data: countries,
+    isError: countriesFailed,
+    isSuccess: countriesLoaded,
+    error: countriesError,
+  } = useBankCountries()
+
+  const hasCountries = !!countries && countries.length > 0
+  const enableBankingNotConfigured =
+    !hasCountries && countriesFailed && isEnableBankingNotConfigured(countriesError)
+  const showCountriesLoadError =
+    !hasCountries && !enableBankingNotConfigured && (countriesFailed || countriesLoaded)
 
   const {
     data: institutions,
@@ -79,13 +103,36 @@ export function InstitutionSearch({ onConnect, connecting, layout }: Institution
               autoFocus={modal}
             />
           </div>
-          <BankCountrySelect value={country} onChange={setCountry} />
+          {/* Its load error is shown full width below, not squeezed under the select. */}
+          <BankCountrySelect value={country} onChange={setCountry} silentFallback />
         </div>
       </div>
 
+      {enableBankingNotConfigured && (
+        <div role="alert" className="flex items-start gap-3 rounded-xl bg-warning/10 px-3 py-2.5 text-sm text-foreground">
+          <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden />
+          <span className="flex-1 text-pretty">
+            {t(isAdmin ? 'sync.banks.notConfigured' : 'sync.banks.notConfiguredMember')}
+          </span>
+          {/* Members cannot open Administration: they are asked to contact the administrator. */}
+          {isAdmin && (
+            <Button variant="outline" size="xs" asChild className="-my-1 shrink-0 pointer-coarse:h-10">
+              <a href="/admin#enable-banking">{t('sync.banks.configureEnableBanking')}</a>
+            </Button>
+          )}
+        </div>
+      )}
+
+      {showCountriesLoadError && (
+        <p role="alert" className="px-1 text-xs text-destructive">
+          {t('sync.banks.countriesLoadError')}
+        </p>
+      )}
+
       {searchLoading && <PanelLoading />}
 
-      {searchEnabled && searchFailed && !searchLoading && (
+      {searchEnabled && searchFailed && !searchLoading
+        && !(enableBankingNotConfigured && isEnableBankingNotConfigured(searchError)) && (
         <PanelError>
           {modal
             ? extractErrorMessage(searchError, t('sync.banks.searchError'))

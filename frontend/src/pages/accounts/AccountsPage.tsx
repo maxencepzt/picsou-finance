@@ -1,7 +1,8 @@
 import { Fragment, useState, useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
-import { useAccounts, useAccountTree, useAccountDeletionImpact, useDeleteAccount } from '@/features/accounts/hooks'
+import { useAccounts, useAccountTree, useAccountDeletionImpact, useDeleteAccount, useSetDisplayOrder, useSetListCollapsed } from '@/features/accounts/hooks'
+import { orderAccountsForList, splitCollapsed } from '@/features/accounts/display'
 import { useHistory } from '@/features/history/hooks'
 import { useSavingsSuggestions } from '@/features/savings/hooks'
 import { usePeerLoansOverview } from '@/features/peer-loans/hooks'
@@ -23,14 +24,14 @@ import { SegmentedControl } from '@/components/shared/SegmentedControl'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Download, Eye, EyeOff, PiggyBank, Plus, Wallet } from 'lucide-react'
+import { ArrowUpDown, ChevronDown, ChevronUp, Download, Eye, EyeOff, PiggyBank, Plus, Wallet } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ASSET_CLASS_ORDER, assetClassColor, assetClassOf, sumBy } from '@/lib/asset-classes'
 import { HOLDING_ACCOUNT_TYPES, LIABILITY_ACCOUNT_TYPES } from '@/lib/constants'
 import { accountInvestedAt, accountPnlAt, hasMeasurableGain } from '@/features/accounts/pnl'
 import { useAppStore } from '@/stores/app-store'
 import type { Account, AccountType } from '@/types/api'
-import { accountKpis, groupByAssetClass, groupByInstitution } from './account-groups'
+import { accountKpis, byLargestBalance, groupByAssetClass, groupByInstitution, signedBalance, type AccountItem } from './account-groups'
 import { AccountEditDialog } from './AccountEditDialog'
 import { AccountPanel } from './AccountPanel'
 import { AccountRow } from './AccountRow'
@@ -111,6 +112,11 @@ export function AccountsPage() {
   const [showScpiModal, setShowScpiModal] = useState(false)
   const [deleteId, setDeleteId] = useState<number | null>(null)
   const [filter, setFilter] = useState<AssetFilter>('ALL')
+  // The viewer's own order and collapse apply to the Tout list only (docs/features/account-list-display.md).
+  const [reorderMode, setReorderMode] = useState(false)
+  const reorderActive = reorderMode && filter === 'ALL'
+  const setDisplayOrder = useSetDisplayOrder()
+  const setListCollapsed = useSetListCollapsed()
   const [showClosed, setShowClosed] = useState(false)
   const [groupBy, setGroupBy] = useState<'class' | 'institution'>('class')
   const [panelId, setPanelId] = useState<number | null>(null)
@@ -195,26 +201,89 @@ export function AccountsPage() {
     return allStandaloneAccounts.filter((a) => types.includes(a.type))
   }, [allStandaloneAccounts, filter])
 
-  const groups = useMemo(() => {
-    const items = [
-      ...walletGroups.map(({ wallet, pockets }) => ({ account: wallet, pockets })),
-      ...standaloneAccounts.map((account) => ({ account, pockets: [] })),
-    ]
-    if (groupBy === 'institution') {
-      return groupByInstitution(items).map((g) => ({
-        ...g,
-        label: g.label ?? t(`accounts.groupBy.${g.key}`),
-        color: null,
-      }))
+  const items = useMemo<AccountItem[]>(() => [
+    ...walletGroups.map(({ wallet, pockets }) => ({ account: wallet, pockets })),
+    ...standaloneAccounts.map((account) => ({ account, pockets: [] })),
+  ], [walletGroups, standaloneAccounts])
+
+  // On Tout, collapsed accounts leave the rows for the recap (except while reordering, to unfold
+  // them) and positioned ones lead their group. The group totals cover the rows shown, the recap the
+  // rest; every KPI, total and chart keeps using the full lists.
+  const { groups, collapsed } = useMemo(() => {
+    const arranged = filter === 'ALL'
+    const { shown, collapsed } = arranged && !reorderActive
+      ? splitCollapsed(items, (i) => i.account)
+      : { shown: items, collapsed: [] }
+    const grouped: { key: string; label: string; color: string | null; total: number; items: AccountItem[] }[] =
+      groupBy === 'institution'
+        ? groupByInstitution(shown).map((g) => ({
+          ...g,
+          label: g.label ?? t(`accounts.groupBy.${g.key}`),
+          color: null,
+        }))
+        : groupByAssetClass(shown).map((g) => ({
+          ...g,
+          label: g.key === 'debts' ? t('accounts.filters.DEBTS')
+            : g.key === 'receivables' ? t('accounts.filters.RECEIVABLES')
+            : t(`assetClasses.${g.key}`),
+          color: g.key === 'debts' || g.key === 'receivables' ? 'var(--muted-foreground)' : assetClassColor(g.key),
+        }))
+    return {
+      collapsed,
+      groups: arranged ? grouped.map((g) => ({ ...g, items: orderAccountsForList(g.items, (i) => i.account) })) : grouped,
     }
-    return groupByAssetClass(items).map((g) => ({
-      ...g,
-      label: g.key === 'debts' ? t('accounts.filters.DEBTS')
-        : g.key === 'receivables' ? t('accounts.filters.RECEIVABLES')
-        : t(`assetClasses.${g.key}`),
-      color: g.key === 'debts' || g.key === 'receivables' ? 'var(--muted-foreground)' : assetClassColor(g.key),
-    }))
-  }, [walletGroups, standaloneAccounts, groupBy, t])
+  }, [items, filter, reorderActive, groupBy, t])
+  const collapsedTotal = collapsed.reduce((sum, i) => sum + signedBalance(i.account), 0)
+
+  // One order serves both groupings: the moved row leaves the whole list and goes back in beside its
+  // neighbour, so no other row changes place. Every top-level account of the list is sent, owned or
+  // shared: the order is the viewer's own.
+  function moveRow(rows: AccountItem[], index: number, dir: -1 | 1) {
+    const ids = orderAccountsForList([...items].sort(byLargestBalance), (i) => i.account).map((i) => i.account.id)
+    const moved = rows[index].account.id
+    ids.splice(ids.indexOf(moved), 1)
+    ids.splice(ids.indexOf(rows[index + dir].account.id) + (dir > 0 ? 1 : 0), 0, moved)
+    setDisplayOrder.mutate(ids)
+  }
+
+  function arrangeControls(rows: AccountItem[], index: number) {
+    const { account } = rows[index]
+    return (
+      <>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-7"
+          aria-label={t('accounts.moveUp')}
+          disabled={index === 0 || setDisplayOrder.isPending}
+          onClick={() => moveRow(rows, index, -1)}
+        >
+          <ChevronUp className="size-3.5" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-7"
+          aria-label={t('accounts.moveDown')}
+          disabled={index === rows.length - 1 || setDisplayOrder.isPending}
+          onClick={() => moveRow(rows, index, 1)}
+        >
+          <ChevronDown className="size-3.5" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-7"
+          aria-label={t(account.listCollapsed ? 'accounts.expandAccount' : 'accounts.collapseAccount')}
+          aria-pressed={account.listCollapsed}
+          disabled={setListCollapsed.isPending}
+          onClick={() => setListCollapsed.mutate({ id: account.id, collapsed: !account.listCollapsed })}
+        >
+          {account.listCollapsed ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
+        </Button>
+      </>
+    )
+  }
 
   // Gross assets of the filter by class; sumBy leaves liabilities and empty classes out.
   const classBreakdown = useMemo(() =>
@@ -292,6 +361,8 @@ export function AccountsPage() {
       logoKey: null,
       createdAt: '',
       hidden: false,
+      listPosition: null,
+      listCollapsed: false,
     }))
   }, [accounts, nonPocketAccounts, filter, t])
 
@@ -442,7 +513,7 @@ export function AccountsPage() {
             size="sm"
             variant="outline"
             className="h-9 shrink-0 px-4"
-            onClick={() => navigate(`/accounts/${savingsSuggestions![0].accountId}`)}
+            onClick={() => navigate(`/accounts/${savingsSuggestions![0].accountId}?tab=config`)}
           >
             {t('savings.configureSavings')}
           </Button>
@@ -536,15 +607,30 @@ export function AccountsPage() {
             <Card className="lg:col-span-7">
               <CardHeader className="flex flex-wrap items-center justify-between gap-2">
                 <CardTitle>{t('dashboard.kpi.accountCount', { count: filteredNonPockets.length })}</CardTitle>
-                <SegmentedControl
-                  ariaLabel={t('accounts.groupBy.label')}
-                  value={groupBy}
-                  onChange={setGroupBy}
-                  options={[
-                    { value: 'class', label: t('accounts.groupBy.class') },
-                    { value: 'institution', label: t('accounts.groupBy.institution') },
-                  ]}
-                />
+                <div className="flex flex-wrap items-center gap-2">
+                  <SegmentedControl
+                    ariaLabel={t('accounts.groupBy.label')}
+                    value={groupBy}
+                    onChange={setGroupBy}
+                    options={[
+                      { value: 'class', label: t('accounts.groupBy.class') },
+                      { value: 'institution', label: t('accounts.groupBy.institution') },
+                    ]}
+                  />
+                  {filter === 'ALL' && (
+                    // Secondary when on: the add button stays the screen's only filled one.
+                    <Button
+                      size="xs"
+                      variant={reorderActive ? 'secondary' : 'outline'}
+                      className="h-8 px-3"
+                      aria-pressed={reorderActive}
+                      onClick={() => setReorderMode((on) => !on)}
+                    >
+                      <ArrowUpDown className="size-3.5" />
+                      {t(reorderActive ? 'accounts.doneReordering' : 'accounts.reorder')}
+                    </Button>
+                  )}
+                </div>
               </CardHeader>
               <CardContent className="divide-y divide-border px-2">
                 {groups.map((group) => (
@@ -558,16 +644,18 @@ export function AccountsPage() {
                         </span>
                         <CurrencyDisplay value={group.total} className="shrink-0 text-[13px] font-semibold tabular-nums" />
                       </div>
-                      {/* The rows' edit / delete column, so the total sits in line with the balances. */}
-                      <span className="hidden w-16 shrink-0 sm:block" aria-hidden />
+                      {/* The rows' action column, so the total sits in line with the balances. */}
+                      <span className={reorderActive ? 'w-24 shrink-0' : 'hidden w-16 shrink-0 sm:block'} aria-hidden />
                     </div>
                     <ul>
-                      {group.items.map(({ account, pockets }) => (
+                      {group.items.map(({ account, pockets }, index) => (
                         <Fragment key={account.id}>
                           <AccountRow
                             account={account}
                             now={now}
                             closed={closedPeerLoanIds.has(account.id)}
+                            collapsed={reorderActive && account.listCollapsed}
+                            controls={reorderActive ? arrangeControls(group.items, index) : undefined}
                             onOpen={() => setPanelId(account.id)}
                             onEdit={() => handleOpenEdit(account)}
                             onDelete={() => setDeleteId(account.id)}
@@ -579,6 +667,9 @@ export function AccountsPage() {
                               account={pocket}
                               now={now}
                               nested
+                              // A pocket moves and folds with its wallet.
+                              collapsed={reorderActive && account.listCollapsed}
+                              controls={reorderActive ? null : undefined}
                               onOpen={() => setPanelId(pocket.id)}
                               onEdit={() => handleOpenEdit(pocket)}
                             />
@@ -588,6 +679,30 @@ export function AccountsPage() {
                     </ul>
                   </section>
                 ))}
+                {collapsed.length > 0 && (
+                  <div className="flex items-center py-2">
+                    <div className="flex min-w-0 flex-1 items-center gap-3 px-3 py-2">
+                      <span className="grid size-9 shrink-0 place-items-center rounded-md bg-muted text-muted-foreground">
+                        <EyeOff className="size-4" aria-hidden />
+                      </span>
+                      <span className="flex min-w-0 flex-1 flex-col">
+                        <span className="truncate text-sm font-semibold">{t('accounts.collapsedRecap', { count: collapsed.length })}</span>
+                        <span className="text-xs font-medium text-muted-foreground">
+                          {t('accounts.collapsedHint')}{' '}
+                          <button
+                            type="button"
+                            className="font-medium text-primary underline-offset-4 hover:underline"
+                            onClick={() => setReorderMode(true)}
+                          >
+                            {t('accounts.manageCollapsed')}
+                          </button>
+                        </span>
+                      </span>
+                      <CurrencyDisplay value={collapsedTotal} className="shrink-0 text-right text-[15px] font-semibold tabular-nums" />
+                    </div>
+                    <span className="hidden w-16 shrink-0 sm:block" aria-hidden />
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}

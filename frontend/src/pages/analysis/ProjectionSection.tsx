@@ -1,9 +1,10 @@
 import { useMemo, useState, type ReactNode } from 'react'
-import { Pencil } from 'lucide-react'
+import { Pencil, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { CartesianGrid, Line, LineChart, XAxis, YAxis, usePlotArea, useXAxisScale, useYAxisScale } from 'recharts'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { CurrencyDisplay } from '@/components/shared/CurrencyDisplay'
+import { Delta } from '@/components/shared/Delta'
 import { SegmentedControl } from '@/components/shared/SegmentedControl'
 import { AllocationTrajectory } from './AllocationTrajectory'
 import { RiskOutlook } from './RiskOutlook'
@@ -21,6 +22,7 @@ import { cn, formatPercent } from '@/lib/utils'
 import type { ProjectionScenario } from '@/types/api'
 import { AXIS_PROPS, AXIS_PROPS_FLUSH } from '@/lib/chart-axis'
 import { labelGutter, spreadLabels } from './projection-labels'
+import { parseCustomRate, projectCustomRate } from './custom-projection'
 
 /** The backend clamps the horizon to this range; the field says so rather than being silently corrected. */
 const MIN_YEARS = 1
@@ -95,6 +97,41 @@ const CONTRIBUTED_COLOR = 'var(--chart-5)'
 /** The series the legend can toggle: contributions first, then the scenarios in payload order. */
 const CONTRIBUTED_KEY = 'contributed'
 
+/** The reader's own rate, drawn in ink so it never passes for a step of the scenario ramp. */
+const CUSTOM_KEY = 'CUSTOM'
+const CUSTOM_COLOR = 'var(--foreground)'
+
+/** A user-chosen annual rate, typed in place and drawn live next to the scenarios. */
+function CustomRateField({ value, onChange }: Readonly<{ value: string; onChange: (value: string) => void }>) {
+  const { t } = useTranslation()
+  return (
+    <div className="flex h-8 items-center gap-1.5 rounded-md bg-muted px-2.5 text-xs font-medium text-muted-foreground focus-within:ring-2 focus-within:ring-ring">
+      <label htmlFor="projection-custom-rate" className="cursor-text">
+        {t('analysis.projection.customRateLabel')}
+      </label>
+      <input
+        id="projection-custom-rate"
+        type="text"
+        inputMode="decimal"
+        value={value}
+        onChange={(e) => onChange(e.target.value.replace(/[^\d.,]/g, '').slice(0, 5))}
+        className="w-9 bg-transparent text-right font-semibold tabular-nums text-foreground outline-none focus-visible:outline-none focus-visible:ring-0"
+      />
+      <span aria-hidden="true">%</span>
+      {value !== '' && (
+        <button
+          type="button"
+          onClick={() => onChange('')}
+          aria-label={t('analysis.projection.customRateClear')}
+          className="-mr-1 rounded-sm p-0.5 transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <X className="size-3.5" aria-hidden="true" />
+        </button>
+      )}
+    </div>
+  )
+}
+
 /** Vertical room per end label: 11px text plus air. */
 const LABEL_GAP = 14
 
@@ -168,13 +205,31 @@ export function ProjectionSection({ className }: { className?: string }) {
   // Everything visible until the reader says otherwise. Hidden rather than shown, so a scenario
   // added later to the payload appears without anyone remembering to opt it in.
   const [hidden, setHidden] = useState<Set<string>>(() => new Set())
+  const [customRateRaw, setCustomRateRaw] = useState('')
   const money = useMoney()
   // A phone's chart has no room beside the lines; the legend and the tooltip still carry the values.
   const showEndLabels = !useIsMobile()
   const projection = useProjection(years)
 
+  const customRate = parseCustomRate(customRateRaw)
+  const customRateLabel =
+    customRate == null ? null : formatPercent(customRate, { fractionDigits: Number.isInteger(customRate) ? 0 : 1 })
+
+  // Compounded client-side on the backend's contribution schedule, so plan dates and joint-account
+  // shares carry over without a round trip per keystroke.
+  const customPoints = useMemo(() => {
+    const first = projection.data?.scenarios?.[0]
+    return first && customRate != null ? projectCustomRate(first.points, customRate) : null
+  }, [projection.data, customRate])
+
+  const customFinal = useMemo(() => {
+    const last = customPoints?.at(-1)
+    if (!last) return null
+    return { valueEur: last.valueEur, gainEur: Math.round((last.valueEur - last.contributedEur) * 100) / 100 }
+  }, [customPoints])
+
   const config = useMemo<ChartConfig>(() => {
-    const entries = (projection.data?.scenarios ?? []).map((s) => [
+    const entries: Array<[string, { label: string; color: string }]> = (projection.data?.scenarios ?? []).map((s) => [
       s.key,
       {
         // The rate comes from the payload, never restated here: a label that disagrees with the
@@ -185,8 +240,11 @@ export function ProjectionSection({ className }: { className?: string }) {
         color: SCENARIO_COLORS[s.key],
       },
     ])
+    if (customRateLabel != null) {
+      entries.push([CUSTOM_KEY, { label: t('analysis.projection.scenarios.CUSTOM', { value: customRateLabel }), color: CUSTOM_COLOR }])
+    }
     return Object.fromEntries(entries) as ChartConfig
-  }, [projection.data, t])
+  }, [projection.data, customRateLabel, t])
 
   // Recharts wants one row per x value with a column per series.
   const rows = useMemo(() => {
@@ -204,9 +262,10 @@ export function ProjectionSection({ className }: { className?: string }) {
       for (const scenario of scenarios) {
         row[scenario.key] = scenario.points[i]?.valueEur ?? 0
       }
+      if (customPoints) row[CUSTOM_KEY] = customPoints[i]?.valueEur ?? 0
       return row
     })
-  }, [projection.data])
+  }, [projection.data, customPoints])
 
   /**
    * Pinned to the full set of series, not to the visible ones.
@@ -235,8 +294,11 @@ export function ProjectionSection({ className }: { className?: string }) {
         }),
         color: SCENARIO_COLORS[scenario.key],
       })),
+      ...(CUSTOM_KEY in config
+        ? [{ key: CUSTOM_KEY, label: String(config[CUSTOM_KEY].label), color: CUSTOM_COLOR }]
+        : []),
     ],
-    [projection.data, t],
+    [projection.data, config, t],
   )
 
   const ends = useMemo<ScenarioEnd[]>(() => {
@@ -249,7 +311,7 @@ export function ProjectionSection({ className }: { className?: string }) {
         date: String(last.date),
         value: Number(last[key] ?? 0),
         text: money.compact(Number(last[key] ?? 0)),
-        color: SCENARIO_COLORS[key as ProjectionScenario['key']],
+        color: config[key]?.color ?? CUSTOM_COLOR,
       }))
   }, [rows, config, hidden, money])
 
@@ -310,6 +372,20 @@ export function ProjectionSection({ className }: { className?: string }) {
               risk={<RiskOutlook years={years} />}
               wealth={
               <>
+            <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-2">
+              <CustomRateField value={customRateRaw} onChange={setCustomRateRaw} />
+              {customFinal && customRateLabel != null ? (
+                <p className="flex flex-wrap items-baseline gap-x-2 text-xs text-muted-foreground">
+                  {t('analysis.projection.customRateResult', { count: years, value: customRateLabel })}
+                  <CurrencyDisplay value={customFinal.valueEur} className="text-sm font-semibold text-foreground" />
+                  {customFinal.gainEur > 0 && (
+                    <Delta amount={customFinal.gainEur}>{t('analysis.projection.customRateGains')}</Delta>
+                  )}
+                </p>
+              ) : (
+                <p className="text-xs text-muted-foreground">{t('analysis.projection.customRateHint')}</p>
+              )}
+            </div>
             <ChartContainer
               config={config}
               className="h-[300px] w-full"

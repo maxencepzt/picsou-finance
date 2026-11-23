@@ -7,6 +7,8 @@ import { formatCountryName } from '@/lib/utils'
 interface BankCountrySelectProps {
   value: string
   onChange: (country: string) => void
+  /** Suppress the load-error caption when the country picker is an optional enhancement (e.g. manual BankPicker). */
+  silentFallback?: boolean
 }
 
 /** Picsou's primary market — the initial/fallback selection everywhere a country picker appears. */
@@ -20,7 +22,7 @@ const FALLBACK_COUNTRIES = [DEFAULT_BANK_COUNTRY]
  * covers) rather than a hardcoded list, so coverage never drifts from reality. The backend
  * already returns codes sorted; this just pins the default market first for convenience.
  */
-export function BankCountrySelect({ value, onChange }: BankCountrySelectProps) {
+export function BankCountrySelect({ value, onChange, silentFallback = false }: BankCountrySelectProps) {
   const { t } = useTranslation()
   const { data: countries, isError, isSuccess } = useBankCountries()
   const hasCountries = !!countries && countries.length > 0
@@ -30,7 +32,7 @@ export function BankCountrySelect({ value, onChange }: BankCountrySelectProps) {
   // query is still loading, and NOT if we still have real (possibly stale) data from a prior
   // success, since the message would then be false ("showing France only" while the full
   // list is actually rendered).
-  const showLoadError = !hasCountries && (isError || isSuccess)
+  const showLoadError = !silentFallback && !hasCountries && (isError || isSuccess)
 
   const options = useMemo(() => {
     const codes = hasCountries ? countries : FALLBACK_COUNTRIES
@@ -52,19 +54,21 @@ export function BankCountrySelect({ value, onChange }: BankCountrySelectProps) {
   }, [options, value, onChange])
 
   return (
-    <div className="flex shrink-0 flex-col gap-1">
+    // A fixed width, so the error caption wraps under the select instead of widening it over
+    // the field beside it.
+    <div className="flex w-32 shrink-0 flex-col gap-1">
       <NativeSelect
         value={value}
         onChange={(e) => onChange(e.target.value)}
         aria-label={t('sync.banks.country')}
-        className="w-auto text-foreground [color-scheme:light] dark:[color-scheme:dark]"
+        className="text-foreground [color-scheme:light] dark:[color-scheme:dark]"
       >
         {options.map((o) => (
           <option key={o.code} value={o.code}>{o.label}</option>
         ))}
       </NativeSelect>
       {showLoadError && (
-        <span className="text-xs text-destructive">{t('sync.banks.countriesLoadError')}</span>
+        <span className="text-xs leading-snug text-destructive">{t('sync.banks.countriesLoadError')}</span>
       )}
     </div>
   )

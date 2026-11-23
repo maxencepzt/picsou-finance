@@ -38,7 +38,8 @@ descending, then the accounts that name no institution ("Manual") and the proper
 (`REAL_ESTATE`) in their own bucket. A manual account that names its bank — a loan typed in by
 hand — stays with that bank: the view answers "what do I have where". Institution headers carry
 no colour dot, since colour belongs to the asset class. Both groupings share `bucket()` (wallet
-counts once, largest row first).
+counts once, largest row first). On "Tout", a "Réorganiser" toggle beside the switch orders and folds
+the rows per viewer: see [account-list-display.md](./account-list-display.md).
 
 ### Breakdown by asset class
 
@@ -232,7 +233,7 @@ another type is one entry in `OPENING_DATE_TYPES`.
 
 `accountCeiling` (`lib/ceiling.ts`) says how far an account is into its ceiling, or null when it has
 none: a livret's balance against `savingsConfig.ceiling`, or a PEA's contributions against
-`account.deposit_ceiling` (V152, nullable; the form field "Contribution ceiling" is offered for a
+`account.deposit_ceiling` (V1000, nullable; the form field "Contribution ceiling" is offered for a
 `PEA` only, null keeps the stored value like `openedAt`) or, unset, `PEA_DEFAULT_DEPOSIT_CEILING`
 (150 000 €; a PEA jeune states 20 000 €). The PEA figure is the cost basis: the detail page's
 "Capital invested", else `AccountResponse.investedEur`, which the API fills for a `PEA` only

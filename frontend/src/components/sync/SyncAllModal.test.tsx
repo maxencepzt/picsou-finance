@@ -93,6 +93,8 @@ function mockStatusEndpoints() {
         return Promise.resolve({ data: lbpStatus })
       case '/sofidy/status':
         return Promise.resolve({ data: sofidyStatus })
+      case '/louve/status':
+        return Promise.resolve({ data: louveStatus })
       case '/accounts':
         return Promise.resolve({ data: accountsFixture })
       case '/revolut/status':
@@ -128,6 +130,8 @@ const REVOLUT_DONE = {
   discovered: [discoveredAccount('acc-1'), discoveredAccount('acc-2')],
 }
 
+const LOUVE_DISCONNECTED = { connected: false, status: null, lastSyncedAt: null }
+
 const SIMPLEFIN_DISCONNECTED = {
   connected: false, connectionId: null, status: null, lastSyncedAt: null, maskedToken: null,
 }
@@ -136,6 +140,7 @@ let caisseEpargneStatus: Record<string, unknown>
 let banquePopulaireStatus: Record<string, unknown>
 let corumStatus: Record<string, unknown>
 let sofidyStatus: Record<string, unknown>
+let louveStatus: Record<string, unknown>
 let cmesStatus: Record<string, unknown>
 let natixisStatus: Record<string, unknown>
 let cicStatus: Record<string, unknown>
@@ -217,7 +222,7 @@ const SCPI_ACCOUNT = {
   name: 'Corum Origin',
   type: 'SCPI',
   provider: null as string | null,
-  scpi: { corumFundCode: null, sofidyFundCode: null },
+  scpi: { corumFundCode: null, sofidyFundCode: null, louveFundCode: null },
 }
 
 /** Resets the per-test fixtures to "only Trade Republic exists". */
@@ -230,6 +235,7 @@ function resetFixtures() {
   banquePopulaireStatus = { ...AMUNDI_INACTIVE, unsupported: [], unsupportedCount: 0 }
   corumStatus = AMUNDI_INACTIVE
   sofidyStatus = AMUNDI_INACTIVE
+  louveStatus = LOUVE_DISCONNECTED
   cmesStatus = AMUNDI_INACTIVE
   natixisStatus = AMUNDI_INACTIVE
   cicStatus = AMUNDI_INACTIVE
@@ -952,13 +958,34 @@ describe('SyncAllModal session providers', () => {
     await waitFor(() => expect(apiPost).toHaveBeenCalledWith('/sofidy/sync'))
   })
 
-  it('hides CORUM and Sofidy when their sessions are inactive and no SCPI account is theirs', async () => {
+  it('hides CORUM, Sofidy and Louve Invest when their sessions are inactive and no SCPI account is theirs', async () => {
     accountsFixture = [TR_ACCOUNT, { ...SCPI_ACCOUNT, provider: null }]
     renderModal()
 
     expect(await screen.findByText('Trade Republic')).toBeInTheDocument()
     expect(screen.queryByText('CORUM')).not.toBeInTheDocument()
     expect(screen.queryByText('Sofidy')).not.toBeInTheDocument()
+    expect(screen.queryByText('Louve Invest')).not.toBeInTheDocument()
+  })
+
+  it('lists a connected Louve Invest and syncs through its endpoint', async () => {
+    louveStatus = { connected: true, status: 'CONNECTED', lastSyncedAt: '2026-11-17T08:00:00Z' }
+    apiPost.mockResolvedValue({ data: louveStatus })
+    renderModal()
+
+    const row = (await screen.findByText('Louve Invest')).closest('li') as HTMLElement
+    fireEvent.click(within(row).getByRole('button'))
+    await waitFor(() => expect(apiPost).toHaveBeenCalledWith('/louve/sync'))
+  })
+
+  it('sends a Louve Invest row whose grant Louve refused to its tab instead of retrying it', async () => {
+    louveStatus = { connected: true, status: 'REAUTH_REQUIRED', lastSyncedAt: '2026-11-17T08:00:00Z' }
+    renderModal()
+
+    const row = (await screen.findByText('Louve Invest')).closest('li') as HTMLElement
+    fireEvent.click(within(row).getByRole('button'))
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith('/sync?tab=louve'))
+    expect(apiPost).not.toHaveBeenCalledWith('/louve/sync')
   })
 
   it('lists CORUM when its session is live', async () => {
@@ -975,6 +1002,7 @@ describe('SyncAllModal session providers', () => {
   it.each([
     ['CORUM', 'corum'],
     ['Sofidy', 'sofidy'],
+    ['Louve Invest', 'louve'],
   ])('keeps an expired %s row with a reconnect action when it created an account', async (provider, tab) => {
     accountsFixture = [TR_ACCOUNT, { ...SCPI_ACCOUNT, provider }]
     renderModal()
@@ -990,6 +1018,7 @@ describe('SyncAllModal session providers', () => {
   it.each([
     ['CORUM', 'corumFundCode'],
     ['Sofidy', 'sofidyFundCode'],
+    ['Louve Invest', 'louveFundCode'],
   ])('keeps an expired %s row for an adopted SCPI account', async (provider, fundCodeKey) => {
     accountsFixture = [TR_ACCOUNT, {
       ...SCPI_ACCOUNT, provider: 'Mon conseiller',

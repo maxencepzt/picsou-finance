@@ -30,9 +30,10 @@ type WealthMode = 'net' | 'gross' | 'financial'
 // Financial wealth = liquid and investable assets only. Checking is the day-to-day
 // cash excluded by design; real estate is tangible property; physical precious
 // metals are tangible movables; OTHER has an unknown nature and must not inflate
-// the figure by default. SCPI stays in: a share of a real-estate fund is an
-// intangible, exchangeable security.
-const EXCLUDED_FINANCIAL = new Set(['CHECKING', 'LOAN', 'REAL_ESTATE', 'PRECIOUS_METALS', 'OTHER'])
+// the figure by default. A peer loan is a real asset but neither liquid nor
+// invested, so it counts in net and gross wealth only. SCPI stays in: a share
+// of a real-estate fund is an intangible, exchangeable security.
+const EXCLUDED_FINANCIAL = new Set(['CHECKING', 'LOAN', 'REAL_ESTATE', 'PRECIOUS_METALS', 'PEER_LOAN', 'OTHER'])
 
 const RANGE_MONTHS: Record<TimeRange, number> = { '24H': 1, '7D': 1, '1M': 1, '3M': 3, YTD: 12, '1Y': 12, ALL: 1200 }
 

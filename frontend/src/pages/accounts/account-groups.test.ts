@@ -8,7 +8,7 @@ function account(id: number, type: AccountType, balance: number, extra: Partial<
   return {
     id, name: `A${id}`, type, provider: null, currency: 'EUR', currentBalance: balance, currentBalanceEur: balance,
     lastSyncedAt: null, isManual: true, color: '#000', ticker: null, logoUrl: null, logoKey: null,
-    createdAt: '2026-01-01T00:00:00Z', hidden: false, ...extra,
+    createdAt: '2026-01-01T00:00:00Z', hidden: false, listPosition: null, listCollapsed: false, ...extra,
   }
 }
 

@@ -90,6 +90,15 @@ export function CryptoExchangeTab() {
                   <ConnectionState tone={connectionTone(exchange.status)}>
                     {t(`sync.connectionStatus.${exchange.status}`, { defaultValue: exchange.status })}
                   </ConnectionState>
+                  {exchange.region && (
+                    <>
+                      <span aria-hidden>·</span>
+                      <span>
+                        {t('common.labelColon', { label: t('sync.exchanges.region') })}{' '}
+                        {t(`sync.exchanges.regions.${exchange.region}`, { defaultValue: exchange.region })}
+                      </span>
+                    </>
+                  )}
                   {exchange.lastSyncedAt && (
                     <>
                       <span aria-hidden>·</span>

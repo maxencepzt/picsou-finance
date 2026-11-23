@@ -24,6 +24,7 @@ import { NatixisTab } from './NatixisTab'
 import { AmexTab } from './AmexTab'
 import { CorumTab } from './CorumTab'
 import { SofidyTab } from './SofidyTab'
+import { LouveTab } from './LouveTab'
 import { BoursoTab } from './BoursoTab'
 import { CaisseEpargneTab } from './CaisseEpargneTab'
 import { BanquePopulaireTab } from './BanquePopulaireTab'
@@ -60,6 +61,7 @@ const VIEW_PANELS: Record<ViewKey, ComponentType> = {
   amex: AmexTab,
   corum: CorumTab,
   sofidy: SofidyTab,
+  louve: LouveTab,
   actual: ActualBudgetTab,
   finary: FinaryTab,
   homebank: HomeBankTab,

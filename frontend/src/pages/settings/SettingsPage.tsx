@@ -24,12 +24,12 @@ function AboutSection() {
       </SettingRow>
       <SettingRow label="GitHub" className="flex-row items-center justify-between">
         <a
-          href="https://github.com/cloeille/picsou-finance"
+          href="https://github.com/Cloeille/picsou-finance"
           target="_blank"
           rel="noreferrer"
           className="inline-flex min-h-8 min-w-0 items-center gap-1.5 rounded-md text-sm font-medium text-primary underline-offset-4 hover:underline"
         >
-          <span className="truncate">cloeille/picsou-finance</span>
+          <span className="truncate">Cloeille/picsou-finance</span>
           <ExternalLink className="size-3.5 shrink-0" aria-hidden="true" />
         </a>
       </SettingRow>

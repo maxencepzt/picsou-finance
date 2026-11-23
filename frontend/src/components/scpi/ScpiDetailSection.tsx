@@ -59,6 +59,7 @@ export function ScpiDetailSection({ account }: { account: Account }) {
   const [managementCompany, setManagementCompany] = useState(position?.managementCompany ?? '')
   const [corumFundCode, setCorumFundCode] = useState(position?.corumFundCode ?? '')
   const [sofidyFundCode, setSofidyFundCode] = useState(position?.sofidyFundCode ?? '')
+  const [louveFundCode, setLouveFundCode] = useState(position?.louveFundCode ?? '')
 
   function startEditing() {
     setShareCount(position?.shareCount?.toString() ?? '')
@@ -72,6 +73,7 @@ export function ScpiDetailSection({ account }: { account: Account }) {
     setManagementCompany(position?.managementCompany ?? '')
     setCorumFundCode(position?.corumFundCode ?? '')
     setSofidyFundCode(position?.sofidyFundCode ?? '')
+    setLouveFundCode(position?.louveFundCode ?? '')
     setEditing(true)
   }
 
@@ -90,6 +92,7 @@ export function ScpiDetailSection({ account }: { account: Account }) {
       managementCompany: managementCompany.trim() || null,
       corumFundCode: corumFundCode.trim(),
       sofidyFundCode: sofidyFundCode.trim(),
+      louveFundCode: louveFundCode.trim(),
       shareCount: shares,
       subscriptionPriceEur: num(subscriptionPrice) ?? null,
       withdrawalPriceEur: num(withdrawalPrice) ?? null,
@@ -141,6 +144,7 @@ export function ScpiDetailSection({ account }: { account: Account }) {
             {([
               ['CORUM', 'scpi.corumFundCode', position.corumFundCode],
               ['SOFIDY', 'scpi.sofidyFundCode', position.sofidyFundCode],
+              ['LOUVE', 'scpi.louveFundCode', position.louveFundCode],
             ] as const).map(([provider, label, code]) => (
               <Fact key={provider} label={t(label)}>
                 <span className="flex min-w-0 items-center gap-2">
@@ -196,6 +200,11 @@ export function ScpiDetailSection({ account }: { account: Account }) {
               <Label htmlFor="scpi-edit-sofidy-fund">{t('scpi.sofidyFundCode')}</Label>
               <Input id="scpi-edit-sofidy-fund" value={sofidyFundCode} maxLength={40} onChange={(e) => setSofidyFundCode(e.target.value)} />
               <p className="text-xs text-muted-foreground">{t('scpi.sofidyFundHint')}</p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="scpi-edit-louve-fund">{t('scpi.louveFundCode')}</Label>
+              <Input id="scpi-edit-louve-fund" value={louveFundCode} maxLength={40} onChange={(e) => setLouveFundCode(e.target.value)} />
+              <p className="text-xs text-muted-foreground">{t('scpi.louveFundHint')}</p>
             </div>
             </details>
             <div className="space-y-2">

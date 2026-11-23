@@ -26,6 +26,7 @@ import { FortuneoPanel } from '@/components/sync/FortuneoPanel'
 import { AmexPanel } from '@/components/sync/AmexPanel'
 import { CorumPanel } from '@/components/sync/CorumPanel'
 import { SofidyPanel } from '@/components/sync/SofidyPanel'
+import { LouvePanel } from '@/components/sync/LouvePanel'
 import { IbkrPanel } from '@/components/sync/IbkrPanel'
 import { SimplefinPanel } from '@/components/sync/SimplefinPanel'
 import { WisePanel } from '@/components/sync/WisePanel'
@@ -87,6 +88,7 @@ const PANEL_STEPS: Record<string, ComponentType<{ onConnected?: () => void }>> =
   amex: AmexPanel,
   corum: CorumPanel,
   sofidy: SofidyPanel,
+  louve: LouvePanel,
 }
 
 /** One of the two hand-entered choices that open the dialog, ahead of the catalog. */

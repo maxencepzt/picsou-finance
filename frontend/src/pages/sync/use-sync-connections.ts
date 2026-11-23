@@ -26,6 +26,8 @@ import {
   useSyncSimplefin,
   useWiseStatus,
   useSyncWise,
+  useLouveStatus,
+  useSyncLouve,
 } from '@/features/sync/hooks'
 import { useAccounts } from '@/features/accounts/hooks'
 import { syncKeys } from '@/features/sync/keys'
@@ -66,7 +68,7 @@ function isJobRunning(syncStatus: string | undefined): boolean {
 
 export type ProviderType = 'bank' | 'exchange' | 'wallet' | 'tr' | 'finary' | 'bourso' | 'revolut'
   | 'amundi' | 'fortuneo' | 'bourse-direct' | 'degiro' | 'ibkr' | 'simplefin' | 'wise'
-  | 'amex' | 'corum' | 'sofidy' | 'caisse-epargne' | 'banque-populaire' | 'lbp' | 'bnp' | 'cmes' | 'natixis' | 'cic'
+  | 'amex' | 'corum' | 'sofidy' | 'louve' | 'caisse-epargne' | 'banque-populaire' | 'lbp' | 'bnp' | 'cmes' | 'natixis' | 'cic'
 
 export interface SyncConnection {
   /** The connector's server-side job is queued or running. */
@@ -168,6 +170,7 @@ export function useSyncConnections() {
   const { data: amexStatus } = useProviderStatus('amex')
   const { data: corumStatus } = useProviderStatus('corum')
   const { data: sofidyStatus } = useProviderStatus('sofidy')
+  const { data: louveStatus } = useLouveStatus()
   const { data: cmesStatus } = useProviderStatus('cmes')
   const { data: natixisStatus } = useProviderStatus('natixis')
   const { data: cicStatus } = useProviderStatus('cic')
@@ -195,8 +198,8 @@ export function useSyncConnections() {
    * *or* the user still has accounts from it — a dead session must stay visible and
    * re-authenticatable rather than disappear from the list, the same rule Trade Republic
    * already followed. `provider` is the exact string the connector stamps on the accounts it
-   * creates (see each service's PROVIDER constant). CORUM and Sofidy also match an account
-   * through its SCPI fund code: a manual SCPI they adopted keeps the provider the user typed.
+   * creates (see each service's PROVIDER constant). CORUM, Sofidy and Louve Invest also match an
+   * account through its SCPI fund code: a manual SCPI they adopted keeps the provider the user typed.
    * Banque Populaire stamps its regional bank's name, so it matches any of those labels.
    */
   const sessionProviders = useMemo(() => [
@@ -303,6 +306,14 @@ export function useSyncConnections() {
       running: isJobRunning(sofidyStatus?.syncStatus),
     },
     {
+      type: 'louve' as const, name: 'Louve Invest', provider: 'Louve Invest',
+      ownsAccount: (a: Account) => a.scpi?.louveFundCode != null,
+      active: louveStatus?.connected ?? false, lastSyncedAt: louveStatus?.lastSyncedAt ?? null,
+      failed: louveStatus?.status === 'ERROR' || louveStatus?.status === 'REAUTH_REQUIRED',
+      // A refused grant only clears with a new consent, given from the Louve Invest view.
+      reauth: louveStatus?.status === 'REAUTH_REQUIRED',
+    },
+    {
       type: 'cmes' as const, name: 'Crédit Mutuel / CIC Épargne Salariale', provider: 'Crédit Mutuel Épargne Salariale',
       active: cmesStatus?.isActive ?? false, lastSyncedAt: cmesStatus?.lastSyncCompletedAt ?? null,
       // A stored session is never IDLE (it is queued as it is created): an expired one is kept
@@ -326,7 +337,7 @@ export function useSyncConnections() {
       running: isJobRunning(cicStatus?.syncStatus),
       canReconnect: cicStatus?.canReconnect === true,
     },
-  ], [cicStatus, cmesStatus, natixisStatus, amexStatus, corumStatus, sofidyStatus, amundiStatus, fortuneoStatus, boursoStatus, caisseEpargneStatus, banquePopulaireStatus, lbpStatus, bnpStatus, bourseDirectStatus, degiroStatus, ibkrStatus, simplefinStatus, wiseStatus])
+  ], [cicStatus, cmesStatus, natixisStatus, amexStatus, corumStatus, sofidyStatus, louveStatus, amundiStatus, fortuneoStatus, boursoStatus, caisseEpargneStatus, banquePopulaireStatus, lbpStatus, bnpStatus, bourseDirectStatus, degiroStatus, ibkrStatus, simplefinStatus, wiseStatus])
 
   // Memoized so its identity is stable across renders — the sync callbacks depend on it.
   const connections = useMemo<SyncConnection[]>(() => {
@@ -449,6 +460,7 @@ export function useConnectionSync({ connections, trActive, revolutRemembered, on
   const syncAmexMutation = useProviderSync('amex')
   const syncCorumMutation = useProviderSync('corum')
   const syncSofidyMutation = useProviderSync('sofidy')
+  const syncLouveMutation = useSyncLouve()
   const syncCmesMutation = useProviderSync('cmes')
   const syncNatixisMutation = useProviderSync('natixis')
   const syncCicMutation = useProviderSync('cic')
@@ -548,6 +560,7 @@ export function useConnectionSync({ connections, trActive, revolutRemembered, on
       case 'amex': syncAmexMutation.mutate(undefined, generic); break
       case 'corum': syncCorumMutation.mutate(undefined, generic); break
       case 'sofidy': syncSofidyMutation.mutate(undefined, generic); break
+      case 'louve': syncLouveMutation.mutate(undefined, generic); break
       case 'cmes': syncCmesMutation.mutate(undefined, generic); break
       case 'natixis': syncNatixisMutation.mutate(undefined, generic); break
       case 'cic': syncCicMutation.mutate(undefined, generic); break
@@ -581,7 +594,7 @@ export function useConnectionSync({ connections, trActive, revolutRemembered, on
     retryBankMutation, syncExchangeMutation, syncWalletMutation, syncTrMutation, syncBoursoMutation,
     syncCaisseEpargneMutation, syncBanquePopulaireMutation, syncLbpMutation, syncBnpMutation, syncAmundiMutation, syncFortuneoMutation, syncBourseDirectMutation,
     syncDegiroMutation, syncIbkrMutation, syncSimplefinMutation, syncWiseMutation, startRevolutMutation, syncAmexMutation,
-    syncCorumMutation, syncSofidyMutation, syncCmesMutation, syncNatixisMutation, syncCicMutation, queryClient, t,
+    syncCorumMutation, syncSofidyMutation, syncLouveMutation, syncCmesMutation, syncNatixisMutation, syncCicMutation, queryClient, t,
     clearSyncing, markSynced, setRowError, clearRowError, onTrSessionDead,
   ])
 
