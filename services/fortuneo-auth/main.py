@@ -672,6 +672,12 @@ DEBUG_ARTIFACT_DIR = os.path.join(tempfile.gettempdir(), "fortuneo-debug")
 DEBUG_ARTIFACTS_ENABLED = os.getenv("FORTUNEO_DEBUG_ARTIFACTS", "false").lower() == "true"
 
 
+
+def _write_text(path: str, content: str) -> None:
+    """Blocking write, run off the event loop."""
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(content)
+
 async def _capture_failure_diagnostics(page: Page, label: str) -> None:
     """Best-effort diagnostic capture on an unexpected outcome -- a
     screenshot and the page's visible text (UI copy only, never the code or
@@ -686,8 +692,7 @@ async def _capture_failure_diagnostics(page: Page, label: str) -> None:
         stamp = int(time.time())
         await page.screenshot(path=f"{DEBUG_ARTIFACT_DIR}/{label}_{stamp}.png", full_page=True)
         text = await page.locator("body").inner_text()
-        with open(f"{DEBUG_ARTIFACT_DIR}/{label}_{stamp}.txt", "w", encoding="utf-8") as f:
-            f.write(f"url: {page.url}\n\n{text}")
+        await asyncio.to_thread(_write_text, f"{DEBUG_ARTIFACT_DIR}/{label}_{stamp}.txt", f"url: {page.url}\n\n{text}")
         log.info("Fortuneo diagnostic capture saved: %s_%s.{png,txt}", label, stamp)
     except Exception:
         log.warning("Fortuneo diagnostic capture failed", exc_info=True)
