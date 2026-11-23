@@ -844,6 +844,8 @@ class CiJobSelectionTest(unittest.TestCase):
         # The image's minor on uv's managed builds: the runners' toolcache lags its patch release.
         self.assertIn(f"--managed-python --python {base.group(1)} ", run)
         self.assertIn("--with-requirements services/base/requirements.txt", run)
+        # Wheels only: no package's setup script runs on the runner.
+        self.assertIn("--no-build", run)
         self.assertTrue(run.endswith("python .github/scripts/native_sidecars.py"))
 
     def test_native_script_rejects_a_sidecar_that_needs_a_browser(self):
