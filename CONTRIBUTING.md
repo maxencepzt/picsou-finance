@@ -188,18 +188,9 @@ is rejected with the matching rule and expected pattern.
 - **No useless clutter text**: do not add obvious subtitles that repeat the card/dialog title,
   permanent validation reminders when the form is already valid (show validation errors only when
   invalid, e.g. allocation sum != 100%), or filler disclaimers at the bottom of cards.
-- **French copy standards (`fr.json`, enforced in CI)**:
-  - **No em dashes (`—`)**: use a colon (`:`), comma, or natural phrasing.
-  - **No navigation arrows (`→`)** in prose.
-  - **Never abbreviate to "IA"**: always write **intelligence artificielle** in full across every
-    French surface (Budget, Admin, Settings, onboarding, What's new).
-  - **Proper French sentence case**: capitalize only sentence/label starts and proper nouns; write
-    `et` instead of `&`; keep labels natural and complete (no telegraphic keyword chains).
-  - **GitHub stars**: keep the word **star** across all locales (`Laisser une star sur GitHub`,
-    `Star on GitHub`, `Star auf GitHub geben`, `Dar una star en GitHub`).
-- **Release highlights (`frontend/src/lib/whats-new.ts`)**: when cutting a new release, add the
-  version summary and highlights at the top of `WHATS_NEW_RELEASES` in all 4 locales (`fr`, `en`,
-  `de`, `es`) alongside `CHANGELOG.md` so the sidebar "Nouveautés" card updates automatically.
+- **French copy in the maxencepzt fork**: the fork keeps its own wording and design (see `DESIGN.md`
+  and `docs/decisions/2026-11-23-fork-merges-upstream-function-keeps-its-design.md`): short labels
+  are allowed (`&`, `±`), and upstream's 1.2.1 copy rules and "What's new" card are not used.
 
 ## Documentation
 
