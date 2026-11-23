@@ -60,6 +60,10 @@ Register handlers only for supported backend routes, using their response shapes
 
 ## Gotchas / Pitfalls
 
+- **Louve Invest connects without leaving the demo.** `POST /louve/auth/start` answers the app's own
+  callback (`/sync/louve/callback?code=demo&state=demo&iss=demo`), so the panel completes the OAuth
+  round trip against the demo handlers; disconnecting resets it.
+
 - **`/login` redirects to `/` in demo mode** — `PublicOnly` redirects immediately. To see the login page, disable `VITE_DEMO_MODE`.
 - **Mock handlers are keyed by route** — the key is `METHOD /path` with no query string or trailing slash. A `:name` segment (`GET /accounts/:id/holdings`) matches any value and reaches the handler as `params.name`; an exact key wins over a pattern, so one id can override the default. Any new API route needs a handler added in `frontend/src/demo/index.ts`, otherwise the call returns `{}` silently — and components that `.map()`/`.filter()` the payload crash the page, or a widget waits on it forever. Per-id registration loops are what left `/accounts/{id}/holdings`, `/goals/4` and the provider `/status` routes unanswered (#277); register a pattern instead. Query params (e.g. `?split=true` on `/history`) are read from `config.params` inside the handler.
 - **CIC session routes return their production shapes.** Status, completion, and sync return an inactive `IDLE` session with `canReconnect: false`. Initiation and reconnect return no pending process or second factor. Session deletion returns `null`. The demo bypasses bank confirmation and keeps the existing shared financial fixtures.

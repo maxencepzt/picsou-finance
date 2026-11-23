@@ -12,7 +12,10 @@ describe('Louve Invest demo', () => {
     const adapter = createDemoAdapter()
 
     const start = (await call(adapter, 'POST', '/louve/auth/start')).data as LouveStartResponse
-    expect(start.authorizeUrl).toMatch(/^\/sync\/louve\/callback\?code=/)
+    // LouvePanel leaves the callback without posting it unless all three are there.
+    const callback = new URL(start.authorizeUrl, 'http://demo.local')
+    expect(callback.pathname).toBe('/sync/louve/callback')
+    expect(['code', 'state', 'iss'].map((name) => callback.searchParams.get(name))).not.toContain(null)
 
     await call(adapter, 'POST', '/louve/auth/complete')
     const status = (await call(adapter, 'GET', '/louve/status')).data as LouveConnectionStatus

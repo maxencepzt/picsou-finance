@@ -280,7 +280,7 @@ handlers.set(key('PUT', '/accounts/display-order'), (config) => {
   return _demoAccounts
 })
 
-// SCPI funds seen by a sync: the demo has no CORUM/Sofidy/Louve Invest connection.
+// SCPI funds seen by a sync: no demo connection syncs any fund.
 handlers.set(key('GET', '/scpi/funds'), () => [])
 
 // Account CRUD
@@ -1658,7 +1658,7 @@ const demoLouveStatus = () => demoLouveSyncedAt
   ? { connected: true, status: 'CONNECTED' as const, lastSyncedAt: demoLouveSyncedAt }
   : { connected: false, status: null, lastSyncedAt: null }
 handlers.set(key('GET', '/louve/status'), demoLouveStatus)
-handlers.set(key('POST', '/louve/auth/start'), () => ({ authorizeUrl: '/sync/louve/callback?code=demo&state=demo' }))
+handlers.set(key('POST', '/louve/auth/start'), () => ({ authorizeUrl: '/sync/louve/callback?code=demo&state=demo&iss=demo' }))
 handlers.set(key('POST', '/louve/auth/complete'), () => {
   demoLouveSyncedAt = new Date().toISOString()
   return demoLouveStatus()
