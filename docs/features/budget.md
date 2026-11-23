@@ -51,7 +51,7 @@ the current section into view on a phone:
 | `/budget` (index) | `BudgetOverviewPage` → `OverviewTab` | KPI row, Review banner (only if items), flow Sankey, top envelopes, cash flow and savings rate by cycle, top merchants, subscriptions summary, capital income ahead — see [Overview](#overview-coffre-nocturne-redesign) |
 | `/budget/spending` | `SpendingPage` | Cashflow **flow diagram**: Sankey in a card ≥ 640px, Flow Bars below |
 | `/budget/spending/:categoryId` | `CategoryDetailPage` | Per-category drill: transactions with `MerchantAvatar` |
-| `/budget/subscriptions` | `SubscriptionsPage` | Recurring series **v2**: auto-confirm + runtime/price badges (`SubscriptionCard`), "what changed" feed + undo (`ActivityFeed`), upcoming agenda |
+| `/budget/subscriptions` | `SubscriptionsPage` | KPI strip (monthly recurring expenses / income, net of the next 30 days), recurring series **v2** with Detect / Add in the list header: auto-confirm note + runtime/price badges (`SubscriptionCard`), upcoming agenda, then the "recent changes" feed + undo (`ActivityFeed`) |
 | `/budget/envelopes` | `EnvelopesPage` | Envelopes + allocation; a parent envelope rolls up its whole subtree (M4) |
 | `/budget/review` | `ReviewPage` | Uncategorized inbox — **contextual, not a permanent destination** |
 | `/budget/settings` | `BudgetSettingsPage` | Category management, pay cycle, logo opt-in |
@@ -169,8 +169,9 @@ It deliberately has no empty-rules early-out: the brand KB alone categorizes a r
   - Conservation invariant (test-locked): `intoHub == outOfHub == max(in, out)`.
   - **Known limits**: the two legs of one transfer booked on either side of a cycle boundary show up as a
     small transfer in/out in each cycle. Both legs of an internal transfer must be categorised
-    `TRANSFER`: for example, a checking debit categorised as a transfer and an uncategorised
-    Livret credit show an external transfer out rather than savings. The allocation view
+    `TRANSFER`. After each sync, `InternalTransferPairingService` pairs the legs it can prove
+    (see *Internal transfer pairing* below); a leg it leaves alone (ambiguous, manual, more than
+    three days apart) still shows as an external transfer or as spending. The allocation view
     (`AllocationService`) keeps its own gross
     rule (incoming legs only) and is not changed here, so its contributions can differ from the Sankey's
     net per-account figures.
@@ -392,6 +393,15 @@ silently**, with a safety net so silent ≠ unexplained.
   (Apple principle — no permanent review chore). Both are mobile-responsive via `flex-wrap`. New
   TanStack hooks `useRecurringActivity` / `useUndoRecurring` invalidate `['budget','activity']`
   (also swept by `useDetectRecurring`).
+- **Recurring page layout (1.2.2 redesign)**: a three-card KPI strip on top, computed client-side
+  by `pages/budget/recurring-summary.ts` — monthly totals normalise each cadence to a month and
+  count only `CONFIRMED` series that are not `STALE` (the same set the upcoming calendar projects);
+  the third card nets the calendar occurrences up to the 30th local day. Rows show a neutral
+  directional tile instead of the category-coloured `MerchantAvatar`, and a status badge only when it
+  is not `CONFIRMED`. Labels go through `lib/bank-label.ts` (`formatBankLabel`), which hides SEPA
+  creditor / mandate / reference noise and rewords French transfer labels for display only; the raw
+  label stays in the `title` attribute, and any synthesized wording comes from
+  `budget.recurring.labels.*`, so it follows the interface language.
 
 ### Opt-in brand logos (M5)
 

@@ -288,8 +288,8 @@ export function AccountForm({ open, onOpenChange, onSubmit, defaultValues, title
 
           {selectedType !== 'REAL_ESTATE' && selectedType !== 'LOAN' && selectedType !== 'SCPI'
             && selectedType !== 'PEER_LOAN' && (
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="min-w-0 space-y-2">
                 <Label htmlFor="provider">{t('accounts.provider')}</Label>
                 <BankPicker
                   id="provider"
@@ -298,7 +298,7 @@ export function AccountForm({ open, onOpenChange, onSubmit, defaultValues, title
                   onChange={handleBankChange}
                 />
               </div>
-              <div className="space-y-2">
+              <div className="min-w-0 space-y-2">
                 <Label htmlFor="ticker">{t('accounts.ticker')}</Label>
                 <Input id="ticker" {...register('ticker')} placeholder="BTC" />
               </div>

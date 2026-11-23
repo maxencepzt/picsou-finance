@@ -405,16 +405,43 @@ class LegacyMigrationRenumberingTest {
     }
 
     @Test
-    void aDatabaseWithTheDepositCeilingAtV142MovesItToV152AndMigratesToHead() throws Exception {
+    void aDatabaseWithTheDepositCeilingAtV142MovesItToV1000AndMigratesToHead() throws Exception {
         String url = createDatabase("deposit_ceiling_at_142");
-        Path before = Files.createTempDirectory("ceiling-at-142");
+        migrateWithTheCeilingAt(url, 141, "V142__account_deposit_ceiling.sql");
+
+        upgrade(url).migrate();
+
+        assertThat(upgrade(url).info().pending()).isEmpty();
+        assertThat(query(url, "SELECT version || ' ' || description FROM flyway_schema_history "
+            + "WHERE version IN ('142', '152', '1000') ORDER BY version::int")).containsExactly(
+            "142 sidecar session", "152 account list display", "1000 account deposit ceiling");
+        assertThat(schema(url)).isEqualTo(schema(freshDatabase("deposit_ceiling_fresh_142")));
+    }
+
+    @Test
+    void aDatabaseWithTheDepositCeilingAtV152MovesItToV1000AndMigratesToHead() throws Exception {
+        String url = createDatabase("deposit_ceiling_at_152");
+        migrateWithTheCeilingAt(url, 151, "V152__account_deposit_ceiling.sql");
+
+        upgrade(url).migrate();
+
+        assertThat(upgrade(url).info().pending()).isEmpty();
+        assertThat(query(url, "SELECT version || ' ' || description FROM flyway_schema_history "
+            + "WHERE version IN ('152', '1000') ORDER BY version::int")).containsExactly(
+            "152 account list display", "1000 account deposit ceiling");
+        assertThat(schema(url)).isEqualTo(schema(freshDatabase("deposit_ceiling_fresh_152")));
+    }
+
+    /** Applies V1 up to {@code upTo}, then the fork's deposit ceiling under the name it once had. */
+    private static void migrateWithTheCeilingAt(String url, int upTo, String oldName) throws Exception {
+        Path before = Files.createTempDirectory("ceiling-before");
         try (Stream<Path> files = Files.list(Path.of(migrationDirectory()))) {
             for (Path file : files.toList()) {
                 String name = file.getFileName().toString();
-                if (version(name) <= 141) {
+                if (version(name) <= upTo) {
                     Files.copy(file, before.resolve(name));
-                } else if (version(name) == 152) {
-                    Files.copy(file, before.resolve("V142__account_deposit_ceiling.sql"));
+                } else if (version(name) == 1000) {
+                    Files.copy(file, before.resolve(oldName));
                 }
             }
         }
@@ -423,14 +450,6 @@ class LegacyMigrationRenumberingTest {
             .locations("filesystem:" + before)
             .load()
             .migrate();
-
-        upgrade(url).migrate();
-
-        assertThat(upgrade(url).info().pending()).isEmpty();
-        assertThat(query(url, "SELECT version || ' ' || description FROM flyway_schema_history "
-            + "WHERE version IN ('142', '152') ORDER BY version::int")).containsExactly(
-            "142 sidecar session", "152 account deposit ceiling");
-        assertThat(schema(url)).isEqualTo(schema(freshDatabase("deposit_ceiling_fresh")));
     }
 
     @Test

@@ -652,7 +652,6 @@ export function BnpPanel({ onConnected }: BnpPanelProps = {}) {
                 <li>{t("sync.bnp.notice.neverStored")}</li>
                 <li>{t("sync.bnp.notice.noRetry")}</li>
                 <li>{t("sync.bnp.notice.lockRisk")}</li>
-                <li>{t("sync.bnp.notice.unverified")}</li>
               </ul>
             </CardContent>
           </Card>

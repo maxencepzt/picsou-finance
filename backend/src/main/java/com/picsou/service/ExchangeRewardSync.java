@@ -6,6 +6,7 @@ import com.picsou.model.PriceSnapshot;
 import com.picsou.model.Transaction;
 import com.picsou.model.TransactionType;
 import com.picsou.port.CryptoExchangePort;
+import com.picsou.port.CryptoExchangePort.ExchangeCredentials;
 import com.picsou.port.CryptoExchangePort.ExchangeReward;
 import com.picsou.repository.AccountRepository;
 import com.picsou.repository.PriceSnapshotRepository;
@@ -83,12 +84,12 @@ public class ExchangeRewardSync {
      * transaction; the price backfill and the write each run in a new one, so a failure here
      * never rolls back the balance sync that has just succeeded.
      */
-    public void sync(CryptoExchangePort adapter, String apiKey, String apiSecret,
+    public void sync(CryptoExchangePort adapter, ExchangeCredentials credentials,
                      ExchangeType exchange, Long accountId) {
         LocalDate today = LocalDate.now(clock);
         // The first month the window covers whole: the month it starts in is only partly read.
         LocalDate from = YearMonth.from(today.minusDays(LOOKBACK_DAYS)).plusMonths(1).atDay(1);
-        List<ExchangeReward> rewards = adapter.fetchRewards(apiKey, apiSecret,
+        List<ExchangeReward> rewards = adapter.fetchRewards(credentials,
             from.atStartOfDay(ZoneOffset.UTC).toInstant());
         if (rewards.isEmpty()) return;
 

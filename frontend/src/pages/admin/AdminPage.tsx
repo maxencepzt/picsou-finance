@@ -30,6 +30,14 @@ type SectionId = (typeof SECTIONS)[number]['id']
 function useActiveSection(enabled: boolean): [SectionId, (id: SectionId) => void] {
   const [active, setActive] = useState<SectionId>(SECTIONS[0].id)
   useEffect(() => {
+    // A link from another page (/admin#enable-banking) lands before the sections exist.
+    const id = window.location.hash.slice(1)
+    const target = SECTIONS.find((s) => s.id === id)
+    if (!enabled || !target) return
+    // The section observer then marks it active.
+    document.getElementById(target.id)?.scrollIntoView({ block: 'start' })
+  }, [enabled])
+  useEffect(() => {
     if (!enabled || typeof IntersectionObserver === 'undefined') return
     // Each callback only reports the sections that changed, so keep the full visible set.
     const visible = new Set<string>()

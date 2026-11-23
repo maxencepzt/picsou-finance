@@ -22,6 +22,11 @@ export interface AccountGroup {
   items: AccountItem[]
 }
 
+/** The list's natural order: largest balance first, a debt by its size. */
+export function byLargestBalance(a: AccountItem, b: AccountItem): number {
+  return Math.abs(signedBalance(b.account)) - Math.abs(signedBalance(a.account))
+}
+
 /** Buckets the items by `keyOf`, totals each one (a wallet's balance already includes its pockets), largest item first. */
 function bucket<K extends string>(items: AccountItem[], keyOf: (account: Account) => K): Map<K, { key: K; total: number; items: AccountItem[] }> {
   const groups = new Map<K, { key: K; total: number; items: AccountItem[] }>()
@@ -33,7 +38,7 @@ function bucket<K extends string>(items: AccountItem[], keyOf: (account: Account
     groups.set(key, group)
   }
   for (const group of groups.values()) {
-    group.items.sort((a, b) => Math.abs(signedBalance(b.account)) - Math.abs(signedBalance(a.account)))
+    group.items.sort(byLargestBalance)
   }
   return groups
 }

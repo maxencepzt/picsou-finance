@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ReactNode } from 'react'
 
@@ -17,6 +17,16 @@ vi.mock('@/lib/api-client', () => ({
     delete: apiDelete,
   },
 }))
+
+vi.mock('@/types/api', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/types/api')>()
+  // Give Kraken test-only capabilities without adding an exchange.
+  Object.assign(actual.SUPPORTED_EXCHANGES.find(({ type }) => type === 'KRAKEN')!, {
+    requiresApiPassphrase: true,
+    regions: ['GLOBAL', 'EEA', 'US'],
+  })
+  return actual
+})
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -98,6 +108,7 @@ describe('CryptoExchangeTab credential fields', () => {
     fireEvent.click(screen.getByRole('button', { name: 'MERIA' }))
 
     expect(screen.queryByLabelText('sync.exchanges.apiSecret')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('sync.exchanges.apiPassphrase')).not.toBeInTheDocument()
     // Explain the absence rather than letting the field vanish silently.
     expect(screen.getByText('sync.exchanges.apiKeyOnly')).toBeInTheDocument()
   })
@@ -117,6 +128,8 @@ describe('CryptoExchangeTab credential fields', () => {
     expect(body.type).toBe('MERIA')
     expect(body.apiKey).toBe('meria-key')
     expect(body.apiSecret).toBeUndefined()
+    expect(body).not.toHaveProperty('apiPassphrase')
+    expect(body).not.toHaveProperty('region')
   })
 
   it('drops a secret typed before switching to a single-key exchange', async () => {
@@ -151,5 +164,49 @@ describe('CryptoExchangeTab credential fields', () => {
 
     await waitFor(() => expect(apiPost).toHaveBeenCalled())
     expect(apiPost.mock.calls[0][1]).toMatchObject({ type: 'BINANCE', apiKey: 'k', apiSecret: 's' })
+  })
+
+  it('requires and submits a masked passphrase and an explicit region for the exchange that uses them', async () => {
+    await openAddForm()
+    expect(screen.queryByLabelText('sync.exchanges.apiPassphrase')).not.toBeInTheDocument()
+    expect(screen.queryByRole('combobox', { name: 'sync.exchanges.region' })).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'KRAKEN' }))
+    fireEvent.change(screen.getByLabelText('sync.exchanges.apiKey'), { target: { value: 'test-key' } })
+    fireEvent.change(screen.getByLabelText('sync.exchanges.apiSecret'), { target: { value: 'test-secret' } })
+
+    const passphrase = screen.getByLabelText('sync.exchanges.apiPassphrase')
+    expect(passphrase).toHaveAttribute('type', 'password')
+    expect(passphrase).toBeRequired()
+    expect(passphrase).toHaveAttribute('maxlength', '200')
+    fireEvent.change(passphrase, { target: { value: 'test-passphrase' } })
+
+    const region = screen.getByRole('combobox', { name: 'sync.exchanges.region' })
+    const connect = screen.getByRole('button', { name: 'sync.exchanges.connect' })
+    expect(region).toBeRequired()
+    expect(region).toHaveDisplayValue('sync.exchanges.regionPlaceholder')
+    expect(connect).toBeDisabled()
+    fireEvent.submit(connect.closest('form')!)
+    expect(apiPost).not.toHaveBeenCalled()
+
+    // A native select: the placeholder is a disabled first option, never a default region.
+    const options = within(region).getAllByRole('option')
+    expect(options[0]).toBeDisabled()
+    expect(options.slice(1).map(option => option.textContent)).toEqual([
+      'sync.exchanges.regions.GLOBAL', 'sync.exchanges.regions.EEA', 'sync.exchanges.regions.US',
+    ])
+    fireEvent.change(region, { target: { value: 'EEA' } })
+    expect(connect).toBeEnabled()
+    fireEvent.click(connect)
+
+    await waitFor(() => expect(apiPost).toHaveBeenCalledWith('/crypto/exchange', {
+      type: 'KRAKEN', apiKey: 'test-key', apiSecret: 'test-secret', apiPassphrase: 'test-passphrase', region: 'EEA',
+    }))
+  })
+
+  it('shows the stored region on the connection card', async () => {
+    apiGet.mockResolvedValue({ data: [{ id: 1, exchangeType: 'KRAKEN', status: 'CONNECTED', region: 'EEA' }] })
+    renderTab()
+
+    expect(await screen.findByText(/sync\.exchanges\.regions\.EEA/)).toBeInTheDocument()
   })
 })

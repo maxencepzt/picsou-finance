@@ -109,6 +109,13 @@ describe('providerLogoUrl', () => {
     expect(providerLogoUrl('BoursoBank')).toBe('/providers/boursobank.png')
   })
 
+  // Copied verbatim from LbpSyncService.PROVIDER. Every La Banque Postale
+  // account — current account, livrets and LEP alike — carries it, so a
+  // rename on either side would drop the logo from all of them at once.
+  it('resolves the provider string the La Banque Postale connector writes', () => {
+    expect(providerLogoUrl('La Banque Postale')).toBe('/providers/la-banque-postale.svg')
+  })
+
   // Copied verbatim from the literal TradeRepublicSyncService.upsertAccount() writes.
   it('resolves the provider string the Trade Republic connector writes', () => {
     expect(providerLogoUrl('Trade Republic')).toBe('/providers/trade-republic.svg')
@@ -123,6 +130,12 @@ describe('providerLogoUrl', () => {
   // CORUM Life connectors write as the account's provider.
   it('resolves the provider string the CORUM connectors write', () => {
     expect(providerLogoUrl('CORUM')).toBe('/providers/corum.svg')
+  })
+
+  // Copied verbatim from ScpiProvider.LOUVE.displayName(), which LouveSyncService writes as
+  // the provider of every SCPI account it creates.
+  it('resolves the provider string the Louve Invest connector writes', () => {
+    expect(providerLogoUrl('Louve Invest')).toBe('/providers/louve-invest.png')
   })
 
   it('resolves the exchange name the backend writes as provider', () => {

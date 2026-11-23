@@ -19,11 +19,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * Proves a database at V151 upgrades in place: existing accounts keep a NULL deposit ceiling
+ * Proves a database at V155 upgrades in place: existing accounts keep a NULL deposit ceiling
  * (the legal default applies), a stated one is stored, and a non-positive one is refused.
  */
 @RequiresPostgres
-class V152AccountDepositCeilingMigrationTest {
+class V1000AccountDepositCeilingMigrationTest {
 
     private static final String INSERT_ACCOUNT =
         "INSERT INTO account (name, type, currency, current_balance, is_manual, member_id) "
@@ -35,8 +35,8 @@ class V152AccountDepositCeilingMigrationTest {
     static final PostgreSQLContainer<?> POSTGRES = PostgresContainers.newContainer();
 
     @BeforeAll
-    static void migrateToV151() {
-        flyway("151").migrate();
+    static void migrateToV155() {
+        flyway("155").migrate();
     }
 
     private static Flyway flyway(String target) {
@@ -81,7 +81,7 @@ class V152AccountDepositCeilingMigrationTest {
         long member = insert("INSERT INTO family_member (display_name) VALUES (?) RETURNING id", "before-v152", null);
         long existing = insert(INSERT_ACCOUNT, "existing-pea", member);
 
-        assertThat(flyway("152").migrate().migrationsExecuted).isEqualTo(1);
+        assertThat(flyway("1000").migrate().migrationsExecuted).isEqualTo(1);
 
         assertThat(readCeiling(existing)).isNull();
         setCeiling(existing, new BigDecimal("20000"));

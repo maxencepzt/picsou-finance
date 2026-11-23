@@ -26,7 +26,7 @@ States: **connected** (gain dot), **connected, never synced** (muted dot + "Jama
 
 A back button ("Synchronisation"), a header (mark, name as the page `h1`, one-line description, the provider's state: not connected / its single connection's state and last sync / "N connexions · M à reconnecter") and the provider's panel as the body, at most 760px wide. Panels render no page header of their own: this frame is the contract the panel components rely on. File imports (Actual, HomeBank) and the visibility view show no state line.
 
-The keys are the former tab keys and must not change: the Sync-all modal, the bank OAuth callback, `?reconnect=1` (CIC) and the e2e specs link to them. `/sync/callback?code=…` (no `tab`) renders the banks view, which completes the OAuth exchange. An unknown key falls back to the overview. Choosing a view pushes a history entry, so the browser Back button returns to the overview, and the view starts scrolled to the top.
+The keys are the former tab keys and must not change: the Sync-all modal, the bank OAuth callback, `?reconnect=1` (CIC) and the e2e specs link to them. `/sync/callback?code=…` (no `tab`) renders the banks view, which completes the OAuth exchange. An unknown key falls back to the overview. Choosing a view pushes a history entry, so the browser Back button returns to the overview, and the view starts scrolled to the top. `/sync/louve/callback` renders the Louve Invest view (`?tab=louve`); its panel posts the OAuth code once and replaces the entry with `/sync?tab=louve`.
 
 ### Sync-all modal (top bar)
 
@@ -57,7 +57,7 @@ Every behaviour of the previous modal is kept: rows that own a surface (`ownTab`
 | Connection list and sync engine extracted to hooks | The page and the modal show and sync the same rows; one copy of the per-provider rules | Duplicating the modal's 400 lines in the page |
 | Catalog grid on container queries | The same component fits the page card, the modal and a phone | Viewport breakpoints, which gave 3 cramped columns inside the modal |
 | Monograms for brands without a bundled logo | Only BoursoBank, Amundi, Trade Republic, Meria and the wallet marks ship; generic entries (any bank, any exchange, file imports) take an icon | Generic icons for brands (what the old lists did) |
-| "SCPI" category | Only CORUM and Sofidy exist; an "Assurance" label would promise insurers that are not there | "Assurance / SCPI" |
+| "SCPI" category | Only CORUM, Sofidy and Louve Invest exist; an "Assurance" label would promise insurers that are not there | "Assurance / SCPI" |
 
 ## Gotchas / Pitfalls
 

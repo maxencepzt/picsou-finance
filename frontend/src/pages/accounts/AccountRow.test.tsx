@@ -31,6 +31,7 @@ const baseAccount: Account = {
   id: 1, name: 'Compte Courant BNP', type: 'CHECKING', provider: 'BNP Paribas', currency: 'EUR',
   currentBalance: 1000, currentBalanceEur: 1000, lastSyncedAt: null, isManual: false, color: '#6366f1',
   ticker: null, logoUrl: null, logoKey: null, createdAt: '2024-01-01T00:00:00Z', hidden: false,
+  listPosition: null, listCollapsed: false,
 }
 
 function property(metadata: Partial<RealEstateMetadata> = {}): Account {

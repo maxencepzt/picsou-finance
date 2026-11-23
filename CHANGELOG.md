@@ -28,6 +28,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Upstream 1.2.1 and 1.2.2 are merged in the fork's design.** Their connectors, features and fixes are in (Louve Invest,
+  account order and collapse, Banque Populaire loans, transfer detection, the custom projection rate, the exchange passphrase
+  and region, dialog and goal-allocation fixes), drawn in the Coffre Nocturne look. Their redesign, What's new card, update
+  check and profile photo are left out. The fork's own migrations now start at V1000.
 - **Hiding amounts rolls the figures away.** Turning privacy mode on or off now animates every amount on screen like the dials
   of a safe: the digits roll up out of view and five dashes roll in, one after another, then back again. The dashes replace the
   asterisks and are drawn in grey, so a hidden amount reads as an empty slot. With "reduce motion" set, amounts swap at once.
@@ -45,6 +49,141 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   syncs imported operations without running the categorization rules or the merchant-name cleanup, and never ran the
   recurring-payment detection, so members on these banks saw no category from their rules and no recurring payment.
   Each sync now does both, after its card-settlement and loan tagging, and never overwrites a category already set.
+
+## [1.2.2] — 2026-11-21
+
+### Added
+
+- **Account list display order and collapse (Tout tab).** A "Réorganiser" mode on
+  `/accounts` > Tout adds per-card up/down arrows and a collapse eye, persisted per
+  viewer — owned or shared (`PUT /api/accounts/display-order`, `PUT /api/accounts/{id}/display`, `V152`).
+  Order applies within each section (wallet groups, then standalone accounts); collapsing
+  hides the card behind a recap row with its total.
+  Unlike `hidden`, collapsed accounts stay in every total, budget and chart — see
+  `docs/features/account-list-display.md`.
+- **Banque Populaire: import personal and home loans (6/12, 6/13).** Both loan kinds are now imported with
+  their borrowed amount, rate, installment and dates, as on Caisse d'Epargne. The two bank apps' sign-in
+  settings come from the bank's public web app configuration and are not yet verified against a real account:
+  if a loan app refuses them, the loan is still imported from its balance with no details and the session
+  stays connected. Sync logs name the field that could not be read (never a value) so a report can be
+  precise. (#567)
+- **Transfers between your own accounts are recognised.** After each sync, a debit on one of your
+  accounts and the matching credit on another (same amount and currency, at most three days apart)
+  are both categorised *Virement interne*, so cash flow and the flow diagram stop counting them as
+  spending and income. A category you chose by hand is never changed, and when two legs could
+  match, Picsou leaves them alone rather than guess. See `docs/features/budget.md`. Closes #450.
+- **Louve Invest SCPI sync (verified against one real account).** Connect Louve Invest from the
+  Sync page or Add Account: Picsou sends you to Louve's own consent page and asks only for
+  read-only access to your portfolio (`portfolio:read`); no Louve password is typed into or stored
+  by Picsou, and no connector container is needed. The SCPI shares you hold in full ownership are
+  synced daily into one SCPI account per fund, valued at the withdrawal price, with the
+  subscription price, management company, ISIN and declared distribution filled in. An existing
+  account named "Aurore" or "Louve Invest - Aurore" is linked rather than duplicated. Shares held in
+  bare ownership or usufruct are listed but not valued, and life-insurance contracts are not
+  synced yet. Louve sends you back to the Picsou address you connected from, which must be one
+  of the allowed origins in Administration > Security (HTTPS, or `localhost` for development).
+  The encrypted OAuth tokens are stored by `V153`; the instance's Louve client registration is
+  kept in the application settings. See `docs/features/louve-invest.md`.
+
+### Changed
+
+- **Goal cards no longer show an "On track" / "Behind" tag.** The cards and the goal detail keep
+  the figures behind that verdict (required monthly pace, average contribution, months left), so the
+  comparison stays readable without a coloured tag competing with the page's actions.
+- **Calmer peer loan page.** The summary card is titled "Loan summary" (the borrower is already
+  the page title) with the loan period in your language; the forecast card is hidden on a closed
+  loan that has nothing to forecast; the write-off note added when closing a loan is translated;
+  each repayment reads on two lines with Edit and Delete buttons. Dismiss buttons on alerts and a
+  few other text-only buttons now use the same icon buttons as the rest of the app.
+- **Trade Republic: native crypto gets its own `TR Crypto` account.** Coins bought on Trade Republic
+  (Bitcoin and the like) moved out of `TR Titres` into a new `TR Crypto` account, so they show under
+  Accounts > Crypto with live CoinGecko prices and coin logos. Crypto ETFs and ETCs stay in `TR Titres`.
+  On the first sync after the upgrade, `TR Titres` drops by the crypto amount and `TR Crypto` takes
+  it, so net worth does not move; past transactions and snapshots stay on `TR Titres`, and CSV imports
+  do not duplicate earlier crypto trades. `TR Crypto` is a new account: sharing with another member,
+  exclusions and goal links set on `TR Titres` are not copied to it, set them again if you use them.
+- **A missed daily sync is made up once.** When Picsou was off or the machine asleep at 08:00, the bank
+  sync and the balance snapshot now run within a minute or two of the next start or wake, once, not
+  once per missed day. The weekly and monthly jobs follow the same rule. The first start after the
+  upgrade only records the time and waits for the next slot. See
+  [Scheduler catch-up](docs/features/scheduler-catch-up.md). (#585, part of #235)
+- **Caisse d'Epargne and Banque Populaire: the Sync tab names the contracts it does not import and counts them.** A personal loan (`6/12`), a home loan (`6/13`) and a revolving credit (`2/11`) show their name next to the code, and the success line adds how many contracts were not imported, so a missing loan is no longer silent. The revolving credit is never imported; a loan lands in this list only when Picsou cannot read its entry. Contracts of any other family keep the bare code. (#567, #486)
+- **Savings configuration banner and direct tab link.** Replaced the legacy emerald banner on `/accounts` with a neutral card matching the 1.2.1 design system, and clicking "Configurer" now opens the account detail page directly on the **Configuration livret** tab (`?tab=config`).
+- **BNP Paribas Clé Digitale approval guidance and live verification docs.** Updated the waiting and timeout messages for BNP Paribas mobile approvals across all four locales to remind users to check the paired Clé Digitale device and pending approvals inside the mobile app, and documented the live-verified Docker Camoufox Clé Digitale flow in `docs/features/bnp-paribas.md`.
+- **Budget recurring payments redesign.** Rebuilt `/budget/subscriptions` (`RecurringTab`, `SubscriptionCard`, `ActivityFeed`) to match the 1.2.1 visual language: added a compact top-aligned 3-card KPI strip (monthly recurring expenses, monthly recurring income, upcoming 30-day total), moved **Detect** and **Add** actions into the primary recurring list header, removed purple/AI sparkle icons and rainbow avatars in favor of monochrome directional tiles, stripped raw SEPA/bank mandate noise from recurring labels, and refined all four locales into natural, concise phrasing.
+- **Compact budget envelopes and cleaner card actions.** Removed double vertical padding on Budget envelope cards and Goals cards, switched envelopes to a compact 2-column grid with click-to-edit (moving Delete cleanly inside the edit dialog), moved Goal card actions (Calendar, Edit, Delete) into `GoalDetailModal`, and collapsed Recurring plan card actions into a single overflow menu.
+- **Recurring payment badges and price-change spacing.** Replaced the amber `DUE_SOON` badge with a neutral secondary gray badge matching the rest of the interface, and normalized word spacing on the price-change indicator in `SubscriptionCard`.
+- **Sidebar What's New GitHub link.** Removed the leading star icon to reduce visual clutter and darkened the right-hand external link icon (`text-foreground`) for clearer contrast.
+- **Custom return rate simulator in wealth projection.** Added an optional annual percentage input (e.g. `12%`) in Analysis > Projection (`ProjectionSection`) that plots a live custom curve using the same geometric monthly compounding as the backend and displays the projected final amount and gains for the selected horizon.
+- **Cleaner net-worth performance and debt breakdown spacing.** Removed the redundant visible "performance portefeuille" suffix on Dashboard, Accounts, and Account Detail summary cards (preserved as `aria-label` for accessibility) and tightened the net-worth assets-minus-liabilities breakdown row on Dashboard so each label stays grouped with its amount.
+- **Unified progress bar sizing and shape.** Standardized `<Progress>` and all custom progress/distribution bars across Dashboard, Goals, Budget, Analysis, Family, Loans, Liabilities, and Setup sub-steps to a single `h-2 w-full rounded-full bg-muted` pill style, backed by a CI guardrail in `design-guardrails.test.ts`.
+- **Site-wide icon harmonization (macOS restraint).** Removed decorative icons from all horizontal tab bars (Budget, Settings, Admin, Goals calendar), all `CardTitle` / `DialogTitle` / section headings across Settings, Admin, Budget, Family, Property, OAuth, and What's New, KPI card labels in Budget, and Enable Banking / Crypto setup step headers. Documented the icon charter in `DESIGN.md` and enforced it in `design-guardrails.test.ts`.
+- **Migrated icon library to Phosphor Icons (`@phosphor-icons/react`).** Replaced `lucide-react` across the entire frontend with `@phosphor-icons/react` (`weight="regular"` globally via `IconContext.Provider`, `weight="fill"` on active sidebar and mobile navigation items), updated `vite.config.ts`, `components.json`, `DESIGN.md`, and enforced the single-library rule in `design-guardrails.test.ts`. Icons stay hidden from screen readers by default, as with lucide (`lib/icon-defaults.ts`).
+- **Redesigned sidebar What's New card.** Simplified `SidebarWhatsNewCard` into a single neutral gray card (`bg-muted/50`) with a squared `rounded-md` version tag, diagonal `ArrowUpRight` indicator, and clean title/summary hierarchy, removing the bolted-on GitHub star footer row from the sidebar (kept inside the What's New dialog and Settings > About).
+- **Eliminated double vertical padding on Card banners and cards site-wide.** Removed redundant `py-*` / `p-*` vertical padding on 86 `<CardContent>` instances across 27 files (Budget overview nudge banner, AccountCard, PocketCard, SavingsRateCard, GoalCalendarPage, and all Sync status/login cards) since `<Card>` already provides symmetric `py-4` / `py-3`, and upgraded `design-guardrails.test.ts` to block future regressions.
+- **Removed static point markers on all chart curves site-wide.** Removed the `24H` / `7D` dot markers in `NetWorthChart` and explicitly enforced `dot={false}` on every Recharts `<Area>` and `<Line>` curve (`PropertyValuationChart`, `BalanceHistoryChart`, etc.), backed by `DESIGN.md` and a CI guardrail in `design-guardrails.test.ts`.
+
+### Fixed
+
+- **Profile photo upload now works under the production CSP.** `resizeProfilePhoto` read uploaded images via a `blob:` URL (`URL.createObjectURL`), which Spring Boot's production `Content-Security-Policy` (`img-src 'self' data: https:`) blocked — causing valid PNG, JPEG and WebP files to fail with an "invalid image" error. It now reads files through `FileReader.readAsDataURL` so uploads comply with the strict CSP without weakening it.
+- **Account reorder controls no longer overlap account type badges.** In `/accounts` reorder mode ("Réorganiser"), the move-up, move-down and collapse buttons floated over the top-right corner of each card and collided with badges like "Compte titres" or "Compte courant". They now sit inside an in-flow hairline `CardFooter` bar at the bottom of `AccountCard`, keeping titles, badges and card heights cleanly aligned across the grid.
+- **Trade Republic bonds are valued correctly again.** Bonds listed under Trade Republic's
+  `bonds` category were not detected as bonds, and the nominal currency was not read, so their price
+  could be off by a factor of 100 or left empty. A Polish IKE wrapper now syncs as a brokerage account
+  (`TR IKE`), for accounts created from now on.
+- **BoursoBank syncs a PER.** A PER on the dashboard was read as a securities account, its
+  trading-board lookup answered 404, and the whole sync failed with `UPSTREAM_FORMAT_CHANGED`,
+  so no account was imported. The PER is now read from its own page: one position per fund,
+  merged across compartments, and a payment not yet invested as cash. If that page cannot be
+  read, the PER keeps its last values and the other accounts still sync; for now only the
+  sidecar log says so. (#351, #624)
+- **BoursoBank: a notice shown instead of the dashboard no longer breaks the sync.** When the bank
+  parks the dashboard behind a notice it lets you postpone (a card renewal offer, for instance),
+  the connector now follows its "Voir plus tard" link and reads the accounts. A notice that cannot
+  be postponed is reported by name instead of `Dashboard carried no account section`.
+- **Deleting a property no longer breaks the loan linked to it.** A loan or peer loan still linked
+  to a deleted account could not be read, and the accounts page failed with an error. Deleting an
+  account now unlinks them, and the upgrade repairs the loans already in that state (`V154`).
+- **American Express login no longer stalls behind the cookie banner.** When the consent banner
+  showed up after the login form, it blocked the sign-in click and the connection failed with
+  "Impossible de joindre American Express". It is now declined whenever it appears (#568).
+- **BoursoBank syncs a PEA-PME holding unlisted instruments.** Crowdfunding lines
+  (Homunity) have an ISIN but no ticker, and one such line failed the whole sync
+  with `UPSTREAM_FORMAT_CHANGED`, so no account was imported. The line now syncs
+  under its ISIN; a line with neither ticker nor valid ISIN is still refused.
+- **An account or transaction name containing `$t(` no longer freezes the page.** i18next before
+  26.4.4 backtracked exponentially on such a value inside a translated sentence: a name of about
+  35 characters blocked the browser tab for minutes. i18next is now 26.7.2.
+- **Bank search explains when Enable Banking is not set up.** Instead of a misleading "showing France
+  only" error, bank search now says Enable Banking is not configured: an admin gets a link to
+  Administration, a member is asked to contact the administrator. The country-list error no longer
+  wraps inside the narrow country selector.
+
+## [1.2.1] — 2026-11-20
+
+### Added
+
+- **Sidebar "What's new" card and release changelog dialog.** A compact card above the sidebar account menu previews the latest release highlights, tracks whether the current version has been read, opens a localized changelog modal, and links directly to starring Picsou on GitHub.
+- **Live version and update check in Settings (Space & system).** The About section now displays the running backend release version, shows whether an update is available, provides one-click update verification and copyable Docker Compose upgrade commands for admins, and opens the What's new dialog.
+- **Custom profile photo upload.** Users can click their avatar in Settings (Profile & account) to upload a locally resized profile photo shown across the sidebar account switcher and settings.
+- **Automated UI design guardrails in CI (`design-guardrails.test.ts`) and contributor design standards.** `CONTRIBUTING.md`, `DESIGN.md`, and the pull request template now document the exact typography, layout widths, tab bars, modal safeguards, empty states, icon/disclosure rules, and copy rules, enforced automatically during `make test-frontend`.
+
+### Changed
+
+- **Unified typography and readable body copy.** Standardized the entire interface on Plus Jakarta Sans (`@fontsource-variable/plus-jakarta-sans`), upgraded dense `text-xs` body/helper paragraphs to `text-sm`, softened input placeholders, and replaced telegraphic French labels and all "IA" abbreviations with full, natural French ("intelligence artificielle").
+- **Redesigned sidebar and privacy mode.** Consolidated the sidebar footer into a single account menu (Settings, Sync, Hide/show amounts, Administration, Logout) and fixed privacy mode (`hideAmounts`) leaks in Budget overview and Holding details.
+- **Dynamic Accounts category bar and detail-page account actions.** The Accounts filter bar now displays only populated categories (up to 5 plus "All") and tucks empty or overflow categories into a custom "More" dropdown; edit and delete controls moved from card hover overlays into the Account detail page header.
+- **Redesigned Budget (Categorize & Manage), Settings (Appearance & Space), Admin AI provider, and Dashboard widgets.** Simplified Budget > Categorize with a single "Automate" menu and readable transaction labels; rebuilt Budget > Manage into three full-width cards with an instant cycle-start-day selector; replaced the permanently open Admin AI form with a collapsible provider summary card; added a title and balanced layout to the Dashboard distribution donut; standardized time-range selectors (`24H`, `7J`, `1M`, `3M`, `YTD`, `1A`, `Tout`) with full tooltips; harmonized all tab bars and framed empty states site-wide; replaced all OS-native `<select>` and `<details>` elements with custom Radix/Lucide components; replaced hardcoded French tax brackets with a country-neutral marginal tax rate input.
+
+### Fixed
+
+- **Modal vertical and horizontal overflow across all 42 dialogs.** Constrained `DialogContent` to `max-h-[calc(100dvh-2rem)]` with internal vertical scrolling and `grid-cols-1 *:min-w-0 overflow-x-hidden`, fixing tall forms and preventing long unbroken strings (such as IBANs in the rule-creation modal) from clipping dates, amounts, or action buttons off-screen.
+- **Strict popover/modal z-index hierarchy and viewport collision padding.** Ensured dropdowns, selects, tooltips, and dialogs never overlap in the wrong order or clip against screen edges.
+- **Goals recurring allocation picker.** Replaced misleading numeric placeholders, added an equal-split helper, and prevented checked allocations with missing amounts from being silently dropped on save.
+- **Account editing bank picker layout and spurious country load error.** Kept the manual account provider field clean and full-width when Enable Banking is not configured, and constrained `BankCountrySelect` width so errors never overlap adjacent form fields.
+- **La Banque Postale accounts show the bank's logo.** The connector writes `La Banque Postale` as the account provider but the frontend had no bundled mark for it, so the accounts fell back to the color circle. The official mark now ships with the app.
+- **La Banque Postale login survives the bank's CloudFront rotations.** The sidecar pinned two distributions, so every rotation broke the keypad scripts and the login failed. It now auto-admits a shape-valid distribution the page requests for the first time — main-frame scripts and data beacons, anti-fraud subframes, never a top-level navigation — scoped to the login attempt, capped, loudly logged (host, path, resource type, frame), plus an operator-provided `LBP_EXTRA_CDN_HOSTS` list for emergencies. Websockets and the httpx replay path still refuse anything off the bank origin.
+- **"Financial assets" on the dashboard counted money lent to people.** In that mode the figure and the curve included a peer loan, while the donut beside them did not, so the two disagreed (a 1,000 livret, a 5,000 PEA and 2,000 lent showed 8,000 next to a donut adding up to 6,000). A peer loan now counts in net and gross wealth only, as the [peer loans decision](docs/decisions/2026-11-05-peer-loans-receivable.md) describes: a real asset, but not an investment.
 
 ## [1.2.0] — 2026-11-12
 

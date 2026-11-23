@@ -2,6 +2,7 @@ package com.picsou.adapter;
 
 import com.picsou.exception.SyncException;
 import com.picsou.port.CryptoExchangePort;
+import com.picsou.port.CryptoExchangePort.ExchangeCredentials;
 import com.picsou.port.CryptoExchangePort.ExchangePosition;
 import com.picsou.port.CryptoExchangePort.Product;
 import org.junit.jupiter.api.Test;
@@ -30,6 +31,8 @@ import static org.assertj.core.api.Assertions.tuple;
  * does not include. Reading spot alone undercounted every account with coins placed in Earn.
  */
 class BinanceAdapterTest {
+
+    private static final ExchangeCredentials CREDENTIALS = new ExchangeCredentials("key", "secret", null, null);
 
     private static final String SPOT = """
         {"balances":[
@@ -60,7 +63,7 @@ class BinanceAdapterTest {
             default -> notFound();
         });
 
-        List<ExchangePosition> positions = adapter.fetchPositions("key", "secret");
+        List<ExchangePosition> positions = adapter.fetchPositions(CREDENTIALS);
 
         // LDUSDT is spot's mirror of the flexible USDT position and is dropped; LDO (Lido) is a
         // real coin with no flexible counterpart and stays.
@@ -92,7 +95,7 @@ class BinanceAdapterTest {
             default -> notFound();
         });
 
-        List<ExchangePosition> positions = adapter.fetchPositions("key", "secret");
+        List<ExchangePosition> positions = adapter.fetchPositions(CREDENTIALS);
 
         assertThat(positions).singleElement()
             .satisfies(p -> assertThat(p.quantity()).isEqualByComparingTo("15"));
@@ -114,7 +117,7 @@ class BinanceAdapterTest {
         });
 
         // Binance's own explanation is kept: a bare 400 says nothing about what it rejected.
-        assertThatThrownBy(() -> adapter.fetchPositions("key", "secret"))
+        assertThatThrownBy(() -> adapter.fetchPositions(CREDENTIALS))
             .isInstanceOf(SyncException.class)
             .hasMessageContaining("400")
             .hasMessageContaining("locked/position")
@@ -129,7 +132,7 @@ class BinanceAdapterTest {
             default -> ok(NO_ROWS);
         });
 
-        assertThatThrownBy(() -> adapter.fetchPositions("key", "secret"))
+        assertThatThrownBy(() -> adapter.fetchPositions(CREDENTIALS))
             .isInstanceOf(SyncException.class)
             .hasMessageContaining("flexible/position");
     }
@@ -154,7 +157,7 @@ class BinanceAdapterTest {
         });
 
         List<CryptoExchangePort.ExchangeReward> rewards =
-            adapter.fetchRewards("key", "secret", Instant.parse("2026-06-01T00:00:00Z"));
+            adapter.fetchRewards(CREDENTIALS, Instant.parse("2026-06-01T00:00:00Z"));
 
         // A zero credit is no reward; the asset is upper-cased like the positions, and staked-ETH
         // receipts (BETH, WBETH) count as ETH, as the history import keyed them.

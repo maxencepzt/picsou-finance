@@ -47,6 +47,7 @@ test.describe('Sync page', () => {
       'Natixis Interépargne',
       'CORUM',
       'Sofidy',
+      'Louve Invest',
       'Finary',
       'Actual Budget',
       'Import HomeBank',
@@ -65,7 +66,7 @@ test.describe('Sync page', () => {
     const tiles = catalog(page).getByRole('listitem')
     // Accent- and case-insensitive, on the name and the description.
     await catalog(page).getByLabel('Rechercher un établissement').fill('scpi')
-    await expect(tiles).toHaveCount(2)
+    await expect(tiles).toHaveCount(3)
     await expect(catalog(page).getByText('CORUM', { exact: true })).toBeVisible()
     await catalog(page).getByLabel('Rechercher un établissement').fill('')
     await catalog(page).getByRole('button', { name: 'Crypto', exact: true }).click()

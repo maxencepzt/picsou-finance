@@ -1,5 +1,6 @@
 import json
 import os
+import tempfile
 import time
 import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -77,6 +78,21 @@ class PendingAuthenticationLifecycleTest(unittest.IsolatedAsyncioTestCase):
             await _capture_failure_diagnostics(page, "anonymous_failure")
 
         page.screenshot.assert_not_awaited()
+
+    async def test_failure_capture_saves_the_page_text_when_opted_in(self):
+        page = MagicMock()
+        page.screenshot = AsyncMock()
+        page.url = "https://example.test/login"
+        page.locator.return_value.inner_text = AsyncMock(return_value="Visible copy")
+
+        with tempfile.TemporaryDirectory() as directory, \
+                patch("main.DEBUG_ARTIFACTS_ENABLED", True), patch("main.DEBUG_ARTIFACT_DIR", directory):
+            await _capture_failure_diagnostics(page, "unexpected")
+            [saved] = [name for name in os.listdir(directory) if name.endswith(".txt")]
+            with open(os.path.join(directory, saved), encoding="utf-8") as f:
+                content = f.read()
+
+        self.assertEqual(content, "url: https://example.test/login\n\nVisible copy")
 
 
 class RequestContractTest(unittest.TestCase):

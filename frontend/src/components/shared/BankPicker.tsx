@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Input } from '@/components/ui/input'
 import { BankCountrySelect, DEFAULT_BANK_COUNTRY } from '@/components/shared/BankCountrySelect'
-import { useSearchInstitutions } from '@/features/sync/hooks'
+import { useBankCountries, useSearchInstitutions } from '@/features/sync/hooks'
 import { ProviderMark } from '@/components/shared/ProviderMark'
 
 interface BankPickerProps {
@@ -35,17 +35,24 @@ export function BankPicker({ id, value, placeholder, onChange }: BankPickerProps
   // choosing "Crédit Agricole" leaves a list still matching "Crédit Agricole" open under it.
   const [showSuggestions, setShowSuggestions] = useState(false)
 
-  const { data: institutions } = useSearchInstitutions(value.trim(), country)
+  // One country (or none: Enable Banking not configured) leaves nothing to choose, so the field
+  // takes the full width and no load error shows for a picker that is only an enhancement here.
+  const { data: countries } = useBankCountries()
+  const showCountryPicker = Array.isArray(countries) && countries.length > 1
+  // With the picker hidden nothing snaps the country to the provider's only one, so do it here.
+  const searchCountry = countries?.length === 1 ? countries[0] : country
+  const { data: institutions } = useSearchInstitutions(value.trim(), searchCountry)
   const suggestions = showSuggestions ? (institutions ?? []) : []
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-start gap-2">
+    <div className="min-w-0 space-y-2">
+      <div className="flex min-w-0 items-start gap-2">
         <Input
           id={id}
           value={value}
           placeholder={placeholder}
           autoComplete="off"
+          className="min-w-0 flex-1"
           onChange={(e) => {
             setShowSuggestions(true)
             // The id belongs to the bank that was picked; the moment the text diverges from it
@@ -53,7 +60,9 @@ export function BankPicker({ id, value, placeholder, onChange }: BankPickerProps
             onChange(e.target.value, undefined)
           }}
         />
-        <BankCountrySelect value={country} onChange={setCountry} />
+        {showCountryPicker && (
+          <BankCountrySelect value={country} onChange={setCountry} silentFallback />
+        )}
       </div>
 
       {suggestions.length > 0 && (

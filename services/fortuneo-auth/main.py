@@ -10,6 +10,7 @@ import asyncio
 import json
 import os
 import re
+import tempfile
 import time
 import uuid
 from urllib.parse import urlencode
@@ -666,9 +667,16 @@ def _session_state_json(
     )
 
 
-DEBUG_ARTIFACT_DIR = "/tmp/fortuneo-debug"
+# The OS temp dir: /tmp in the image, and still valid when the sidecar runs outside a container.
+DEBUG_ARTIFACT_DIR = os.path.join(tempfile.gettempdir(), "fortuneo-debug")
 DEBUG_ARTIFACTS_ENABLED = os.getenv("FORTUNEO_DEBUG_ARTIFACTS", "false").lower() == "true"
 
+
+
+def _write_text(path: str, content: str) -> None:
+    """Blocking write, run off the event loop."""
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(content)
 
 async def _capture_failure_diagnostics(page: Page, label: str) -> None:
     """Best-effort diagnostic capture on an unexpected outcome -- a
@@ -684,8 +692,7 @@ async def _capture_failure_diagnostics(page: Page, label: str) -> None:
         stamp = int(time.time())
         await page.screenshot(path=f"{DEBUG_ARTIFACT_DIR}/{label}_{stamp}.png", full_page=True)
         text = await page.locator("body").inner_text()
-        with open(f"{DEBUG_ARTIFACT_DIR}/{label}_{stamp}.txt", "w") as f:
-            f.write(f"url: {page.url}\n\n{text}")
+        await asyncio.to_thread(_write_text, f"{DEBUG_ARTIFACT_DIR}/{label}_{stamp}.txt", f"url: {page.url}\n\n{text}")
         log.info("Fortuneo diagnostic capture saved: %s_%s.{png,txt}", label, stamp)
     except Exception:
         log.warning("Fortuneo diagnostic capture failed", exc_info=True)
@@ -703,7 +710,7 @@ def _save_debug_text(label: str, text: str) -> None:
     try:
         os.makedirs(DEBUG_ARTIFACT_DIR, exist_ok=True)
         stamp = int(time.time())
-        with open(f"{DEBUG_ARTIFACT_DIR}/{label}_{stamp}.html", "w") as f:
+        with open(f"{DEBUG_ARTIFACT_DIR}/{label}_{stamp}.html", "w", encoding="utf-8") as f:
             f.write(text)
         log.info("Fortuneo diagnostic capture saved: %s_%s.html", label, stamp)
     except Exception:

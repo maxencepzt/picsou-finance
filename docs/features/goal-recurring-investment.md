@@ -149,6 +149,13 @@ to add its whole amount on top of a base that counted half the account.
 The maths is monthly, the points are yearly: 480 points × 4 lines is a large payload for a chart
 that cannot render them distinctly anyway.
 
+**A rate of your own.** A "Custom rate" field above the wealth chart (0 to 100 %, a comma or a
+dot) adds a fifth line, drawn in ink, with its own legend toggle, line-end label and tooltip row.
+It is computed in the browser by `projectCustomRate` (`pages/analysis/custom-projection.ts`):
+the same monthly compounding as `ProjectionService`, on the backend's yearly `contributedEur`
+schedule, so plan dates and joint-account shares match the four scenarios. Nothing is sent to
+the backend.
+
 ### The risk tab (Monte-Carlo)
 
 The four scenario curves compound at a steady rate: none of them ever has a bad year, and none
@@ -211,6 +218,11 @@ price, a currency and a name from nowhere.
 Requiring the lines to sum exactly would mean nobody details a plan they have not finished
 thinking about. Over-allocating is not legal, and the form disables Save before the 422 has to
 say it.
+
+A checked line with no amount is refused in the form too: its field is marked invalid, and Save
+stays disabled until every checked line has an amount (`hasIncompleteAllocations` in
+`pages/goals/plan-math.ts`). It used to be dropped silently on save. **Split equally**
+(`splitEqually`) shares the plan's monthly amount between the checked lines, to the cent.
 
 The sum rule is **not** a CHECK: it spans several rows and the parent table, which a row-level
 constraint cannot see. It is `GoalRequest.isAllocationWithinMonthlyAmount`, beside the existing

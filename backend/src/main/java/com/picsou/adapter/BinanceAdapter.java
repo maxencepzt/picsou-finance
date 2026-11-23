@@ -67,7 +67,9 @@ public class BinanceAdapter implements CryptoExchangePort {
      * which would write a balance short by the whole Earn amount into the daily snapshot.
      */
     @Override
-    public List<ExchangePosition> fetchPositions(String apiKey, String apiSecret) {
+    public List<ExchangePosition> fetchPositions(ExchangeCredentials credentials) {
+        String apiKey = credentials.apiKey();
+        String apiSecret = credentials.apiSecret();
         JsonNode response = signedGet("/api/v3/account", "", apiKey, apiSecret);
 
         List<ExchangePosition> holdings = new ArrayList<>();
@@ -106,7 +108,9 @@ public class BinanceAdapter implements CryptoExchangePort {
      * one each. The histories refuse long ranges, so the period is read in 30-day windows.
      */
     @Override
-    public List<ExchangeReward> fetchRewards(String apiKey, String apiSecret, Instant since) {
+    public List<ExchangeReward> fetchRewards(ExchangeCredentials credentials, Instant since) {
+        String apiKey = credentials.apiKey();
+        String apiSecret = credentials.apiSecret();
         List<ExchangeReward> rewards = new ArrayList<>();
         Instant now = clock.instant();
         for (Instant start = since; start.isBefore(now); start = start.plus(REWARD_WINDOW)) {
@@ -224,9 +228,9 @@ public class BinanceAdapter implements CryptoExchangePort {
     }
 
     @Override
-    public boolean testConnection(String apiKey, String apiSecret) {
+    public boolean testConnection(ExchangeCredentials credentials) {
         try {
-            signedGet("/api/v3/account", "", apiKey, apiSecret);
+            signedGet("/api/v3/account", "", credentials.apiKey(), credentials.apiSecret());
             return true;
         } catch (Exception ex) {
             log.warn("Binance connection test failed: {}", ex.getMessage());

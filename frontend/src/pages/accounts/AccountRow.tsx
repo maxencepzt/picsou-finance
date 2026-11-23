@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pencil, Trash2, TriangleAlert } from 'lucide-react'
 import type { Account } from '@/types/api'
@@ -86,10 +87,17 @@ interface AccountRowProps {
   nested?: boolean
   /** A closed peer loan: still listed under Receivables, but no longer active. */
   closed?: boolean
+  /**
+   * Reorder mode: these controls replace edit / delete, visible on every screen. `null` leaves the
+   * column empty (a pocket moves with its wallet) so the balance stays in line with the others.
+   */
+  controls?: ReactNode
+  /** Folded away from the Tout list, on screen only while reordering: dimmed like a closed loan. */
+  collapsed?: boolean
 }
 
 /** One compact account line: mark, name, provider · freshness, balance, then edit / delete. */
-export function AccountRow({ account, now, onOpen, onEdit, onDelete, nested, closed = false }: AccountRowProps) {
+export function AccountRow({ account, now, onOpen, onEdit, onDelete, nested, closed = false, controls, collapsed = false }: AccountRowProps) {
   const { t } = useTranslation()
   const money = useMoney()
   const institutionLogoUrl = useInstitutionLogoUrl()
@@ -118,7 +126,7 @@ export function AccountRow({ account, now, onOpen, onEdit, onDelete, nested, clo
   ].filter(Boolean).join(' · ')
 
   return (
-    <li className={cn('group flex items-center rounded-xl transition-colors hover:bg-muted/50', nested && 'ml-6', closed && 'opacity-70')}>
+    <li className={cn('group flex items-center rounded-xl transition-colors hover:bg-muted/50', nested && 'ml-6', (closed || collapsed) && 'opacity-70')}>
       <button type="button" onClick={onOpen} className="flex min-w-0 flex-1 items-center gap-3 px-3 py-2 text-left">
         <AccountMark account={account} size={nested ? 'sm' : 'md'} institutionLogo={institutionLogoUrl(account)} />
         <span className="flex min-w-0 flex-1 flex-col">
@@ -162,6 +170,9 @@ export function AccountRow({ account, now, onOpen, onEdit, onDelete, nested, clo
           className={cn('shrink-0 text-right font-semibold tabular-nums', nested ? 'text-sm' : 'text-[15px]')}
         />
       </button>
+      {controls !== undefined ? (
+        <div className="flex w-24 shrink-0 justify-end gap-0.5 pr-2">{controls}</div>
+      ) : (
       <div className={ROW_ACTIONS_CLASS}>
         <Button variant="ghost" size="icon" className="size-7" aria-label={t('common.edit')} onClick={onEdit}>
           <Pencil className="size-3.5" />
@@ -178,6 +189,7 @@ export function AccountRow({ account, now, onOpen, onEdit, onDelete, nested, clo
           </Button>
         )}
       </div>
+      )}
     </li>
   )
 }

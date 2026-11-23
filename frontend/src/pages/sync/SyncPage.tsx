@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate, useSearchParams } from 'react-router'
+import { useLocation, useNavigate, useSearchParams } from 'react-router'
 import { Eye, Loader2, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PageHeader } from '@/components/shared/PageHeader'
+import { LOUVE_CALLBACK_PATH } from '@/components/sync/LouvePanel'
 import { VISIBILITY_VIEW, isViewKey } from './catalog'
 import { ConnectionRow } from './ConnectionRow'
 import { ProviderCatalog } from './ProviderCatalog'
@@ -109,14 +110,19 @@ function ConnectionsCard({ onOpen }: { onOpen: (href: string) => void }) {
 /**
  * /sync: an overview of the member's connections and the catalog to add one; choosing a
  * provider opens its view at `/sync?tab=<key>`. The keys are the tab keys of the former tab
- * strip, kept so every deep link (Sync-all modal, bank OAuth callback, `?reconnect=1`) works.
+ * strip, kept so every deep link (Sync-all modal, bank OAuth callback, `?reconnect=1`) works;
+ * Louve Invest's OAuth callback (`/sync/louve/callback`) opens the Louve view.
  */
 export function SyncPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  // The bank OAuth callback lands on /sync/callback?code=… with no tab: it belongs to the banks view.
-  const requested = searchParams.get('tab') ?? (searchParams.has('code') ? 'banks' : null)
+  const { pathname } = useLocation()
+  // Louve Invest's OAuth callback has its own path and belongs to its view; the bank OAuth
+  // callback lands on /sync/callback?code=… with no tab: it belongs to the banks view.
+  const requested = pathname === LOUVE_CALLBACK_PATH
+    ? 'louve'
+    : searchParams.get('tab') ?? (searchParams.has('code') ? 'banks' : null)
   // An unknown key (an old bookmark) falls back to the overview rather than an empty page.
   const view = isViewKey(requested) ? requested : null
   const top = useRef<HTMLDivElement>(null)

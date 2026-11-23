@@ -77,6 +77,7 @@ V{n}__description.sql
 | `V148__banque_populaire_stored_identifier.sql` | `sidecar_session.encrypted_credentials` is also allowed for `BANQUE_POPULAIRE`: the encrypted Banque Populaire identifier of the last successful login (never the password) |
 | `V149__trade_republic_sidecar_session.sql` | Trade Republic joins `sidecar_session` (bank and error-code CHECKs widened, Banque Populaire kept); `trade_republic_session` dropped, members reconnect once |
 | `V150__bnp_sidecar_session.sql` | BNP Paribas / Hello bank! joins `sidecar_session` (bank and error-code CHECKs rebuilt from V149 with `BNP` added); no table of its own, so nothing to copy |
+| `V153__louve_invest_sync.sql` | `louve_connection` (one row per member: encrypted token set, status, grant generation, last sync, pending OAuth attempt), like `wise_connection`; `scpi_position.louve_fund_code` + per-member unique index; `LOUVE` provider and `UNSUPPORTED_OWNERSHIP` outcome on `scpi_provider_fund`. The instance's Louve client ids live in `app_setting` (`louve.client-id:<sha-256 of the redirect URI>`), not in a table |
 
 Note: V8 is absent by design (skipped — never rolled into another migration). Numbering after V32 is not contiguous (V33–V36 unused).
 
@@ -90,6 +91,9 @@ Note: V8 is absent by design (skipped — never rolled into another migration). 
    already applied the old numbers has to be recreated, which deletes its data and encryption key
    ([how to do it safely](../../CONTRIBUTING.md#before-you-open-a-pull-request)).
    `MigrationVersionsTest` fails on a duplicate version.
+   In the maxencepzt fork, a fork-only migration takes the next free version from V1000 up, never
+   one in upstream's range: upstream releases reuse every lower number. Flyway runs upstream's later
+   migrations out of order (`out-of-order: true`).
 2. Use plain SQL — no Hibernate-generated DDL.
 3. Include constraints, indexes, and foreign keys explicitly.
 4. For new enums, use `CREATE TYPE ... AS ENUM (...)` at the top of the file.

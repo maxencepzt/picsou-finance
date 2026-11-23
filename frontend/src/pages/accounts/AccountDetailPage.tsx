@@ -1,6 +1,6 @@
 import { useState, useRef, type ReactNode } from 'react'
 import { toast } from 'sonner'
-import { useParams, useNavigate } from 'react-router'
+import { useParams, useNavigate, useSearchParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { useQueryClient } from '@tanstack/react-query'
 import {
@@ -136,6 +136,9 @@ function AccountSubtitle({ account, now }: { account: Account; now: number }) {
 export function AccountDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  // `?tab=config` opens a savings account on its configuration tab (the list's suggestion banner links there).
+  const [searchParams, setSearchParams] = useSearchParams()
+  const activeSavingsTab = searchParams.get('tab') === 'config' ? 'config' : 'overview'
   const { t, i18n } = useTranslation()
   const locale = localeFromLanguage(i18n.resolvedLanguage ?? i18n.language)
   const accountId = parseInt(id!, 10)
@@ -570,7 +573,10 @@ export function AccountDetailPage() {
 
       {/* Savings accounts: split into Overview / Config tabs so the page stays clean. */}
       {isSavings ? (
-        <Tabs defaultValue="overview">
+        <Tabs
+          value={activeSavingsTab}
+          onValueChange={(next) => setSearchParams(next === 'config' ? { tab: 'config' } : {}, { replace: true })}
+        >
           <TabsList>
             <TabsTrigger value="overview">{t('accounts.tabOverview')}</TabsTrigger>
             <TabsTrigger value="config">{t('savings.configSection')}</TabsTrigger>
