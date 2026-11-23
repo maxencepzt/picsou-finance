@@ -1411,9 +1411,9 @@
       "detect": "Detect",
       "add": "Add",
       "subtitle": "Subscriptions and recurring payments.",
-      "series": "Subscriptions and recurring",
+      "series": "Recurring series",
       "upcoming": "Upcoming payments",
-      "noSeries": "No recurring payments recorded yet.",
+      "noSeries": "No recurring series detected yet.",
       "noUpcoming": "No upcoming payments",
       "noUpcomingHint": "Upcoming charges will appear here once detected.",
       "error": "Couldn't load recurring items.",
@@ -1440,11 +1440,11 @@
         "dueSoon": "Due soon"
       },
       "activity": {
-        "title": "Recent changes",
-        "autoConfirmed": "Detected automatically",
+        "title": "What changed",
+        "autoConfirmed": "Auto-confirmed",
         "priceChange": "Price change",
-        "autoConfirmedDesc": "Added automatically to your recurring payments.",
-        "priceChangeDesc": "Amount changed from {{from}} to {{to}}.",
+        "autoConfirmedDesc": "Detected and confirmed automatically",
+        "priceChangeDesc": "Price went from {{from}} to {{to}}",
         "acknowledge": "Got it"
       },
       "nextDueShort": "Next on {{date}}",
@@ -2796,7 +2796,7 @@
       "birthDate": "Date of birth",
       "currentAge": "{{age}} years old",
       "retirementAge": "Target retirement age",
-      "marginalTaxRate": "Marginal tax rate (%)",
+      "marginalTaxRate": "Marginal tax rate",
       "householdStatus": "Household",
       "household": {
         "SINGLE": "Single",
@@ -3373,7 +3373,7 @@
     ],
     "intro": {
       "title": "Welcome to Picsou.",
-      "subtitle": "Your personal dashboard to track bank accounts, investments, crypto, and net worth, self-hosted privately on your own machine.",
+      "subtitle": "Let's set you up in about 2 minutes.",
       "cta": "Get started",
       "language": "Language",
       "skip": "Skip the animation",
@@ -3381,7 +3381,7 @@
     },
     "admin": {
       "title": "Create your admin account",
-      "subtitle": "This is the first and only required account on Picsou. You can invite others from Settings later.",
+      "subtitle": "This is the first — and only required — account on Picsou. You can invite others from Settings later.",
       "username": "Username",
       "usernameHint": "Choose a username with at least 3 characters.",
       "password": "Password",
@@ -3422,16 +3422,16 @@
     },
     "integrations": {
       "title": "Pick your integrations",
-      "subtitle": "Choose what to enable now. You can always change this later in the Integrations section of Settings.",
+      "subtitle": "Choose what to enable now. You can always change this later from Settings → Integrations.",
       "continue": "Continue",
-      "skipAll": "Skip all and configure later",
+      "skipAll": "Skip all — I'll configure later",
       "cards": {
         "enablebanking": {
           "title": "Enable Banking",
-          "description": "Connect Revolut, BoursoBank, Trade Republic and 2000+ European banks via PSD2. Takes about 5 minutes, we'll guide you."
+          "description": "Connect Revolut, BoursoBank, Trade Republic and 2000+ European banks via PSD2. Takes about 5 minutes — we'll guide you."
         },
         "boursobank": {
-          "title": "BoursoBank",
+          "title": "BoursoBank (sidecar)",
           "description": "Direct sync via the bundled bourso-auth container. No external account needed."
         },
         "traderepublic": {
@@ -3468,7 +3468,7 @@
         }
       },
       "hint": {
-        "none": "Nothing to enable now? That's fine, you can skip and configure everything later.",
+        "none": "Nothing to enable now? That's fine — you can skip and configure everything later.",
         "some": "{{count}} integration selected. We'll walk you through each one.",
         "some_other": "{{count}} integrations selected. We'll walk you through each one."
       },
@@ -3485,11 +3485,11 @@
       }
     },
     "enablebanking": {
-      "substep": "Step {{current}} of {{total}} · Enable Banking",
+      "substep": "Step {{current}} of {{total}} — Enable Banking",
       "skip": "Skip this integration",
       "back": "Back",
       "continue": "Continue",
-      "appIdFormat": "The Application ID doesn't look right: it should be a 32 to 36 character UUID.",
+      "appIdFormat": "The Application ID doesn't look right — it should be a 32–36 character UUID.",
       "redirectFormat": "Must look like http(s)://host[:port]/path",
       "explain": {
         "title": "What is Enable Banking?",
@@ -3501,7 +3501,7 @@
         "psd2Popover": "What is PSD2?",
         "psd2Body": "PSD2 is the EU regulation that lets licensed aggregators read your bank account with your consent. Your credentials never leave your bank.",
         "prodWarningTitle": "Create a PRODUCTION application",
-        "prodWarningBody": "In your Enable Banking dashboard, make sure to choose \"Production\" when creating the application: SANDBOX only gives you access to fake test banks, not your real ones.",
+        "prodWarningBody": "In your Enable Banking dashboard, make sure to choose \"Production\" when creating the application — the SANDBOX only gives you access to fake test banks, not your real ones.",
         "psd2ScopeNote": "Enable Banking only syncs current accounts (PSD2 limitation). For PEA, life insurance, savings accounts, etc.: use the dedicated integrations (Trade Republic, Boursobank, Finary) or add them manually.",
         "magicLinkHint": "Enter your email on the sign-in page. Enable Banking creates your account on first sign-in and sends you a one-time sign-in link."
       },
@@ -3592,31 +3592,31 @@
     },
     "tr": {
       "title": "Trade Republic is ready to go.",
-      "body": "There's nothing to configure here: you'll sign in with your Trade Republic credentials when you add the account from Picsou.",
-      "tip": "Once setup is done, open Accounts, click Add account, and choose Trade Republic.",
+      "body": "There's nothing to configure here — you'll sign in with your Trade Republic credentials when you add the account from Picsou.",
+      "tip": "Head to Accounts → Add account → Trade Republic once setup is done.",
       "cta": "Got it",
       "skip": "Don't enable Trade Republic"
     },
     "revolut": {
       "title": "Revolut is ready to go.",
-      "body": "Nothing to configure here: you'll connect Revolut with your phone number, passcode, and mobile app approval when you add the account.",
-      "tip": "Once setup is done, open Accounts, click Add account, and choose Revolut.",
+      "body": "Nothing to configure here — you'll connect Revolut with your phone number and passcode, then an approval from your mobile app, when you add the account.",
+      "tip": "Head to Accounts → Add account → Revolut once setup is done.",
       "cta": "Got it",
       "skip": "Don't enable Revolut"
     },
     "finary": {
       "title": "Finary is ready to go.",
-      "body": "Nothing to configure now: you'll sign in with your Finary account when you add it from Picsou. TOTP codes are handled at add-time if your account requires them.",
-      "tip": "Once setup is done, open Accounts, click Add account, and choose Finary.",
+      "body": "Nothing to configure now — you'll sign in with your Finary account when you add it from Picsou. TOTP codes are handled at add-time if your account requires them.",
+      "tip": "Head to Accounts → Add account → Finary once setup is done.",
       "cta": "Got it",
       "skip": "Don't enable Finary"
     },
     "crypto": {
       "title": "Encrypt your exchange API keys",
-      "body": "Your exchange API keys (Binance, Meria...) are encrypted at rest. Picsou can generate the encryption key for you: it stays on your disk and is never transmitted.",
+      "body": "Your exchange API keys (Binance, Meria...) are encrypted at rest. Picsou can generate the encryption key for you — it stays on your disk and is never transmitted.",
       "generateCta": "Generate a key for me",
       "generating": "Generating...",
-      "existed": "Your encryption key is already configured, nothing to do.",
+      "existed": "Your encryption key is already configured — nothing to do.",
       "created": "Encryption key generated.",
       "pathLabel": "Source",
       "continue": "Continue",
@@ -3627,7 +3627,7 @@
       "title": "Picsou is ready.",
       "subtitle": "Welcome, {{name}}.",
       "summaryTitle": "What's enabled",
-      "noIntegrations": "You didn't enable any integrations yet. That's fine, you can add them anytime from the Integrations section of Settings.",
+      "noIntegrations": "You didn't enable any integrations yet — that's fine, you can do that anytime from Settings → Integrations.",
       "completing": "Wrapping up...",
       "cta": "Open my dashboard",
       "loginFallback": "Go to login",
@@ -3642,7 +3642,7 @@
     },
     "lbp": {
       "title": "La Banque Postale is ready.",
-      "body": "Connect your account after setup by opening Accounts and clicking Add an account. You will enter your identifier, then your six digits on the bank's keypad.",
+      "body": "Connect your account after setup from Accounts → Add an account. You will enter your identifier, then your six digits on the bank's keypad.",
       "tip": "Picsou only stores an encrypted session and, if you ask, your identifier. The password and keypad positions are never stored.",
       "cta": "Enable La Banque Postale",
       "skip": "Don't enable La Banque Postale"
