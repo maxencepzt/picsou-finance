@@ -98,6 +98,7 @@ COMPLETE_WAIT_SECONDS = 150  # the human part only
 COMPLETE_DEADLINE_SECONDS = 160
 STEP_TIMEOUT_SECONDS = 30
 LOG_TITLE_TIMEOUT_SECONDS = 2
+LOG_REFUSED_HOSTS = 10
 AUTHORIZE_WAIT_SECONDS = 15
 POLL_INTERVAL_SECONDS = 0.25
 RESOURCE_CLOSE_TIMEOUT_SECONDS = 5
@@ -318,10 +319,13 @@ def _route_guard(site: Site, refused: collections.Counter[str] | None = None):
         if replay.is_allowed_url(site, url) or url.startswith("data:"):
             await route.continue_()
         else:
+            await route.abort()  # first: counting must never stand in the way of the refusal
             if refused is not None:
-                # The host only: a path or query could carry a value.
-                refused[f"{_url_parts(url)[0] or '?'} ({route.request.resource_type})"] += 1
-            await route.abort()
+                try:
+                    # The host only: a path or query could carry a value.
+                    refused[f"{_url_parts(url)[0] or '?'} ({route.request.resource_type})"] += 1
+                except ValueError:  # an unparsable URL, the reason it was refused
+                    refused["unparsable URL"] += 1
 
     return guard
 
@@ -427,9 +431,11 @@ async def initiate(site: Site, customer_id: str, *, region: str | None = None) -
         }
     except BaseException as exc:
         error = _to_login_error(exc) if isinstance(exc, Exception) else None
-        if error is not None and error.code.startswith("UPSTREAM_"):
-            await _log_where_login_stopped(session)
-        await _dispose(session)
+        try:
+            if error is not None and error.code.startswith("UPSTREAM_"):
+                await _log_where_login_stopped(session)
+        finally:
+            await _dispose(session)  # even when cancelled while logging
         if error is None:
             raise  # cancellation: the slot and the browser are already released
         raise error from None
@@ -443,11 +449,14 @@ async def _log_where_login_stopped(session: _Session) -> None:
     path, title = "?", "?"
     try:
         if session.page is not None:
-            path = _url_parts(session.page.url)[1] or "/"
+            # Matrix parameters (`;name=value`) could carry a value too.
+            path = _url_parts(session.page.url)[1].split(";", 1)[0] or "/"
             title = str(await asyncio.wait_for(session.page.title(), LOG_TITLE_TIMEOUT_SECONDS))[:80]
     except Exception:  # a closed or odd page: log what is known
         pass
-    refused = ", ".join(f"{name} x{count}" for name, count in sorted(session.refused.items()))
+    refused = ", ".join(f"{name} x{count}" for name, count in session.refused.most_common(LOG_REFUSED_HOSTS))
+    if len(session.refused) > LOG_REFUSED_HOSTS:
+        refused += f", +{len(session.refused) - LOG_REFUSED_HOSTS} more"
     log.warning("Login stopped on %s (title %r); refused off-site requests: %s", path, title, refused or "none")
 
 
