@@ -6,13 +6,14 @@ identifier, the consent banner, the hosts, and the cookies kept. No browser, no
 network, no real credential or bank data: every value below is synthetic.
 """
 
+import collections
 import json
 import unittest
 from dataclasses import replace
 from unittest.mock import patch
 
 from bpce import login, replay
-from bpce.testing import COOKIE_BANNER_BUTTON, World
+from bpce.testing import COOKIE_BANNER_BUTTON, FakeRoute, World
 
 import main
 
@@ -293,6 +294,35 @@ class NavigationAllowListTest(BanquePopulaireLoginTest):
         self.assertTrue((await context.open_web_socket("wss://www.banquepopulaire.fr/ws")).connected)
         self.assertTrue((await context.open_web_socket("wss://www.caisse-epargne.fr/ws")).closed)
 
+
+
+class StopDiagnosticsTest(BanquePopulaireLoginTest):
+    async def test_a_login_stalled_after_the_identifier_logs_its_page_and_never_the_identifier(self):
+        self.world.identifier_ok = False
+        self.world.identifier_error = False  # no banner, no keypad: the page just stays
+        with self.assertLogs("bpce", level="WARNING") as captured:
+            await self.assertFails(502, "UPSTREAM_FORMAT_CHANGED", self.initiate())
+        [line] = [entry for entry in captured.output if "Login stopped on" in entry]
+        self.assertIn("/se-connecter/identifier", line)
+        self.assertIn("refused off-site requests: none", line)
+        self.assertNotIn(CUSTOMER_ID, "\n".join(captured.output))
+        self.assertClean()
+
+    async def test_a_refused_identifier_is_not_reported_as_a_stall(self):
+        self.world.identifier_ok = False  # the bank shows its error banner
+        with self.assertLogs("bpce", level="DEBUG") as captured:
+            login.log.debug("marker")
+            await self.assertFails(401, "INVALID_CREDENTIALS", self.initiate())
+        self.assertFalse(any("Login stopped on" in entry for entry in captured.output))
+
+    async def test_refused_requests_are_counted_by_host_and_kind_only(self):
+        refused = collections.Counter()
+        guard = login._route_guard(main.SITE, refused)
+        for url in ("https://tracker.example.com/pixel?id=SECRET-VALUE",
+                    "https://tracker.example.com/other",
+                    "https://www.icgauth.banquepopulaire.fr/se-connecter/identifier"):
+            await guard(FakeRoute(url))
+        self.assertEqual(dict(refused), {"tracker.example.com (document)": 2})
 
 
 class IdentifierShapeTest(BanquePopulaireLoginTest):

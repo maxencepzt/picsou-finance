@@ -26,6 +26,7 @@ The hosts, the region picker and the cookie domain come from the `Site` handed t
 """
 
 import asyncio
+import collections
 import json
 import logging
 import time
@@ -96,6 +97,7 @@ COMPLETE_WAIT_SECONDS = 150  # the human part only
 # the human approves at the very end of the wait.
 COMPLETE_DEADLINE_SECONDS = 160
 STEP_TIMEOUT_SECONDS = 30
+LOG_TITLE_TIMEOUT_SECONDS = 2
 AUTHORIZE_WAIT_SECONDS = 15
 POLL_INTERVAL_SECONDS = 0.25
 RESOURCE_CLOSE_TIMEOUT_SECONDS = 5
@@ -130,6 +132,9 @@ class _Session:
     authorize_requests: list[str] = field(default_factory=list, repr=False)
     slot_held: bool = True
     shutdown_requested: bool = False
+    # Off-site requests the route guard refused, as "host (resource type)": a login
+    # that stalls on a page needing one of them says so in the log.
+    refused: collections.Counter[str] = field(default_factory=collections.Counter, repr=False)
 
 
 _pending: dict[str, _Session] = {}
@@ -307,12 +312,15 @@ def _to_login_error(exc: Exception) -> LoginError:
     return LoginError(500, "INTERNAL_ERROR")
 
 
-def _route_guard(site: Site):
+def _route_guard(site: Site, refused: collections.Counter[str] | None = None):
     async def guard(route: Any) -> None:
         url = route.request.url
         if replay.is_allowed_url(site, url) or url.startswith("data:"):
             await route.continue_()
         else:
+            if refused is not None:
+                # The host only: a path or query could carry a value.
+                refused[f"{_url_parts(url)[0] or '?'} ({route.request.resource_type})"] += 1
             await route.abort()
 
     return guard
@@ -397,7 +405,7 @@ async def initiate(site: Site, customer_id: str, *, region: str | None = None) -
             session.context = await session.browser.new_context(
                 locale="fr-FR", service_workers="block"
             )
-            await session.context.route("**/*", _route_guard(site))
+            await session.context.route("**/*", _route_guard(site, session.refused))
             await session.context.route_web_socket("**/*", _websocket_guard(site))
             session.page = await session.context.new_page()
             _watch_authorize(session, session.page)
@@ -418,10 +426,29 @@ async def initiate(site: Site, customer_id: str, *, region: str | None = None) -
             "expiresInSeconds": KEYPAD_TTL_SECONDS,
         }
     except BaseException as exc:
+        error = _to_login_error(exc) if isinstance(exc, Exception) else None
+        if error is not None and error.code.startswith("UPSTREAM_"):
+            await _log_where_login_stopped(session)
         await _dispose(session)
-        if not isinstance(exc, Exception):
+        if error is None:
             raise  # cancellation: the slot and the browser are already released
-        raise _to_login_error(exc) from None
+        raise error from None
+
+
+async def _log_where_login_stopped(session: _Session) -> None:
+    """The page a failed login stopped on and the off-site requests refused on the way.
+
+    Path and title only (never a query, a field value or a cookie), and hosts only.
+    """
+    path, title = "?", "?"
+    try:
+        if session.page is not None:
+            path = _url_parts(session.page.url)[1] or "/"
+            title = str(await asyncio.wait_for(session.page.title(), LOG_TITLE_TIMEOUT_SECONDS))[:80]
+    except Exception:  # a closed or odd page: log what is known
+        pass
+    refused = ", ".join(f"{name} x{count}" for name, count in sorted(session.refused.items()))
+    log.warning("Login stopped on %s (title %r); refused off-site requests: %s", path, title, refused or "none")
 
 
 async def _open_identifier_page(site: Site, page: Any) -> None:
