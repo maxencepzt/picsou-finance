@@ -31,6 +31,7 @@ import asyncio
 import base64
 import functools
 import hashlib
+import html.parser
 import json
 import logging
 import re
@@ -324,6 +325,145 @@ def _shape(value: Any, depth: int = 3) -> Any:
     return type(value).__name__
 
 
+@dataclass
+class _Trace:
+    """The last answer of a replay, for the failure log: its status and its shape."""
+
+    status: int | None = None
+    shape: Any = None
+
+
+@dataclass(frozen=True)
+class _SamlForm:
+    request: str = field(repr=False)
+    action: str
+
+
+# Hops allowed between the authorize answer and a SAML request or the code: forms
+# submitted and redirects followed, every one on an allow-listed host.
+MAX_AUTHORIZE_HOPS = 6
+
+
+def _same_endpoint(url: str, other: str) -> bool:
+    a, b = urllib.parse.urlsplit(url), urllib.parse.urlsplit(other)
+    return (a.scheme, (a.hostname or "").lower(), a.path) == (b.scheme, (b.hostname or "").lower(), b.path)
+
+
+def _string_form(answer: Any) -> tuple[str, str, dict[str, str]] | None:
+    """(method, action, fields) when `answer` is a form to submit, else None."""
+    if not isinstance(answer, dict):
+        return None
+    action, fields = answer.get("action"), answer.get("parameters")
+    if not _non_empty_str(action) or not isinstance(fields, dict) or not fields:
+        return None
+    if not all(isinstance(key, str) and isinstance(value, str) for key, value in fields.items()):
+        return None
+    method = answer.get("method") or "POST"
+    return (method.upper() if isinstance(method, str) else ""), action, fields
+
+
+class _HtmlFormParser(html.parser.HTMLParser):
+    """The first <form> of a page: its method, action and named inputs."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.form: dict[str, Any] | None = None
+        self._open = False
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        values = {name: value or "" for name, value in attrs}
+        if tag == "form" and self.form is None:
+            self.form = {"method": values.get("method") or "GET", "action": values.get("action"), "parameters": {}}
+            self._open = True
+        elif tag == "input" and self._open and values.get("name"):
+            self.form["parameters"][values["name"]] = values.get("value", "")
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag == "form":
+            self._open = False
+
+
+def _html_form(body: bytes, base_url: str) -> dict[str, Any] | None:
+    """An auto-submitted HTML form, as the JSON form shape, its action made absolute."""
+    try:
+        parser = _HtmlFormParser()
+        parser.feed(body.decode("utf-8", errors="replace"))
+    except Exception:  # an unparsable page is no form
+        return None
+    form = parser.form
+    if not form or not _non_empty_str(form.get("action")):
+        return None
+    form["action"] = urllib.parse.urljoin(base_url, form["action"])
+    return form
+
+
+async def _walk_to_saml_or_code(
+    site: Site, client: httpx.AsyncClient, answer: dict[str, Any], redirect_uri: str, trace: _Trace
+) -> "_SamlForm | str":
+    """From the authorize answer to a SAML request (the historic chain) or the code.
+
+    The answer used to hold a SAMLRequest form. Since 2026-11-24 Banque Populaire's holds
+    an OAuth form for its new identity server ("iag"); the client space submits it and
+    follows the redirects back. This does the same, form by form and redirect by redirect,
+    on allow-listed hosts only, until a SAML request, a code addressed to the captured
+    `redirect_uri`, or a code-bearing answer with no further action. A redirect to the
+    login pages or a 401/403 means the SSO session is gone.
+    """
+    current: dict[str, Any] | None = answer
+    requests_left = MAX_AUTHORIZE_HOPS
+    first = True
+    while True:
+        fields = current.get("parameters") if isinstance(current, dict) else None
+        if isinstance(fields, dict):
+            saml_request = fields.get("SAMLRequest")
+            if _non_empty_str(saml_request):
+                return _SamlForm(request=saml_request, action=_require_allowed(site, current.get("action")))
+            code = fields.get("code")
+            action = current.get("action")
+            if _non_empty_str(code) and (not _non_empty_str(action) or _same_endpoint(action, redirect_uri)):
+                return code
+        form = _string_form(current)
+        if form is None:
+            raise UpstreamError("Authorize step returned no SAML request" if first
+                                else "Identity step returned neither a SAML request nor a code")
+        first = False
+        method, action, form_fields = form
+        url = _require_allowed(site, action)
+        if method == "GET":
+            joiner = "&" if urllib.parse.urlsplit(url).query else "?"
+            url, form_fields, method = url + joiner + urllib.parse.urlencode(form_fields), None, "GET"
+        elif method != "POST":
+            raise UpstreamError("Identity step form has an unknown method")
+        while True:  # this request, then the redirects it answers with
+            if requests_left == 0:
+                raise UpstreamError("Identity step took too many hops")
+            requests_left -= 1
+            trace.shape = None
+            status, body, location = await _request(site, client, method, url, form=form_fields)
+            trace.status = status
+            if not 300 <= status < 400:
+                break
+            if not location:
+                raise UpstreamError("Identity step redirect without a location")
+            target = _require_allowed(site, urllib.parse.urljoin(url, location))
+            if _same_endpoint(target, redirect_uri):
+                code = urllib.parse.parse_qs(urllib.parse.urlsplit(target).query).get("code", [None])[0]
+                if _non_empty_str(code):
+                    return code
+                raise UpstreamError("Identity step returned to the client without a code")
+            if urllib.parse.urlsplit(target).path.startswith("/se-connecter"):
+                raise SessionExpired("Session no longer accepted")
+            url, method, form_fields = target, "GET", None
+        if status in (401, 403):
+            raise SessionExpired("Session no longer accepted")
+        if status != 200:
+            raise UpstreamError("Identity step failed")
+        current = _json_object(body)
+        if current is None:
+            current = _html_form(body, url)
+        trace.shape = _shape(current) if current is not None else "not a JSON object"
+
+
 def _non_empty_str(value: Any) -> bool:
     return isinstance(value, str) and bool(value)
 
@@ -381,59 +521,57 @@ async def replay_chain(
     }
 
     client = new_client(transport)
-    last_status: int | None = None  # of the last answer, for the failure log
-    last_shape: Any = None
+    trace = _Trace()
     try:
         restore_cookies(client, state.cookies)
 
         # 1. authorize
-        last_shape = None
+        trace.shape = None
         status, body = await _send(site, client, f"{authorize_url}?{urllib.parse.urlencode(query)}")
-        last_status = status
+        trace.status = status
         authorize = _json_object(body)
-        last_shape = _shape(authorize) if authorize is not None else "not a JSON object"
+        trace.shape = _shape(authorize) if authorize is not None else "not a JSON object"
         if status != 200 or authorize is None:
             raise UpstreamError("Authorize step failed")
-        authorize_params = authorize.get("parameters")
-        saml_request = authorize_params.get("SAMLRequest") if isinstance(authorize_params, dict) else None
-        if not _non_empty_str(saml_request):
-            raise UpstreamError("Authorize step returned no SAML request")
-        authn_url = _require_allowed(site, authorize.get("action"))
+        outcome = await _walk_to_saml_or_code(site, client, authorize, params["redirect_uri"], trace)
 
-        # 2. AuthnRequest: the status is the session-validity signal.
-        last_shape = None
-        status, body = await _send_authn(site, client, authn_url, {"SAMLRequest": saml_request})
-        last_status = status
-        if status in (401, 403):
-            raise SessionExpired("Session no longer accepted")
-        if status != 200:
-            raise UpstreamError("Authentication step failed")
-        authn = _json_object(body)
-        last_shape = _shape(authn) if authn is not None else "not a JSON object"
-        authn_response = authn.get("response") if authn else None
-        if not isinstance(authn_response, dict) or authn_response.get("status") != AUTHN_SUCCESS:
-            raise SessionExpired("Session no longer accepted")
-        saml2_post = authn_response.get("saml2_post")
-        if not isinstance(saml2_post, dict):
-            raise SessionExpired("Session no longer accepted")
-        consume_url = _require_allowed(site, saml2_post.get("action"))
-        saml_response = saml2_post.get("samlResponse")
-        if not _non_empty_str(saml_response):
-            raise SessionExpired("Session no longer accepted")
+        if isinstance(outcome, _SamlForm):
+            # 2. AuthnRequest: the status is the session-validity signal.
+            trace.shape = None
+            status, body = await _send_authn(site, client, outcome.action, {"SAMLRequest": outcome.request})
+            trace.status = status
+            if status in (401, 403):
+                raise SessionExpired("Session no longer accepted")
+            if status != 200:
+                raise UpstreamError("Authentication step failed")
+            authn = _json_object(body)
+            trace.shape = _shape(authn) if authn is not None else "not a JSON object"
+            authn_response = authn.get("response") if authn else None
+            if not isinstance(authn_response, dict) or authn_response.get("status") != AUTHN_SUCCESS:
+                raise SessionExpired("Session no longer accepted")
+            saml2_post = authn_response.get("saml2_post")
+            if not isinstance(saml2_post, dict):
+                raise SessionExpired("Session no longer accepted")
+            consume_url = _require_allowed(site, saml2_post.get("action"))
+            saml_response = saml2_post.get("samlResponse")
+            if not _non_empty_str(saml_response):
+                raise SessionExpired("Session no longer accepted")
 
-        # 3. consume
-        last_shape = None
-        status, body = await _send(site, client, consume_url, form={"SAMLResponse": saml_response})
-        last_status = status
-        consume = _json_object(body)
-        last_shape = _shape(consume) if consume is not None else "not a JSON object"
-        consume_params = consume.get("parameters") if consume else None
-        code = consume_params.get("code") if isinstance(consume_params, dict) else None
-        if status != 200 or not _non_empty_str(code):
-            raise UpstreamError("Consume step failed")
+            # 3. consume
+            trace.shape = None
+            status, body = await _send(site, client, consume_url, form={"SAMLResponse": saml_response})
+            trace.status = status
+            consume = _json_object(body)
+            trace.shape = _shape(consume) if consume is not None else "not a JSON object"
+            consume_params = consume.get("parameters") if consume else None
+            code = consume_params.get("code") if isinstance(consume_params, dict) else None
+            if status != 200 or not _non_empty_str(code):
+                raise UpstreamError("Consume step failed")
+        else:
+            code = outcome
 
         # 4. token
-        last_shape = None
+        trace.shape = None
         status, body = await _send(
             site,
             client,
@@ -446,9 +584,9 @@ async def replay_chain(
                 "redirect_uri": params["redirect_uri"],
             },
         )
-        last_status = status
+        trace.status = status
         token = _json_object(body)
-        last_shape = _shape(token) if token is not None else "not a JSON object"
+        trace.shape = _shape(token) if token is not None else "not a JSON object"
         if status != 200 or token is None:
             raise UpstreamError("Token step failed")
         access_token = token.get("access_token")
@@ -468,7 +606,7 @@ async def replay_chain(
         # The messages are fixed strings: the failed step, never upstream data.
         log.warning(
             "token replay failed: %s (%s; last HTTP status %s; last answer shape %s)",
-            exc.code, exc, last_status, last_shape,
+            exc.code, exc, trace.status, trace.shape,
         )
         raise
     finally:

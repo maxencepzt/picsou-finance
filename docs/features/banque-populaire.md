@@ -75,6 +75,18 @@ Loans read their detail through separate OAuth clients, as on Caisse d'Epargne. 
 
 The PER is read from the Banque Populaire insurer portal (Natixis Assurances, `SITE.per`).
 
+### The token chain since the identity-server move (2026-11-24)
+
+The authorize answer used to be a form carrying a `SAMLRequest` for the SAML IdP. Since 2026-11-24
+Banque Populaire answers an OAuth form for its new identity server (`iag`): `method`, `action` and
+`parameters` (`request`, `client_id`, `redirect_uri`, `code_challenge`...). `replay._walk_to_saml_or_code`
+does what the client space does: it submits each form (JSON, or an auto-submitted HTML form) and follows
+the redirects, every URL on the allow-list, at most `MAX_AUTHORIZE_HOPS` requests, until it meets a
+`SAMLRequest` (the historic AuthnRequest -> consume steps follow), a redirect to the captured
+`redirect_uri` carrying the code, or an answer holding a code with no further action. A redirect to
+`/se-connecter` or a 401/403 is an expired session. Only the first answer's shape was observed live; the
+rest follows the standard OAuth flow, and a failure logs the step, the status and the answer's shape.
+
 ### A login that stops without an answer
 
 When `/initiate` (shared BPCE code, Caisse d'Epargne too) fails with `UPSTREAM_FORMAT_CHANGED` or
