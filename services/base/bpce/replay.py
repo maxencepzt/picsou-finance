@@ -347,6 +347,15 @@ MAX_AUTHORIZE_HOPS = 6
 SESSION_GONE_ERRORS = frozenset({"login_required", "interaction_required", "consent_required", "account_selection_required"})
 
 
+def _where(url: str) -> str:
+    """Host and path for the log: never a query, a fragment or `;` parameters."""
+    try:
+        parts = urllib.parse.urlsplit(url)
+        return f"{parts.hostname or '?'}{parts.path.split(';', 1)[0][:80]}"
+    except ValueError:
+        return "(unparsable)"
+
+
 def _same_endpoint(url: str, other: str) -> bool:
     a, b = urllib.parse.urlsplit(url), urllib.parse.urlsplit(other)
     return (a.scheme, (a.hostname or "").lower(), a.path) == (b.scheme, (b.hostname or "").lower(), b.path)
@@ -371,10 +380,13 @@ class _HtmlFormParser(html.parser.HTMLParser):
     def __init__(self) -> None:
         super().__init__()
         self.form: dict[str, Any] | None = None
+        self.asks_for_a_password = False
         self._open = False
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         values = {name: value or "" for name, value in attrs}
+        if tag == "input" and values.get("type", "").lower() == "password":
+            self.asks_for_a_password = True
         if tag == "form" and self.form is None:
             self.form = {"method": values.get("method") or "GET", "action": values.get("action"), "parameters": {}}
             self._open = True
@@ -393,6 +405,10 @@ def _html_form(body: bytes, base_url: str) -> dict[str, Any] | None:
         parser.feed(body.decode("utf-8", errors="replace"))
     except Exception:  # an unparsable page is no form
         return None
+    if parser.asks_for_a_password:
+        # A sign-in page: the SSO session is gone. It is never submitted, even empty,
+        # since a refused attempt would count against the user at the bank.
+        raise SessionExpired("Session no longer accepted")
     form = parser.form
     if not form or not _non_empty_str(form.get("action")):
         return None
@@ -427,18 +443,25 @@ async def _walk_to_saml_or_code(
             action = current.get("action")
             if _non_empty_str(code) and (not _non_empty_str(action) or _same_endpoint(action, redirect_uri)):
                 return code
-        form = _string_form(current)
-        if form is None:
-            raise UpstreamError("Authorize step returned no SAML request" if first
-                                else "Identity step returned neither a SAML request nor a code")
+        navigate = current.get("authenticate_url") if isinstance(current, dict) else None
+        if _non_empty_str(navigate) and not first:
+            # Observed live 2026-11-24 after the identity server form: {"authenticate_url": ...}.
+            method, action, form_fields = "GET", urllib.parse.urljoin(url, navigate), None
+        else:
+            form = _string_form(current)
+            if form is None:
+                raise UpstreamError("Authorize step returned no SAML request" if first
+                                    else "Identity step returned neither a SAML request nor a code")
+            method, action, form_fields = form
         first = False
-        method, action, form_fields = form
         url = _require_allowed(site, action)
-        if method == "GET":
+        if method == "POST" and urllib.parse.urlsplit(url).path.startswith("/se-connecter"):
+            raise SessionExpired("Session no longer accepted")  # a sign-in form: never submitted
+        if method == "GET" and form_fields is not None:
             parts = urllib.parse.urlsplit(url)
             url = urllib.parse.urlunsplit(parts._replace(query=urllib.parse.urlencode(form_fields), fragment=""))
             form_fields = None
-        elif method != "POST":
+        elif method not in ("GET", "POST"):
             raise UpstreamError("Identity step form has an unknown method")
         while True:  # this request, then the redirects it answers with
             if requests_left == 0:
@@ -447,6 +470,7 @@ async def _walk_to_saml_or_code(
             trace.shape = None
             status, body, location = await _request(site, client, method, url, form=form_fields)
             trace.status = status
+            log.info("Identity hop: %s %s -> %s", method, _where(url), status)
             if not 300 <= status < 400:
                 break
             if not location:

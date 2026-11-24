@@ -84,7 +84,10 @@ does what the client space does: it submits each form (JSON, or an auto-submitte
 the redirects, every URL on the allow-list, at most `MAX_AUTHORIZE_HOPS` requests, until it meets a
 `SAMLRequest` (the historic AuthnRequest -> consume steps follow), a redirect to the captured
 `redirect_uri` carrying the code, or an answer holding a code with no further action. A redirect to
-`/se-connecter` or a 401/403 is an expired session. Only the first answer's shape was observed live; the
+`/se-connecter` or a 401/403 is an expired session. The identity server answered the form with
+`{"authenticate_url": ...}` (observed 2026-11-24): it is followed with a GET. A page asking for a password is an
+expired session and is never submitted, nor is any form posted to `/se-connecter`. Each hop is logged at INFO as
+`Identity hop: <method> <host><path> -> <status>`, never with a query. Only the first answer's shape was observed live; the
 rest follows the standard OAuth flow, and a failure logs the step, the status and the answer's shape.
 
 ### A login that stops without an answer

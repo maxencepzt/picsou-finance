@@ -732,6 +732,42 @@ class ReplayChainTest(unittest.IsolatedAsyncioTestCase):
             await self.run_chain(bank)
         self.assertEqual(bank.paths(), ["/api/oauth/v2/authorize"])
 
+    async def test_an_authenticate_url_answer_is_followed_with_a_get(self):
+        seen = []
+        def answer(request):
+            seen.append(request)
+            if request.url.path == "/oauth2/authorize":
+                return httpx.Response(200, json={"authenticate_url": "/authenticate?ctx=" + SECRET_PARAM})
+            return httpx.Response(302, headers={"Location": CLIENT_REDIRECT + "?code=" + SECRET_CODE})
+        with self.assertLogs("bpce", level="INFO") as captured:
+            result = await self.run_chain(IagBank(answer))
+        self.assertEqual(result.access_token, SECRET_TOKEN)
+        self.assertEqual((seen[1].method, seen[1].url.path), ("GET", "/authenticate"))
+        logged = "\n".join(captured.output)
+        self.assertIn("Identity hop: GET www.iag.caisse-epargne.fr/authenticate -> 302", logged)
+        for secret in ALL_SECRETS:
+            self.assertNotIn(secret, logged)
+
+    async def test_a_sign_in_page_is_never_submitted(self):
+        seen = []
+        def answer(request):
+            seen.append(request)
+            if request.url.path == "/oauth2/authorize":
+                return httpx.Response(200, json={"authenticate_url": "/authenticate"})
+            return httpx.Response(200, text='<form method="post" action="/login"><input name="user">'
+                                            '<input type="password" name="pass"></form>')
+        with self.assertRaises(replay.SessionExpired):
+            await self.run_chain(IagBank(answer))
+        self.assertEqual([request.method for request in seen], ["POST", "GET"])
+
+    async def test_nothing_is_ever_posted_to_the_sign_in_pages(self):
+        bank = IagBank(lambda request: httpx.Response(200, json={
+            "method": "POST", "action": "https://www.icgauth.caisse-epargne.fr/se-connecter/identifier",
+            "parameters": {"field": "value"}}))
+        with self.assertRaises(replay.SessionExpired):
+            await self.run_chain(bank)
+        self.assertNotIn("/se-connecter/identifier", bank.paths())
+
     async def test_a_redirect_to_the_login_pages_means_session_expired(self):
         bank = IagBank(lambda request: httpx.Response(
             302, headers={"Location": "https://www.icgauth.caisse-epargne.fr/se-connecter/sso?x=1"}))
