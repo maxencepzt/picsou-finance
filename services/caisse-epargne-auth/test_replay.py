@@ -579,9 +579,35 @@ class ReplayChainTest(unittest.IsolatedAsyncioTestCase):
                 with self.assertLogs("bpce", level="WARNING") as captured, self.assertRaises(replay.UpstreamError):
                     await self.run_chain(bank)
                 logged = "\n".join(captured.output)
-                self.assertIn(f"token replay failed: UPSTREAM_ERROR ({expected})", logged)
+                self.assertIn(f"token replay failed: UPSTREAM_ERROR ({expected};", logged)
                 for secret in ALL_SECRETS:
                     self.assertNotIn(secret, logged)
+
+    async def test_an_unexpected_answer_is_logged_by_its_shape_never_its_values(self):
+        bank = FakeBank(authorize_body=json.dumps({
+            "action": "https://www.example.caisse-epargne.fr/x?" + SECRET_PARAM,
+            "parameters": {"code": SECRET_CODE, "state": SECRET_SAML_REQUEST, "nested": {"deep": [1, 2]}},
+        }).encode())
+        with self.assertLogs("bpce", level="WARNING") as captured, self.assertRaises(replay.UpstreamError):
+            await self.run_chain(bank)
+        logged = "\n".join(captured.output)
+        self.assertIn("Authorize step returned no SAML request", logged)
+        self.assertIn("{'action': 'str', 'parameters': {'code': 'str', 'state': 'str', 'nested': {'deep': 'list[2]'}}}", logged)
+        for secret in ALL_SECRETS:
+            self.assertNotIn(secret, logged)
+
+    async def test_secret_bearing_field_names_are_masked_in_the_shape(self):
+        bank = FakeBank(authorize_body=json.dumps({"parameters": {"SAMLRequest": "", "RelayState": "x"}}).encode())
+        with self.assertLogs("bpce", level="WARNING") as captured, self.assertRaises(replay.UpstreamError):
+            await self.run_chain(bank)
+        logged = "\n".join(captured.output)
+        self.assertIn("{'parameters': {'(sensitive field)': 'str', 'RelayState': 'str'}}", logged)
+        self.assertNotIn("SAMLRequest", logged)
+
+    async def test_a_non_json_answer_is_logged_as_such(self):
+        with self.assertLogs("bpce", level="WARNING") as captured, self.assertRaises(replay.UpstreamError):
+            await self.run_chain(FakeBank(authorize_body=b"<html>"))
+        self.assertIn("last answer shape not a JSON object", "\n".join(captured.output))
 
     async def test_a_refused_host_is_logged_by_name_only(self):
         bank = FakeBank(action="https://evil.example.com/dacswebssoissuer/AuthnRequestServlet?q=" + SECRET_PARAM)

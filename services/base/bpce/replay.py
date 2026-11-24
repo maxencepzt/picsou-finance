@@ -59,6 +59,9 @@ MAX_RESPONSE_BYTES = 1_048_576
 # The token is dropped this long before the bank says it expires.
 TOKEN_SAFETY_MARGIN_SECONDS = 30.0
 MAX_TOKEN_LIFETIME_SECONDS = 3600.0
+SHAPE_MAX_KEYS = 30
+# Field names that travel with a secret: kept out of the log even as names.
+SENSITIVE_KEYS = frozenset({"SAMLRequest", "SAMLResponse", "login_hint", "code_verifier"})
 MAX_CACHED_TOKENS = 64
 
 USER_AGENT = (
@@ -303,6 +306,24 @@ def _json_object(body: bytes) -> dict[str, Any] | None:
     return decoded if isinstance(decoded, dict) else None
 
 
+def _shape(value: Any, depth: int = 3) -> Any:
+    """A JSON answer's structure for the log: key names and value types, never a value."""
+    if isinstance(value, dict):
+        if depth == 0:
+            return f"dict[{len(value)}]"
+        items = list(value.items())[:SHAPE_MAX_KEYS]
+        shape = {
+            ("(sensitive field)" if key in SENSITIVE_KEYS else str(key)[:40]): _shape(item, depth - 1)
+            for key, item in items
+        }
+        if len(value) > SHAPE_MAX_KEYS:
+            shape["..."] = f"+{len(value) - SHAPE_MAX_KEYS} keys"
+        return shape
+    if isinstance(value, list):
+        return f"list[{len(value)}]"
+    return type(value).__name__
+
+
 def _non_empty_str(value: Any) -> bool:
     return isinstance(value, str) and bool(value)
 
@@ -361,13 +382,16 @@ async def replay_chain(
 
     client = new_client(transport)
     last_status: int | None = None  # of the last answer, for the failure log
+    last_shape: Any = None
     try:
         restore_cookies(client, state.cookies)
 
         # 1. authorize
+        last_shape = None
         status, body = await _send(site, client, f"{authorize_url}?{urllib.parse.urlencode(query)}")
         last_status = status
         authorize = _json_object(body)
+        last_shape = _shape(authorize) if authorize is not None else "not a JSON object"
         if status != 200 or authorize is None:
             raise UpstreamError("Authorize step failed")
         authorize_params = authorize.get("parameters")
@@ -377,6 +401,7 @@ async def replay_chain(
         authn_url = _require_allowed(site, authorize.get("action"))
 
         # 2. AuthnRequest: the status is the session-validity signal.
+        last_shape = None
         status, body = await _send_authn(site, client, authn_url, {"SAMLRequest": saml_request})
         last_status = status
         if status in (401, 403):
@@ -384,6 +409,7 @@ async def replay_chain(
         if status != 200:
             raise UpstreamError("Authentication step failed")
         authn = _json_object(body)
+        last_shape = _shape(authn) if authn is not None else "not a JSON object"
         authn_response = authn.get("response") if authn else None
         if not isinstance(authn_response, dict) or authn_response.get("status") != AUTHN_SUCCESS:
             raise SessionExpired("Session no longer accepted")
@@ -396,15 +422,18 @@ async def replay_chain(
             raise SessionExpired("Session no longer accepted")
 
         # 3. consume
+        last_shape = None
         status, body = await _send(site, client, consume_url, form={"SAMLResponse": saml_response})
         last_status = status
         consume = _json_object(body)
+        last_shape = _shape(consume) if consume is not None else "not a JSON object"
         consume_params = consume.get("parameters") if consume else None
         code = consume_params.get("code") if isinstance(consume_params, dict) else None
         if status != 200 or not _non_empty_str(code):
             raise UpstreamError("Consume step failed")
 
         # 4. token
+        last_shape = None
         status, body = await _send(
             site,
             client,
@@ -419,6 +448,7 @@ async def replay_chain(
         )
         last_status = status
         token = _json_object(body)
+        last_shape = _shape(token) if token is not None else "not a JSON object"
         if status != 200 or token is None:
             raise UpstreamError("Token step failed")
         access_token = token.get("access_token")
@@ -436,7 +466,10 @@ async def replay_chain(
         return TokenResult(access_token=access_token, expires_in=expires_in)
     except ReplayError as exc:
         # The messages are fixed strings: the failed step, never upstream data.
-        log.warning("token replay failed: %s (%s; last HTTP status %s)", exc.code, exc, last_status)
+        log.warning(
+            "token replay failed: %s (%s; last HTTP status %s; last answer shape %s)",
+            exc.code, exc, last_status, last_shape,
+        )
         raise
     finally:
         await client.aclose()
