@@ -306,6 +306,35 @@ class FakeBank:
         return httpx.Response(404)
 
 
+# The identity server Banque Populaire moved to on 2026-11-24 ("iag"), on synthetic hosts.
+IAG_AUTHORIZE = "https://www.iag.caisse-epargne.fr/oauth2/authorize"
+AS_CALLBACK = "https://www.as-ext-bad-ce.caisse-epargne.fr/api/oauth/v2/callback"
+CLIENT_REDIRECT = make_params()["redirect_uri"]
+
+
+def iag_form(action: str = IAG_AUTHORIZE) -> bytes:
+    return json.dumps({
+        "method": "POST",
+        "action": action,
+        "parameters": {"request": "signed-request", "client_id": "as-client", "redirect_uri": AS_CALLBACK,
+                       "response_type": "code", "scope": "openid"},
+    }).encode()
+
+
+class IagBank(FakeBank):
+    """The authorize answer is an OAuth form for the identity server; `answer` plays the rest."""
+
+    def __init__(self, answer, **kwargs):
+        super().__init__(authorize_body=kwargs.pop("authorize_body", iag_form()), **kwargs)
+        self.answer = answer
+
+    def handle(self, request: httpx.Request) -> httpx.Response:
+        if request.url.host == "www.iag.caisse-epargne.fr" or request.url.path == "/api/oauth/v2/callback":
+            self.requests.append(request)
+            return self.answer(request)
+        return super().handle(request)
+
+
 class ReplayChainTest(unittest.IsolatedAsyncioTestCase):
     async def run_chain(self, bank: FakeBank, **kwargs) -> replay.TokenResult:
         state = replay.parse_session_state(make_state())
@@ -616,6 +645,133 @@ class ReplayChainTest(unittest.IsolatedAsyncioTestCase):
         logged = "\n".join(captured.output)
         self.assertIn("Refused a URL on host evil.example.com", logged)
         self.assertNotIn(SECRET_PARAM, logged)
+
+    async def test_an_identity_server_form_leading_to_a_saml_request_completes_the_historic_chain(self):
+        bank = IagBank(lambda request: httpx.Response(200, json={
+            "method": "POST", "action": AUTHN_URL, "parameters": {"SAMLRequest": SECRET_SAML_REQUEST}}))
+        result = await self.run_chain(bank)
+        self.assertEqual(result.access_token, SECRET_TOKEN)
+        self.assertEqual(bank.paths(), ["/api/oauth/v2/authorize", "/oauth2/authorize",
+                                        "/dacswebssoissuer/AuthnRequestServlet", "/api/oauth/v2/consume",
+                                        "/api/oauth/v2/token"])
+        self.assertIn(b"request=signed-request", bank.requests[1].content)
+
+    async def test_redirects_back_to_the_captured_redirect_uri_hand_over_the_code(self):
+        def answer(request):
+            if request.url.path == "/oauth2/authorize":
+                return httpx.Response(302, headers={"Location": AS_CALLBACK + "?code=idp-code"})
+            return httpx.Response(302, headers={"Location": CLIENT_REDIRECT + "?code=" + SECRET_CODE})
+        bank = IagBank(answer)
+        result = await self.run_chain(bank)
+        self.assertEqual(result.access_token, SECRET_TOKEN)
+        self.assertEqual(bank.paths(), ["/api/oauth/v2/authorize", "/oauth2/authorize",
+                                        "/api/oauth/v2/callback", "/api/oauth/v2/token"])
+        token_form = urllib.parse.parse_qs(bank.requests[-1].content.decode())
+        self.assertEqual(token_form["code"], [SECRET_CODE])
+        self.assertNotIn(urllib.parse.urlsplit(CLIENT_REDIRECT).hostname, {r.url.host for r in bank.requests})
+
+    async def test_an_auto_submitted_html_form_is_followed(self):
+        def answer(request):
+            if request.url.path == "/oauth2/authorize":
+                return httpx.Response(200, text='<html><body><form method="post" action="/api/oauth/v2/callback">'
+                                                '<input type="hidden" name="code" value="idp-code"></form></body></html>')
+            return httpx.Response(200, json={"method": "POST", "parameters": {"code": SECRET_CODE}})
+        bank = IagBank(answer)
+        result = await self.run_chain(bank)
+        self.assertEqual(result.access_token, SECRET_TOKEN)
+        callback = bank.requests[2]
+        self.assertEqual((callback.method, callback.url.path), ("POST", "/api/oauth/v2/callback"))
+        self.assertEqual(urllib.parse.parse_qs(callback.content.decode())["code"], ["idp-code"])
+        self.assertEqual(urllib.parse.parse_qs(bank.requests[-1].content.decode())["code"], [SECRET_CODE])
+
+    async def test_an_intermediate_code_for_the_banks_callback_is_never_exchanged(self):
+        def answer(request):
+            if request.url.path == "/oauth2/authorize":  # a code, but addressed to the bank's callback
+                return httpx.Response(200, json={"method": "POST", "action": AS_CALLBACK,
+                                                 "parameters": {"code": "idp-code"}})
+            return httpx.Response(302, headers={"Location": CLIENT_REDIRECT + "?code=" + SECRET_CODE})
+        bank = IagBank(answer)
+        await self.run_chain(bank)
+        self.assertEqual(urllib.parse.parse_qs(bank.requests[-1].content.decode())["code"], [SECRET_CODE])
+
+    async def test_a_login_required_answer_at_the_client_means_session_expired(self):
+        bank = IagBank(lambda request: httpx.Response(302, headers={"Location": CLIENT_REDIRECT + "?error=login_required"}))
+        with self.assertRaises(replay.SessionExpired):
+            await self.run_chain(bank)
+
+    async def test_a_get_form_replaces_the_actions_query_and_fragment(self):
+        seen = []
+        def answer(request):
+            seen.append(request)
+            if len(seen) == 1:
+                return httpx.Response(200, json={"method": "get", "action": IAG_AUTHORIZE + "?old=1#frag",
+                                                 "parameters": {"step": "two"}})
+            return httpx.Response(302, headers={"Location": CLIENT_REDIRECT + "?code=" + SECRET_CODE})
+        await self.run_chain(IagBank(answer))
+        self.assertEqual((seen[1].method, seen[1].url.query), ("GET", b"step=two"))
+
+    async def test_a_307_after_a_post_is_posted_again(self):
+        seen = []
+        def answer(request):
+            seen.append(request)
+            if len(seen) == 1:
+                return httpx.Response(307, headers={"Location": IAG_AUTHORIZE + "/again"})
+            return httpx.Response(302, headers={"Location": CLIENT_REDIRECT + "?code=" + SECRET_CODE})
+        await self.run_chain(IagBank(answer))
+        self.assertEqual(seen[1].method, "POST")
+        self.assertIn(b"request=signed-request", seen[1].content)
+
+    async def test_a_malformed_location_is_an_upstream_error(self):
+        bank = IagBank(lambda request: httpx.Response(302, headers={"Location": "https://xn--/"}))
+        with self.assertRaises(replay.UpstreamError):
+            await self.run_chain(bank)
+
+    async def test_an_empty_saml_request_is_refused_without_posting_it(self):
+        bank = FakeBank(authorize_body=json.dumps({"action": AUTHN_URL, "parameters": {"SAMLRequest": ""}}).encode())
+        with self.assertRaises(replay.UpstreamError):
+            await self.run_chain(bank)
+        self.assertEqual(bank.paths(), ["/api/oauth/v2/authorize"])
+
+    async def test_a_redirect_to_the_login_pages_means_session_expired(self):
+        bank = IagBank(lambda request: httpx.Response(
+            302, headers={"Location": "https://www.icgauth.caisse-epargne.fr/se-connecter/sso?x=1"}))
+        with self.assertRaises(replay.SessionExpired):
+            await self.run_chain(bank)
+
+    async def test_an_identity_server_refusal_means_session_expired(self):
+        with self.assertRaises(replay.SessionExpired):
+            await self.run_chain(IagBank(lambda request: httpx.Response(401)))
+
+    async def test_a_return_to_the_client_without_a_code_is_an_upstream_error(self):
+        bank = IagBank(lambda request: httpx.Response(302, headers={"Location": CLIENT_REDIRECT + "?error=x"}))
+        with self.assertRaises(replay.UpstreamError) as ctx:
+            await self.run_chain(bank)
+        self.assertNotIsInstance(ctx.exception, replay.SessionExpired)
+
+    async def test_a_form_off_the_allow_list_is_refused_before_anything_is_sent(self):
+        bank = IagBank(lambda request: httpx.Response(500),
+                       authorize_body=iag_form("https://evil.example.com/oauth2/authorize"))
+        with self.assertRaises(replay.HostNotAllowed):
+            await self.run_chain(bank)
+        self.assertEqual(bank.paths(), ["/api/oauth/v2/authorize"])
+
+    async def test_a_redirect_off_the_allow_list_is_refused_before_following(self):
+        bank = IagBank(lambda request: httpx.Response(302, headers={"Location": "https://evil.example.com/cb?code=x"}))
+        with self.assertRaises(replay.HostNotAllowed):
+            await self.run_chain(bank)
+        self.assertEqual(bank.paths(), ["/api/oauth/v2/authorize", "/oauth2/authorize"])
+
+    async def test_hops_are_bounded(self):
+        bank = IagBank(lambda request: httpx.Response(200, content=iag_form()))
+        with self.assertRaises(replay.UpstreamError):
+            await self.run_chain(bank)
+        self.assertEqual(bank.paths().count("/oauth2/authorize"), replay.MAX_AUTHORIZE_HOPS)
+
+    async def test_an_endless_redirect_loop_is_bounded(self):
+        bank = IagBank(lambda request: httpx.Response(302, headers={"Location": IAG_AUTHORIZE}))
+        with self.assertRaises(replay.UpstreamError):
+            await self.run_chain(bank)
+        self.assertEqual(bank.paths().count("/oauth2/authorize"), replay.MAX_AUTHORIZE_HOPS)
 
     async def test_transport_errors_map_to_upstream_error(self):
         def handler(request: httpx.Request) -> httpx.Response:

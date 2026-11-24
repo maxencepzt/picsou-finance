@@ -38,6 +38,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Banque Populaire syncs again after its identity-server move.** Since 2026-11-24 the bank answers the
+  token request with a form for its new identity server instead of a SAML request; the connector now submits
+  it and follows the redirects back, on the bank's own domains only.
 - **Banque Populaire login works again.** The bank moved its password page from `/se-connecter/icg/` to
   `/se-connecter/iag/` on 2026-11-24; the connector waited for the old address and gave up after 30 seconds
   with "the site format changed". Both addresses are accepted, for Caisse d'Epargne too.
