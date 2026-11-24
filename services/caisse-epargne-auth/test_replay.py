@@ -566,6 +566,31 @@ class ReplayChainTest(unittest.IsolatedAsyncioTestCase):
                     await self.run_chain(bank)
                 self.assertNotIsInstance(ctx.exception, replay.SessionExpired)
 
+    async def test_a_failed_step_is_logged_by_name_and_status_never_by_value(self):
+        cases = {
+            "Authorize step failed; last HTTP status 500": FakeBank(authorize_http=500, authorize_body=b""),
+            "Consume step failed; last HTTP status 500": FakeBank(consume_http=500, consume_body=b""),
+            "Token step failed; last HTTP status 400": FakeBank(
+                token_http=400, token_body=b'{"error":"invalid_grant"}'
+            ),
+        }
+        for expected, bank in cases.items():
+            with self.subTest(expected=expected):
+                with self.assertLogs("bpce", level="WARNING") as captured, self.assertRaises(replay.UpstreamError):
+                    await self.run_chain(bank)
+                logged = "\n".join(captured.output)
+                self.assertIn(f"token replay failed: UPSTREAM_ERROR ({expected})", logged)
+                for secret in ALL_SECRETS:
+                    self.assertNotIn(secret, logged)
+
+    async def test_a_refused_host_is_logged_by_name_only(self):
+        bank = FakeBank(action="https://evil.example.com/dacswebssoissuer/AuthnRequestServlet?q=" + SECRET_PARAM)
+        with self.assertLogs("bpce", level="WARNING") as captured, self.assertRaises(replay.HostNotAllowed):
+            await self.run_chain(bank)
+        logged = "\n".join(captured.output)
+        self.assertIn("Refused a URL on host evil.example.com", logged)
+        self.assertNotIn(SECRET_PARAM, logged)
+
     async def test_transport_errors_map_to_upstream_error(self):
         def handler(request: httpx.Request) -> httpx.Response:
             raise httpx.ConnectTimeout("boom " + SECRET_COOKIE, request=request)

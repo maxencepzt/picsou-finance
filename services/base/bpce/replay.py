@@ -129,8 +129,19 @@ def is_allowed_url(site: Site, url: Any) -> bool:
 
 def _require_allowed(site: Site, url: Any) -> str:
     if not is_allowed_url(site, url):
+        log.warning("Refused a URL on host %s", _host_for_log(url))
         raise HostNotAllowed(f"Refused a URL outside https *.{site.domain}")
     return url
+
+
+def _host_for_log(url: Any) -> str:
+    """The host alone (never a path, a query or credentials), or what kind of value it was."""
+    if not isinstance(url, str):
+        return type(url).__name__
+    try:
+        return urllib.parse.urlsplit(url).hostname or "(none)"
+    except ValueError:
+        return "(unparsable)"
 
 
 # --- Session state -----------------------------------------------------------
@@ -349,11 +360,13 @@ async def replay_chain(
     }
 
     client = new_client(transport)
+    last_status: int | None = None  # of the last answer, for the failure log
     try:
         restore_cookies(client, state.cookies)
 
         # 1. authorize
         status, body = await _send(site, client, f"{authorize_url}?{urllib.parse.urlencode(query)}")
+        last_status = status
         authorize = _json_object(body)
         if status != 200 or authorize is None:
             raise UpstreamError("Authorize step failed")
@@ -365,6 +378,7 @@ async def replay_chain(
 
         # 2. AuthnRequest: the status is the session-validity signal.
         status, body = await _send_authn(site, client, authn_url, {"SAMLRequest": saml_request})
+        last_status = status
         if status in (401, 403):
             raise SessionExpired("Session no longer accepted")
         if status != 200:
@@ -383,6 +397,7 @@ async def replay_chain(
 
         # 3. consume
         status, body = await _send(site, client, consume_url, form={"SAMLResponse": saml_response})
+        last_status = status
         consume = _json_object(body)
         consume_params = consume.get("parameters") if consume else None
         code = consume_params.get("code") if isinstance(consume_params, dict) else None
@@ -402,6 +417,7 @@ async def replay_chain(
                 "redirect_uri": params["redirect_uri"],
             },
         )
+        last_status = status
         token = _json_object(body)
         if status != 200 or token is None:
             raise UpstreamError("Token step failed")
@@ -419,7 +435,8 @@ async def replay_chain(
             raise UpstreamError("Token step returned an unusable token")
         return TokenResult(access_token=access_token, expires_in=expires_in)
     except ReplayError as exc:
-        log.warning("token replay failed: %s", exc.code)
+        # The messages are fixed strings: the failed step, never upstream data.
+        log.warning("token replay failed: %s (%s; last HTTP status %s)", exc.code, exc, last_status)
         raise
     finally:
         await client.aclose()
