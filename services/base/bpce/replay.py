@@ -257,8 +257,9 @@ async def _request(
                     raise UpstreamError("Upstream response too large")
                 chunks.append(chunk)
             return response.status_code, b"".join(chunks), response.headers.get("location")
-    except httpx.HTTPError:
-        # Fixed message, no chained cause: httpx errors can embed URLs.
+    except (httpx.HTTPError, httpx.InvalidURL, ValueError):
+        # Fixed message, no chained cause: httpx errors can embed URLs. InvalidURL and
+        # ValueError (IDNA) come from a malformed Location httpx parses even unfollowed.
         raise UpstreamError("Upstream request failed") from None
 
 
@@ -342,6 +343,8 @@ class _SamlForm:
 # Hops allowed between the authorize answer and a SAML request or the code: forms
 # submitted and redirects followed, every one on an allow-listed host.
 MAX_AUTHORIZE_HOPS = 6
+# OpenID Connect's errors for "no usable session, the user must sign in again".
+SESSION_GONE_ERRORS = frozenset({"login_required", "interaction_required", "consent_required", "account_selection_required"})
 
 
 def _same_endpoint(url: str, other: str) -> bool:
@@ -415,8 +418,10 @@ async def _walk_to_saml_or_code(
     while True:
         fields = current.get("parameters") if isinstance(current, dict) else None
         if isinstance(fields, dict):
-            saml_request = fields.get("SAMLRequest")
-            if _non_empty_str(saml_request):
+            if "SAMLRequest" in fields:
+                saml_request = fields["SAMLRequest"]
+                if not _non_empty_str(saml_request):
+                    raise UpstreamError("Authorize step returned no SAML request")
                 return _SamlForm(request=saml_request, action=_require_allowed(site, current.get("action")))
             code = fields.get("code")
             action = current.get("action")
@@ -430,8 +435,9 @@ async def _walk_to_saml_or_code(
         method, action, form_fields = form
         url = _require_allowed(site, action)
         if method == "GET":
-            joiner = "&" if urllib.parse.urlsplit(url).query else "?"
-            url, form_fields, method = url + joiner + urllib.parse.urlencode(form_fields), None, "GET"
+            parts = urllib.parse.urlsplit(url)
+            url = urllib.parse.urlunsplit(parts._replace(query=urllib.parse.urlencode(form_fields), fragment=""))
+            form_fields = None
         elif method != "POST":
             raise UpstreamError("Identity step form has an unknown method")
         while True:  # this request, then the redirects it answers with
@@ -447,13 +453,18 @@ async def _walk_to_saml_or_code(
                 raise UpstreamError("Identity step redirect without a location")
             target = _require_allowed(site, urllib.parse.urljoin(url, location))
             if _same_endpoint(target, redirect_uri):
-                code = urllib.parse.parse_qs(urllib.parse.urlsplit(target).query).get("code", [None])[0]
+                answer_query = urllib.parse.parse_qs(urllib.parse.urlsplit(target).query)
+                code = answer_query.get("code", [None])[0]
                 if _non_empty_str(code):
                     return code
+                if answer_query.get("error", [None])[0] in SESSION_GONE_ERRORS:
+                    raise SessionExpired("Session no longer accepted")
                 raise UpstreamError("Identity step returned to the client without a code")
             if urllib.parse.urlsplit(target).path.startswith("/se-connecter"):
                 raise SessionExpired("Session no longer accepted")
-            url, method, form_fields = target, "GET", None
+            if status not in (307, 308):  # 301/302/303: the browser goes on with a GET
+                method, form_fields = "GET", None
+            url = target
         if status in (401, 403):
             raise SessionExpired("Session no longer accepted")
         if status != 200:
