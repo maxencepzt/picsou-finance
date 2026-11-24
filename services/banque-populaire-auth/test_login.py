@@ -6,13 +6,15 @@ identifier, the consent banner, the hosts, and the cookies kept. No browser, no
 network, no real credential or bank data: every value below is synthetic.
 """
 
+import asyncio
+import collections
 import json
 import unittest
 from dataclasses import replace
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 from bpce import login, replay
-from bpce.testing import COOKIE_BANNER_BUTTON, World
+from bpce.testing import COOKIE_BANNER_BUTTON, FakePage, FakeRoute, World
 
 import main
 
@@ -293,6 +295,85 @@ class NavigationAllowListTest(BanquePopulaireLoginTest):
         self.assertTrue((await context.open_web_socket("wss://www.banquepopulaire.fr/ws")).connected)
         self.assertTrue((await context.open_web_socket("wss://www.caisse-epargne.fr/ws")).closed)
 
+
+
+class StopDiagnosticsTest(BanquePopulaireLoginTest):
+    async def test_a_login_stalled_after_the_identifier_logs_its_page_and_never_the_identifier(self):
+        self.world.identifier_ok = False
+        self.world.identifier_error = False  # no banner, no keypad: the page just stays
+        with self.assertLogs("bpce", level="WARNING") as captured:
+            await self.assertFails(502, "UPSTREAM_FORMAT_CHANGED", self.initiate())
+        [line] = [entry for entry in captured.output if "Login stopped on" in entry]
+        self.assertIn("/se-connecter/identifier", line)
+        self.assertIn("refused off-site requests: none", line)
+        self.assertNotIn(CUSTOMER_ID, "\n".join(captured.output))
+        self.assertClean()
+
+    async def test_a_refused_identifier_is_not_reported_as_a_stall(self):
+        self.world.identifier_ok = False  # the bank shows its error banner
+        with self.assertLogs("bpce", level="DEBUG") as captured:
+            login.log.debug("marker")
+            await self.assertFails(401, "INVALID_CREDENTIALS", self.initiate())
+        self.assertFalse(any("Login stopped on" in entry for entry in captured.output))
+
+    async def test_refused_requests_are_counted_by_host_and_kind_only(self):
+        refused = collections.Counter()
+        guard = login._route_guard(main.SITE, refused)
+        for url in ("https://tracker.example.com/pixel?id=SECRET-VALUE",
+                    "https://tracker.example.com/other",
+                    "https://www.icgauth.banquepopulaire.fr/se-connecter/identifier"):
+            await guard(FakeRoute(url))
+        self.assertEqual(dict(refused), {"tracker.example.com (document)": 2})
+
+    async def test_the_route_of_a_login_counts_into_its_own_session(self):
+        result = await self.initiate()
+        await self.world.contexts[0].request_through_route("https://tracker.example.com/pixel")
+        self.assertEqual(dict(login._pending[result["processId"]].refused), {"tracker.example.com (document)": 1})
+
+    async def test_an_unparsable_refused_url_is_still_aborted(self):
+        refused = collections.Counter()
+        route = FakeRoute("https://[evil/x")
+        await login._route_guard(main.SITE, refused)(route)
+        self.assertTrue(route.aborted)
+        self.assertEqual(dict(refused), {"unparsable URL": 1})
+
+    async def test_the_logged_title_is_cut_to_80_characters(self):
+        self.world.identifier_ok = False
+        self.world.identifier_error = False
+        with patch.object(FakePage, "title", AsyncMock(return_value="T" * 100), create=True), \
+                self.assertLogs("bpce", level="WARNING") as captured:
+            await self.assertFails(502, "UPSTREAM_FORMAT_CHANGED", self.initiate())
+        [line] = [entry for entry in captured.output if "Login stopped on" in entry]
+        self.assertIn(repr("T" * 80), line)
+        self.assertNotIn("T" * 81, line)
+
+    async def test_matrix_parameters_and_queries_never_reach_the_log(self):
+        session = login._Session(created_at=0.0, site=main.SITE)
+        session.page = type("Page", (), {
+            "url": "https://www.icgauth.banquepopulaire.fr/se-connecter/identifier;jsessionid=SECRET-1?hint=SECRET-2",
+        })()
+        with self.assertLogs("bpce", level="WARNING") as captured:
+            await login._log_where_login_stopped(session)
+        self.assertIn("Login stopped on /se-connecter/identifier ", captured.output[0])
+        self.assertNotIn("SECRET", captured.output[0])
+
+    async def test_a_cancellation_while_logging_still_closes_the_browser(self):
+        self.world.identifier_ok = False
+        self.world.identifier_error = False
+        reached = asyncio.Event()
+
+        async def hanging_title(_page):
+            reached.set()
+            await asyncio.Event().wait()
+
+        with patch.object(FakePage, "title", hanging_title, create=True):
+            task = asyncio.create_task(self.initiate())
+            await asyncio.wait_for(reached.wait(), 5)
+            task.cancel()
+            with self.assertRaises(asyncio.CancelledError):
+                await task
+        self.assertClean()
+        self.assertEqual(self.world.still_open(), [])
 
 
 class IdentifierShapeTest(BanquePopulaireLoginTest):

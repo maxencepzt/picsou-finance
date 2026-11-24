@@ -38,6 +38,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **A Banque Populaire or Caisse d'Epargne login that stalls says where.** The connector logs the page it
+  stopped on and the outside sites it refused to load, never a value typed or a cookie, so a change on the
+  bank's side can be pinned down.
 - **The price chart of a position opens again.** Clicking a position on the Investments page opened its detail with a blank
   chart: inside the dialog the plot had no height.
 - **Binance balances include Simple Earn.** Coins placed in flexible or locked Simple Earn products were missing from

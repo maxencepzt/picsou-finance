@@ -75,6 +75,14 @@ Loans read their detail through separate OAuth clients, as on Caisse d'Epargne. 
 
 The PER is read from the Banque Populaire insurer portal (Natixis Assurances, `SITE.per`).
 
+### A login that stops without an answer
+
+When `/initiate` (shared BPCE code, Caisse d'Epargne too) fails with `UPSTREAM_FORMAT_CHANGED` or
+`UPSTREAM_UNAVAILABLE`, the sidecar logs `Login stopped on <path> (title ...)` with the off-site
+requests its route guard refused, as `host (resource type) xN`. Path, title and hosts only: never a
+query string, a field value or a cookie. A page that now waits on a host outside
+`*.banquepopulaire.fr` and `SITE.extra_hosts` shows up there.
+
 ### Wrong identifier or password
 
 The bank answers a wrong identifier or password with a modal titled "Identifiant ou mot de passe erroné" over the keypad page (observed live 2026-11-05). The sidecar reads it as `INVALID_CREDENTIALS` (`ERROR_SELECTOR` matches that wording), so the UI says the credentials were refused and warns about the lock risk instead of reporting a format change.
