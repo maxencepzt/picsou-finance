@@ -45,8 +45,12 @@ from .site import Site
 
 log = logging.getLogger("bpce.login")
 
-KEYS_PATH = "/se-connecter/icg/mot-de-passe"
-SECURPASS_URL_MARKER = "(modal:icg/cloudcard)"
+# The login flow's route segment: `icg` until Banque Populaire moved its pages to `iag`
+# (seen live on 2026-11-24, same pages and keypad). Both are accepted, so a site still on
+# the old one keeps working.
+LOGIN_FLOW_SEGMENTS = ("icg", "iag")
+KEYS_PATHS = frozenset(f"/se-connecter/{segment}/mot-de-passe" for segment in LOGIN_FLOW_SEGMENTS)
+SECURPASS_URL_MARKERS = tuple(f"(modal:{segment}/cloudcard)" for segment in LOGIN_FLOW_SEGMENTS)
 ERROR_PATH_PREFIX = "/erreur"
 AUTHORIZE_PATH = "/api/oauth/v2/authorize"
 DROPPED_AUTHORIZE_PARAMS = ("code_challenge", "code_challenge_method", "nonce")
@@ -585,7 +589,7 @@ async def _submit_identifier(page: Any, customer_id: str) -> None:
     deadline = time.monotonic() + STEP_TIMEOUT_SECONDS
     while True:
         url = page.url
-        if _url_parts(url)[1].rstrip("/") == KEYS_PATH:
+        if _url_parts(url)[1].rstrip("/") in KEYS_PATHS:
             count = await keys.count()
             if count == keypad_table.KEY_COUNT:
                 return
@@ -651,7 +655,7 @@ async def _expect_securpass(page: Any) -> None:
     deadline = time.monotonic() + STEP_TIMEOUT_SECONDS
     while True:
         url = page.url
-        if SECURPASS_URL_MARKER in url or await _visible(page, SECURPASS_SELECTOR):
+        if any(marker in url for marker in SECURPASS_URL_MARKERS) or await _visible(page, SECURPASS_SELECTOR):
             return
         if await _visible(page, ERROR_SELECTOR):
             raise LoginError(401, "INVALID_CREDENTIALS")

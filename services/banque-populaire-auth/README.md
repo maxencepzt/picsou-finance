@@ -66,8 +66,8 @@ unchanged. The container listens on port 8001.
    another establishment is never picked.
 3. From here the Caisse d'Epargne flow, unchanged: identifier in
    `input[type="text"][id^="neo-input-"]`, the form's `Valider`, the 10
-   `.keyboard-button` keys at `/se-connecter/icg/mot-de-passe`, the user's clicks,
-   `Valider`, the Sécur'Pass wait (`(modal:icg/cloudcard)`), the client space.
+   `.keyboard-button` keys at `/se-connecter/iag/mot-de-passe` (`icg` until 2026-11-24; both accepted), the
+   user's clicks, `Valider`, the Sécur'Pass wait (`(modal:iag/cloudcard)`, or `icg`), the client space.
 4. The authorize query is captured from the first authorize request made from the
    client space. The login pages' own authorize (another client, implicit flow, made
    from icgauth) is ignored.
