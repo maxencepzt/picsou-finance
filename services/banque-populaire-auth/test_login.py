@@ -297,6 +297,31 @@ class NavigationAllowListTest(BanquePopulaireLoginTest):
 
 
 
+class IagLoginPathTest(BanquePopulaireLoginTest):
+    """The password page and the Secur'Pass modal under `iag`, as the bank serves them since 2026-11-24."""
+
+    async def asyncSetUp(self):
+        await super().asyncSetUp()
+        self.world.keys_url = f"{LOGIN_HOST}/se-connecter/iag/mot-de-passe"
+        self.world.securpass_url = self.world.keys_url + "/(modal:iag/cloudcard)"
+
+    async def test_the_keypad_is_read_on_the_iag_password_page(self):
+        result = await self.initiate()
+        self.assertEqual(len(result["keypad"]["images"]), 10)
+
+    async def test_a_full_login_goes_through_the_iag_securpass_modal(self):
+        pid = (await self.initiate())["processId"]
+        await login.keypad(pid, POSITIONS)
+        state = json.loads(await login.complete(pid))
+        self.assertEqual(state["authorizeParams"]["cdetab"], "00000")
+        self.assertClean()
+
+    async def test_a_password_page_under_another_segment_is_still_refused(self):
+        self.world.keys_url = f"{LOGIN_HOST}/se-connecter/xyz/mot-de-passe"
+        await self.assertFails(502, "UPSTREAM_FORMAT_CHANGED", self.initiate())
+        self.assertClean()
+
+
 class StopDiagnosticsTest(BanquePopulaireLoginTest):
     async def test_a_login_stalled_after_the_identifier_logs_its_page_and_never_the_identifier(self):
         self.world.identifier_ok = False

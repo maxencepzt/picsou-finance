@@ -38,6 +38,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Banque Populaire login works again.** The bank moved its password page from `/se-connecter/icg/` to
+  `/se-connecter/iag/` on 2026-11-24; the connector waited for the old address and gave up after 30 seconds
+  with "the site format changed". Both addresses are accepted, for Caisse d'Epargne too.
 - **A Banque Populaire or Caisse d'Epargne login that stalls says where.** The connector logs the page it
   stopped on and the outside sites it refused to load, never a value typed or a cookie, so a change on the
   bank's side can be pinned down.
